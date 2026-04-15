@@ -20,7 +20,7 @@ Use juce::dsp::FFT with an exact order of 12 (size 4096) for high frequency reso
 The GUI thread should pull from the lock-free FIFO, perform the FFT, and calculate a high-resolution Pitch Class
 Profile.
 
-CRITICAL: The visualizer uses 60 bins (5 bins per semitone).
+CRITICAL: The visualizer uses 108 bins (9 bins per semitone, ).
 
 The GUI Thread (PluginEditor):
 
