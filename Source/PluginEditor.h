@@ -8,6 +8,7 @@
 #include <array>
 #include <vector>
 #include <memory>
+#include <atomic>
 
 enum class Tone { Do, Ra, Re, Me, Mi, Fa, Fi, So, Le, La, Te, Ti };
 
@@ -31,28 +32,53 @@ public:
 
 private:
     void timerCallback() override;
-    void processCqt();
     static juce::Colour calculateColor (float velocity, float toneRatio);
 
     PitchengaAudioProcessor& audioProcessor;
 
-    // CQT Engine and DSP Filters
-    CqtEngine cqt;
-    std::unique_ptr<HarmonicPatternPitchClassDetector> pcDetector;
-    std::unique_ptr<SpectralEqualizer> spectralEqualizer;
-    std::unique_ptr<ExpSmoother> octaveBinSmoother;
+    // Background worker for heavy DSP
+    class CqtWorkerThread : public juce::Thread
+    {
+    public:
+        CqtWorkerThread (PitchengaAudioProcessor& p);
+        void run() override;
+        
+        // Thread-safe access to results
+        void getLatestResults (std::vector<double>& dest);
+        bool hasNewData() const { return newDataAvailable.load(); }
+        void clearNewDataFlag() { newDataAvailable.store (false); }
 
-    std::vector<float> workBuffer;
-    std::vector<std::complex<float>> cqtSpectrum;
-    std::vector<double> amplitudeSpectrumDb;
-    std::vector<double> octaveBins;
+        void updateSampleRate (double newSampleRate);
+
+    private:
+        PitchengaAudioProcessor& processor;
+        
+        CqtEngine cqt;
+        std::unique_ptr<HarmonicPatternPitchClassDetector> pcDetector;
+        std::unique_ptr<SpectralEqualizer> spectralEqualizer;
+        std::unique_ptr<ExpSmoother> octaveBinSmoother;
+
+        std::vector<float> workBuffer;
+        std::vector<std::complex<float>> cqtSpectrum;
+        std::vector<double> amplitudeSpectrumDb;
+        std::vector<double> octaveBins;
+        
+        juce::CriticalSection resultLock;
+        std::vector<double> results;
+        std::atomic<bool> newDataAvailable { false };
+        
+        static double amplitudeToDbRescaled (double amplitude);
+    };
+
+    CqtWorkerThread worker;
+
+    // Shared results for rendering
     std::vector<double> smoothedOctaveBins;
 
     // Rendering Constants
     static constexpr int semitonesPerOctave = 12;
     static constexpr int binsPerSemitone = 9;
     static constexpr int totalFoldedBins = binsPerSemitone * semitonesPerOctave;
-    static constexpr double frequencyC0 = 16.35159783128741;
 
     std::array<juce::Path, totalFoldedBins> segmentPaths;
     juce::PathStrokeType strokeType { 0.5f };
