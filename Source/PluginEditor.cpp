@@ -42,15 +42,15 @@ void PitchengaAudioProcessorEditor::timerCallback()
 
     while (fifo.getNumReady() >= fftSize)
     {
-        auto scope = fifo.read (fftSize);
-        int start1 = scope.startIndex1;
-        int size1 = scope.blockSize1;
-        int start2 = scope.startIndex2;
-        int size2 = scope.blockSize2;
+        int start1, size1, start2, size2;
+        fifo.prepareToRead (fftSize, start1, size1, start2, size2);
+
+        if (size1 + size2 < fftSize)
+            break;
 
         const auto& buffer = audioProcessor.getFifoBuffer();
-        if (size1 > 0) std::copy (buffer.begin() + static_cast<size_t> (start1), buffer.begin() + static_cast<size_t> (start1 + size1), fifoWorkBuffer.begin());
-        if (size2 > 0) std::copy (buffer.begin() + static_cast<size_t> (start2), buffer.begin() + static_cast<size_t> (start2 + size2), fifoWorkBuffer.begin() + static_cast<size_t> (size1));
+        if (size1 > 0) std::copy (buffer.begin() + start1, buffer.begin() + start1 + size1, fifoWorkBuffer.begin());
+        if (size2 > 0) std::copy (buffer.begin() + start2, buffer.begin() + start2 + size2, fifoWorkBuffer.begin() + size1);
 
         fifo.finishedRead (size1 + size2);
 
@@ -58,9 +58,10 @@ void PitchengaAudioProcessorEditor::timerCallback()
         dataProcessed = true;
 
         // If we are falling behind (e.g. UI lag), skip to the most recent data to maintain sync
-        if (fifo.getNumReady() > fftSize * 2)
+        int numReady = fifo.getNumReady();
+        if (numReady > fftSize * 2)
         {
-            fifo.finishedRead (fifo.getNumReady() - fftSize);
+            fifo.finishedRead (numReady - fftSize);
         }
     }
 

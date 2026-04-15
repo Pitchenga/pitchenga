@@ -45,11 +45,7 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     const int numSamples = buffer.getNumSamples();
 
     // Mono Mixdown and Push to lock-free FIFO
-    auto scope = fifo.write (numSamples);
-    int start1 = scope.startIndex1;
-    int size1 = scope.blockSize1;
-    int start2 = scope.startIndex2;
-    int size2 = scope.blockSize2;
+    const auto scope = fifo.write (numSamples);
 
     auto pushToFifo = [&](int fifoStart, int amount, int bufferOffset)
     {
@@ -69,10 +65,8 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         }
     };
 
-    if (size1 > 0) pushToFifo (start1, size1, 0);
-    if (size2 > 0) pushToFifo (start2, size2, size1);
-
-    fifo.finishedWrite (size1 + size2);
+    if (scope.blockSize1 > 0) pushToFifo (scope.startIndex1, scope.blockSize1, 0);
+    if (scope.blockSize2 > 0) pushToFifo (scope.startIndex2, scope.blockSize2, scope.blockSize1);
 }
 
 juce::AudioProcessorEditor* PitchengaAudioProcessor::createEditor()
