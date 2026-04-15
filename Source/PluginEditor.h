@@ -31,6 +31,7 @@ public:
 private:
     void timerCallback() override;
     void processFFT();
+    void updateBinLookupTable (double sampleRate);
     static juce::Colour calculateColor (float velocity, float toneRatio);
 
     PitchengaAudioProcessor& audioProcessor;
@@ -43,6 +44,10 @@ private:
 
     std::vector<float> fftData;
     std::vector<float> fifoWorkBuffer;
+
+    // Bin Lookup Table for optimization
+    std::vector<int> binLookupTable;
+    double lastSampleRate = 0.0;
 
     // 60 bins (5 per semitone)
     static constexpr int numBins = 60;

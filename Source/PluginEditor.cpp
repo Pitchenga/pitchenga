@@ -23,6 +23,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor (PitchengaAudioProc
 {
     fftData.resize (fftSize * 2, 0.0f);
     fifoWorkBuffer.resize (fftSize, 0.0f);
+    binLookupTable.assign (static_cast<size_t>(fftSize / 2), -1);
     currentBins.fill (0.0f);
     smoothedBins.fill (0.0f);
 
@@ -58,8 +59,38 @@ void PitchengaAudioProcessorEditor::timerCallback()
     }
 }
 
+void PitchengaAudioProcessorEditor::updateBinLookupTable (double sampleRate)
+{
+    const double binWidth = sampleRate / fftSize;
+    const double refFreq = 16.35159783128741; // C0
+
+    for (int i = 1; i < fftSize / 2; ++i)
+    {
+        double freq = i * binWidth;
+        if (freq < 20.0) 
+        {
+            binLookupTable[static_cast<size_t>(i)] = -1;
+            continue;
+        }
+
+        double semitones = 12.0 * std::log2 (freq / refFreq);
+        int binIndex = static_cast<int> (std::round (semitones * 5.0)) % numBins;
+        if (binIndex < 0) binIndex += numBins;
+        binLookupTable[static_cast<size_t>(i)] = binIndex;
+    }
+}
+
 void PitchengaAudioProcessorEditor::processFFT()
 {
+    const double sampleRate = audioProcessor.getSampleRate();
+    if (sampleRate > 0 && std::abs (sampleRate - lastSampleRate) > 0.01)
+    {
+        updateBinLookupTable (sampleRate);
+        lastSampleRate = sampleRate;
+    }
+
+    if (lastSampleRate <= 0) return;
+
     std::fill (fftData.begin(), fftData.end(), 0.0f);
     std::copy (fifoWorkBuffer.begin(), fifoWorkBuffer.end(), fftData.begin());
 
@@ -68,18 +99,10 @@ void PitchengaAudioProcessorEditor::processFFT()
 
     currentBins.fill (0.0f);
 
-    const double sampleRate = audioProcessor.getSampleRate();
-    const double binWidth = sampleRate / fftSize;
-    const double refFreq = 16.35159783128741; // C0
-
     for (int i = 1; i < fftSize / 2; ++i)
     {
-        double freq = i * binWidth;
-        if (freq < 20.0) continue;
-
-        double semitones = 12.0 * std::log2 (freq / refFreq);
-        int binIndex = static_cast<int> (std::round (semitones * 5.0)) % numBins;
-        if (binIndex < 0) binIndex += numBins;
+        int binIndex = binLookupTable[static_cast<size_t>(i)];
+        if (binIndex == -1) continue;
 
         float magnitude = fftData[static_cast<size_t>(i)];
         currentBins[static_cast<size_t>(binIndex)] = std::max (currentBins[static_cast<size_t>(binIndex)], magnitude);
