@@ -157,6 +157,31 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 octaveBins[static_cast<size_t> (i)] = maxVal;
             }
 
+            // --- Top Bin Amplification ---
+            struct BinRank { int index; double velocity; };
+            std::vector<BinRank> ranks (static_cast<size_t>(binsPerOctave));
+            for (int i = 0; i < binsPerOctave; ++i)
+                ranks[static_cast<size_t>(i)] = { i, octaveBins[static_cast<size_t>(i)] };
+
+            std::sort (ranks.begin(), ranks.end(), [](const BinRank& a, const BinRank& b) {
+                return a.velocity < b.velocity;
+            });
+
+            for (int i = 0; i < binsPerOctave; ++i)
+            {
+                int binIdx = ranks[static_cast<size_t>(i)].index;
+                double velocity = octaveBins[static_cast<size_t>(binIdx)];
+                
+                // Multiplier based on rank (0 to 107)
+                velocity *= static_cast<double>(i) * 0.013;
+                
+                // Extra boost for the absolute loudest bin
+                if (i == binsPerOctave - 1)
+                    velocity *= 1.3;
+
+                octaveBins[static_cast<size_t>(binIdx)] = std::min (velocity, 1.2);
+            }
+
             const auto& smoothed = octaveBinSmoother->smooth (octaveBins);
 
             {
@@ -246,8 +271,9 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
 
         juce::Colour color = calculateColor (velocity, toneRatio);
 
-        float currentRadius = baseRadius * (0.2f + velocity * 0.8f);
-        float alpha = juce::jlimit (0.3f, 1.0f, 0.5f + velocity * 0.5f);
+        // Map energy directly to radius and alpha without floor offsets
+        float currentRadius = baseRadius * velocity;
+        float alpha = juce::jlimit (0.0f, 1.0f, velocity);
 
         auto& originalPath = segmentPaths[static_cast<size_t>(i)];
         auto transform = juce::AffineTransform::scale (currentRadius, currentRadius).translated (center.x, center.y);
@@ -255,7 +281,8 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
         g.setColour (color.withAlpha (alpha));
         g.fillPath (originalPath, transform);
 
-        g.setColour (color.withAlpha (0.1f + velocity * 0.2f));
+        // Segment outline also scales with velocity
+        g.setColour (color.withAlpha (velocity * 0.2f));
         g.strokePath (originalPath, strokeType, transform);
     }
 }
