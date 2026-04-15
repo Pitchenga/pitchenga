@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Pitchenga_Standalone" type="CMakeRunConfiguration" factoryName="Application" folderName="Pitchenga" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Pitchenga" TARGET_NAME="Pitchenga_Standalone" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Pitchenga" RUN_TARGET_NAME="Pitchenga_Standalone">
+    <method v="2">
+      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+</component>

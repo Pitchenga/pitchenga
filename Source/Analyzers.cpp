@@ -11,10 +11,10 @@ ExpSmoother::ExpSmoother(int size, double currentWeight)
 
 std::vector<double> ExpSmoother::smooth(const std::vector<double>& currentFrame) {
     for (size_t i = 0; i < data.size(); ++i) {
-        if (currentFrame[i] < 0.5 || data[i] > currentFrame[i]) {
-            data[i] = previousWeight * data[i] + currentWeight * currentFrame[i];
+        if (currentFrame[i] > data[i]) {
+            data[i] = currentFrame[i]; // Instant Attack
         } else {
-            data[i] = currentFrame[i];
+            data[i] = previousWeight * data[i] + currentWeight * currentFrame[i]; // Smooth Decay
         }
     }
     return data;

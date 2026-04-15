@@ -31,7 +31,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor (PitchengaAudioProc
 
     pcDetector = std::make_unique<HarmonicPatternPitchClassDetector>(binsPerOctave, config.binsPerHalftone);
     spectralEqualizer = std::make_unique<SpectralEqualizer>(totalBins, 30);
-    octaveBinSmoother = std::make_unique<ExpSmoother>(binsPerOctave, 0.2);
+    octaveBinSmoother = std::make_unique<ExpSmoother>(binsPerOctave, 0.35); // Increased from 0.2
 
     workBuffer.resize(cqt.getSignalBlockSize(), 0.0f);
     amplitudeSpectrumDb.resize(totalBins, 0.0);
