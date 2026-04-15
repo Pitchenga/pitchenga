@@ -43,7 +43,6 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::setupBuffers()
 
     workBuffer.assign (signalBlockSize, 0.0f);
     
-    // Initialize sliding windows for each octave
     slidingWindows.assign (static_cast<size_t> (PitchengaAudioProcessor::numOctaves), 
                            std::vector<float>(signalBlockSize, 0.0f));
 
@@ -93,7 +92,6 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
             auto& buffer = octaves[static_cast<size_t> (oct)].buffer;
             auto& win = slidingWindows[static_cast<size_t> (oct)];
 
-            // Safety check against race conditions during resize
             if (win.size() != static_cast<size_t>(signalBlockSize)) continue;
 
             int numReady = fifo.getNumReady();
@@ -102,28 +100,20 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 if (oct == 0) hasNewAudio = true;
 
                 int toRead = std::min (numReady, signalBlockSize);
-                
-                // Jump to latest data
-                if (numReady > toRead)
-                    fifo.finishedRead (numReady - toRead);
+                if (numReady > toRead) fifo.finishedRead (numReady - toRead);
 
-                // Shift window
                 if (toRead < signalBlockSize)
                 {
-                    std::memmove (win.data(), 
-                                  win.data() + toRead, 
+                    std::memmove (win.data(), win.data() + toRead, 
                                   static_cast<size_t> (signalBlockSize - toRead) * sizeof (float));
                 }
 
-                // Append new data
                 int start1, size1, start2, size2;
                 fifo.prepareToRead (toRead, start1, size1, start2, size2);
-                
                 if (size1 > 0) std::copy (buffer.begin() + start1, buffer.begin() + start1 + size1, 
                                          win.begin() + (static_cast<ptrdiff_t>(signalBlockSize) - toRead));
                 if (size2 > 0) std::copy (buffer.begin() + start2, buffer.begin() + start2 + size2, 
                                          win.begin() + (static_cast<ptrdiff_t>(signalBlockSize) - toRead) + size1);
-                
                 fifo.finishedRead (toRead);
             }
         }
@@ -137,9 +127,14 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 {
                     cqt.transform (win, cqtSpectrum);
 
+                    // Apply Octave-dependent gain tilt (higher octaves get more boost)
+                    // oct=0 is highest freq (C8), oct=5 is lowest (C3).
+                    float octaveTilt = 1.0f + (static_cast<float>(oct) * 0.15f);
+                    
                     int startIndex = (PitchengaAudioProcessor::numOctaves - 1 - oct) * binsPerOctave;
                     for (size_t i = 0; i < cqtSpectrum.size(); ++i) {
-                        double amplitude = std::abs (cqtSpectrum[i]);
+                        // Global gain boost (2.0x) + Tilt
+                        double amplitude = std::abs (cqtSpectrum[i]) * 2.0 * octaveTilt;
                         amplitudeSpectrumDb[static_cast<size_t> (startIndex) + i] = amplitudeToDbRescaled (amplitude);
                     }
                 }
@@ -157,7 +152,7 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 octaveBins[static_cast<size_t> (i)] = maxVal;
             }
 
-            // --- Top Bin Amplification ---
+            // --- Tuned Rank-Based Amplification ---
             struct BinRank { int index; double velocity; };
             std::vector<BinRank> ranks (static_cast<size_t>(binsPerOctave));
             for (int i = 0; i < binsPerOctave; ++i)
@@ -172,14 +167,13 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 int binIdx = ranks[static_cast<size_t>(i)].index;
                 double velocity = octaveBins[static_cast<size_t>(binIdx)];
                 
-                // Multiplier based on rank (0 to 107)
-                velocity *= static_cast<double>(i) * 0.013;
+                // Softer rank multiplier (floor at 0.4 to prevent total silence of secondary notes)
+                double multiplier = 0.4 + (static_cast<double>(i) / static_cast<double>(binsPerOctave)) * 0.8;
+                velocity *= multiplier;
                 
-                // Extra boost for the absolute loudest bin
-                if (i == binsPerOctave - 1)
-                    velocity *= 1.3;
+                if (i == binsPerOctave - 1) velocity *= 1.3; // Loudest peak boost
 
-                octaveBins[static_cast<size_t>(binIdx)] = std::min (velocity, 1.2);
+                octaveBins[static_cast<size_t>(binIdx)] = std::min (velocity, 1.5);
             }
 
             const auto& smoothed = octaveBinSmoother->smooth (octaveBins);
@@ -236,7 +230,6 @@ void PitchengaAudioProcessorEditor::timerCallback()
 
 juce::Colour PitchengaAudioProcessorEditor::calculateColor (float velocity, float toneRatio)
 {
-    // Handle wrapping and negative ratios for smooth chromatic loops
     float wrappedRatio = std::fmod (toneRatio, 12.0f);
     if (wrappedRatio < 0) wrappedRatio += 12.0f;
 
@@ -250,7 +243,7 @@ juce::Colour PitchengaAudioProcessorEditor::calculateColor (float velocity, floa
     juce::Colour nextToneColor = chromaticScale[static_cast<size_t>(nextIdx)].color;
 
     juce::Colour baseColor = currentToneColor.interpolatedWith (nextToneColor, diff);
-    float colorVelocity = juce::jlimit (0.0f, 1.0f, 0.3f + velocity * 1.5f);
+    float colorVelocity = juce::jlimit (0.0f, 1.0f, velocity * 1.2f);
     return juce::Colours::black.interpolatedWith (baseColor, colorVelocity);
 }
 
@@ -265,13 +258,9 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
     for (int i = 0; i < totalFoldedBins; ++i)
     {
         float velocity = static_cast<float>(smoothedOctaveBins[static_cast<size_t>(i)]);
-
-        // Goes from 0 to 107 - toneRatio will accurately go from 0.0 to 11.888...
         float toneRatio = static_cast<float> (i) / static_cast<float> (binsPerSemitone);
-
         juce::Colour color = calculateColor (velocity, toneRatio);
 
-        // Map energy directly to radius and alpha without floor offsets
         float currentRadius = baseRadius * velocity;
         float alpha = juce::jlimit (0.0f, 1.0f, velocity);
 
@@ -281,7 +270,6 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
         g.setColour (color.withAlpha (alpha));
         g.fillPath (originalPath, transform);
 
-        // Segment outline also scales with velocity
         g.setColour (color.withAlpha (velocity * 0.2f));
         g.strokePath (originalPath, strokeType, transform);
     }
@@ -290,8 +278,6 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
 void PitchengaAudioProcessorEditor::resized()
 {
     constexpr float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(totalFoldedBins);
-    
-    // Rotate 90 degrees clockwise from the 9 o'clock position
     const float rotation = 0.0f - (0.5f * angleStep);
 
     for (int i = 0; i < totalFoldedBins; ++i)
