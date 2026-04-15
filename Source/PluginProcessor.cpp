@@ -58,7 +58,7 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     // Safety check: if host exceeds promised block size, we must skip to avoid OOB/Allocation
     if (static_cast<size_t>(numSamples) > monoBuffer.size()) return;
 
-    // Mix down to mono into pre-allocated buffer
+    // Mix down to mono into pre-allocated buffer (Unity Gain)
     float* monoData = monoBuffer.data();
     if (totalNumInputChannels == 1)
     {
@@ -70,7 +70,6 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         auto* right = buffer.getReadPointer (1);
         juce::FloatVectorOperations::copy (monoData, left, numSamples);
         juce::FloatVectorOperations::add (monoData, right, numSamples);
-        juce::FloatVectorOperations::multiply (monoData, 0.5f, numSamples);
     }
 
     // Cascade multi-rate decimation using pointer swapping
