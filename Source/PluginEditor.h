@@ -1,6 +1,8 @@
 #pragma once
 
-#include <JuceHeader.h>
+#include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_dsp/juce_dsp.h>
+#include <juce_events/juce_events.h>
 #include "PluginProcessor.h"
 #include <array>
 #include <vector>
@@ -29,7 +31,7 @@ public:
 private:
     void timerCallback() override;
     void processFFT();
-    juce::Colour calculateColor (float velocity, float toneRatio);
+    static juce::Colour calculateColor (float velocity, float toneRatio);
 
     PitchengaAudioProcessor& audioProcessor;
 

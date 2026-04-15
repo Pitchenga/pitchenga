@@ -41,11 +41,15 @@ void PitchengaAudioProcessorEditor::timerCallback()
 
     if (fifo.getNumReady() >= fftSize)
     {
-        auto [start1, size1, start2, size2] = fifo.read (fftSize);
+        auto scope = fifo.read (fftSize);
+        int start1 = scope.startIndex1;
+        int size1 = scope.blockSize1;
+        int start2 = scope.startIndex2;
+        int size2 = scope.blockSize2;
 
         const auto& buffer = audioProcessor.getFifoBuffer();
-        if (size1 > 0) std::copy (buffer.begin() + start1, buffer.begin() + start1 + size1, fifoWorkBuffer.begin());
-        if (size2 > 0) std::copy (buffer.begin() + start2, buffer.begin() + start2 + size2, fifoWorkBuffer.begin() + size1);
+        if (size1 > 0) std::copy (buffer.begin() + static_cast<size_t> (start1), buffer.begin() + static_cast<size_t> (start1 + size1), fifoWorkBuffer.begin());
+        if (size2 > 0) std::copy (buffer.begin() + static_cast<size_t> (start2), buffer.begin() + static_cast<size_t> (start2 + size2), fifoWorkBuffer.begin() + static_cast<size_t> (size1));
 
         fifo.finishedRead (size1 + size2);
 
@@ -77,13 +81,16 @@ void PitchengaAudioProcessorEditor::processFFT()
         int binIndex = static_cast<int> (std::round (semitones * 5.0)) % numBins;
         if (binIndex < 0) binIndex += numBins;
 
-        float magnitude = fftData[i];
-        currentBins[binIndex] = std::max (currentBins[binIndex], magnitude);
+        float magnitude = fftData[static_cast<size_t>(i)];
+        currentBins[static_cast<size_t>(binIndex)] = std::max (currentBins[static_cast<size_t>(binIndex)], magnitude);
     }
 
     // Exponential Smoothing
     for (int i = 0; i < numBins; ++i)
-        smoothedBins[i] = (smoothingFactor * currentBins[i]) + ((1.0f - smoothingFactor) * smoothedBins[i]);
+    {
+        size_t idx = static_cast<size_t>(i);
+        smoothedBins[idx] = (smoothingFactor * currentBins[idx]) + ((1.0f - smoothingFactor) * smoothedBins[idx]);
+    }
 }
 
 juce::Colour PitchengaAudioProcessorEditor::calculateColor (float velocity, float toneRatio)
@@ -96,8 +103,8 @@ juce::Colour PitchengaAudioProcessorEditor::calculateColor (float velocity, floa
     int nextIdx = (currentIdx + (diff < 0 ? -1 : 1)) % 12;
     if (nextIdx < 0) nextIdx += 12;
 
-    juce::Colour currentToneColor = chromaticScale[currentIdx].color;
-    juce::Colour nextToneColor = chromaticScale[nextIdx].color;
+    juce::Colour currentToneColor = chromaticScale[static_cast<size_t>(currentIdx)].color;
+    juce::Colour nextToneColor = chromaticScale[static_cast<size_t>(nextIdx)].color;
 
     // Smoothly interpolate between semitone colors
     juce::Colour baseColor = currentToneColor.interpolatedWith (nextToneColor, std::abs (diff));
@@ -114,17 +121,17 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
     auto center = bounds.getCentre();
     auto radius = std::min (bounds.getWidth(), bounds.getHeight()) * 0.45f;
 
-    const float angleStep = juce::MathConstants<float>::twoPi / numBins;
+    const float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(numBins);
 
     for (int i = 0; i < numBins; ++i)
     {
-        float velocity = smoothedBins[i];
+        float velocity = smoothedBins[static_cast<size_t>(i)];
         float toneRatio = static_cast<float> (i) / 5.0f; // 5 bins per semitone
 
         juce::Colour color = calculateColor (velocity, toneRatio);
 
-        float startAngle = i * angleStep;
-        float endAngle = (i + 1) * angleStep;
+        float startAngle = static_cast<float>(i) * angleStep;
+        float endAngle = static_cast<float>(i + 1) * angleStep;
 
         juce::Path p;
         p.addCentredArc (center.x, center.y, radius, radius, 0.0f, startAngle, endAngle, true);

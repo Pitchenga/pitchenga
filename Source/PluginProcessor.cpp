@@ -13,6 +13,7 @@ PitchengaAudioProcessor::~PitchengaAudioProcessor() {}
 
 void PitchengaAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    juce::ignoreUnused (sampleRate, samplesPerBlock);
     fifo.reset();
     std::fill (fifoBuffer.begin(), fifoBuffer.end(), 0.0f);
 }
@@ -33,6 +34,7 @@ bool PitchengaAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts
 
 void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
+    juce::ignoreUnused (midiMessages);
     juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
@@ -43,21 +45,25 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     const int numSamples = buffer.getNumSamples();
 
     // Mono Mixdown and Push to lock-free FIFO
-    auto [start1, size1, start2, size2] = fifo.write (numSamples);
+    auto scope = fifo.write (numSamples);
+    int start1 = scope.startIndex1;
+    int size1 = scope.blockSize1;
+    int start2 = scope.startIndex2;
+    int size2 = scope.blockSize2;
 
     auto pushToFifo = [&](int fifoStart, int amount, int bufferOffset)
     {
         if (totalNumInputChannels == 1)
         {
             const float* reader = buffer.getReadPointer (0, bufferOffset);
-            std::copy (reader, reader + amount, fifoBuffer.data() + fifoStart);
+            std::copy (reader, reader + amount, fifoBuffer.data() + static_cast<size_t> (fifoStart));
         }
         else if (totalNumInputChannels >= 2)
         {
             const float* left = buffer.getReadPointer (0, bufferOffset);
             const float* right = buffer.getReadPointer (1, bufferOffset);
             for (int i = 0; i < amount; ++i)
-                fifoBuffer[fifoStart + i] = (left[i] + right[i]) * 0.5f;
+                fifoBuffer[static_cast<size_t> (fifoStart + i)] = (left[i] + right[i]) * 0.5f;
         }
     };
 
