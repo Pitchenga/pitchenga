@@ -5,8 +5,8 @@
 #include <array>
 #include <vector>
 
-// Ported Domain Models from Java logic
-enum class Tone { Do, DoSharp, Re, ReSharp, Mi, Fa, FaSharp, So, SoSharp, La, LaSharp, Ti };
+// Ported Domain Models from Java logic - Renamed to match legacy solfège names
+enum class Tone { Do, Ra, Re, Me, Mi, Fa, Fi, So, Le, La, Te, Ti };
 
 struct Pitch
 {

@@ -2,20 +2,20 @@
 #include "PluginEditor.h"
 #include <cmath>
 
-// Ported chromatic colors from Java HarmonEye
+// Ported chromatic colors from Java HarmonEye - Updated with legacy Tone names
 const std::array<Pitch, 12> PitchengaAudioProcessorEditor::chromaticScale = {{
-    { Tone::Do,      0, 16.35, juce::Colour::fromRGB (255, 0, 0) },     // C (Red)
-    { Tone::DoSharp, 1, 17.32, juce::Colour::fromRGB (255, 127, 0) },   // C# (Orange)
-    { Tone::Re,      2, 18.35, juce::Colour::fromRGB (255, 255, 0) },   // D (Yellow)
-    { Tone::ReSharp, 3, 19.45, juce::Colour::fromRGB (127, 255, 0) },   // D# (Lime)
-    { Tone::Mi,      4, 20.60, juce::Colour::fromRGB (0, 255, 0) },     // E (Green)
-    { Tone::Fa,      5, 21.83, juce::Colour::fromRGB (0, 255, 127) },   // F (Spring Green)
-    { Tone::FaSharp, 6, 23.12, juce::Colour::fromRGB (0, 255, 255) },   // F# (Cyan)
-    { Tone::So,      7, 24.50, juce::Colour::fromRGB (0, 127, 255) },   // G (Azure)
-    { Tone::SoSharp, 8, 25.96, juce::Colour::fromRGB (0, 0, 255) },     // G# (Blue)
-    { Tone::La,      9, 27.50, juce::Colour::fromRGB (127, 0, 255) },   // A (Violet)
-    { Tone::LaSharp, 10, 29.14, juce::Colour::fromRGB (255, 0, 255) },  // A# (Magenta)
-    { Tone::Ti,      11, 30.87, juce::Colour::fromRGB (255, 0, 127) }   // B (Rose)
+    { Tone::Do,  0, 16.35, juce::Colour::fromRGB (255, 0, 0) },     // C (Red)
+    { Tone::Ra,  1, 17.32, juce::Colour::fromRGB (255, 127, 0) },   // Ra (C# / Orange)
+    { Tone::Re,  2, 18.35, juce::Colour::fromRGB (255, 255, 0) },   // D (Yellow)
+    { Tone::Me,  3, 19.45, juce::Colour::fromRGB (127, 255, 0) },   // Me (D# / Lime)
+    { Tone::Mi,  4, 20.60, juce::Colour::fromRGB (0, 255, 0) },     // E (Green)
+    { Tone::Fa,  5, 21.83, juce::Colour::fromRGB (0, 255, 127) },   // F (Spring Green)
+    { Tone::Fi,  6, 23.12, juce::Colour::fromRGB (0, 255, 255) },   // Fi (F# / Cyan)
+    { Tone::So,  7, 24.50, juce::Colour::fromRGB (0, 127, 255) },   // G (Azure)
+    { Tone::Le,  8, 25.96, juce::Colour::fromRGB (0, 0, 255) },     // Le (G# / Blue)
+    { Tone::La,  9, 27.50, juce::Colour::fromRGB (127, 0, 255) },   // A (Violet)
+    { Tone::Te, 10, 29.14, juce::Colour::fromRGB (255, 0, 255) },  // Te (A# / Magenta)
+    { Tone::Ti, 11, 30.87, juce::Colour::fromRGB (255, 0, 127) }   // B (Rose)
 }};
 
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor (PitchengaAudioProcessor& p)
