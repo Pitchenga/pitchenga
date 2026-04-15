@@ -55,7 +55,7 @@ cmake --build cmake-build-debug
 
 ```bash
 # Run the application
-killall Pitchenga; ~/dev/pitchenga/cmake-build-debug/Pitchenga_artefacts/Debug/Standalone/Pitchenga.app/Contents/MacOS/Pitchenga
+killall Pitchenga; ./cmake-build-debug/Pitchenga_artefacts/Debug/Standalone/Pitchenga.app/Contents/MacOS/Pitchenga
 ```
 
 ### Running

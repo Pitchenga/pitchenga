@@ -93,18 +93,22 @@ std::vector<std::complex<float>> CqtEngine::conjugatedNormalizedSpectralKernel(i
     std::vector<std::complex<float>> spectrum(signalBlockSize, {0.0f, 0.0f});
     
     // Complex Forward FFT
-    fft->perform(reinterpret_cast<const std::complex<float>*>(padded.data()), 
-                 reinterpret_cast<std::complex<float>*>(spectrum.data()), false);
+    fft->perform(padded.data(), spectrum.data(), false);
     
     // Normalize, Conjugate and Chop using threshold
     std::vector<std::complex<float>> result(signalBlockSize, {0.0f, 0.0f});
     for (int i = 0; i < signalBlockSize; ++i) {
-        float re = spectrum[i].real() * static_cast<float>(normalizationFactor);
-        float im = -spectrum[i].imag() * static_cast<float>(normalizationFactor); // Conjugation
+        float re = spectrum[i].real();
+        float im = spectrum[i].imag();
         
         float absVal = std::sqrt(re * re + im * im);
+        
+        // CHOP BEFORE NORMALIZATION (matching Java logic)
         if (absVal >= config.chopThreshold) {
-            result[i] = {re, im};
+            result[i] = {
+                static_cast<float>(re * normalizationFactor),
+                static_cast<float>(-im * normalizationFactor) // Conjugation
+            };
         }
     }
     

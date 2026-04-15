@@ -54,9 +54,10 @@ void PitchengaAudioProcessorEditor::timerCallback()
 }
 
 static double amplitudeToDbRescaled(double amplitude) {
-    if (amplitude <= 1e-5) return 0.0;
+    if (amplitude <= 1e-6) return 0.0;
     double db = 20.0 * std::log10(amplitude);
-    double rescaled = (db + 100.0) / 100.0;
+    // Increased range to handle quieter signals
+    double rescaled = (db + 80.0) / 80.0; 
     return juce::jlimit(0.0, 1.0, rescaled);
 }
 
@@ -75,15 +76,14 @@ void PitchengaAudioProcessorEditor::processCqt()
     int binsPerOctave = cqt.getBinsPerOctave();
 
     bool hasData = false;
-    int startIndex = (cqt.getOctaves() - 1) * binsPerOctave;
 
-    for (int oct = 0; oct < cqt.getOctaves(); ++oct, startIndex -= binsPerOctave)
+    for (int oct = 0; oct < cqt.getOctaves(); ++oct)
     {
         auto& fifo = octaves[oct].fifo;
         auto& buffer = octaves[oct].buffer;
 
-        int numReady = fifo.getNumReady();
-        if (numReady >= signalBlockSize)
+        // Process all available data in the FIFO to keep it drained
+        while (fifo.getNumReady() >= signalBlockSize)
         {
             int start1, size1, start2, size2;
             fifo.prepareToRead (signalBlockSize, start1, size1, start2, size2);
@@ -93,16 +93,13 @@ void PitchengaAudioProcessorEditor::processCqt()
 
             fifo.finishedRead (size1 + size2);
 
-            if (fifo.getNumReady() > signalBlockSize * 2) {
-                fifo.finishedRead(fifo.getNumReady() - signalBlockSize);
-            }
-
             std::vector<std::complex<float>> cqtSpectrum;
             cqt.transform(workBuffer, cqtSpectrum);
 
+            int startIndex = (cqt.getOctaves() - 1 - oct) * binsPerOctave;
             for (size_t i = 0; i < cqtSpectrum.size(); ++i) {
                 double amplitude = std::abs(cqtSpectrum[i]);
-                amplitudeSpectrumDb[startIndex + i] = amplitudeToDbRescaled(amplitude);
+                amplitudeSpectrumDb[static_cast<size_t>(startIndex) + i] = amplitudeToDbRescaled(amplitude);
             }
             hasData = true;
         }

@@ -55,6 +55,8 @@ public:
 
 private:
     std::array<OctaveBuffer, numOctaves> octaves;
+    std::vector<float> monoBuffer;
+    std::vector<float> nextStageBuffer;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PitchengaAudioProcessor)
 };

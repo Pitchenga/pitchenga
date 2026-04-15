@@ -49,10 +49,15 @@ std::vector<double> SpectralEqualizer::filter(const std::vector<double>& values)
     }
 
     if (newMax > 0.0) {
-        double factor = origMax < 1.0 ? origMax / newMax : 1.0 / origMax;
+        // Safety check to prevent extreme amplification of noise when signal is low
+        double safeNewMax = std::max(newMax, 0.01);
+        double factor = origMax < 1.0 ? origMax / safeNewMax : 1.0 / origMax;
+        
         for (int i = 0; i < size; ++i) {
-            filteredValues[i] *= factor;
+            filteredValues[i] = std::clamp(filteredValues[i] * factor, 0.0, 1.0);
         }
+    } else {
+        std::fill(filteredValues.begin(), filteredValues.end(), 0.0);
     }
 
     return filteredValues;

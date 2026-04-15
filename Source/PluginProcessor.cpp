@@ -12,8 +12,9 @@ PitchengaAudioProcessor::~PitchengaAudioProcessor() {}
 
 void PitchengaAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    juce::ignoreUnused (samplesPerBlock);
-
+    monoBuffer.resize (static_cast<size_t>(samplesPerBlock));
+    nextStageBuffer.resize (static_cast<size_t>(samplesPerBlock));
+    
     for (int i = 0; i < numOctaves; ++i)
     {
         octaves[i].fifo.reset();
@@ -54,32 +55,36 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     const int numSamples = buffer.getNumSamples();
     if (numSamples == 0) return;
 
+    if (monoBuffer.size() < static_cast<size_t>(numSamples))
+        monoBuffer.resize (static_cast<size_t>(numSamples));
+
     // Mix down to mono
-    std::vector<float> mono (static_cast<size_t>(numSamples), 0.0f);
     if (totalNumInputChannels == 1)
     {
-        juce::FloatVectorOperations::copy (mono.data(), buffer.getReadPointer (0), numSamples);
+        juce::FloatVectorOperations::copy (monoBuffer.data(), buffer.getReadPointer (0), numSamples);
     }
     else if (totalNumInputChannels >= 2)
     {
         auto* left = buffer.getReadPointer (0);
         auto* right = buffer.getReadPointer (1);
-        juce::FloatVectorOperations::add (mono.data(), left, right, numSamples);
-        juce::FloatVectorOperations::multiply (mono.data(), 0.5f, numSamples);
+        juce::FloatVectorOperations::copy (monoBuffer.data(), left, numSamples);
+        juce::FloatVectorOperations::add (monoBuffer.data(), right, numSamples);
+        juce::FloatVectorOperations::multiply (monoBuffer.data(), 0.5f, numSamples);
     }
 
     // Cascade multi-rate decimation
-    std::vector<float> currentStage = std::move (mono);
+    float* currentStageData = monoBuffer.data();
+    int currentStageSize = numSamples;
 
     for (int oct = 0; oct < numOctaves; ++oct)
     {
         // 1. Push current stage samples to this octave's lock-free FIFO
-        auto scope = octaves[oct].fifo.write (static_cast<int>(currentStage.size()));
+        auto scope = octaves[oct].fifo.write (currentStageSize);
         
         auto pushToFifo = [&](int fifoStart, int amount, int offset)
         {
             juce::FloatVectorOperations::copy (octaves[oct].buffer.data() + fifoStart, 
-                                               currentStage.data() + offset, 
+                                               currentStageData + offset, 
                                                amount);
         };
 
@@ -89,20 +94,32 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         // 2. Filter and Decimate by 2 for the next octave
         if (oct < numOctaves - 1)
         {
-            std::vector<float> nextStage;
-            nextStage.reserve (currentStage.size() / 2 + 1);
-            
-            for (float sample : currentStage)
+            if (nextStageBuffer.size() < static_cast<size_t>(currentStageSize))
+                nextStageBuffer.resize (static_cast<size_t>(currentStageSize));
+
+            int nextIdx = 0;
+            for (int i = 0; i < currentStageSize; ++i)
             {
-                float filtered = octaves[oct].lowpass.processSample (sample);
+                float filtered = octaves[oct].lowpass.processSample (currentStageData[i]);
                 if (! octaves[oct].dropNext)
                 {
-                    nextStage.push_back (filtered);
+                    nextStageBuffer[static_cast<size_t>(nextIdx++)] = filtered;
                 }
                 octaves[oct].dropNext = ! octaves[oct].dropNext;
             }
             
-            currentStage = std::move (nextStage);
+            // Swap buffers for the next iteration
+            if (currentStageData == monoBuffer.data())
+            {
+                std::swap (monoBuffer, nextStageBuffer);
+                currentStageData = monoBuffer.data();
+            }
+            else
+            {
+                std::swap (nextStageBuffer, monoBuffer);
+                currentStageData = monoBuffer.data();
+            }
+            currentStageSize = nextIdx;
         }
     }
 }
