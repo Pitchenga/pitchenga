@@ -137,6 +137,8 @@ void CqtEngine::computeSpectralKernels() {
 
 void CqtEngine::init() {
     computeSpectralKernels();
+    cqtRes.resize(kernelBins);
+    cqtRes.setZero();
 }
 
 void CqtEngine::transform(const std::vector<float>& timeDomainSignal, std::vector<std::complex<float>>& cqtSpectrumOut) {
@@ -151,14 +153,13 @@ void CqtEngine::transform(const std::vector<float>& timeDomainSignal, std::vecto
                  reinterpret_cast<std::complex<float>*>(fftWorkspace.data()), false);
     
     // Wrap the spectrum via Eigen Map
-    Eigen::Map<Eigen::Matrix<std::complex<float>, Eigen::Dynamic, 1>> signalFft(
-        fftWorkspace.data(), signalBlockSize);
+    Eigen::Map<const Eigen::VectorXcf> signalFft(fftWorkspace.data(), signalBlockSize);
         
-    // Standard Complex Sparse Matrix * Vector Multiplication
-    Eigen::Matrix<std::complex<float>, Eigen::Dynamic, 1> cqtRes = spectralKernels * signalFft;
+    // Standard Complex Sparse Matrix * Vector Multiplication into pre-allocated result
+    cqtRes.noalias() = spectralKernels * signalFft;
     
-    cqtSpectrumOut.resize(kernelBins);
+    cqtSpectrumOut.resize(static_cast<size_t>(kernelBins));
     for (int i = 0; i < kernelBins; ++i) {
-        cqtSpectrumOut[i] = cqtRes(i);
+        cqtSpectrumOut[static_cast<size_t>(i)] = cqtRes(i);
     }
 }

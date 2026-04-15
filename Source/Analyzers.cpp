@@ -25,7 +25,6 @@ SpectralEqualizer::SpectralEqualizer(int size, int windowSize)
     : size(size), windowSize(windowSize) {
     filteredValues.resize(size, 0.0);
     window.resize(windowSize, 0.0);
-    tempWindow.resize(windowSize, 0.0);
 }
 
 std::vector<double> SpectralEqualizer::filter(const std::vector<double>& values) {
@@ -35,9 +34,8 @@ std::vector<double> SpectralEqualizer::filter(const std::vector<double>& values)
             window[winIndex] = values[index];
         }
         
-        std::copy(window.begin(), window.end(), tempWindow.begin());
-        std::nth_element(tempWindow.begin(), tempWindow.begin() + windowSize / 2, tempWindow.end());
-        double median = tempWindow[static_cast<size_t>(windowSize / 2)];
+        std::nth_element(window.begin(), window.begin() + windowSize / 2, window.end());
+        double median = window[static_cast<size_t>(windowSize / 2)];
         
         filteredValues[i] = values[i] - 0.75 * median; // MEDIAN_WEIGHT = 0.75
     }

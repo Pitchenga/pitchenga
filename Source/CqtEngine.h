@@ -53,6 +53,7 @@ private:
     double normalizationFactor;
 
     Eigen::SparseMatrix<std::complex<float>, Eigen::RowMajor> spectralKernels;
+    Eigen::VectorXcf cqtRes;
     std::unique_ptr<juce::dsp::FFT> fft;
 
     // Buffers for FFT
