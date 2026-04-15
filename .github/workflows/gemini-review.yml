@@ -1,0 +1,17 @@
+name: Auto-Trigger Gemini Review
+on:
+    pull_request:
+        types: [opened, synchronize]
+
+jobs:
+    trigger-review:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Post /gemini review comment
+              env:
+                  GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
+              run: |
+                  gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "/gemini review"

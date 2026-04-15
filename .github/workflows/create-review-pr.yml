@@ -1,0 +1,19 @@
+name: Auto-Create PR from main to review
+on:
+    push:
+        branches:
+            - dev
+
+jobs:
+    create-pr:
+        if: "github.event.head_commit != null && !contains(github.event.head_commit.message, 'Merge pull request') && !contains(github.event.head_commit.message, 'Merge branch')"
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Create Pull Request
+              env:
+                  GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
+              run: |
+                  gh pr create --base main --head dev --title "review" --body "Automated PR to review changes to dev." || echo "PR already exists or could not be created"
