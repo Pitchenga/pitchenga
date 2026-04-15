@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.22)
 project(Pitchenga VERSION 1.0.0)
 
+include(FetchContent)
+FetchContent_Declare(
+  eigen
+  GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+  GIT_TAG        3.4.0
+)
+FetchContent_MakeAvailable(eigen)
+
 # 1. Tell CMake where to find the JUCE framework
 add_subdirectory(JUCE)
 
@@ -26,12 +34,17 @@ target_sources(Pitchenga PRIVATE
         Source/PluginProcessor.cpp
         Source/PluginProcessor.h
         Source/PluginEditor.cpp
-        Source/PluginEditor.h)
+        Source/PluginEditor.h
+        Source/CqtEngine.h
+        Source/CqtEngine.cpp
+        Source/Analyzers.h
+        Source/Analyzers.cpp)
 
 # 4. Link the heavy-lifting JUCE modules (Audio, GUI, and Hardware-Accelerated Math)
 target_link_libraries(Pitchenga PRIVATE
         juce::juce_audio_utils
         juce::juce_dsp                 # Contains the fast FFT class
+        Eigen3::Eigen
         PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags)

@@ -2,7 +2,6 @@
 #include "PluginEditor.h"
 #include <cmath>
 
-// Ported chromatic colors from Java HarmonEye - Updated with legacy Tone names
 const std::array<Pitch, 12> PitchengaAudioProcessorEditor::chromaticScale = {{
     { Tone::Do,  0, 16.35, juce::Colour::fromRGB (255, 0, 0) },    // C (Red)
     { Tone::Ra,  1, 17.32, juce::Colour::fromRGB (255, 127, 0) },  // C# (Orange)
@@ -21,10 +20,23 @@ const std::array<Pitch, 12> PitchengaAudioProcessorEditor::chromaticScale = {{
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor (PitchengaAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
-    fftData.resize (fftSize * 2, 0.0f);
-    fifoWorkBuffer.resize (fftSize, 0.0f);
-    currentBins.fill (0.0f);
-    smoothedBins.fill (0.0f);
+    CqtEngine::Config config;
+    config.octaves = PitchengaAudioProcessor::numOctaves;
+    config.samplingFreq = 44100.0;
+    cqt.updateConfig(config);
+    cqt.init();
+
+    int totalBins = cqt.getTotalBins();
+    int binsPerOctave = cqt.getBinsPerOctave();
+
+    pcDetector = std::make_unique<HarmonicPatternPitchClassDetector>(binsPerOctave, config.binsPerHalftone);
+    spectralEqualizer = std::make_unique<SpectralEqualizer>(totalBins, 30);
+    octaveBinSmoother = std::make_unique<ExpSmoother>(binsPerOctave, 0.2);
+
+    workBuffer.resize(cqt.getSignalBlockSize(), 0.0f);
+    amplitudeSpectrumDb.resize(totalBins, 0.0);
+    octaveBins.resize(binsPerOctave, 0.0);
+    smoothedOctaveBins.resize(binsPerOctave, 0.0);
 
     setSize (600, 600);
     startTimerHz (30);
@@ -37,94 +49,85 @@ PitchengaAudioProcessorEditor::~PitchengaAudioProcessorEditor()
 
 void PitchengaAudioProcessorEditor::timerCallback()
 {
-    auto& fifo = audioProcessor.getFifo();
-    bool dataProcessed = false;
+    processCqt();
+    repaint();
+}
 
-    while (fifo.getNumReady() >= fftSize)
+static double amplitudeToDbRescaled(double amplitude) {
+    if (amplitude <= 1e-5) return 0.0;
+    double db = 20.0 * std::log10(amplitude);
+    double rescaled = (db + 100.0) / 100.0;
+    return juce::jlimit(0.0, 1.0, rescaled);
+}
+
+void PitchengaAudioProcessorEditor::processCqt()
+{
+    double sampleRate = audioProcessor.getSampleRate();
+    if (sampleRate > 0 && std::abs(sampleRate - cqt.getConfig().samplingFreq) > 0.01) {
+        CqtEngine::Config config = cqt.getConfig();
+        config.samplingFreq = sampleRate;
+        cqt.updateConfig(config);
+        cqt.init();
+    }
+
+    auto& octaves = audioProcessor.getOctaves();
+    int signalBlockSize = cqt.getSignalBlockSize();
+    int binsPerOctave = cqt.getBinsPerOctave();
+
+    bool hasData = false;
+    int startIndex = (cqt.getOctaves() - 1) * binsPerOctave;
+
+    for (int oct = 0; oct < cqt.getOctaves(); ++oct, startIndex -= binsPerOctave)
     {
-        int start1, size1, start2, size2;
-        fifo.prepareToRead (fftSize, start1, size1, start2, size2);
+        auto& fifo = octaves[oct].fifo;
+        auto& buffer = octaves[oct].buffer;
 
-        if (size1 + size2 < fftSize)
-            break;
-
-        const auto& buffer = audioProcessor.getFifoBuffer();
-        if (size1 > 0) std::copy (buffer.begin() + start1, buffer.begin() + start1 + size1, fifoWorkBuffer.begin());
-        if (size2 > 0) std::copy (buffer.begin() + start2, buffer.begin() + start2 + size2, fifoWorkBuffer.begin() + size1);
-
-        fifo.finishedRead (size1 + size2);
-
-        processFft();
-        dataProcessed = true;
-
-        // If we are falling behind (e.g. UI lag), skip to the most recent data to maintain sync
         int numReady = fifo.getNumReady();
-        if (numReady > fftSize * 2)
+        if (numReady >= signalBlockSize)
         {
-            fifo.finishedRead (numReady - fftSize);
+            int start1, size1, start2, size2;
+            fifo.prepareToRead (signalBlockSize, start1, size1, start2, size2);
+
+            if (size1 > 0) std::copy(buffer.begin() + start1, buffer.begin() + start1 + size1, workBuffer.begin());
+            if (size2 > 0) std::copy(buffer.begin() + start2, buffer.begin() + start2 + size2, workBuffer.begin() + size1);
+
+            fifo.finishedRead (size1 + size2);
+
+            if (fifo.getNumReady() > signalBlockSize * 2) {
+                fifo.finishedRead(fifo.getNumReady() - signalBlockSize);
+            }
+
+            std::vector<std::complex<float>> cqtSpectrum;
+            cqt.transform(workBuffer, cqtSpectrum);
+
+            for (size_t i = 0; i < cqtSpectrum.size(); ++i) {
+                double amplitude = std::abs(cqtSpectrum[i]);
+                amplitudeSpectrumDb[startIndex + i] = amplitudeToDbRescaled(amplitude);
+            }
+            hasData = true;
         }
     }
 
-    if (dataProcessed)
-        repaint();
-}
+    if (!hasData) return;
 
-void PitchengaAudioProcessorEditor::updateBinLookupTable (double sampleRate)
-{
-    activeBinMappings.clear();
-    const double binWidth = sampleRate / fftSize;
+    // Harmonic Pattern Pitch Class Detector
+    std::vector<double> detectedPitchClasses = pcDetector->detectPitchClasses(amplitudeSpectrumDb);
+    
+    // Spectral Equalizer
+    detectedPitchClasses = spectralEqualizer->filter(detectedPitchClasses);
 
-    for (int i = 1; i < fftSize / 2; ++i)
-    {
-        double freq = i * binWidth;
-
-        // Skip sub-audio frequencies that would crash the log2 function
-        if (freq < 20.0) continue;
-
-        // 1. Find exactly how many semitones we are above C0
-        double semitones = static_cast<double>(semitonesPerOctave) * std::log2 (freq / frequencyC0);
-
-        // 2. Multiply by binsPerSemitone and wrap to the 108-bin circle
-        int binIndex = static_cast<int> (std::round (semitones * binsPerSemitone)) % totalFoldedBins;
-
-        // Handle negative wraps if the math dips below C0
-        if (binIndex < 0) binIndex += totalFoldedBins;
-
-        activeBinMappings.push_back ({ i, binIndex });
-    }
-}
-
-void PitchengaAudioProcessorEditor::processFft()
-{
-    const double sampleRate = audioProcessor.getSampleRate();
-    if (sampleRate > 0 && std::abs (sampleRate - lastSampleRate) > 0.01)
-    {
-        updateBinLookupTable (sampleRate);
-        lastSampleRate = sampleRate;
+    // Aggregate into octaves
+    std::fill(octaveBins.begin(), octaveBins.end(), 0.0);
+    for (int i = 0; i < binsPerOctave; ++i) {
+        double maxVal = 0.0;
+        for (int j = i; j < static_cast<int>(detectedPitchClasses.size()); j += binsPerOctave) {
+            maxVal = std::max(maxVal, detectedPitchClasses[j]);
+        }
+        octaveBins[i] = maxVal;
     }
 
-    if (lastSampleRate <= 0) return;
-
-    std::fill (fftData.begin(), fftData.end(), 0.0f);
-    std::copy (fifoWorkBuffer.begin(), fifoWorkBuffer.end(), fftData.begin());
-
-    window.multiplyWithWindowingTable (fftData.data(), fftSize);
-    fft.performFrequencyOnlyForwardTransform (fftData.data());
-
-    currentBins.fill (0.0f);
-
-    for (const auto& mapping : activeBinMappings)
-    {
-        float magnitude = fftData[static_cast<size_t>(mapping.fftIndex)];
-        currentBins[static_cast<size_t>(mapping.binIndex)] = std::max (currentBins[static_cast<size_t>(mapping.binIndex)], magnitude);
-    }
-
-    // Exponential Smoothing
-    for (int i = 0; i < totalFoldedBins; ++i)
-    {
-        const auto idx = static_cast<size_t>(i);
-        smoothedBins[idx] = (smoothingFactor * currentBins[idx]) + ((1.0f - smoothingFactor) * smoothedBins[idx]);
-    }
+    // Exponential Smoother
+    smoothedOctaveBins = octaveBinSmoother->smooth(octaveBins);
 }
 
 juce::Colour PitchengaAudioProcessorEditor::calculateColor (float velocity, float toneRatio)
@@ -155,10 +158,9 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
 
     for (int i = 0; i < totalFoldedBins; ++i)
     {
-        float velocity = smoothedBins[static_cast<size_t>(i)];
+        float velocity = static_cast<float>(smoothedOctaveBins[static_cast<size_t>(i)]);
 
-        // i goes from 0 to 107.
-        // toneRatio will accurately go from 0.0 to 11.888...
+        // Goes from 0 to 107 - toneRatio will accurately go from 0.0 to 11.888...
         float toneRatio = static_cast<float> (i) / static_cast<float> (binsPerSemitone);
 
         // Calculate the exact interpolated color across the 12 chromatic scales
@@ -194,7 +196,7 @@ void PitchengaAudioProcessorEditor::resized()
 
         juce::Path p;
         // Unit path at origin (0,0) with radius 1.0
-        p.addCentredArc (0.0f, 0.0f, 1.0f, 1.0f, 0.0f, startAngle, endAngle, true);
+        p.addCentredArc (0.0f, 0.0f, 2.0f, 2.0f, 0.0f, startAngle, endAngle, true);
         p.lineTo (0.0f, 0.0f);
         p.closeSubPath();
 

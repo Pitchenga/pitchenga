@@ -6,16 +6,25 @@ PitchengaAudioProcessor::PitchengaAudioProcessor()
                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
 {
-    fifoBuffer.resize (fifoSize);
 }
 
 PitchengaAudioProcessor::~PitchengaAudioProcessor() {}
 
 void PitchengaAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    juce::ignoreUnused (sampleRate, samplesPerBlock);
-    fifo.reset();
-    std::fill (fifoBuffer.begin(), fifoBuffer.end(), 0.0f);
+    juce::ignoreUnused (samplesPerBlock);
+
+    for (int i = 0; i < numOctaves; ++i)
+    {
+        octaves[i].fifo.reset();
+        std::fill (octaves[i].buffer.begin(), octaves[i].buffer.end(), 0.0f);
+        
+        double currentSR = sampleRate / std::pow(2.0, i);
+        // Half-band filter (cutoff at Nyquist/2 = currentSR/4) to prevent aliasing before downsampling
+        octaves[i].lowpass.coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass (currentSR, currentSR / 4.0);
+        octaves[i].lowpass.reset();
+        octaves[i].dropNext = false;
+    }
 }
 
 void PitchengaAudioProcessor::releaseResources() {}
@@ -43,30 +52,59 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         buffer.clear (i, 0, buffer.getNumSamples());
 
     const int numSamples = buffer.getNumSamples();
+    if (numSamples == 0) return;
 
-    // Mono Mixdown and Push to lock-free FIFO
-    const auto scope = fifo.write (numSamples);
-
-    auto pushToFifo = [&](int fifoStart, int amount, int bufferOffset)
+    // Mix down to mono
+    std::vector<float> mono (static_cast<size_t>(numSamples), 0.0f);
+    if (totalNumInputChannels == 1)
     {
-        float* dest = fifoBuffer.data() + static_cast<size_t> (fifoStart);
+        juce::FloatVectorOperations::copy (mono.data(), buffer.getReadPointer (0), numSamples);
+    }
+    else if (totalNumInputChannels >= 2)
+    {
+        auto* left = buffer.getReadPointer (0);
+        auto* right = buffer.getReadPointer (1);
+        juce::FloatVectorOperations::add (mono.data(), left, right, numSamples);
+        juce::FloatVectorOperations::multiply (mono.data(), 0.5f, numSamples);
+    }
 
-        if (totalNumInputChannels == 1)
+    // Cascade multi-rate decimation
+    std::vector<float> currentStage = std::move (mono);
+
+    for (int oct = 0; oct < numOctaves; ++oct)
+    {
+        // 1. Push current stage samples to this octave's lock-free FIFO
+        auto scope = octaves[oct].fifo.write (static_cast<int>(currentStage.size()));
+        
+        auto pushToFifo = [&](int fifoStart, int amount, int offset)
         {
-            juce::FloatVectorOperations::copy (dest, buffer.getReadPointer (0, bufferOffset), amount);
-        }
-        else if (totalNumInputChannels >= 2)
+            juce::FloatVectorOperations::copy (octaves[oct].buffer.data() + fifoStart, 
+                                               currentStage.data() + offset, 
+                                               amount);
+        };
+
+        if (scope.blockSize1 > 0) pushToFifo (scope.startIndex1, scope.blockSize1, 0);
+        if (scope.blockSize2 > 0) pushToFifo (scope.startIndex2, scope.blockSize2, scope.blockSize1);
+
+        // 2. Filter and Decimate by 2 for the next octave
+        if (oct < numOctaves - 1)
         {
-            auto* left = buffer.getReadPointer (0, bufferOffset);
-            auto* right = buffer.getReadPointer (1, bufferOffset);
-
-            juce::FloatVectorOperations::multiply (dest, left, 0.5f, amount);
-            juce::FloatVectorOperations::addWithMultiply (dest, right, 0.5f, amount);
+            std::vector<float> nextStage;
+            nextStage.reserve (currentStage.size() / 2 + 1);
+            
+            for (float sample : currentStage)
+            {
+                float filtered = octaves[oct].lowpass.processSample (sample);
+                if (! octaves[oct].dropNext)
+                {
+                    nextStage.push_back (filtered);
+                }
+                octaves[oct].dropNext = ! octaves[oct].dropNext;
+            }
+            
+            currentStage = std::move (nextStage);
         }
-    };
-
-    if (scope.blockSize1 > 0) pushToFifo (scope.startIndex1, scope.blockSize1, 0);
-    if (scope.blockSize2 > 0) pushToFifo (scope.startIndex2, scope.blockSize2, scope.blockSize1);
+    }
 }
 
 juce::AudioProcessorEditor* PitchengaAudioProcessor::createEditor()

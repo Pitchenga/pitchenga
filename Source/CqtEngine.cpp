@@ -1,0 +1,160 @@
+#include "CqtEngine.h"
+#include <cmath>
+#include <iostream>
+#include <algorithm>
+
+CqtEngine::CqtEngine() {
+    updateContext();
+}
+
+CqtEngine::CqtEngine(const Config& c) : config(c) {
+    updateContext();
+}
+
+void CqtEngine::updateConfig(const Config& newConfig) {
+    config = newConfig;
+    updateContext();
+}
+
+int CqtEngine::nextPowerOf2(int value) const {
+    value--;
+    value |= (value >> 1);
+    value |= (value >> 2);
+    value |= (value >> 4);
+    value |= (value >> 8);
+    value |= (value >> 16);
+    value++;
+    return value;
+}
+
+double CqtEngine::centerFreq(int binIndex) const {
+    return (baseFreq * std::pow(2.0, (binIndex - config.binsPerHalftone / 2.0) * binsPerOctaveInv));
+}
+
+int CqtEngine::bandWidth(int binIndex) const {
+    return static_cast<int>(std::ceil(q * config.samplingFreq / centerFreq(binIndex)));
+}
+
+static double calculateHammingIntegral() {
+    // The Trapezoid integral of a normalized Hamming window over [0,1] is approximately 0.54
+    return 0.54;
+}
+
+void CqtEngine::updateContext() {
+    baseFreq = std::pow(2.0, -config.octaves) * config.maxFreq;
+    binsPerOctave = config.halftonesPerOctave * config.binsPerHalftone;
+    binsPerOctaveInv = 1.0 / binsPerOctave;
+    totalBins = binsPerOctave * config.octaves;
+    kernelBins = binsPerOctave * config.kernelOctaves;
+    firstKernelBin = totalBins - kernelBins;
+    q = 1.0 / (std::pow(2.0, binsPerOctaveInv) - 1.0);
+    windowIntegral = calculateHammingIntegral();
+
+    signalBlockSize = nextPowerOf2(bandWidth(firstKernelBin));
+    normalizationFactor = 2.0 / (signalBlockSize * windowIntegral);
+
+    int fftOrder = static_cast<int>(std::round(std::log2(signalBlockSize)));
+    fft = std::make_unique<juce::dsp::FFT>(fftOrder);
+    
+    fftWorkspace.resize(signalBlockSize, {0.0f, 0.0f});
+}
+
+std::vector<std::complex<float>> CqtEngine::temporalKernel(int kernelBinIndex) const {
+    int size = bandWidth(kernelBinIndex + firstKernelBin);
+    std::vector<std::complex<float>> coeffs(size, {0.0f, 0.0f});
+    
+    double sizeInv = 1.0 / size;
+    double factor = 2.0 * juce::MathConstants<double>::pi * q * sizeInv;
+    
+    for (int i = 0; i < size; ++i) {
+        // Standard Hamming Window
+        double x = i * sizeInv;
+        double w = 0.54 - 0.46 * std::cos(2.0 * juce::MathConstants<double>::pi * x);
+        double r = w * sizeInv;
+        
+        double theta = i * factor;
+        coeffs[i] = { static_cast<float>(r * std::cos(theta)), static_cast<float>(r * std::sin(theta)) };
+    }
+    
+    return coeffs;
+}
+
+std::vector<std::complex<float>> CqtEngine::conjugatedNormalizedSpectralKernel(int k) {
+    auto tk = temporalKernel(k);
+    
+    // Left pad with zeros to match signalBlockSize
+    std::vector<std::complex<float>> padded(signalBlockSize, {0.0f, 0.0f});
+    int dataSize = std::min(static_cast<int>(tk.size()), signalBlockSize);
+    int paddingSize = signalBlockSize - dataSize;
+    for (int i = 0; i < dataSize; ++i) {
+        padded[paddingSize + i] = tk[i];
+    }
+    
+    std::vector<std::complex<float>> spectrum(signalBlockSize, {0.0f, 0.0f});
+    
+    // Complex Forward FFT
+    fft->perform(reinterpret_cast<const std::complex<float>*>(padded.data()), 
+                 reinterpret_cast<std::complex<float>*>(spectrum.data()), false);
+    
+    // Normalize, Conjugate and Chop using threshold
+    std::vector<std::complex<float>> result(signalBlockSize, {0.0f, 0.0f});
+    for (int i = 0; i < signalBlockSize; ++i) {
+        float re = spectrum[i].real() * static_cast<float>(normalizationFactor);
+        float im = -spectrum[i].imag() * static_cast<float>(normalizationFactor); // Conjugation
+        
+        float absVal = std::sqrt(re * re + im * im);
+        if (absVal >= config.chopThreshold) {
+            result[i] = {re, im};
+        }
+    }
+    
+    return result;
+}
+
+void CqtEngine::computeSpectralKernels() {
+    int rows = kernelBins;
+    int cols = signalBlockSize;
+    
+    spectralKernels.resize(rows, cols);
+    std::vector<Eigen::Triplet<std::complex<float>>> triplets;
+    
+    for (int k = 0; k < rows; ++k) {
+        auto kernel = conjugatedNormalizedSpectralKernel(k);
+        for (int i = 0; i < cols; ++i) {
+            if (kernel[i].real() != 0.0f || kernel[i].imag() != 0.0f) {
+                triplets.push_back(Eigen::Triplet<std::complex<float>>(k, i, kernel[i]));
+            }
+        }
+    }
+    
+    spectralKernels.setFromTriplets(triplets.begin(), triplets.end());
+    spectralKernels.makeCompressed();
+}
+
+void CqtEngine::init() {
+    computeSpectralKernels();
+}
+
+void CqtEngine::transform(const std::vector<float>& timeDomainSignal, std::vector<std::complex<float>>& cqtSpectrumOut) {
+    if (timeDomainSignal.size() < static_cast<size_t>(signalBlockSize)) return;
+    
+    // Perform complex Forward FFT on input signal
+    for (int i = 0; i < signalBlockSize; ++i) {
+        fftWorkspace[i] = {timeDomainSignal[i], 0.0f};
+    }
+    
+    fft->perform(reinterpret_cast<const std::complex<float>*>(fftWorkspace.data()), 
+                 reinterpret_cast<std::complex<float>*>(fftWorkspace.data()), false);
+    
+    // Wrap the spectrum via Eigen Map
+    Eigen::Map<Eigen::Matrix<std::complex<float>, Eigen::Dynamic, 1>> signalFft(
+        fftWorkspace.data(), signalBlockSize);
+        
+    // Standard Complex Sparse Matrix * Vector Multiplication
+    Eigen::Matrix<std::complex<float>, Eigen::Dynamic, 1> cqtRes = spectralKernels * signalFft;
+    
+    cqtSpectrumOut.resize(kernelBins);
+    for (int i = 0; i < kernelBins; ++i) {
+        cqtSpectrumOut[i] = cqtRes(i);
+    }
+}
