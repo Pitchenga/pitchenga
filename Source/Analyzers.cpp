@@ -25,6 +25,7 @@ SpectralEqualizer::SpectralEqualizer(int size, int windowSize)
     : size(size), windowSize(windowSize) {
     filteredValues.resize(size, 0.0);
     window.resize(windowSize, 0.0);
+    tempWindow.resize(windowSize, 0.0);
 }
 
 std::vector<double> SpectralEqualizer::filter(const std::vector<double>& values) {
@@ -34,9 +35,9 @@ std::vector<double> SpectralEqualizer::filter(const std::vector<double>& values)
             window[winIndex] = values[index];
         }
         
-        std::vector<double> tempWindow = window;
+        std::copy(window.begin(), window.end(), tempWindow.begin());
         std::nth_element(tempWindow.begin(), tempWindow.begin() + windowSize / 2, tempWindow.end());
-        double median = tempWindow[windowSize / 2];
+        double median = tempWindow[static_cast<size_t>(windowSize / 2)];
         
         filteredValues[i] = values[i] - 0.75 * median; // MEDIAN_WEIGHT = 0.75
     }
@@ -51,7 +52,7 @@ std::vector<double> SpectralEqualizer::filter(const std::vector<double>& values)
     if (newMax > 0.0) {
         // Safety check to prevent extreme amplification of noise when signal is low
         double safeNewMax = std::max(newMax, 0.01);
-        double factor = origMax < 1.0 ? origMax / safeNewMax : 1.0 / origMax;
+        double factor = origMax / safeNewMax;
         
         for (int i = 0; i < size; ++i) {
             filteredValues[i] = std::clamp(filteredValues[i] * factor, 0.0, 1.0);

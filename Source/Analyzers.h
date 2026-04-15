@@ -27,6 +27,7 @@ private:
     int windowSize;
     std::vector<double> filteredValues;
     std::vector<double> window;
+    std::vector<double> tempWindow;
 };
 
 // 3. Harmonic Pattern Pitch Class Detector
