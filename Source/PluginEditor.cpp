@@ -125,9 +125,7 @@ juce::Colour PitchengaAudioProcessorEditor::calculateColor (float velocity, floa
     float diff = toneRatio - static_cast<float> (toneNumber);
 
     int currentIdx = toneNumber % 12;
-    if (currentIdx < 0) currentIdx += 12;
     int nextIdx = (currentIdx + 1) % 12;
-    if (nextIdx < 0) nextIdx += 12;
 
     juce::Colour currentToneColor = chromaticScale[static_cast<size_t>(currentIdx)].color;
     juce::Colour nextToneColor = chromaticScale[static_cast<size_t>(nextIdx)].color;
@@ -183,7 +181,7 @@ void PitchengaAudioProcessorEditor::resized()
 
         juce::Path p;
         // Unit path at origin (0,0) with radius 1.0
-        p.addCentredArc (0.0f, 0.0f, 2.0f, 2.0f, 0.0f, startAngle, endAngle, true);
+        p.addCentredArc (0.0f, 0.0f, 1.0f, 1.0f, 0.0f, startAngle, endAngle, true);
         p.lineTo (0.0f, 0.0f);
         p.closeSubPath();
 
