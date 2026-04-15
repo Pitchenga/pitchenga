@@ -46,7 +46,8 @@ private:
     std::vector<float> fifoWorkBuffer;
 
     // Bin Lookup Table for optimization
-    std::vector<int> binLookupTable;
+    struct BinMapping { int fftIndex; int binIndex; };
+    std::vector<BinMapping> activeBinMappings;
     double lastSampleRate = 0.0;
 
     // 60 bins (5 per semitone)
