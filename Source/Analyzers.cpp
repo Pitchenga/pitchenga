@@ -74,7 +74,7 @@ HarmonicPatternPitchClassDetector::HarmonicPatternPitchClassDetector(int binsPer
 }
 
 double HarmonicPatternPitchClassDetector::extractHarmonics(const std::vector<double>& cqBins, int baseFreqBin) const {
-    double dotProduct = cqBins[baseFreqBin];
+    double dotProduct = 0.0;
     int centerFreqBin = baseFreqBin - binsPerHalftoneHalf;
     
     for (int i = 1; i <= harmonicCount; ++i) {

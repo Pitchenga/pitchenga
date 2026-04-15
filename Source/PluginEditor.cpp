@@ -77,8 +77,13 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
             auto& fifo = octaves[static_cast<size_t> (oct)].fifo;
             auto& buffer = octaves[static_cast<size_t> (oct)].buffer;
 
-            while (fifo.getNumReady() >= signalBlockSize)
+            int numReady = fifo.getNumReady();
+            if (numReady >= signalBlockSize)
             {
+                // Drain old data: skip all but the most recent block to prevent lag
+                if (numReady > signalBlockSize)
+                    fifo.finishedRead (numReady - signalBlockSize);
+
                 int start1, size1, start2, size2;
                 fifo.prepareToRead (signalBlockSize, start1, size1, start2, size2);
 
