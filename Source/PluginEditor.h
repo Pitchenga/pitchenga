@@ -1,0 +1,55 @@
+#pragma once
+
+#include <JuceHeader.h>
+#include "PluginProcessor.h"
+#include <array>
+#include <vector>
+
+// Ported Domain Models from Java logic
+enum class Tone { Do, DoSharp, Re, ReSharp, Mi, Fa, FaSharp, So, SoSharp, La, LaSharp, Ti };
+
+struct Pitch
+{
+    Tone tone;
+    int number;
+    double frequency;
+    juce::Colour color;
+};
+
+class PitchengaAudioProcessorEditor : public juce::AudioProcessorEditor,
+                                      private juce::Timer
+{
+public:
+    explicit PitchengaAudioProcessorEditor (PitchengaAudioProcessor&);
+    ~PitchengaAudioProcessorEditor() override;
+
+    void paint (juce::Graphics&) override;
+    void resized() override;
+
+private:
+    void timerCallback() override;
+    void processFFT();
+    juce::Colour calculateColor (float velocity, float toneRatio);
+
+    PitchengaAudioProcessor& audioProcessor;
+
+    // FFT Setup (Order 12 = 4096 points)
+    static constexpr int fftOrder = 12;
+    static constexpr int fftSize = 1 << fftOrder;
+    juce::dsp::FFT fft { fftOrder };
+    juce::dsp::WindowingFunction<float> window { fftSize, juce::dsp::WindowingFunction<float>::hann };
+
+    std::vector<float> fftData;
+    std::vector<float> fifoWorkBuffer;
+
+    // 60 bins (5 per semitone)
+    static constexpr int numBins = 60;
+    std::array<float, numBins> currentBins;
+    std::array<float, numBins> smoothedBins;
+    const float smoothingFactor = 0.2f;
+
+    // Ported Tone colors
+    static const std::array<Pitch, 12> chromaticScale;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PitchengaAudioProcessorEditor)
+};
