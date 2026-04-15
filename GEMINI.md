@@ -49,8 +49,12 @@ The project is configured to build both **AU (Audio Unit)** and **Standalone** f
 
 # Build the project
 /Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake --build cmake-build-debug
+```
 
-# Run the application - execute when completed a change
+- Execute after completing every change request:
+
+```bash
+# Run the application
 killall Pitchenga; /Users/d/dev/pitchenga/cmake-build-debug/Pitchenga_artefacts/Debug/Standalone/Pitchenga.app/Contents/MacOS/Pitchenga
 ```
 

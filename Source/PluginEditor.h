@@ -54,6 +54,7 @@ private:
     static constexpr int numBins = 60;
     static constexpr int semitonesInOctave = 12;
     static constexpr double binsPerSemitone = static_cast<double> (numBins) / static_cast<double> (semitonesInOctave);
+    static constexpr double frequencyC0 = 16.35159783128741;
     std::array<float, numBins> currentBins;
     std::array<float, numBins> smoothedBins;
     const float smoothingFactor = 0.2f;

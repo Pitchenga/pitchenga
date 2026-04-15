@@ -38,8 +38,9 @@ PitchengaAudioProcessorEditor::~PitchengaAudioProcessorEditor()
 void PitchengaAudioProcessorEditor::timerCallback()
 {
     auto& fifo = audioProcessor.getFifo();
+    bool dataProcessed = false;
 
-    if (fifo.getNumReady() >= fftSize)
+    while (fifo.getNumReady() >= fftSize)
     {
         auto scope = fifo.read (fftSize);
         int start1 = scope.startIndex1;
@@ -54,22 +55,30 @@ void PitchengaAudioProcessorEditor::timerCallback()
         fifo.finishedRead (size1 + size2);
 
         processFFT();
-        repaint();
+        dataProcessed = true;
+
+        // If we are falling behind (e.g. UI lag), skip to the most recent data to maintain sync
+        if (fifo.getNumReady() > fftSize * 2)
+        {
+            fifo.finishedRead (fifo.getNumReady() - fftSize);
+        }
     }
+
+    if (dataProcessed)
+        repaint();
 }
 
 void PitchengaAudioProcessorEditor::updateBinLookupTable (double sampleRate)
 {
     activeBinMappings.clear();
     const double binWidth = sampleRate / fftSize;
-    const double refFreq = 16.35159783128741; // C0
 
     for (int i = 1; i < fftSize / 2; ++i)
     {
         double freq = i * binWidth;
         if (freq < 20.0) continue;
 
-        double semitones = static_cast<double> (semitonesInOctave) * std::log2 (freq / refFreq);
+        double semitones = static_cast<double> (semitonesInOctave) * std::log2 (freq / frequencyC0);
         int binIndex = static_cast<int> (std::round (semitones * binsPerSemitone)) % numBins;
         if (binIndex < 0) binIndex += numBins;
         
@@ -117,14 +126,14 @@ juce::Colour PitchengaAudioProcessorEditor::calculateColor (float velocity, floa
 
     int currentIdx = toneNumber % 12;
     if (currentIdx < 0) currentIdx += 12;
-    int nextIdx = (currentIdx + (diff < 0 ? -1 : 1)) % 12;
+    int nextIdx = (currentIdx + 1) % 12;
     if (nextIdx < 0) nextIdx += 12;
 
     juce::Colour currentToneColor = chromaticScale[static_cast<size_t>(currentIdx)].color;
     juce::Colour nextToneColor = chromaticScale[static_cast<size_t>(nextIdx)].color;
 
     // Smoothly interpolate between semitone colors
-    juce::Colour baseColor = currentToneColor.interpolatedWith (nextToneColor, std::abs (diff));
+    juce::Colour baseColor = currentToneColor.interpolatedWith (nextToneColor, diff);
 
     float colorVelocity = juce::jlimit (0.0f, 1.0f, 0.3f + velocity * 1.5f);
     return juce::Colours::black.interpolatedWith (baseColor, colorVelocity);
