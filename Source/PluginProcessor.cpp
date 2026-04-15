@@ -12,8 +12,9 @@ PitchengaAudioProcessor::~PitchengaAudioProcessor() {}
 
 void PitchengaAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    monoBuffer.resize (static_cast<size_t>(samplesPerBlock));
-    nextStageBuffer.resize (static_cast<size_t>(samplesPerBlock));
+    const size_t bufferSize = static_cast<size_t> (std::max (samplesPerBlock, 4096));
+    monoBuffer.assign (bufferSize, 0.0f);
+    nextStageBuffer.assign (bufferSize, 0.0f);
     
     for (int i = 0; i < numOctaves; ++i)
     {
@@ -21,7 +22,6 @@ void PitchengaAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
         std::fill (octaves[i].buffer.begin(), octaves[i].buffer.end(), 0.0f);
         
         double currentSR = sampleRate / std::pow(2.0, i);
-        // Half-band filter (cutoff at Nyquist/2 = currentSR/4) to prevent aliasing before downsampling
         octaves[i].lowpass.coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass (currentSR, currentSR / 4.0);
         octaves[i].lowpass.reset();
         octaves[i].dropNext = false;
@@ -55,25 +55,27 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     const int numSamples = buffer.getNumSamples();
     if (numSamples == 0) return;
 
-    if (monoBuffer.size() < static_cast<size_t>(numSamples))
-        monoBuffer.resize (static_cast<size_t>(numSamples));
+    // Safety check: if host exceeds promised block size, we must skip to avoid OOB/Allocation
+    if (static_cast<size_t>(numSamples) > monoBuffer.size()) return;
 
-    // Mix down to mono
+    // Mix down to mono into pre-allocated buffer
+    float* monoData = monoBuffer.data();
     if (totalNumInputChannels == 1)
     {
-        juce::FloatVectorOperations::copy (monoBuffer.data(), buffer.getReadPointer (0), numSamples);
+        juce::FloatVectorOperations::copy (monoData, buffer.getReadPointer (0), numSamples);
     }
     else if (totalNumInputChannels >= 2)
     {
         auto* left = buffer.getReadPointer (0);
         auto* right = buffer.getReadPointer (1);
-        juce::FloatVectorOperations::copy (monoBuffer.data(), left, numSamples);
-        juce::FloatVectorOperations::add (monoBuffer.data(), right, numSamples);
-        juce::FloatVectorOperations::multiply (monoBuffer.data(), 0.5f, numSamples);
+        juce::FloatVectorOperations::copy (monoData, left, numSamples);
+        juce::FloatVectorOperations::add (monoData, right, numSamples);
+        juce::FloatVectorOperations::multiply (monoData, 0.5f, numSamples);
     }
 
-    // Cascade multi-rate decimation
-    float* currentStageData = monoBuffer.data();
+    // Cascade multi-rate decimation using pointer swapping
+    float* currentStageData = monoData;
+    float* nextStageData = nextStageBuffer.data();
     int currentStageSize = numSamples;
 
     for (int oct = 0; oct < numOctaves; ++oct)
@@ -81,44 +83,34 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         // 1. Push current stage samples to this octave's lock-free FIFO
         auto scope = octaves[oct].fifo.write (currentStageSize);
         
-        auto pushToFifo = [&](int fifoStart, int amount, int offset)
-        {
-            juce::FloatVectorOperations::copy (octaves[oct].buffer.data() + fifoStart, 
-                                               currentStageData + offset, 
-                                               amount);
-        };
-
-        if (scope.blockSize1 > 0) pushToFifo (scope.startIndex1, scope.blockSize1, 0);
-        if (scope.blockSize2 > 0) pushToFifo (scope.startIndex2, scope.blockSize2, scope.blockSize1);
+        if (scope.blockSize1 > 0) 
+            juce::FloatVectorOperations::copy (octaves[oct].buffer.data() + scope.startIndex1, 
+                                               currentStageData, 
+                                               scope.blockSize1);
+                                               
+        if (scope.blockSize2 > 0) 
+            juce::FloatVectorOperations::copy (octaves[oct].buffer.data() + scope.startIndex2, 
+                                               currentStageData + scope.blockSize1, 
+                                               scope.blockSize2);
 
         // 2. Filter and Decimate by 2 for the next octave
         if (oct < numOctaves - 1)
         {
-            if (nextStageBuffer.size() < static_cast<size_t>(currentStageSize))
-                nextStageBuffer.resize (static_cast<size_t>(currentStageSize));
-
             int nextIdx = 0;
             for (int i = 0; i < currentStageSize; ++i)
             {
                 float filtered = octaves[oct].lowpass.processSample (currentStageData[i]);
                 if (! octaves[oct].dropNext)
                 {
-                    nextStageBuffer[static_cast<size_t>(nextIdx++)] = filtered;
+                    nextStageData[nextIdx++] = filtered;
                 }
                 octaves[oct].dropNext = ! octaves[oct].dropNext;
             }
             
-            // Swap buffers for the next iteration
-            if (currentStageData == monoBuffer.data())
-            {
-                std::swap (monoBuffer, nextStageBuffer);
-                currentStageData = monoBuffer.data();
-            }
-            else
-            {
-                std::swap (nextStageBuffer, monoBuffer);
-                currentStageData = monoBuffer.data();
-            }
+            // Swap pointers for the next octave iteration
+            float* temp = currentStageData;
+            currentStageData = nextStageData;
+            nextStageData = temp;
             currentStageSize = nextIdx;
         }
     }
