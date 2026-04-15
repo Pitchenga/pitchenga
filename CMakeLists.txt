@@ -1,0 +1,39 @@
+cmake_minimum_required(VERSION 3.22)
+project(Pitchenga VERSION 1.0.0)
+
+# 1. Tell CMake where to find the JUCE framework
+add_subdirectory(JUCE)
+
+# 2. Define the exact plugin we are building
+juce_add_plugin(Pitchenga
+        # Plugin metadata
+        PLUGIN_MANUFACTURER_CODE "Ptng"  # Exactly 4 chars
+        PLUGIN_CODE "Ptng"               # Exactly 4 chars
+        FORMATS AU Standalone            # The magic dual-compile flag
+        PRODUCT_NAME "Pitchenga"
+
+        # Architecture rules
+        IS_SYNTH FALSE                   # It's an effect/visualizer, not a synth generator
+        NEEDS_MIDI_INPUT TRUE            # We need MIDI for your Wurlitzer/Keyboard
+        NEEDS_MIDI_OUTPUT FALSE
+        IS_MIDI_EFFECT FALSE
+        EDITOR_WANTS_KEYBOARD_FOCUS FALSE
+        COPY_PLUGIN_AFTER_BUILD TRUE)    # Automatically drops the AU into your Mac's plugin folder
+
+# 3. Tell CMake which C++ files to compile
+target_sources(Pitchenga PRIVATE
+        Source/PluginProcessor.cpp
+        Source/PluginProcessor.h
+        Source/PluginEditor.cpp
+        Source/PluginEditor.h)
+
+# 4. Link the heavy-lifting JUCE modules (Audio, GUI, and Hardware-Accelerated Math)
+target_link_libraries(Pitchenga PRIVATE
+        juce::juce_audio_utils
+        juce::juce_dsp                 # Contains the fast FFT class
+        PUBLIC
+        juce::juce_recommended_config_flags
+        juce::juce_recommended_warning_flags)
+
+# 5. Lock in the C++20 Standard
+target_compile_features(Pitchenga PUBLIC cxx_std_20)
