@@ -28,16 +28,18 @@ SpectralEqualizer::SpectralEqualizer(int size, int windowSize)
 }
 
 const std::vector<double>& SpectralEqualizer::filter(const std::vector<double>& values) {
+    const int halfWindow = windowSize / 2;
     for (int i = 0; i < size; ++i) {
         for (int winIndex = 0; winIndex < windowSize; ++winIndex) {
-            int index = (i + winIndex + size) % size;
-            window[winIndex] = values[index];
+            // Center the window around i: range is [i - halfWindow, i + halfWindow]
+            int index = (i + winIndex - halfWindow + size) % size;
+            window[static_cast<size_t>(winIndex)] = values[static_cast<size_t>(index)];
         }
         
-        std::nth_element(window.begin(), window.begin() + windowSize / 2, window.end());
-        double median = window[static_cast<size_t>(windowSize / 2)];
+        std::nth_element(window.begin(), window.begin() + halfWindow, window.end());
+        double median = window[static_cast<size_t>(halfWindow)];
         
-        filteredValues[i] = values[i] - 0.75 * median; // MEDIAN_WEIGHT = 0.75
+        filteredValues[static_cast<size_t>(i)] = values[static_cast<size_t>(i)] - 0.75 * median; // MEDIAN_WEIGHT = 0.75
     }
 
     double newMax = 0.0;

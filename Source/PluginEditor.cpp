@@ -211,8 +211,12 @@ void PitchengaAudioProcessorEditor::timerCallback()
 
 juce::Colour PitchengaAudioProcessorEditor::calculateColor (float velocity, float toneRatio)
 {
-    int toneNumber = static_cast<int> (std::floor (toneRatio));
-    float diff = toneRatio - static_cast<float> (toneNumber);
+    // Handle wrapping and negative ratios for smooth chromatic loops
+    float wrappedRatio = std::fmod (toneRatio, 12.0f);
+    if (wrappedRatio < 0) wrappedRatio += 12.0f;
+
+    int toneNumber = static_cast<int> (std::floor (wrappedRatio));
+    float diff = wrappedRatio - static_cast<float> (toneNumber);
 
     int currentIdx = toneNumber % 12;
     int nextIdx = (currentIdx + 1) % 12;
@@ -236,7 +240,10 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
     for (int i = 0; i < totalFoldedBins; ++i)
     {
         float velocity = static_cast<float>(smoothedOctaveBins[static_cast<size_t>(i)]);
+
+        // Goes from 0 to 107 - toneRatio will accurately go from 0.0 to 11.888...
         float toneRatio = static_cast<float> (i) / static_cast<float> (binsPerSemitone);
+
         juce::Colour color = calculateColor (velocity, toneRatio);
 
         float currentRadius = baseRadius * (0.2f + velocity * 0.8f);
@@ -256,11 +263,14 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
 void PitchengaAudioProcessorEditor::resized()
 {
     constexpr float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(totalFoldedBins);
+    
+    // Rotate so that bin 4.5 (the peak of the first halftone 'Do') is exactly at 12 o'clock (-pi/2)
+    const float rotation = -juce::MathConstants<float>::halfPi - (4.5f * angleStep);
 
     for (int i = 0; i < totalFoldedBins; ++i)
     {
-        const float startAngle = static_cast<float>(i) * angleStep;
-        const float endAngle = static_cast<float>(i + 1) * angleStep;
+        const float startAngle = static_cast<float>(i) * angleStep + rotation;
+        const float endAngle = static_cast<float>(i + 1) * angleStep + rotation;
 
         juce::Path p;
         p.addCentredArc (0.0f, 0.0f, 1.0f, 1.0f, 0.0f, startAngle, endAngle, true);

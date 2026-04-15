@@ -28,7 +28,7 @@ int CqtEngine::nextPowerOf2(int value) const {
 }
 
 double CqtEngine::centerFreq(int binIndex) const {
-    return (baseFreq * std::pow(2.0, (binIndex - config.binsPerHalftone / 2.0) * binsPerOctaveInv));
+    return (baseFreq * std::pow(2.0, static_cast<double>(binIndex) * binsPerOctaveInv));
 }
 
 int CqtEngine::bandWidth(int binIndex) const {
