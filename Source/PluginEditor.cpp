@@ -22,7 +22,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor (PitchengaAudioProc
 {
     CqtEngine::Config config;
     config.octaves = PitchengaAudioProcessor::numOctaves;
-    config.samplingFreq = 44100.0;
+    config.samplingFreq = p.getSampleRate() > 0 ? p.getSampleRate() : 44100.0;
     cqt.updateConfig(config);
     cqt.init();
 
@@ -93,7 +93,6 @@ void PitchengaAudioProcessorEditor::processCqt()
 
             fifo.finishedRead (size1 + size2);
 
-            std::vector<std::complex<float>> cqtSpectrum;
             cqt.transform(workBuffer, cqtSpectrum);
 
             int startIndex = (cqt.getOctaves() - 1 - oct) * binsPerOctave;
@@ -194,6 +193,13 @@ void PitchengaAudioProcessorEditor::resized()
         juce::Path p;
         // Unit path at origin (0,0) with radius 1.0
         p.addCentredArc (0.0f, 0.0f, 2.0f, 2.0f, 0.0f, startAngle, endAngle, true);
+        p.lineTo (0.0f, 0.0f);
+        p.closeSubPath();
+
+        segmentPaths[static_cast<size_t>(i)] = p;
+    }
+}
+ true);
         p.lineTo (0.0f, 0.0f);
         p.closeSubPath();
 

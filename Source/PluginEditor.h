@@ -43,6 +43,7 @@ private:
     std::unique_ptr<ExpSmoother> octaveBinSmoother;
 
     std::vector<float> workBuffer;
+    std::vector<std::complex<float>> cqtSpectrum;
     std::vector<double> amplitudeSpectrumDb;
     std::vector<double> octaveBins;
     std::vector<double> smoothedOctaveBins;
