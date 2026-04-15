@@ -22,34 +22,46 @@ const std::array<Pitch, 12> PitchengaAudioProcessorEditor::chromaticScale = {{
 PitchengaAudioProcessorEditor::CqtWorkerThread::CqtWorkerThread (PitchengaAudioProcessor& p)
     : Thread ("CqtWorker"), processor (p)
 {
+    setupBuffers();
+}
+
+void PitchengaAudioProcessorEditor::CqtWorkerThread::setupBuffers()
+{
     CqtEngine::Config config;
     config.octaves = PitchengaAudioProcessor::numOctaves;
     config.samplingFreq = processor.getSampleRate() > 0 ? processor.getSampleRate() : 44100.0;
     cqt.updateConfig (config);
     cqt.init();
 
-    int totalBins = cqt.getTotalBins();
-    int binsPerOctave = cqt.getBinsPerOctave();
+    const int totalBins = cqt.getTotalBins();
+    const int binsPerOctave = cqt.getBinsPerOctave();
+    const size_t signalBlockSize = static_cast<size_t>(cqt.getSignalBlockSize());
 
     pcDetector = std::make_unique<HarmonicPatternPitchClassDetector> (binsPerOctave, config.binsPerHalftone);
     spectralEqualizer = std::make_unique<SpectralEqualizer> (totalBins, 30);
     octaveBinSmoother = std::make_unique<ExpSmoother> (binsPerOctave, 0.35);
 
-    workBuffer.resize (static_cast<size_t> (cqt.getSignalBlockSize()), 0.0f);
+    workBuffer.assign (signalBlockSize, 0.0f);
+    
+    // Initialize sliding windows for each octave
+    slidingWindows.assign (static_cast<size_t> (PitchengaAudioProcessor::numOctaves), 
+                           std::vector<float>(signalBlockSize, 0.0f));
+
     cqtSpectrum.resize (static_cast<size_t> (cqt.getKernelBins()));
-    amplitudeSpectrumDb.resize (static_cast<size_t> (totalBins), 0.0);
-    octaveBins.resize (static_cast<size_t> (binsPerOctave), 0.0);
-    results.resize (static_cast<size_t> (binsPerOctave), 0.0);
+    amplitudeSpectrumDb.assign (static_cast<size_t> (totalBins), 0.0);
+    octaveBins.assign (static_cast<size_t> (binsPerOctave), 0.0);
+    
+    {
+        const juce::CriticalSection::ScopedLockType lock (resultLock);
+        results.assign (static_cast<size_t> (binsPerOctave), 0.0);
+    }
 }
 
 void PitchengaAudioProcessorEditor::CqtWorkerThread::updateSampleRate (double newSampleRate)
 {
     if (newSampleRate > 0 && std::abs (newSampleRate - cqt.getConfig().samplingFreq) > 0.01)
     {
-        CqtEngine::Config config = cqt.getConfig();
-        config.samplingFreq = newSampleRate;
-        cqt.updateConfig (config);
-        cqt.init();
+        setupBuffers();
     }
 }
 
@@ -68,43 +80,71 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
         updateSampleRate (processor.getSampleRate());
 
         auto& octaves = processor.getOctaves();
-        int signalBlockSize = cqt.getSignalBlockSize();
-        int binsPerOctave = cqt.getBinsPerOctave();
-        bool hasData = false;
+        const int signalBlockSize = cqt.getSignalBlockSize();
+        const int binsPerOctave = cqt.getBinsPerOctave();
+        
+        if (signalBlockSize <= 0 || slidingWindows.empty()) { wait(10); continue; }
 
-        for (int oct = 0; oct < cqt.getOctaves(); ++oct)
+        bool hasNewAudio = false;
+
+        for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct)
         {
             auto& fifo = octaves[static_cast<size_t> (oct)].fifo;
             auto& buffer = octaves[static_cast<size_t> (oct)].buffer;
+            auto& win = slidingWindows[static_cast<size_t> (oct)];
+
+            // Safety check against race conditions during resize
+            if (win.size() != static_cast<size_t>(signalBlockSize)) continue;
 
             int numReady = fifo.getNumReady();
-            if (numReady >= signalBlockSize)
+            if (numReady > 0)
             {
-                // Drain old data: skip all but the most recent block to prevent lag
-                if (numReady > signalBlockSize)
-                    fifo.finishedRead (numReady - signalBlockSize);
+                if (oct == 0) hasNewAudio = true;
 
-                int start1, size1, start2, size2;
-                fifo.prepareToRead (signalBlockSize, start1, size1, start2, size2);
+                int toRead = std::min (numReady, signalBlockSize);
+                
+                // Jump to latest data
+                if (numReady > toRead)
+                    fifo.finishedRead (numReady - toRead);
 
-                if (size1 > 0) std::copy (buffer.begin() + start1, buffer.begin() + start1 + size1, workBuffer.begin());
-                if (size2 > 0) std::copy (buffer.begin() + start2, buffer.begin() + start2 + size2, workBuffer.begin() + size1);
-
-                fifo.finishedRead (size1 + size2);
-
-                cqt.transform (workBuffer, cqtSpectrum);
-
-                int startIndex = (cqt.getOctaves() - 1 - oct) * binsPerOctave;
-                for (size_t i = 0; i < cqtSpectrum.size(); ++i) {
-                    double amplitude = std::abs (cqtSpectrum[i]);
-                    amplitudeSpectrumDb[static_cast<size_t> (startIndex) + i] = amplitudeToDbRescaled (amplitude);
+                // Shift window
+                if (toRead < signalBlockSize)
+                {
+                    std::memmove (win.data(), 
+                                  win.data() + toRead, 
+                                  static_cast<size_t> (signalBlockSize - toRead) * sizeof (float));
                 }
-                hasData = true;
+
+                // Append new data
+                int start1, size1, start2, size2;
+                fifo.prepareToRead (toRead, start1, size1, start2, size2);
+                
+                if (size1 > 0) std::copy (buffer.begin() + start1, buffer.begin() + start1 + size1, 
+                                         win.begin() + (static_cast<ptrdiff_t>(signalBlockSize) - toRead));
+                if (size2 > 0) std::copy (buffer.begin() + start2, buffer.begin() + start2 + size2, 
+                                         win.begin() + (static_cast<ptrdiff_t>(signalBlockSize) - toRead) + size1);
+                
+                fifo.finishedRead (toRead);
             }
         }
 
-        if (hasData)
+        if (hasNewAudio)
         {
+            for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct)
+            {
+                const auto& win = slidingWindows[static_cast<size_t>(oct)];
+                if (win.size() == static_cast<size_t>(signalBlockSize))
+                {
+                    cqt.transform (win, cqtSpectrum);
+
+                    int startIndex = (PitchengaAudioProcessor::numOctaves - 1 - oct) * binsPerOctave;
+                    for (size_t i = 0; i < cqtSpectrum.size(); ++i) {
+                        double amplitude = std::abs (cqtSpectrum[i]);
+                        amplitudeSpectrumDb[static_cast<size_t> (startIndex) + i] = amplitudeToDbRescaled (amplitude);
+                    }
+                }
+            }
+
             const auto& detectedPitchClasses = pcDetector->detectPitchClasses (amplitudeSpectrumDb);
             const auto& equalizedPitchClasses = spectralEqualizer->filter (detectedPitchClasses);
 
@@ -121,12 +161,15 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
 
             {
                 const juce::CriticalSection::ScopedLockType lock (resultLock);
-                std::copy (smoothed.begin(), smoothed.end(), results.begin());
-                newDataAvailable.store (true);
+                if (results.size() == smoothed.size())
+                {
+                    std::copy (smoothed.begin(), smoothed.end(), results.begin());
+                    newDataAvailable.store (true);
+                }
             }
         }
 
-        wait (5); // Small sleep to prevent CPU pinning
+        wait (5); 
     }
 }
 

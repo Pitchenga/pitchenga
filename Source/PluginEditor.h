@@ -43,7 +43,6 @@ private:
         CqtWorkerThread (PitchengaAudioProcessor& p);
         void run() override;
         
-        // Thread-safe access to results
         void getLatestResults (std::vector<double>& dest);
         bool hasNewData() const { return newDataAvailable.load(); }
         void clearNewDataFlag() { newDataAvailable.store (false); }
@@ -51,6 +50,8 @@ private:
         void updateSampleRate (double newSampleRate);
 
     private:
+        void setupBuffers();
+
         PitchengaAudioProcessor& processor;
         
         CqtEngine cqt;
@@ -59,6 +60,7 @@ private:
         std::unique_ptr<ExpSmoother> octaveBinSmoother;
 
         std::vector<float> workBuffer;
+        std::vector<std::vector<float>> slidingWindows;
         std::vector<std::complex<float>> cqtSpectrum;
         std::vector<double> amplitudeSpectrumDb;
         std::vector<double> octaveBins;
