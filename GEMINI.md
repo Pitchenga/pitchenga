@@ -55,7 +55,7 @@ The project is configured to build both **AU (Audio Unit)** and **Standalone** f
 
 ```bash
 # Run the application
-killall Pitchenga; /Users/d/dev/pitchenga/cmake-build-debug/Pitchenga_artefacts/Debug/Standalone/Pitchenga.app/Contents/MacOS/Pitchenga
+killall Pitchenga; ~/dev/pitchenga/cmake-build-debug/Pitchenga_artefacts/Debug/Standalone/Pitchenga.app/Contents/MacOS/Pitchenga
 ```
 
 ### Running

@@ -81,7 +81,7 @@ void PitchengaAudioProcessorEditor::updateBinLookupTable (double sampleRate)
         double semitones = static_cast<double> (semitonesInOctave) * std::log2 (freq / frequencyC0);
         int binIndex = static_cast<int> (std::round (semitones * binsPerSemitone)) % numBins;
         if (binIndex < 0) binIndex += numBins;
-        
+
         activeBinMappings.push_back ({ i, binIndex });
     }
 }
@@ -146,11 +146,13 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
     auto bounds = getLocalBounds().toFloat();
     auto center = bounds.getCentre();
     auto baseRadius = std::min (bounds.getWidth(), bounds.getHeight()) * 0.45f;
+    const juce::PathStrokeType stroke (0.5f);
 
     for (int i = 0; i < numBins; ++i)
     {
         float velocity = smoothedBins[static_cast<size_t>(i)];
         float toneRatio = static_cast<float> (i) / static_cast<float> (binsPerSemitone);
+
         juce::Colour color = calculateColor (velocity, toneRatio);
 
         // Map energy to both radius and opacity
@@ -158,7 +160,7 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
         float alpha = juce::jlimit (0.3f, 1.0f, 0.5f + velocity * 0.5f);
 
         auto& originalPath = segmentPaths[static_cast<size_t>(i)];
-        
+
         // Applying a transformation directly in fillPath is more efficient than rebuilding the path
         auto transform = juce::AffineTransform::scale (currentRadius, currentRadius).translated (center.x, center.y);
 
@@ -167,11 +169,11 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
 
         // Define segment with a faint outline
         g.setColour (color.withAlpha (0.1f + velocity * 0.2f));
-        g.strokePath (originalPath, juce::PathStrokeType (0.5f), transform);
+        g.strokePath (originalPath, stroke, transform);
     }
 }
 
-void PitchengaAudioProcessorEditor::resized() 
+void PitchengaAudioProcessorEditor::resized()
 {
     const float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(numBins);
 
@@ -185,7 +187,7 @@ void PitchengaAudioProcessorEditor::resized()
         p.addCentredArc (0.0f, 0.0f, 2.0f, 2.0f, 0.0f, startAngle, endAngle, true);
         p.lineTo (0.0f, 0.0f);
         p.closeSubPath();
-        
+
         segmentPaths[static_cast<size_t>(i)] = p;
     }
 }
