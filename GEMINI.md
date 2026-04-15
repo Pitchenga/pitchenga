@@ -45,10 +45,10 @@ The project is configured to build both **AU (Audio Unit)** and **Standalone** f
 
 ```bash
 # Generate build files
-/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -B cmake-build-debug
+cmake -B cmake-build-debug
 
 # Build the project
-/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake --build cmake-build-debug
+cmake --build cmake-build-debug
 ```
 
 - Execute after completing every change request:

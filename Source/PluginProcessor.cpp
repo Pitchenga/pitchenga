@@ -53,17 +53,19 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
 
     auto pushToFifo = [&](int fifoStart, int amount, int bufferOffset)
     {
+        float* dest = fifoBuffer.data() + static_cast<size_t> (fifoStart);
+
         if (totalNumInputChannels == 1)
         {
-            const float* reader = buffer.getReadPointer (0, bufferOffset);
-            std::copy (reader, reader + amount, fifoBuffer.data() + static_cast<size_t> (fifoStart));
+            juce::FloatVectorOperations::copy (dest, buffer.getReadPointer (0, bufferOffset), amount);
         }
         else if (totalNumInputChannels >= 2)
         {
-            const float* left = buffer.getReadPointer (0, bufferOffset);
-            const float* right = buffer.getReadPointer (1, bufferOffset);
-            for (int i = 0; i < amount; ++i)
-                fifoBuffer[static_cast<size_t> (fifoStart + i)] = (left[i] + right[i]) * 0.5f;
+            auto* left = buffer.getReadPointer (0, bufferOffset);
+            auto* right = buffer.getReadPointer (1, bufferOffset);
+
+            juce::FloatVectorOperations::multiply (dest, left, 0.5f, amount);
+            juce::FloatVectorOperations::addWithMultiply (dest, right, 0.5f, amount);
         }
     };
 

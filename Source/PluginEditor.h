@@ -60,6 +60,7 @@ private:
     const float smoothingFactor = 0.2f;
 
     std::array<juce::Path, numBins> segmentPaths;
+    juce::PathStrokeType strokeType { 0.5f };
 
     // Ported Tone colors
     static const std::array<Pitch, 12> chromaticScale;

@@ -114,7 +114,7 @@ void PitchengaAudioProcessorEditor::processFFT()
     // Exponential Smoothing
     for (int i = 0; i < numBins; ++i)
     {
-        size_t idx = static_cast<size_t>(i);
+        const auto idx = static_cast<size_t>(i);
         smoothedBins[idx] = (smoothingFactor * currentBins[idx]) + ((1.0f - smoothingFactor) * smoothedBins[idx]);
     }
 }
@@ -146,7 +146,6 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
     auto bounds = getLocalBounds().toFloat();
     auto center = bounds.getCentre();
     auto baseRadius = std::min (bounds.getWidth(), bounds.getHeight()) * 0.45f;
-    const juce::PathStrokeType stroke (0.5f);
 
     for (int i = 0; i < numBins; ++i)
     {
@@ -169,18 +168,18 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
 
         // Define segment with a faint outline
         g.setColour (color.withAlpha (0.1f + velocity * 0.2f));
-        g.strokePath (originalPath, stroke, transform);
+        g.strokePath (originalPath, strokeType, transform);
     }
 }
 
 void PitchengaAudioProcessorEditor::resized()
 {
-    const float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(numBins);
+    constexpr float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(numBins);
 
     for (int i = 0; i < numBins; ++i)
     {
-        float startAngle = static_cast<float>(i) * angleStep;
-        float endAngle = static_cast<float>(i + 1) * angleStep;
+        const float startAngle = static_cast<float>(i) * angleStep;
+        const float endAngle = static_cast<float>(i + 1) * angleStep;
 
         juce::Path p;
         // Unit path at origin (0,0) with radius 1.0
