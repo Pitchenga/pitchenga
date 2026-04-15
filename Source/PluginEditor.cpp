@@ -54,7 +54,7 @@ void PitchengaAudioProcessorEditor::timerCallback()
 
         fifo.finishedRead (size1 + size2);
 
-        processFFT();
+        processFft();
         dataProcessed = true;
 
         // If we are falling behind (e.g. UI lag), skip to the most recent data to maintain sync
@@ -77,17 +77,24 @@ void PitchengaAudioProcessorEditor::updateBinLookupTable (double sampleRate)
     for (int i = 1; i < fftSize / 2; ++i)
     {
         double freq = i * binWidth;
+
+        // Skip sub-audio frequencies that would crash the log2 function
         if (freq < 20.0) continue;
 
-        double semitones = static_cast<double> (semitonesInOctave) * std::log2 (freq / frequencyC0);
-        int binIndex = static_cast<int> (std::round (semitones * binsPerSemitone)) % numBins;
-        if (binIndex < 0) binIndex += numBins;
+        // 1. Find exactly how many semitones we are above C0
+        double semitones = static_cast<double>(semitonesPerOctave) * std::log2 (freq / frequencyC0);
+
+        // 2. Multiply by binsPerSemitone and wrap to the 108-bin circle
+        int binIndex = static_cast<int> (std::round (semitones * binsPerSemitone)) % totalFoldedBins;
+
+        // Handle negative wraps if the math dips below C0
+        if (binIndex < 0) binIndex += totalFoldedBins;
 
         activeBinMappings.push_back ({ i, binIndex });
     }
 }
 
-void PitchengaAudioProcessorEditor::processFFT()
+void PitchengaAudioProcessorEditor::processFft()
 {
     const double sampleRate = audioProcessor.getSampleRate();
     if (sampleRate > 0 && std::abs (sampleRate - lastSampleRate) > 0.01)
@@ -113,7 +120,7 @@ void PitchengaAudioProcessorEditor::processFFT()
     }
 
     // Exponential Smoothing
-    for (int i = 0; i < numBins; ++i)
+    for (int i = 0; i < totalFoldedBins; ++i)
     {
         const auto idx = static_cast<size_t>(i);
         smoothedBins[idx] = (smoothingFactor * currentBins[idx]) + ((1.0f - smoothingFactor) * smoothedBins[idx]);
@@ -146,11 +153,15 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
     auto center = bounds.getCentre();
     auto baseRadius = std::min (bounds.getWidth(), bounds.getHeight()) * 0.45f;
 
-    for (int i = 0; i < numBins; ++i)
+    for (int i = 0; i < totalFoldedBins; ++i)
     {
         float velocity = smoothedBins[static_cast<size_t>(i)];
+
+        // i goes from 0 to 107.
+        // toneRatio will accurately go from 0.0 to 11.888...
         float toneRatio = static_cast<float> (i) / static_cast<float> (binsPerSemitone);
 
+        // Calculate the exact interpolated color across the 12 chromatic scales
         juce::Colour color = calculateColor (velocity, toneRatio);
 
         // Map energy to both radius and opacity
@@ -173,9 +184,10 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
 
 void PitchengaAudioProcessorEditor::resized()
 {
-    constexpr float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(numBins);
+    // Divide the 360 degrees by 108
+    constexpr float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(totalFoldedBins);
 
-    for (int i = 0; i < numBins; ++i)
+    for (int i = 0; i < totalFoldedBins; ++i)
     {
         const float startAngle = static_cast<float>(i) * angleStep;
         const float endAngle = static_cast<float>(i + 1) * angleStep;

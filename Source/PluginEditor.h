@@ -30,7 +30,7 @@ public:
 
 private:
     void timerCallback() override;
-    void processFFT();
+    void processFft();
     void updateBinLookupTable (double sampleRate);
     static juce::Colour calculateColor (float velocity, float toneRatio);
 
@@ -50,16 +50,15 @@ private:
     std::vector<BinMapping> activeBinMappings;
     double lastSampleRate = 0.0;
 
-    // 60 bins (5 per semitone)
-    static constexpr int numBins = 60;
-    static constexpr int semitonesInOctave = 12;
-    static constexpr double binsPerSemitone = static_cast<double> (numBins) / static_cast<double> (semitonesInOctave);
+    static constexpr int semitonesPerOctave = 12;
+    static constexpr int binsPerSemitone = 9;
+    static constexpr int totalFoldedBins = binsPerSemitone * semitonesPerOctave;
     static constexpr double frequencyC0 = 16.35159783128741;
-    std::array<float, numBins> currentBins;
-    std::array<float, numBins> smoothedBins;
+    std::array<float, totalFoldedBins> currentBins;
+    std::array<float, totalFoldedBins> smoothedBins;
     const float smoothingFactor = 0.2f;
 
-    std::array<juce::Path, numBins> segmentPaths;
+    std::array<juce::Path, totalFoldedBins> segmentPaths;
     juce::PathStrokeType strokeType { 0.5f };
 
     // Ported Tone colors
