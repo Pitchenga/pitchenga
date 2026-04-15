@@ -18,7 +18,8 @@ juce_add_plugin(Pitchenga
         NEEDS_MIDI_OUTPUT FALSE
         IS_MIDI_EFFECT FALSE
         EDITOR_WANTS_KEYBOARD_FOCUS FALSE
-        COPY_PLUGIN_AFTER_BUILD TRUE)    # Automatically drops the AU into your Mac's plugin folder
+        COPY_PLUGIN_AFTER_BUILD TRUE      # Automatically drops the AU into your Mac's plugin folder
+        MICROPHONE_PERMISSION_ENABLED TRUE)    # This ensures the Info.plist has the usage description for macOS TCC
 
 # 3. Tell CMake which C++ files to compile
 target_sources(Pitchenga PRIVATE
