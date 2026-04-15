@@ -9,7 +9,7 @@ ExpSmoother::ExpSmoother(int size, double currentWeight)
     data.resize(size, 0.0);
 }
 
-std::vector<double> ExpSmoother::smooth(const std::vector<double>& currentFrame) {
+const std::vector<double>& ExpSmoother::smooth(const std::vector<double>& currentFrame) {
     for (size_t i = 0; i < data.size(); ++i) {
         if (currentFrame[i] > data[i]) {
             data[i] = currentFrame[i]; // Instant Attack
@@ -27,7 +27,7 @@ SpectralEqualizer::SpectralEqualizer(int size, int windowSize)
     window.resize(windowSize, 0.0);
 }
 
-std::vector<double> SpectralEqualizer::filter(const std::vector<double>& values) {
+const std::vector<double>& SpectralEqualizer::filter(const std::vector<double>& values) {
     for (int i = 0; i < size; ++i) {
         for (int winIndex = 0; winIndex < windowSize; ++winIndex) {
             int index = (i + winIndex + size) % size;
@@ -87,7 +87,7 @@ double HarmonicPatternPitchClassDetector::extractHarmonics(const std::vector<dou
     return dotProduct;
 }
 
-std::vector<double> HarmonicPatternPitchClassDetector::detectPitchClasses(const std::vector<double>& cqBins) {
+const std::vector<double>& HarmonicPatternPitchClassDetector::detectPitchClasses(const std::vector<double>& cqBins) {
     int size = static_cast<int>(cqBins.size());
     if (static_cast<int>(harmonicBins.size()) != size) {
         harmonicBins.resize(size, 0.0);

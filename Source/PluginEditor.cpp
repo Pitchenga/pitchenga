@@ -107,19 +107,19 @@ void PitchengaAudioProcessorEditor::processCqt()
     if (!hasData) return;
 
     // Harmonic Pattern Pitch Class Detector
-    std::vector<double> detectedPitchClasses = pcDetector->detectPitchClasses(amplitudeSpectrumDb);
+    const auto& detectedPitchClasses = pcDetector->detectPitchClasses(amplitudeSpectrumDb);
     
     // Spectral Equalizer
-    detectedPitchClasses = spectralEqualizer->filter(detectedPitchClasses);
+    const auto& equalizedPitchClasses = spectralEqualizer->filter(detectedPitchClasses);
 
     // Aggregate into octaves
     std::fill(octaveBins.begin(), octaveBins.end(), 0.0);
     for (int i = 0; i < binsPerOctave; ++i) {
         double maxVal = 0.0;
-        for (int j = i; j < static_cast<int>(detectedPitchClasses.size()); j += binsPerOctave) {
-            maxVal = std::max(maxVal, detectedPitchClasses[j]);
+        for (int j = i; j < static_cast<int>(equalizedPitchClasses.size()); j += binsPerOctave) {
+            maxVal = std::max(maxVal, equalizedPitchClasses[static_cast<size_t>(j)]);
         }
-        octaveBins[i] = maxVal;
+        octaveBins[static_cast<size_t>(i)] = maxVal;
     }
 
     // Exponential Smoother
@@ -192,14 +192,7 @@ void PitchengaAudioProcessorEditor::resized()
 
         juce::Path p;
         // Unit path at origin (0,0) with radius 1.0
-        p.addCentredArc (0.0f, 0.0f, 2.0f, 2.0f, 0.0f, startAngle, endAngle, true);
-        p.lineTo (0.0f, 0.0f);
-        p.closeSubPath();
-
-        segmentPaths[static_cast<size_t>(i)] = p;
-    }
-}
- true);
+        p.addCentredArc (0.0f, 0.0f, 1.0f, 1.0f, 0.0f, startAngle, endAngle, true);
         p.lineTo (0.0f, 0.0f);
         p.closeSubPath();
 
