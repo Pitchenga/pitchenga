@@ -264,8 +264,8 @@ void PitchengaAudioProcessorEditor::resized()
 {
     constexpr float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(totalFoldedBins);
     
-    // Rotate so that bin 4.5 (the peak of the first halftone 'Do') is exactly at 12 o'clock (-pi/2)
-    const float rotation = -juce::MathConstants<float>::halfPi - (4.5f * angleStep);
+    // Rotate 90 degrees clockwise from the 9 o'clock position
+    const float rotation = 0.0f - (0.5f * angleStep);
 
     for (int i = 0; i < totalFoldedBins; ++i)
     {
