@@ -1,3 +1,1 @@
-- **Avoid hard-coding**: Do not hard-code values.
-- **Do not add or remove comment**: DO NOT add comments to the code and DO NOT remove existing comments or commented-out code.
-- **Avoid generating duplicated code**: refactor and reuse instead.
+See GEMINI.md

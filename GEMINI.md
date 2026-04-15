@@ -59,29 +59,22 @@ cmake --build cmake-build-debug
 
 ## Development Conventions
 
-### "Hybrid Strategy" (from `doc/init.md`)
-
-1. **Idiomatic JUCE Shell:** Always build the outer shell (UI, audio routing) using idiomatic JUCE/C++ patterns. Do not
+- **Idiomatic JUCE Shell:** Always build the outer shell (UI, audio routing) using idiomatic JUCE/C++ patterns. Do not
    attempt to direct-port Java architecture.
-2. **Math Snippets:** Translate core mathematical logic (e.g., color mapping, bin folding) snippet-by-snippet from the
+- **Math Snippets:** Translate core mathematical logic (e.g., color mapping, bin folding) snippet-by-snippet from the
    original Java source to optimized C++.
-3. **Graphics:** Use `juce::Graphics` for 2D rendering. Avoid OpenGL unless performance benchmarks specifically require
-   it.
+- **Graphics:** Use `juce::Graphics` for 2D rendering. Avoid using OpenGL.
+- Prioritize C++20 features and memory-safe JUCE patterns.
+- Ensure all external libraries use permissive licenses (MIT, BSD, or Apache 2.0). Avoid GPL/copyleft dependencies.
 
 
+## Coding style
 
-## Roadmap / TODO
-
-- [ ] Implement `PluginProcessor` and `PluginEditor` boilerplate.
-- [ ] Port "Rainbow Math" from Java for the Chromagram circle.
-- [ ] Integrate an MIT-licensed MPM library (e.g., `adamski/pitch_detector`) for monophonic tracking.
-- [ ] Add unit tests for DSP logic.
+- Avoid generating duplicated code: refactor and reuse instead.
+- CRITICAL: DO NOT remove existing comments or commented-out code. This is a hard rule and cannot be violated.
+- CRITICAL: Before changing any file (write_file), explicitly list all exising comments in the code you are about to change. After the change double-check and ensure that all pre-existing comments still exist and no new comments were added. If any pre-existing comments became outdated by the change explicitly state it to the user, but do not remove them.
 
 # Guidelines
-
-- Prioritize C++20 features and memory-safe JUCE patterns.
-- Ensure all external libraries use permissive licenses (MIT, BSD, or Apache 2.0). **Avoid GPL/copyleft code.**
-- See .gemini/styleguide.md for coding style guide.
 
 Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
 
