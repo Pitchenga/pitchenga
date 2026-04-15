@@ -119,9 +119,7 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
 
     auto bounds = getLocalBounds().toFloat();
     auto center = bounds.getCentre();
-    auto radius = std::min (bounds.getWidth(), bounds.getHeight()) * 0.45f;
-
-    const float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(numBins);
+    auto baseRadius = std::min (bounds.getWidth(), bounds.getHeight()) * 0.45f;
 
     for (int i = 0; i < numBins; ++i)
     {
@@ -130,21 +128,39 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
 
         juce::Colour color = calculateColor (velocity, toneRatio);
 
+        // Map energy to both radius and opacity
+        float currentRadius = baseRadius * (0.2f + velocity * 0.8f);
+        float alpha = juce::jlimit (0.3f, 1.0f, 0.5f + velocity * 0.5f);
+
+        auto& originalPath = segmentPaths[static_cast<size_t>(i)];
+        
+        // Applying a transformation directly in fillPath is more efficient than rebuilding the path
+        auto transform = juce::AffineTransform::scale (currentRadius, currentRadius).translated (center.x, center.y);
+
+        g.setColour (color.withAlpha (alpha));
+        g.fillPath (originalPath, transform);
+
+        // Define segment with a faint outline
+        g.setColour (color.withAlpha (0.1f + velocity * 0.2f));
+        g.strokePath (originalPath, juce::PathStrokeType (0.5f), transform);
+    }
+}
+
+void PitchengaAudioProcessorEditor::resized() 
+{
+    const float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(numBins);
+
+    for (int i = 0; i < numBins; ++i)
+    {
         float startAngle = static_cast<float>(i) * angleStep;
         float endAngle = static_cast<float>(i + 1) * angleStep;
 
         juce::Path p;
-        p.addCentredArc (center.x, center.y, radius, radius, 0.0f, startAngle, endAngle, true);
-        p.lineTo (center);
+        // Unit path at origin (0,0) with radius 1.0
+        p.addCentredArc (0.0f, 0.0f, 2.0f, 2.0f, 0.0f, startAngle, endAngle, true);
+        p.lineTo (0.0f, 0.0f);
         p.closeSubPath();
-
-        g.setColour (color);
-        g.fillPath (p);
-
-        // Define segment with a faint outline
-        g.setColour (color.withAlpha (0.2f));
-        g.strokePath (p, juce::PathStrokeType (0.5f));
+        
+        segmentPaths[static_cast<size_t>(i)] = p;
     }
 }
-
-void PitchengaAudioProcessorEditor::resized() {}

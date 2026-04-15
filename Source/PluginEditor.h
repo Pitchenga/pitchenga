@@ -50,6 +50,8 @@ private:
     std::array<float, numBins> smoothedBins;
     const float smoothingFactor = 0.2f;
 
+    std::array<juce::Path, numBins> segmentPaths;
+
     // Ported Tone colors
     static const std::array<Pitch, 12> chromaticScale;
 
