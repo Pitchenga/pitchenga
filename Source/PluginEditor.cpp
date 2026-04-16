@@ -77,11 +77,8 @@ double PitchengaAudioProcessorEditor::CqtWorkerThread::amplitudeToDbRescaled (do
     double db = 20.0 * std::log10 (amplitude);
     return std::max (0.0, 1.0 - (db * zeroAmplitudeDbInv));
 }
-
 void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
 {
-    int samplesSinceLastCqt = 0;
-
     while (! threadShouldExit())
     {
         updateSampleRate (processor.getSampleRate());
@@ -92,43 +89,42 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
 
         if (signalBlockSize <= 0 || slidingWindows.empty()) { wait(5); continue; }
 
-        for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct)
+        // --- THE ARCHITECTURAL FIX ---
+        // Process exactly 1024 samples at a time. This divorces the DSP from the DAW buffer size,
+        // preventing skipped frames and double-ticked smoothers.
+        while (octaves[0].fifo.getNumReady() >= 1024)
         {
-            auto& fifo = octaves[static_cast<size_t> (oct)].fifo;
-            auto& buffer = octaves[static_cast<size_t> (oct)].buffer;
-            auto& win = slidingWindows[static_cast<size_t> (oct)];
-
-            int numReady = fifo.getNumReady();
-            if (numReady > 0)
+            for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct)
             {
-                // ONLY COUNT RAW SAMPLES IN THE HIGHEST OCTAVE
-                if (oct == 0) samplesSinceLastCqt += numReady;
+                auto& fifo = octaves[static_cast<size_t> (oct)].fifo;
+                auto& buffer = octaves[static_cast<size_t> (oct)].buffer;
+                auto& win = slidingWindows[static_cast<size_t> (oct)];
 
-                int toRead = std::min (numReady, signalBlockSize);
-                if (numReady > toRead) fifo.finishedRead (numReady - toRead);
+                // Calculate exactly how many samples this octave should process
+                // Oct 0: 1024, Oct 1: 512, Oct 2: 256...
+                int samplesWanted = 1024 >> oct;
 
-                if (toRead < signalBlockSize) {
-                    std::memmove (win.data(), win.data() + toRead, 
-                                  static_cast<size_t> (signalBlockSize - toRead) * sizeof (float));
-                }
-
-                // Append new data
                 int start1, size1, start2, size2;
-                fifo.prepareToRead (toRead, start1, size1, start2, size2);
-                if (size1 > 0) std::copy (buffer.begin() + start1, buffer.begin() + start1 + size1, 
-                                         win.begin() + (static_cast<ptrdiff_t>(signalBlockSize) - toRead));
-                if (size2 > 0) std::copy (buffer.begin() + start2, buffer.begin() + start2 + size2, 
-                                         win.begin() + (static_cast<ptrdiff_t>(signalBlockSize) - toRead) + size1);
-                fifo.finishedRead (toRead);
+                fifo.prepareToRead (samplesWanted, start1, size1, start2, size2);
+                int actualRead = size1 + size2;
+
+                if (actualRead > 0)
+                {
+                    // Shift the sliding window left
+                    std::memmove (win.data(), win.data() + actualRead,
+                                  static_cast<size_t> (signalBlockSize - actualRead) * sizeof (float));
+
+                    // Append the cleanly extracted data
+                    if (size1 > 0) std::copy (buffer.begin() + start1, buffer.begin() + start1 + size1,
+                                             win.begin() + (static_cast<ptrdiff_t>(signalBlockSize) - actualRead));
+                    if (size2 > 0) std::copy (buffer.begin() + start2, buffer.begin() + start2 + size2,
+                                             win.begin() + (static_cast<ptrdiff_t>(signalBlockSize) - actualRead) + size1);
+
+                    fifo.finishedRead (actualRead);
+                }
             }
-        }
 
-        // --- THE TIME DILATION FIX ---
-        // Only run the CQT and Smoothers exactly when 1024 samples have accumulated
-        if (samplesSinceLastCqt >= 1024)
-        {
-            samplesSinceLastCqt -= 1024; // Reset counter, maintaining perfect temporal accuracy
-
+            // Perform the CQT on the perfectly aligned overlapping windows!
             for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct)
             {
                 const auto& win = slidingWindows[static_cast<size_t>(oct)];
@@ -136,17 +132,19 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 {
                     cqt.transform (win, cqtSpectrum);
                     
+                    // --- THE THRESHOLD FIX ---
+                    // Adjust this gain until your attacks feel instantly snappy again.
+                    const double inputGain = 8.0;
+
                     int startIndex = (PitchengaAudioProcessor::numOctaves - 1 - oct) * binsPerOctave;
                     for (size_t i = 0; i < cqtSpectrum.size(); ++i) {
-                        double amplitude = std::abs (cqtSpectrum[i]);
+                        double amplitude = std::abs (cqtSpectrum[i]) * inputGain;
                         amplitudeSpectrumDb[static_cast<size_t> (startIndex) + i] = amplitudeToDbRescaled (amplitude);
                     }
                 }
             }
 
-            // Global pre-filtering (Matching MusicAnalyzer.java)
             const auto& filteredSpectrum = allBinSmoother->smooth (amplitudeSpectrumDb);
-
             const auto& detectedPitchClasses = pcDetector->detectPitchClasses (filteredSpectrum);
             const auto& equalizedPitchClasses = spectralEqualizer->filter (detectedPitchClasses);
 
@@ -159,8 +157,8 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 octaveBins[static_cast<size_t> (i)] = maxVal;
             }
 
-            // const auto& smoothed = octaveBinSmoother->smooth (octaveBins);
-            const auto& smoothed = octaveBins;
+            const auto& smoothed = octaveBinSmoother->smooth (octaveBins);
+            // const auto& smoothed = octaveBins;
 
             {
                 const juce::CriticalSection::ScopedLockType lock (resultLock);
@@ -291,7 +289,7 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
         float rawVelocity = static_cast<float>(smoothedOctaveBins[i]);
 
         // Rank-based amplification
-        float renderVelocity = rawVelocity * (binOrders[i] * 0.013f);
+        float renderVelocity = rawVelocity * (binOrders[i] * 0.008f);
         if (i == biggestBinNumber) {
             renderVelocity *= 1.3f;
         }
