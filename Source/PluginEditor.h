@@ -6,7 +6,6 @@
 #include "PluginProcessor.h"
 #include <array>
 #include <vector>
-#include <string>
 
 // Ported Domain Models from Java logic - Renamed to match legacy solfège names
 enum class Tone { Do, Ra, Re, Me, Mi, Fa, Fi, So, Le, La, Te, Ti };
@@ -17,8 +16,6 @@ struct Pitch
     int number;
     double frequency;
     juce::Colour color;
-    std::string noteName;
-    std::string colorName;
 };
 
 class PitchengaAudioProcessorEditor : public juce::AudioProcessorEditor,
