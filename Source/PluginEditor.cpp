@@ -43,7 +43,8 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::setupBuffers()
 
     workBuffer.assign (signalBlockSize, 0.0f);
     
-    slidingWindows.assign (static_cast<size_t> (PitchengaAudioProcessor::numOctaves), 
+    // Initialize sliding windows for each octave
+    slidingWindows.assign (static_cast<size_t> (PitchengaAudioProcessor::numOctaves),
                            std::vector<float>(signalBlockSize, 0.0f));
 
     cqtSpectrum.resize (static_cast<size_t> (cqt.getKernelBins()));
@@ -92,6 +93,7 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
             auto& buffer = octaves[static_cast<size_t> (oct)].buffer;
             auto& win = slidingWindows[static_cast<size_t> (oct)];
 
+            // Safety check against race conditions during resize
             if (win.size() != static_cast<size_t>(signalBlockSize)) continue;
 
             int numReady = fifo.getNumReady();
@@ -100,14 +102,19 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 if (oct == 0) hasNewAudio = true;
 
                 int toRead = std::min (numReady, signalBlockSize);
-                if (numReady > toRead) fifo.finishedRead (numReady - toRead);
 
+                // Jump to latest data
+                if (numReady > toRead)
+                    fifo.finishedRead (numReady - toRead);
+
+                // Shift window
                 if (toRead < signalBlockSize)
                 {
                     std::memmove (win.data(), win.data() + toRead, 
                                   static_cast<size_t> (signalBlockSize - toRead) * sizeof (float));
                 }
 
+                // Append new data
                 int start1, size1, start2, size2;
                 fifo.prepareToRead (toRead, start1, size1, start2, size2);
                 if (size1 > 0) std::copy (buffer.begin() + start1, buffer.begin() + start1 + size1, 
@@ -129,12 +136,12 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
 
                     // Apply Octave-dependent gain tilt (higher octaves get more boost)
                     // oct=0 is highest freq (C8), oct=5 is lowest (C3).
-                    float octaveTilt = 1.0f + (static_cast<float>(oct) * 0.15f);
+                    // float octaveTilt = 1.0f + (static_cast<float>(oct) * 0.15f);
                     
                     int startIndex = (PitchengaAudioProcessor::numOctaves - 1 - oct) * binsPerOctave;
                     for (size_t i = 0; i < cqtSpectrum.size(); ++i) {
                         // Global gain boost (2.0x) + Tilt
-                        double amplitude = std::abs (cqtSpectrum[i]) * 2.0 * octaveTilt;
+                        double amplitude = std::abs (cqtSpectrum[i]) * 2.0;
                         amplitudeSpectrumDb[static_cast<size_t> (startIndex) + i] = amplitudeToDbRescaled (amplitude);
                     }
                 }
@@ -167,13 +174,11 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 int binIdx = ranks[static_cast<size_t>(i)].index;
                 double velocity = octaveBins[static_cast<size_t>(binIdx)];
                 
-                // Softer rank multiplier (floor at 0.4 to prevent total silence of secondary notes)
-                double multiplier = 0.4 + (static_cast<double>(i) / static_cast<double>(binsPerOctave)) * 0.8;
-                velocity *= multiplier;
-                
+                velocity *= static_cast<double>(i) * 0.013;
+
                 if (i == binsPerOctave - 1) velocity *= 1.3; // Loudest peak boost
 
-                octaveBins[static_cast<size_t>(binIdx)] = std::min (velocity, 1.5);
+                octaveBins[static_cast<size_t>(binIdx)] = std::min (velocity, 1.2);
             }
 
             const auto& smoothed = octaveBinSmoother->smooth (octaveBins);
