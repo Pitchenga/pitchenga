@@ -67,6 +67,7 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::updateSampleRate (double ne
 
 double PitchengaAudioProcessorEditor::CqtWorkerThread::amplitudeToDbRescaled (double amplitude)
 {
+    // Exact port of HarmonEye's DecibelCalculator.java
     constexpr double zeroAmplitudeDb = -90.30899869919436; 
     constexpr double zeroAmplitudeDbInv = 1.0 / zeroAmplitudeDb;
 
@@ -133,19 +134,17 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 {
                     cqt.transform (win, cqtSpectrum);
 
-                    // Boost higher frequencies to compensate for energy drop-off and shorter windows
-                    // oct=0 is high freq (C7-C8), oct=5 is low freq (C2-C3)
-                    double octaveBoost = std::pow(1.5, static_cast<double>(PitchengaAudioProcessor::numOctaves - 1 - oct));
-
                     int startIndex = (PitchengaAudioProcessor::numOctaves - 1 - oct) * binsPerOctave;
                     for (size_t i = 0; i < cqtSpectrum.size(); ++i) {
-                        double amplitude = std::abs (cqtSpectrum[i]) * octaveBoost;
+                        double amplitude = std::abs (cqtSpectrum[i]);
                         amplitudeSpectrumDb[static_cast<size_t> (startIndex) + i] = amplitudeToDbRescaled (amplitude);
                     }
                 }
             }
 
+            // Global pre-filtering (Matching MusicAnalyzer.java)
             const auto& filteredSpectrum = allBinSmoother->smooth (amplitudeSpectrumDb);
+
             const auto& detectedPitchClasses = pcDetector->detectPitchClasses (filteredSpectrum);
             const auto& equalizedPitchClasses = spectralEqualizer->filter (detectedPitchClasses);
 
@@ -172,7 +171,7 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
             {
                 int binIdx = ranks[static_cast<size_t>(i)].index;
                 double velocity = octaveBins[static_cast<size_t>(binIdx)];
-                double multiplier = 0.5 + (static_cast<double>(i) / static_cast<double>(binsPerOctave)) * 0.7;
+                double multiplier = 0.4 + (static_cast<double>(i) / static_cast<double>(binsPerOctave)) * 0.8;
                 velocity *= multiplier;
                 if (i == binsPerOctave - 1) velocity *= 1.3;
                 octaveBins[static_cast<size_t>(binIdx)] = std::min (velocity, 1.5);
