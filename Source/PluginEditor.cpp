@@ -39,6 +39,7 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::setupBuffers()
 
     pcDetector = std::make_unique<HarmonicPatternPitchClassDetector> (binsPerOctave, config.binsPerHalftone);
     spectralEqualizer = std::make_unique<SpectralEqualizer> (totalBins, 30);
+    allBinSmoother = std::make_unique<ExpSmoother> (totalBins, 0.2);
     octaveBinSmoother = std::make_unique<ExpSmoother> (binsPerOctave, 0.35);
 
     workBuffer.assign (signalBlockSize, 0.0f);
@@ -67,10 +68,14 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::updateSampleRate (double ne
 
 double PitchengaAudioProcessorEditor::CqtWorkerThread::amplitudeToDbRescaled (double amplitude)
 {
-    if (amplitude <= 1e-6) return 0.0;
+    // Exact port of HarmonEye's DecibelCalculator.java
+    constexpr double zeroAmplitudeDb = -90.30899869919436;
+    constexpr double zeroAmplitudeDbInv = 1.0 / zeroAmplitudeDb;
+
+    if (amplitude <= 0.00003051757) return 0.0;
+
     double db = 20.0 * std::log10 (amplitude);
-    double rescaled = (db + 96.0) / 96.0; 
-    return juce::jlimit (0.0, 1.0, rescaled);
+    return std::max (0.0, 1.0 - (db * zeroAmplitudeDbInv));
 }
 
 void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
@@ -143,7 +148,10 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 }
             }
 
-            const auto& detectedPitchClasses = pcDetector->detectPitchClasses (amplitudeSpectrumDb);
+            // Global pre-filtering (Matching MusicAnalyzer.java)
+            const auto& filteredSpectrum = allBinSmoother->smooth (amplitudeSpectrumDb);
+
+            const auto& detectedPitchClasses = pcDetector->detectPitchClasses (filteredSpectrum);
             const auto& equalizedPitchClasses = spectralEqualizer->filter (detectedPitchClasses);
 
             std::fill (octaveBins.begin(), octaveBins.end(), 0.0);
@@ -169,12 +177,10 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
             {
                 int binIdx = ranks[static_cast<size_t>(i)].index;
                 double velocity = octaveBins[static_cast<size_t>(binIdx)];
-
-                velocity *= static_cast<double>(i) * 0.013;
-
+                double multiplier = 0.4 + (static_cast<double>(i) / static_cast<double>(binsPerOctave)) * 0.8;
+                velocity *= multiplier;
                 if (i == binsPerOctave - 1) velocity *= 1.3; // Loudest peak boost
-
-                octaveBins[static_cast<size_t>(binIdx)] = std::min (velocity, 1.2);
+                octaveBins[static_cast<size_t>(binIdx)] = std::min (velocity, 1.5);
             }
 
             const auto& smoothed = octaveBinSmoother->smooth (octaveBins);

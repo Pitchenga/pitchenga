@@ -59,6 +59,7 @@ private:
         CqtEngine cqt;
         std::unique_ptr<HarmonicPatternPitchClassDetector> pcDetector;
         std::unique_ptr<SpectralEqualizer> spectralEqualizer;
+        std::unique_ptr<ExpSmoother> allBinSmoother;
         std::unique_ptr<ExpSmoother> octaveBinSmoother;
 
         std::vector<float> workBuffer;

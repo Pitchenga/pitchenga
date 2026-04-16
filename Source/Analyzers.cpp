@@ -77,18 +77,29 @@ HarmonicPatternPitchClassDetector::HarmonicPatternPitchClassDetector(int binsPer
 
 double HarmonicPatternPitchClassDetector::extractHarmonics(const std::vector<double>& cqBins, int baseFreqBin) const {
     double dotProduct = 0.0;
-    double totalWeight = 0.0;
     int centerFreqBin = baseFreqBin - binsPerHalftoneHalf;
     
+    double totalPossibleWeight = 0.0;
+    double accumulatedWeight = 0.0;
+
     for (int i = 1; i <= harmonicCount; ++i) {
+        double weight = 1.0 - 0.5 * (i - 1) * harmonicCountMinusOneInv; // HARMONIC_WEIGHT_FALLOFF = 0.5
+        totalPossibleWeight += weight;
+
         int harmonicBin = centerFreqBin + harmonicBinsIndexes[i - 1];
         if (harmonicBin >= 0 && harmonicBin < static_cast<int>(cqBins.size())) {
-            double weight = 1.0 - 0.5 * (i - 1) * harmonicCountMinusOneInv; // HARMONIC_WEIGHT_FALLOFF = 0.5
-            dotProduct += weight * cqBins[harmonicBin];
-            totalWeight += weight;
+            dotProduct += weight * cqBins[static_cast<size_t>(harmonicBin)];
+            accumulatedWeight += weight;
         }
     }
-    return (totalWeight > 0.0) ? (dotProduct / totalWeight) : 0.0;
+
+    // Compensation: If harmonics are truncated by the spectrum ceiling (common for high notes),
+    // scale the result up to what it would have been with the full harmonic series.
+    if (accumulatedWeight > 0.1) {
+        dotProduct *= (totalPossibleWeight / accumulatedWeight);
+    }
+
+    return dotProduct;
 }
 
 const std::vector<double>& HarmonicPatternPitchClassDetector::detectPitchClasses(const std::vector<double>& cqBins) {
@@ -104,7 +115,7 @@ const std::vector<double>& HarmonicPatternPitchClassDetector::detectPitchClasses
     double harmonicSum = std::accumulate(harmonicBins.begin(), harmonicBins.end(), 0.0);
     double origSum = std::accumulate(cqBins.begin(), cqBins.end(), 0.0);
 
-    if (harmonicSum > 1e-9) {
+    if (harmonicSum > 0.0) {
         double normalizationFactor = origSum / harmonicSum;
         for (int i = 0; i < size; ++i) {
             harmonicBins[i] *= normalizationFactor;
