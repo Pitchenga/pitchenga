@@ -16,6 +16,8 @@ struct Pitch
     int number;
     double frequency;
     juce::Colour color;
+    const char* colorName;
+    const char* letterNote;
 };
 
 class PitchengaAudioProcessorEditor : public juce::AudioProcessorEditor,
