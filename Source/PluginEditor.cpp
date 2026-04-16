@@ -80,6 +80,8 @@ double PitchengaAudioProcessorEditor::CqtWorkerThread::amplitudeToDbRescaled (do
 
 void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
 {
+    int samplesSinceLastCqt = 0;
+
     while (! threadShouldExit())
     {
         updateSampleRate (processor.getSampleRate());
@@ -87,10 +89,8 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
         auto& octaves = processor.getOctaves();
         const int signalBlockSize = cqt.getSignalBlockSize();
         const int binsPerOctave = cqt.getBinsPerOctave();
-        
-        if (signalBlockSize <= 0 || slidingWindows.empty()) { wait(10); continue; }
 
-        bool hasNewAudio = false;
+        if (signalBlockSize <= 0 || slidingWindows.empty()) { wait(5); continue; }
 
         for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct)
         {
@@ -98,23 +98,16 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
             auto& buffer = octaves[static_cast<size_t> (oct)].buffer;
             auto& win = slidingWindows[static_cast<size_t> (oct)];
 
-            // Safety check against race conditions during resize
-            if (win.size() != static_cast<size_t>(signalBlockSize)) continue;
-
             int numReady = fifo.getNumReady();
             if (numReady > 0)
             {
-                if (oct == 0) hasNewAudio = true;
+                // ONLY COUNT RAW SAMPLES IN THE HIGHEST OCTAVE
+                if (oct == 0) samplesSinceLastCqt += numReady;
 
                 int toRead = std::min (numReady, signalBlockSize);
+                if (numReady > toRead) fifo.finishedRead (numReady - toRead);
 
-                // Jump to latest data
-                if (numReady > toRead)
-                    fifo.finishedRead (numReady - toRead);
-
-                // Shift window
-                if (toRead < signalBlockSize)
-                {
+                if (toRead < signalBlockSize) {
                     std::memmove (win.data(), win.data() + toRead, 
                                   static_cast<size_t> (signalBlockSize - toRead) * sizeof (float));
                 }
@@ -130,8 +123,12 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
             }
         }
 
-        if (hasNewAudio)
+        // --- THE TIME DILATION FIX ---
+        // Only run the CQT and Smoothers exactly when 1024 samples have accumulated
+        if (samplesSinceLastCqt >= 1024)
         {
+            samplesSinceLastCqt -= 1024; // Reset counter, maintaining perfect temporal accuracy
+
             for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct)
             {
                 const auto& win = slidingWindows[static_cast<size_t>(oct)];

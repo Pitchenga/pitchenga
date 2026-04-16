@@ -6,6 +6,42 @@
 #include <vector>
 #include <array>
 
+class FastButterworth
+{
+    std::array<float, 7> inputSamples {0.0f};
+    std::array<float, 7> outputSamples {0.0f};
+    static constexpr float gainInv = 1.0f / 33.79723001f;
+    const std::array<float, 7> inCoeffs = {1.0f, 6.0f, 15.0f, 20.0f, 15.0f, 6.0f, 1.0f};
+    const std::array<float, 7> outCoeffs = {-0.0017509260f, 0.0f, -0.1141994251f, 0.0f, -0.7776959619f, 0.0f, 0.0f};
+
+public:
+    float processSample (float signal)
+    {
+        // Shift history buffers
+        for (int i = 0; i < 6; ++i) {
+            inputSamples[i] = inputSamples[i + 1];
+            outputSamples[i] = outputSamples[i + 1];
+        }
+
+        inputSamples[6] = signal * gainInv;
+
+        float sumIn = 0.0f;
+        float sumOut = 0.0f;
+        for (int i = 0; i < 7; ++i) {
+            sumIn += inCoeffs[i] * inputSamples[i];
+            sumOut += outCoeffs[i] * outputSamples[i];
+        }
+
+        outputSamples[6] = sumIn + sumOut;
+        return outputSamples[6];
+    }
+
+    void reset() {
+        inputSamples.fill(0.0f);
+        outputSamples.fill(0.0f);
+    }
+};
+
 class PitchengaAudioProcessor : public juce::AudioProcessor
 {
 public:
@@ -45,7 +81,7 @@ public:
     struct OctaveBuffer {
         juce::AbstractFifo fifo { fifoSize };
         std::vector<float> buffer;
-        juce::dsp::IIR::Filter<float> lowpass;
+        FastButterworth lowpass;
         bool dropNext = false;
 
         OctaveBuffer() : buffer(fifoSize, 0.0f) {}
@@ -60,3 +96,4 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PitchengaAudioProcessor)
 };
+

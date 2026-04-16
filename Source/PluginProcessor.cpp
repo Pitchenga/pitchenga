@@ -22,7 +22,6 @@ void PitchengaAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
         std::fill (octaves[i].buffer.begin(), octaves[i].buffer.end(), 0.0f);
         
         double currentSR = sampleRate / std::pow(2.0, i);
-        octaves[i].lowpass.coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass (currentSR, currentSR / 4.0);
         octaves[i].lowpass.reset();
         octaves[i].dropNext = false;
     }
