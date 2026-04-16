@@ -141,8 +141,7 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                     
                     int startIndex = (PitchengaAudioProcessor::numOctaves - 1 - oct) * binsPerOctave;
                     for (size_t i = 0; i < cqtSpectrum.size(); ++i) {
-                        // Global gain boost (2.0x)
-                        double amplitude = std::abs (cqtSpectrum[i]) * 2.0;
+                        double amplitude = std::abs (cqtSpectrum[i]);
                         amplitudeSpectrumDb[static_cast<size_t> (startIndex) + i] = amplitudeToDbRescaled (amplitude);
                     }
                 }
@@ -161,26 +160,6 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                     maxVal = std::max (maxVal, equalizedPitchClasses[static_cast<size_t> (j)]);
                 }
                 octaveBins[static_cast<size_t> (i)] = maxVal;
-            }
-
-            // --- Tuned Rank-Based Amplification ---
-            struct BinRank { int index; double velocity; };
-            std::vector<BinRank> ranks (static_cast<size_t>(binsPerOctave));
-            for (int i = 0; i < binsPerOctave; ++i)
-                ranks[static_cast<size_t>(i)] = { i, octaveBins[static_cast<size_t>(i)] };
-
-            std::sort (ranks.begin(), ranks.end(), [](const BinRank& a, const BinRank& b) {
-                return a.velocity < b.velocity;
-            });
-
-            for (int i = 0; i < binsPerOctave; ++i)
-            {
-                int binIdx = ranks[static_cast<size_t>(i)].index;
-                double velocity = octaveBins[static_cast<size_t>(binIdx)];
-                double multiplier = 0.4 + (static_cast<double>(i) / static_cast<double>(binsPerOctave)) * 0.8;
-                velocity *= multiplier;
-                if (i == binsPerOctave - 1) velocity *= 1.3; // Loudest peak boost
-                octaveBins[static_cast<size_t>(binIdx)] = std::min (velocity, 1.5);
             }
 
             const auto& smoothed = octaveBinSmoother->smooth (octaveBins);
@@ -237,21 +216,40 @@ void PitchengaAudioProcessorEditor::timerCallback()
 
 juce::Colour PitchengaAudioProcessorEditor::calculateColor (float velocity, float toneRatio)
 {
+    // Wrap the shifted toneRatio safely
     float wrappedRatio = std::fmod (toneRatio, 12.0f);
-    if (wrappedRatio < 0) wrappedRatio += 12.0f;
+    if (wrappedRatio < 0.0f) wrappedRatio += 12.0f;
 
     int toneNumber = static_cast<int> (std::floor (wrappedRatio));
     float diff = wrappedRatio - static_cast<float> (toneNumber);
 
     int currentIdx = toneNumber % 12;
-    int nextIdx = (currentIdx + 1) % 12;
+    juce::Colour toneColor = chromaticScale[static_cast<size_t>(currentIdx)].color;
 
-    juce::Colour currentToneColor = chromaticScale[static_cast<size_t>(currentIdx)].color;
-    juce::Colour nextToneColor = chromaticScale[static_cast<size_t>(nextIdx)].color;
+    // --- Port of getGuessAndPitchinessColor & transposePitch ---
+    juce::Colour guessColor;
+    if (std::abs(diff) < 0.000000000042f)
+    {
+        guessColor = toneColor;
+    }
+    else
+    {
+        // Transpose -1 or +1 step depending on diff direction
+        int pitchyIdx = diff < 0 ? (currentIdx - 1) : (currentIdx + 1);
+        if (pitchyIdx < 0) pitchyIdx += 12;
+        pitchyIdx %= 12;
 
-    juce::Colour baseColor = currentToneColor.interpolatedWith (nextToneColor, diff);
-    float colorVelocity = juce::jlimit (0.0f, 1.0f, velocity * 1.2f);
-    return juce::Colours::black.interpolatedWith (baseColor, colorVelocity);
+        juce::Colour pitchyColor = chromaticScale[static_cast<size_t>(pitchyIdx)].color;
+
+        // Simple approximation of the ordinal pitchinessDiff logic
+        float pitchinessDiff = std::abs(diff);
+        guessColor = toneColor.interpolatedWith (pitchyColor, pitchinessDiff);
+    }
+
+    float colorVelocity = 0.3f + (velocity * 1.2f);
+    if (colorVelocity > 1.0f) colorVelocity = 1.0f;
+
+    return juce::Colours::black.interpolatedWith (guessColor, colorVelocity);
 }
 
 void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
@@ -262,22 +260,48 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
     auto center = bounds.getCentre();
     auto baseRadius = std::min (bounds.getWidth(), bounds.getHeight()) * 0.45f;
 
+    // 1. Sort to get bin ranks (Matching Java indexToVelocityPairs)
+    struct BinData { int index; float velocity; };
+    std::vector<BinData> sortedBins (totalFoldedBins);
+    for (int i = 0; i < totalFoldedBins; ++i) {
+        sortedBins[i] = { i, static_cast<float>(smoothedOctaveBins[i]) };
+    }
+
+    std::sort (sortedBins.begin(), sortedBins.end(), [](const BinData& a, const BinData& b) {
+        return a.velocity < b.velocity;
+    });
+
+    std::vector<int> binOrders (totalFoldedBins);
+    for (int rank = 0; rank < totalFoldedBins; ++rank) {
+        binOrders[sortedBins[rank].index] = rank;
+    }
+
+    int biggestBinNumber = sortedBins.back().index;
+
+    // 2. Render Loop
     for (int i = 0; i < totalFoldedBins; ++i)
     {
-        float velocity = static_cast<float>(smoothedOctaveBins[static_cast<size_t>(i)]);
-        float toneRatio = static_cast<float> (i) / static_cast<float> (binsPerSemitone);
-        juce::Colour color = calculateColor (velocity, toneRatio);
+        float rawVelocity = static_cast<float>(smoothedOctaveBins[i]);
 
-        float currentRadius = baseRadius * velocity;
-        float alpha = juce::jlimit (0.0f, 1.0f, velocity);
+        // Rank-based amplification
+        float renderVelocity = rawVelocity * (binOrders[i] * 0.013f);
+        if (i == biggestBinNumber) {
+            renderVelocity *= 1.3f;
+        }
+        renderVelocity = std::min (renderVelocity, 1.15f);
+
+        float toneRatio = static_cast<float> (i) / static_cast<float> (binsPerSemitone);
+        juce::Colour color = calculateColor (renderVelocity, toneRatio);
+
+        // Use the amplified velocity for radius
+        float currentRadius = baseRadius * renderVelocity;
 
         auto& originalPath = segmentPaths[static_cast<size_t>(i)];
         auto transform = juce::AffineTransform::scale (currentRadius, currentRadius).translated (center.x, center.y);
 
-        g.setColour (color.withAlpha (alpha));
+        g.setColour (color);
         g.fillPath (originalPath, transform);
 
-        g.setColour (color.withAlpha (velocity * 0.2f));
         g.strokePath (originalPath, strokeType, transform);
     }
 }
