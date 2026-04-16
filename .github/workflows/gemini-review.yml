@@ -1,7 +1,8 @@
 name: Auto-Trigger Gemini Review
 on:
     pull_request:
-        types: [opened, synchronize]
+#        types: [opened, synchronize]
+        types: [opened]
 
 jobs:
     trigger-review:
