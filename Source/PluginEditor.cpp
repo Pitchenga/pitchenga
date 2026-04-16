@@ -216,14 +216,18 @@ void PitchengaAudioProcessorEditor::timerCallback()
 
 juce::Colour PitchengaAudioProcessorEditor::calculateColor (float velocity, float toneRatio)
 {
-    // Wrap the shifted toneRatio safely
-    float wrappedRatio = std::fmod (toneRatio, 12.0f);
+    // 1. NO std::fmod() NEEDED.
+    // toneRatio only ever ranges from -0.444 to 11.444.
+    // A single addition handles the negative wrap perfectly.
+    float wrappedRatio = toneRatio;
     if (wrappedRatio < 0.0f) wrappedRatio += 12.0f;
 
     int toneNumber = static_cast<int> (std::floor (wrappedRatio));
     float diff = wrappedRatio - static_cast<float> (toneNumber);
 
-    int currentIdx = toneNumber % 12;
+    // 2. NO MODULO NEEDED.
+    // wrappedRatio is strictly [0.0, 12.0), so toneNumber is strictly 0 to 11.
+    int currentIdx = toneNumber;
     juce::Colour toneColor = chromaticScale[static_cast<size_t>(currentIdx)].color;
 
     // --- Port of getGuessAndPitchinessColor & transposePitch ---
@@ -238,6 +242,11 @@ juce::Colour PitchengaAudioProcessorEditor::calculateColor (float velocity, floa
         int pitchyIdx = diff < 0 ? (currentIdx - 1) : (currentIdx + 1);
         if (pitchyIdx < 0) pitchyIdx += 12;
         pitchyIdx %= 12;
+
+        // 3. NO MODULO NEEDED.
+        // It only moves by exactly 1 step, so a simple bounds check wraps it perfectly.
+        if (pitchyIdx < 0) pitchyIdx = 11;
+        else if (pitchyIdx > 11) pitchyIdx = 0;
 
         juce::Colour pitchyColor = chromaticScale[static_cast<size_t>(pitchyIdx)].color;
 
