@@ -6,16 +6,26 @@ PitchengaAudioProcessor::PitchengaAudioProcessor()
                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true))
 {
-    fifoBuffer.resize (fifoSize);
 }
 
 PitchengaAudioProcessor::~PitchengaAudioProcessor() {}
 
 void PitchengaAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    juce::ignoreUnused (sampleRate, samplesPerBlock);
-    fifo.reset();
-    std::fill (fifoBuffer.begin(), fifoBuffer.end(), 0.0f);
+    const size_t bufferSize = static_cast<size_t> (std::max (samplesPerBlock, 4096));
+    monoBuffer.assign (bufferSize, 0.0f);
+    nextStageBuffer.assign (bufferSize, 0.0f);
+    
+    for (int i = 0; i < numOctaves; ++i)
+    {
+        octaves[i].fifo.reset();
+        std::fill (octaves[i].buffer.begin(), octaves[i].buffer.end(), 0.0f);
+        
+        double currentSR = sampleRate / std::pow(2.0, i);
+        octaves[i].lowpass.coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass (currentSR, currentSR / 4.0);
+        octaves[i].lowpass.reset();
+        octaves[i].dropNext = false;
+    }
 }
 
 void PitchengaAudioProcessor::releaseResources() {}
@@ -43,30 +53,67 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         buffer.clear (i, 0, buffer.getNumSamples());
 
     const int numSamples = buffer.getNumSamples();
+    if (numSamples == 0) return;
 
-    // Mono Mixdown and Push to lock-free FIFO
-    const auto scope = fifo.write (numSamples);
+    // Safety check: if host exceeds promised block size, we must skip to avoid OOB/Allocation
+    if (static_cast<size_t>(numSamples) > monoBuffer.size()) return;
 
-    auto pushToFifo = [&](int fifoStart, int amount, int bufferOffset)
+    // Mix down to mono into pre-allocated buffer
+    float* monoData = monoBuffer.data();
+    if (totalNumInputChannels == 1)
     {
-        float* dest = fifoBuffer.data() + static_cast<size_t> (fifoStart);
+        juce::FloatVectorOperations::copy (monoData, buffer.getReadPointer (0), numSamples);
+    }
+    else if (totalNumInputChannels >= 2)
+    {
+        auto* left = buffer.getReadPointer (0);
+        auto* right = buffer.getReadPointer (1);
+        juce::FloatVectorOperations::copy (monoData, left, numSamples);
+        juce::FloatVectorOperations::add (monoData, right, numSamples);
+        juce::FloatVectorOperations::multiply (monoData, 0.5f, numSamples);
+    }
 
-        if (totalNumInputChannels == 1)
+    // Cascade multi-rate decimation using pointer swapping
+    float* currentStageData = monoData;
+    float* nextStageData = nextStageBuffer.data();
+    int currentStageSize = numSamples;
+
+    for (int oct = 0; oct < numOctaves; ++oct)
+    {
+        // 1. Push current stage samples to this octave's lock-free FIFO
+        auto scope = octaves[oct].fifo.write (currentStageSize);
+        
+        if (scope.blockSize1 > 0) 
+            juce::FloatVectorOperations::copy (octaves[oct].buffer.data() + scope.startIndex1, 
+                                               currentStageData, 
+                                               scope.blockSize1);
+                                               
+        if (scope.blockSize2 > 0) 
+            juce::FloatVectorOperations::copy (octaves[oct].buffer.data() + scope.startIndex2, 
+                                               currentStageData + scope.blockSize1, 
+                                               scope.blockSize2);
+
+        // 2. Filter and Decimate by 2 for the next octave
+        if (oct < numOctaves - 1)
         {
-            juce::FloatVectorOperations::copy (dest, buffer.getReadPointer (0, bufferOffset), amount);
+            int nextIdx = 0;
+            for (int i = 0; i < currentStageSize; ++i)
+            {
+                float filtered = octaves[oct].lowpass.processSample (currentStageData[i]);
+                if (! octaves[oct].dropNext)
+                {
+                    nextStageData[nextIdx++] = filtered;
+                }
+                octaves[oct].dropNext = ! octaves[oct].dropNext;
+            }
+            
+            // Swap pointers for the next octave iteration
+            float* temp = currentStageData;
+            currentStageData = nextStageData;
+            nextStageData = temp;
+            currentStageSize = nextIdx;
         }
-        else if (totalNumInputChannels >= 2)
-        {
-            auto* left = buffer.getReadPointer (0, bufferOffset);
-            auto* right = buffer.getReadPointer (1, bufferOffset);
-
-            juce::FloatVectorOperations::multiply (dest, left, 0.5f, amount);
-            juce::FloatVectorOperations::addWithMultiply (dest, right, 0.5f, amount);
-        }
-    };
-
-    if (scope.blockSize1 > 0) pushToFifo (scope.startIndex1, scope.blockSize1, 0);
-    if (scope.blockSize2 > 0) pushToFifo (scope.startIndex2, scope.blockSize2, scope.blockSize1);
+    }
 }
 
 juce::AudioProcessorEditor* PitchengaAudioProcessor::createEditor()

@@ -2,7 +2,9 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_utils/juce_audio_utils.h>
+#include <juce_dsp/juce_dsp.h>
 #include <vector>
+#include <array>
 
 class PitchengaAudioProcessor : public juce::AudioProcessor
 {
@@ -36,14 +38,25 @@ public:
     void getStateInformation (juce::MemoryBlock& destData) override { juce::ignoreUnused (destData); }
     void setStateInformation (const void* data, int sizeInBytes) override { juce::ignoreUnused (data, sizeInBytes); }
 
-    // Lock-free FIFO access for the Editor
-    static constexpr int fifoSize = 16384;
-    juce::AbstractFifo& getFifo() { return fifo; }
-    const std::vector<float>& getFifoBuffer() const { return fifoBuffer; }
+    static constexpr int numOctaves = 6;
+    // 32768 is sufficient to hold the lowest octave buffers without overrun at 30fps
+    static constexpr int fifoSize = 32768; 
+
+    struct OctaveBuffer {
+        juce::AbstractFifo fifo { fifoSize };
+        std::vector<float> buffer;
+        juce::dsp::IIR::Filter<float> lowpass;
+        bool dropNext = false;
+
+        OctaveBuffer() : buffer(fifoSize, 0.0f) {}
+    };
+
+    std::array<OctaveBuffer, numOctaves>& getOctaves() { return octaves; }
 
 private:
-    juce::AbstractFifo fifo { fifoSize };
-    std::vector<float> fifoBuffer;
+    std::array<OctaveBuffer, numOctaves> octaves;
+    std::vector<float> monoBuffer;
+    std::vector<float> nextStageBuffer;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PitchengaAudioProcessor)
 };
