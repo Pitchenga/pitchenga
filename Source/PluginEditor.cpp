@@ -155,6 +155,28 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 octaveBins[static_cast<size_t> (i)] = maxVal;
             }
 
+            // --- Tuned Rank-Based Amplification ---
+            struct BinRank { int index; double velocity; };
+            std::vector<BinRank> ranks (static_cast<size_t>(binsPerOctave));
+            for (int i = 0; i < binsPerOctave; ++i)
+                ranks[static_cast<size_t>(i)] = { i, octaveBins[static_cast<size_t>(i)] };
+
+            std::sort (ranks.begin(), ranks.end(), [](const BinRank& a, const BinRank& b) {
+                return a.velocity < b.velocity;
+            });
+
+            for (int i = 0; i < binsPerOctave; ++i)
+            {
+                int binIdx = ranks[static_cast<size_t>(i)].index;
+                double velocity = octaveBins[static_cast<size_t>(binIdx)];
+
+                velocity *= static_cast<double>(i) * 0.013;
+
+                if (i == binsPerOctave - 1) velocity *= 1.3; // Loudest peak boost
+
+                octaveBins[static_cast<size_t>(binIdx)] = std::min (velocity, 1.2);
+            }
+
             const auto& smoothed = octaveBinSmoother->smooth (octaveBins);
 
             {
