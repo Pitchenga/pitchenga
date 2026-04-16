@@ -3,18 +3,18 @@
 #include <cmath>
 
 const std::array<Pitch, 12> PitchengaAudioProcessorEditor::chromaticScale = {{
-    { Tone::Do,  0, 16.35, juce::Colour::fromRGB (255, 0, 0) },
-    { Tone::Ra,  1, 17.32, juce::Colour::fromRGB (255, 127, 0) },
-    { Tone::Re,  2, 18.35, juce::Colour::fromRGB (255, 255, 0) },
-    { Tone::Me,  3, 19.45, juce::Colour::fromRGB (127, 255, 0) },
-    { Tone::Mi,  4, 20.60, juce::Colour::fromRGB (0, 255, 0) },
-    { Tone::Fa,  5, 21.83, juce::Colour::fromRGB (0, 255, 127) },
-    { Tone::Fi,  6, 23.12, juce::Colour::fromRGB (0, 255, 255) },
-    { Tone::So,  7, 24.50, juce::Colour::fromRGB (0, 127, 255) },
-    { Tone::Le,  8, 25.96, juce::Colour::fromRGB (0, 0, 255) },
-    { Tone::La,  9, 27.50, juce::Colour::fromRGB (127, 0, 255) },
-    { Tone::Te, 10, 29.14, juce::Colour::fromRGB (255, 0, 255) },
-    { Tone::Ti, 11, 30.87, juce::Colour::fromRGB (255, 0, 127) }
+    { Tone::Do,  0, 16.35, juce::Colour::fromRGB (255, 0, 0), "Red", "C" },
+    { Tone::Ra,  1, 17.32, juce::Colour::fromRGB (100, 42, 0), "Brown", "Db" },
+    { Tone::Re,  2, 18.35, juce::Colour::fromRGB (255, 87, 0), "Orange", "D" },
+    { Tone::Me,  3, 19.45, juce::Colour::fromRGB (171, 127, 0), "Ochre", "Eb" },
+    { Tone::Mi,  4, 20.60, juce::Colour::fromRGB (255, 255, 0), "Yellow", "E" },
+    { Tone::Fa,  5, 21.83, juce::Colour::fromRGB (0, 255, 0), "Green", "F" },
+    { Tone::Fi,  6, 23.12, juce::Colour::fromRGB (0, 127, 127), "Teal", "F#" },
+    { Tone::So,  7, 24.50, juce::Colour::fromRGB (0, 255, 255), "Cyan", "G" },
+    { Tone::Le,  8, 25.96, juce::Colour::fromRGB (0, 42, 137), "Navy", "Ab" },
+    { Tone::La,  9, 27.50, juce::Colour::fromRGB (0, 0, 255), "Blue", "A" },
+    { Tone::Te, 10, 29.14, juce::Colour::fromRGB (127, 0, 255), "Violet", "Bb" },
+    { Tone::Ti, 11, 30.87, juce::Colour::fromRGB (255, 0, 255), "Magenta", "B" }
 }};
 
 // --- CqtWorkerThread Implementation ---
