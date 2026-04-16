@@ -159,7 +159,8 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 octaveBins[static_cast<size_t> (i)] = maxVal;
             }
 
-            const auto& smoothed = octaveBinSmoother->smooth (octaveBins);
+            // const auto& smoothed = octaveBinSmoother->smooth (octaveBins);
+            const auto& smoothed = octaveBins;
 
             {
                 const juce::CriticalSection::ScopedLockType lock (resultLock);
