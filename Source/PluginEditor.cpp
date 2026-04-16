@@ -69,7 +69,7 @@ double PitchengaAudioProcessorEditor::CqtWorkerThread::amplitudeToDbRescaled (do
 {
     if (amplitude <= 1e-6) return 0.0;
     double db = 20.0 * std::log10 (amplitude);
-    double rescaled = (db + 80.0) / 80.0; 
+    double rescaled = (db + 96.0) / 96.0; 
     return juce::jlimit (0.0, 1.0, rescaled);
 }
 
@@ -133,14 +133,10 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 if (win.size() == static_cast<size_t>(signalBlockSize))
                 {
                     cqt.transform (win, cqtSpectrum);
-
-                    // Apply Octave-dependent gain tilt (higher octaves get more boost)
-                    // oct=0 is highest freq (C8), oct=5 is lowest (C3).
-                    // float octaveTilt = 1.0f + (static_cast<float>(oct) * 0.15f);
                     
                     int startIndex = (PitchengaAudioProcessor::numOctaves - 1 - oct) * binsPerOctave;
                     for (size_t i = 0; i < cqtSpectrum.size(); ++i) {
-                        // Global gain boost (2.0x) + Tilt
+                        // Global gain boost (2.0x)
                         double amplitude = std::abs (cqtSpectrum[i]) * 2.0;
                         amplitudeSpectrumDb[static_cast<size_t> (startIndex) + i] = amplitudeToDbRescaled (amplitude);
                     }
@@ -157,28 +153,6 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                     maxVal = std::max (maxVal, equalizedPitchClasses[static_cast<size_t> (j)]);
                 }
                 octaveBins[static_cast<size_t> (i)] = maxVal;
-            }
-
-            // --- Tuned Rank-Based Amplification ---
-            struct BinRank { int index; double velocity; };
-            std::vector<BinRank> ranks (static_cast<size_t>(binsPerOctave));
-            for (int i = 0; i < binsPerOctave; ++i)
-                ranks[static_cast<size_t>(i)] = { i, octaveBins[static_cast<size_t>(i)] };
-
-            std::sort (ranks.begin(), ranks.end(), [](const BinRank& a, const BinRank& b) {
-                return a.velocity < b.velocity;
-            });
-
-            for (int i = 0; i < binsPerOctave; ++i)
-            {
-                int binIdx = ranks[static_cast<size_t>(i)].index;
-                double velocity = octaveBins[static_cast<size_t>(binIdx)];
-                
-                velocity *= static_cast<double>(i) * 0.013;
-
-                if (i == binsPerOctave - 1) velocity *= 1.3; // Loudest peak boost
-
-                octaveBins[static_cast<size_t>(binIdx)] = std::min (velocity, 1.2);
             }
 
             const auto& smoothed = octaveBinSmoother->smooth (octaveBins);

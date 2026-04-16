@@ -77,16 +77,18 @@ HarmonicPatternPitchClassDetector::HarmonicPatternPitchClassDetector(int binsPer
 
 double HarmonicPatternPitchClassDetector::extractHarmonics(const std::vector<double>& cqBins, int baseFreqBin) const {
     double dotProduct = 0.0;
+    double totalWeight = 0.0;
     int centerFreqBin = baseFreqBin - binsPerHalftoneHalf;
     
     for (int i = 1; i <= harmonicCount; ++i) {
         int harmonicBin = centerFreqBin + harmonicBinsIndexes[i - 1];
-        if (harmonicBin < static_cast<int>(cqBins.size())) {
+        if (harmonicBin >= 0 && harmonicBin < static_cast<int>(cqBins.size())) {
             double weight = 1.0 - 0.5 * (i - 1) * harmonicCountMinusOneInv; // HARMONIC_WEIGHT_FALLOFF = 0.5
             dotProduct += weight * cqBins[harmonicBin];
+            totalWeight += weight;
         }
     }
-    return dotProduct;
+    return (totalWeight > 0.0) ? (dotProduct / totalWeight) : 0.0;
 }
 
 const std::vector<double>& HarmonicPatternPitchClassDetector::detectPitchClasses(const std::vector<double>& cqBins) {
