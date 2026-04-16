@@ -192,7 +192,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor (PitchengaAudioProc
     
     setSize (600, 600);
     worker.startThread (juce::Thread::Priority::high);
-    startTimerHz (30);
+    startTimerHz (48);
 }
 
 PitchengaAudioProcessorEditor::~PitchengaAudioProcessorEditor()
