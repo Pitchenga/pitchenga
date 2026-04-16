@@ -104,7 +104,7 @@ const std::vector<double>& HarmonicPatternPitchClassDetector::detectPitchClasses
     double harmonicSum = std::accumulate(harmonicBins.begin(), harmonicBins.end(), 0.0);
     double origSum = std::accumulate(cqBins.begin(), cqBins.end(), 0.0);
 
-    if (harmonicSum > 0.0) {
+    if (harmonicSum > 1e-9) {
         double normalizationFactor = origSum / harmonicSum;
         for (int i = 0; i < size; ++i) {
             harmonicBins[i] *= normalizationFactor;
