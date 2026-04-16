@@ -30,20 +30,24 @@ SpectralEqualizer::SpectralEqualizer(int size, int windowSize)
 }
 
 const std::vector<double>& SpectralEqualizer::filter(const std::vector<double>& values) {
-    const int halfWindow = windowSize / 2;
     for (int i = 0; i < size; ++i) {
         for (int winIndex = 0; winIndex < windowSize; ++winIndex) {
-            // Center the window around i: range is [i - halfWindow, i + halfWindow]
-            int index = (i + winIndex - halfWindow + size) % size;
+            // Forward-looking asymmetric window
+            int index = (i + winIndex + size) % size;
             window[static_cast<size_t>(winIndex)] = values[static_cast<size_t>(index)];
         }
         
-        std::nth_element(window.begin(), window.begin() + halfWindow, window.end());
-        double median = window[static_cast<size_t>(halfWindow)];
+        // Calculate median using nth_element (fast)
+        std::vector<double> tempWindow = window; // Copy because nth_element mutates
+        int halfWindow = windowSize / 2;
+        std::nth_element(tempWindow.begin(), tempWindow.begin() + halfWindow, tempWindow.end());
+        double median = tempWindow[static_cast<size_t>(halfWindow)];
         
-        filteredValues[static_cast<size_t>(i)] = values[static_cast<size_t>(i)] - 0.75 * median; // MEDIAN_WEIGHT = 0.75
+        // MEDIAN_WEIGHT = 0.75
+        filteredValues[static_cast<size_t>(i)] = values[static_cast<size_t>(i)] - 0.75 * median;
     }
 
+    // EXACT JAVA PORT: normalizeViaMax (Includes the bizarre Java scaling logic)
     double newMax = 0.0;
     double origMax = 0.0;
     for (int i = 0; i < size; ++i) {
@@ -52,12 +56,9 @@ const std::vector<double>& SpectralEqualizer::filter(const std::vector<double>& 
     }
 
     if (newMax > 0.0) {
-        // Safety check to prevent extreme amplification of noise when signal is low
-        double safeNewMax = std::max(newMax, 0.01);
-        double factor = origMax / safeNewMax;
-        
+        double factor = (origMax < 1.0) ? (origMax / newMax) : (1.0 / origMax);
         for (int i = 0; i < size; ++i) {
-            filteredValues[i] = std::clamp(filteredValues[i] * factor, 0.0, 1.0);
+            filteredValues[i] *= factor;
         }
     } else {
         std::fill(filteredValues.begin(), filteredValues.end(), 0.0);
@@ -78,27 +79,17 @@ HarmonicPatternPitchClassDetector::HarmonicPatternPitchClassDetector(int binsPer
 }
 
 double HarmonicPatternPitchClassDetector::extractHarmonics(const std::vector<double>& cqBins, int baseFreqBin) const {
-    double dotProduct = 0.0;
+    // EXACT JAVA PORT: Initialize with the fundamental energy (Adds the fundamental twice!)
+    double dotProduct = cqBins[static_cast<size_t>(baseFreqBin)];
     int centerFreqBin = baseFreqBin - binsPerHalftoneHalf;
-    
-    double totalPossibleWeight = 0.0;
-    double accumulatedWeight = 0.0;
 
     for (int i = 1; i <= harmonicCount; ++i) {
-        double weight = 1.0 - 0.5 * (i - 1) * harmonicCountMinusOneInv; // HARMONIC_WEIGHT_FALLOFF = 0.5
-        totalPossibleWeight += weight;
-
         int harmonicBin = centerFreqBin + harmonicBinsIndexes[i - 1];
-        if (harmonicBin >= 0 && harmonicBin < static_cast<int>(cqBins.size())) {
-            dotProduct += weight * cqBins[static_cast<size_t>(harmonicBin)];
-            accumulatedWeight += weight;
-        }
-    }
 
-    // Compensation: If harmonics are truncated by the spectrum ceiling (common for high notes),
-    // scale the result up to what it would have been with the full harmonic series.
-    if (accumulatedWeight > 0.1) {
-        dotProduct *= (totalPossibleWeight / accumulatedWeight);
+        if (harmonicBin >= 0 && harmonicBin < static_cast<int>(cqBins.size())) {
+            double weight = 1.0 - 0.5 * (i - 1) * harmonicCountMinusOneInv; // HARMONIC_WEIGHT_FALLOFF = 0.5
+            dotProduct += weight * cqBins[static_cast<size_t>(harmonicBin)];
+        }
     }
 
     return dotProduct;
