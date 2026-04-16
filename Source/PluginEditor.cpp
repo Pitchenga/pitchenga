@@ -9,7 +9,7 @@ const std::array<Pitch, 12> PitchengaAudioProcessorEditor::chromaticScale = {{
     { Tone::Me,  3, 19.45, juce::Colour::fromRGB (171, 127, 0), "Ochre", "Eb" },
     { Tone::Mi,  4, 20.60, juce::Colour::fromRGB (255, 255, 0), "Yellow", "E" },
     { Tone::Fa,  5, 21.83, juce::Colour::fromRGB (0, 255, 0), "Green", "F" },
-    { Tone::Fi,  6, 23.12, juce::Colour::fromRGB (0, 127, 127), "Teal", "F#" },
+    { Tone::Fi,  6, 23.12, juce::Colour::fromRGB (0, 171, 127), "Teal", "F#" },
     { Tone::So,  7, 24.50, juce::Colour::fromRGB (0, 255, 255), "Cyan", "G" },
     { Tone::Le,  8, 25.96, juce::Colour::fromRGB (0, 42, 137), "Navy", "Ab" },
     { Tone::La,  9, 27.50, juce::Colour::fromRGB (0, 0, 255), "Blue", "A" },
