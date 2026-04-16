@@ -4,18 +4,18 @@
 
 // Ported chromatic colors from Java HarmonEye - Updated with legacy Tone names
 const std::array<Pitch, 12> PitchengaAudioProcessorEditor::chromaticScale = {{
-    { Tone::Do,  0, 16.35, juce::Colour::fromRGB (255, 0, 0) },    // C (Red)
-    { Tone::Ra,  1, 17.32, juce::Colour::fromRGB (100, 42, 0) },   // Db (Brown)
-    { Tone::Re,  2, 18.35, juce::Colour::fromRGB (255, 87, 0) },   // D (Orange)
-    { Tone::Me,  3, 19.45, juce::Colour::fromRGB (171, 127, 0) },  // Eb (Ochre)
-    { Tone::Mi,  4, 20.60, juce::Colour::fromRGB (255, 255, 0) },  // E (Yellow)
-    { Tone::Fa,  5, 21.83, juce::Colour::fromRGB (0, 255, 0) },    // F (Green)
-    { Tone::Fi,  6, 23.12, juce::Colour::fromRGB (0, 127, 127) },  // F# (Teal)
-    { Tone::So,  7, 24.50, juce::Colour::fromRGB (0, 255, 255) },  // G (Cyan)
-    { Tone::Le,  8, 25.96, juce::Colour::fromRGB (0, 42, 137) },   // Ab (Navy)
-    { Tone::La,  9, 27.50, juce::Colour::fromRGB (0, 0, 255) },    // A (Blue)
-    { Tone::Te, 10, 29.14, juce::Colour::fromRGB (127, 0, 255) },  // Bb (Violet)
-    { Tone::Ti, 11, 30.87, juce::Colour::fromRGB (255, 0, 255) }   // B (Magenta)
+    { Tone::Do,  0, 16.35, juce::Colour::fromRGB (255, 0, 0) },    // C
+    { Tone::Ra,  1, 17.32, juce::Colour::fromRGB (100, 42, 0) },   // Db
+    { Tone::Re,  2, 18.35, juce::Colour::fromRGB (255, 87, 0) },   // D
+    { Tone::Me,  3, 19.45, juce::Colour::fromRGB (171, 127, 0) },  // Eb
+    { Tone::Mi,  4, 20.60, juce::Colour::fromRGB (255, 255, 0) },  // E
+    { Tone::Fa,  5, 21.83, juce::Colour::fromRGB (0, 255, 0) },    // F
+    { Tone::Fi,  6, 23.12, juce::Colour::fromRGB (0, 127, 127) },  // F#
+    { Tone::So,  7, 24.50, juce::Colour::fromRGB (0, 255, 255) },  // G
+    { Tone::Le,  8, 25.96, juce::Colour::fromRGB (0, 42, 137) },   // Ab
+    { Tone::La,  9, 27.50, juce::Colour::fromRGB (0, 0, 255) },    // A
+    { Tone::Te, 10, 29.14, juce::Colour::fromRGB (127, 0, 255) },  // Bb
+    { Tone::Ti, 11, 30.87, juce::Colour::fromRGB (255, 0, 255) }   // B
 }};
 
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor (PitchengaAudioProcessor& p)
