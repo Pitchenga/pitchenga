@@ -43,3 +43,6 @@
 *.log
 .idea
 .DS_Store
+
+build/
+tests_build/
