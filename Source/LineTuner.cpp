@@ -144,7 +144,9 @@ void LineTuner::paint (juce::Graphics& graphics)
             juce::String name = getNoteName(nearestNote);
             
             graphics.saveState();
-            graphics.addTransform (juce::AffineTransform::rotation (-juce::MathConstants<float>::halfPi, closestripY, closestX, name);
+            graphics.addTransform (juce::AffineTransform::rotation (-juce::MathConstants<float>::halfPi, closestX, static_cast<float>(stripY - 5)));
+            graphics.drawText (name, static_cast<int>(closestX), stripY - 5 - 15, 50, 30, juce::Justification::centredLeft);
+            graphics.restoreState();
         }
 
         // Draw the exact float pitch indicator line at 100% brightness
