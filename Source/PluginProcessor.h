@@ -105,7 +105,9 @@ private:
     std::vector<float> pitchAnalysisBuffer;
     int samplesSinceLastPitchDetection = 0;
 
+    juce::dsp::IIR::Filter<float> pitchPreFilter;
     std::unique_ptr<adamski::PitchMPM> pitchDetector;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PitchengaAudioProcessor)
 };
 

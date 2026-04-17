@@ -17,6 +17,7 @@ private:
     void updateCachedGradient();
     float freqToMidi (float freq) const;
     juce::String getNoteName (int midiNote) const;
+    void paintLabel (juce::Graphics& graphics, int midiNote, float x, int stripY) const;
 
     // Range: Re1 to Re6
     float minMidi = 26.0f;

@@ -38,6 +38,15 @@ juce::String LineTuner::getNoteName (int midiNote) const
     return ColorPalette::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
 
+void LineTuner::paintLabel (juce::Graphics& graphics, int midiNote, float x, int stripY) const
+{
+    juce::String name = getNoteName(midiNote);
+    graphics.saveState();
+    graphics.addTransform (juce::AffineTransform::rotation (-juce::MathConstants<float>::halfPi, x, static_cast<float>(stripY - 5)));
+    graphics.drawText (name, static_cast<int>(x), stripY - 5 - 15, 50, 30, juce::Justification::centredLeft);
+    graphics.restoreState();
+}
+
 juce::Font LineTuner::getTunerFont() const
 {
     return juce::Font (juce::FontOptions (tunerFontSize).withStyle (tunerFontStyle));
@@ -88,15 +97,9 @@ void LineTuner::updateCachedGradient()
 
         juce::Colour fullColor = ColorPalette::chromaticScale[static_cast<size_t>(chroma)].color;
         juce::Colour dimmedColor = juce::Colours::black.interpolatedWith (fullColor, dimmingFactor);
-
         graphics.setColour (dimmedColor);
 
-        // Label
-        juce::String name = getNoteName(note);
-        graphics.saveState();
-        graphics.addTransform (juce::AffineTransform::rotation (-juce::MathConstants<float>::halfPi, x, static_cast<float>(stripY - 5)));
-        graphics.drawText (name, static_cast<int>(x), stripY - 5 - 15, 50, 30, juce::Justification::centredLeft);
-        graphics.restoreState();
+        paintLabel (graphics, note, x, stripY);
 
         // 1x5 tick
         graphics.setColour (juce::Colours::black);
@@ -138,18 +141,12 @@ void LineTuner::paint (juce::Graphics& graphics)
             
             int nearestChroma = nearestNote % 12;
             if (nearestChroma < 0) nearestChroma += 12;
-
             juce::Colour toneColor = ColorPalette::chromaticScale[static_cast<size_t>(nearestChroma)].color;
             graphics.setColour (toneColor);
-            juce::String name = getNoteName(nearestNote);
-            
-            graphics.saveState();
-            graphics.addTransform (juce::AffineTransform::rotation (-juce::MathConstants<float>::halfPi, closestX, static_cast<float>(stripY - 5)));
-            graphics.drawText (name, static_cast<int>(closestX), stripY - 5 - 15, 50, 30, juce::Justification::centredLeft);
-            graphics.restoreState();
+            paintLabel (graphics, nearestNote, closestX, stripY);
         }
 
-        // Draw the exact float pitch indicator line at 100% brightness
+        // Draw the tuner needle
         float pitchX = bounds.getWidth() * ((currentMidi - minMidi) / (maxMidi - minMidi));
         
         float exactChroma = std::fmod (currentMidi, 12.0f);
