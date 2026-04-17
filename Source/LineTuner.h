@@ -25,5 +25,11 @@ private:
 
     juce::Image cachedGradient;
 
+    static constexpr float dimmingFactor = 0.2f;
+    static constexpr float tunerFontSize = 13.0f;
+    static constexpr const char* tunerFontStyle = "Bold";
+
+    juce::Font getTunerFont() const;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LineTuner)
 };

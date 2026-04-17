@@ -38,6 +38,11 @@ juce::String LineTuner::getNoteName (int midiNote) const
     return ColorPalette::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
 
+juce::Font LineTuner::getTunerFont() const
+{
+    return juce::Font (juce::FontOptions (tunerFontSize).withStyle (tunerFontStyle));
+}
+
 void LineTuner::updateCachedGradient()
 {
     int width = getWidth();
@@ -53,12 +58,12 @@ void LineTuner::updateCachedGradient()
     {
         float horizontalFraction = static_cast<float>(x) / static_cast<float>(width - 1);
         float midiAtX = minMidi + horizontalFraction * (maxMidi - minMidi);
-        
+
         float chroma = std::fmod (midiAtX, 12.0f);
         if (chroma < 0.0f) chroma += 12.0f;
 
         juce::Colour fullColor = ColorPalette::getContinuousColor (chroma);
-        juce::Colour dimmedColor = juce::Colours::black.interpolatedWith (fullColor, 0.3f);
+        juce::Colour dimmedColor = juce::Colours::black.interpolatedWith (fullColor, dimmingFactor);
 
         for (int y = 0; y < height; ++y) {
             data.setPixelColour (x, y, dimmedColor);
@@ -67,8 +72,7 @@ void LineTuner::updateCachedGradient()
 
     // 2. Bake the 30% dimmed labels and 1x5 ticks into the image
     juce::Graphics graphics (cachedGradient);
-    //fixme: Extract font
-    graphics.setFont (juce::Font (juce::FontOptions (static_cast<float>(height) * 0.55f).withStyle ("Bold")));
+    graphics.setFont (getTunerFont());
 
     int startMidi = static_cast<int>(std::ceil(minMidi));
     int endMidi = static_cast<int>(std::floor(maxMidi));
@@ -76,14 +80,13 @@ void LineTuner::updateCachedGradient()
     for (int note = startMidi; note <= endMidi; ++note)
     {
         float x = static_cast<float>(width) * ((static_cast<float>(note) - minMidi) / (maxMidi - minMidi));
-        
+
         int chroma = note % 12;
         if (chroma < 0) chroma += 12;
-        
+
         juce::Colour fullColor = ColorPalette::chromaticScale[static_cast<size_t>(chroma)].color;
-        //fixme: Extract dimming factor
-        juce::Colour dimmedColor = juce::Colours::black.interpolatedWith (fullColor, 0.3f);
-        
+        juce::Colour dimmedColor = juce::Colours::black.interpolatedWith (fullColor, dimmingFactor);
+
         graphics.setColour (dimmedColor);
 
         // 1x5 tick
@@ -113,8 +116,7 @@ void LineTuner::paint (juce::Graphics& graphics)
     // 2. Dynamic Illumination Overlay
     if (currentMidi >= minMidi && currentMidi <= maxMidi)
     {
-        //fixme: Extract font
-        graphics.setFont (juce::Font (juce::FontOptions (static_cast<float>(height) * 0.55f).withStyle ("Bold")));
+        graphics.setFont (getTunerFont());
 
         // Find the nearest perfect whole note to illuminate
         int nearestNote = static_cast<int>(std::round(currentMidi));
