@@ -11,7 +11,7 @@ void LineTuner::setPitchFrequency (float frequencyHz)
     if (frequencyHz > 0.0f) {
         currentMidi = freqToMidi (frequencyHz);
     } else {
-        currentMidi = -1.0f; 
+        currentMidi = -1.0f;
     }
     repaint();
 }

@@ -112,8 +112,9 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         if (size2 > 0)
             juce::FloatVectorOperations::copy (pitchAnalysisBuffer.data() + size1, pitchBuffer.data() + start2, size2);
         
-        // Mark as read
-        pitchFifo.finishedRead (size1 + size2);
+        // Mark as read - DO NOT consume these 4096 samples so we can overlap!
+        // pitchFifo.finishedRead (size1 + size2);
+        pitchFifo.finishedRead (0);
 
         float detectedPitch = pitchDetector->getPitch (pitchAnalysisBuffer.data());
         currentPitchHz.store (detectedPitch, std::memory_order_relaxed);
