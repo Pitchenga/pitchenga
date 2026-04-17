@@ -52,7 +52,7 @@ void LineTuner::updateCachedGradient()
     // Create a 2D image so we can bake the text and ticks directly into it
     cachedGradient = juce::Image (juce::Image::ARGB, width, height, true);
 
-    // 1. Bake the 30% dimmed continuous gradient
+    // 1. Bake the continuous gradient
     juce::Image::BitmapData data (cachedGradient, juce::Image::BitmapData::writeOnly);
     for (int x = 0; x < width; ++x)
     {
@@ -63,10 +63,9 @@ void LineTuner::updateCachedGradient()
         if (chroma < 0.0f) chroma += 12.0f;
 
         juce::Colour fullColor = ColorPalette::getContinuousColor (chroma);
-        juce::Colour dimmedColor = juce::Colours::black.interpolatedWith (fullColor, dimmingFactor);
 
         for (int y = 0; y < height; ++y) {
-            data.setPixelColour (x, y, dimmedColor);
+            data.setPixelColour (x, y, fullColor);
         }
     }
 
@@ -89,12 +88,14 @@ void LineTuner::updateCachedGradient()
 
         graphics.setColour (dimmedColor);
 
-        // 1x5 tick
-        graphics.fillRect (x - 0.5f, 0.0f, 1.0f, 5.0f);
-
         // Label
         juce::String name = getNoteName(note);
         graphics.drawText (name, static_cast<int>(x) - 15, 6, 30, height - 6, juce::Justification::centredTop);
+
+        // 1x5 tick
+        graphics.setColour (juce::Colours::black);
+        graphics.fillRect (x - 0.5f, 0.0f, 1.0f, 5.0f);
+
     }
 }
 
@@ -121,21 +122,16 @@ void LineTuner::paint (juce::Graphics& graphics)
         // Find the nearest perfect whole note to illuminate
         int nearestNote = static_cast<int>(std::round(currentMidi));
 
+        // Light up the label
         if (static_cast<float>(nearestNote) >= std::ceil(minMidi) && static_cast<float>(nearestNote) <= std::floor(maxMidi))
         {
             float closestX = bounds.getWidth() * ((static_cast<float>(nearestNote) - minMidi) / (maxMidi - minMidi));
             
             int nearestChroma = nearestNote % 12;
             if (nearestChroma < 0) nearestChroma += 12;
-            
-            juce::Colour nearestColor = ColorPalette::chromaticScale[static_cast<size_t>(nearestChroma)].color;
-            
-            graphics.setColour (nearestColor);
-            
-            // Light up the 1x5 tick
-            graphics.fillRect (closestX - 0.5f, 0.0f, 1.0f, 5.0f);
-            
-            // Light up the label
+
+            juce::Colour toneColor = ColorPalette::chromaticScale[static_cast<size_t>(nearestChroma)].color;
+            graphics.setColour (toneColor);
             juce::String name = getNoteName(nearestNote);
             graphics.drawText (name, static_cast<int>(closestX) - 15, 6, 30, height - 6, juce::Justification::centredTop);
         }
@@ -146,9 +142,7 @@ void LineTuner::paint (juce::Graphics& graphics)
         float exactChroma = std::fmod (currentMidi, 12.0f);
         if (exactChroma < 0.0f) exactChroma += 12.0f;
         
-        juce::Colour exactColor = ColorPalette::getContinuousColor (exactChroma);
-        
-        graphics.setColour (exactColor);
+        graphics.setColour (juce::Colours::black);
         graphics.drawLine (pitchX, 0.0f, pitchX, static_cast<float>(height), 1.0f);
     }
 }
