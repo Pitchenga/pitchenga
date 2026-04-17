@@ -90,10 +90,28 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
 
         if (signalBlockSize <= 0 || slidingWindows.empty()) { wait(5); continue; }
 
-        // --- THE ARCHITECTURAL FIX ---
-        // Process exactly 1024 samples at a time. This divorces the DSP from the DAW buffer size,
-        // preventing skipped frames and double-ticked smoothers.
-        while (octaves[0].fifo.getNumReady() >= 1024)
+        int numReady = octaves[0].fifo.getNumReady();
+
+        // --- THE LATENCY KILLER (FRAME DROPPING) ---
+        // If the DSP math falls behind real-time, the FIFO backs up and creates massive visual latency.
+        // If we have more than a few blocks waiting, instantly flush the old ones to catch up to live audio.
+        if (numReady > 4096)
+        {
+            int samplesToDrop = numReady - 1024;
+            samplesToDrop = (samplesToDrop / 1024) * 1024; // Round down to perfect 1024 chunks
+
+            for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct)
+            {
+                int dropForOctave = samplesToDrop >> oct; // Accurately drop decimated amounts
+                int start1, size1, start2, size2;
+                octaves[static_cast<size_t>(oct)].fifo.prepareToRead (dropForOctave, start1, size1, start2, size2);
+                octaves[static_cast<size_t>(oct)].fifo.finishedRead (size1 + size2);
+            }
+            numReady = octaves[0].fifo.getNumReady(); // Recalculate what's left
+        }
+
+        // Process exactly ONE 1024-sample block per wake-up
+        if (numReady >= 1024)
         {
             for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct)
             {
@@ -104,7 +122,6 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 // Calculate exactly how many samples this octave should process
                 // Oct 0: 1024, Oct 1: 512, Oct 2: 256...
                 int samplesWanted = 1024 >> oct;
-
                 int start1, size1, start2, size2;
                 fifo.prepareToRead (samplesWanted, start1, size1, start2, size2);
                 int actualRead = size1 + size2;
@@ -125,14 +142,14 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                 }
             }
 
-            // Perform the CQT on the perfectly aligned overlapping windows!
+            // --- CQT & Smoothers ---
             for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct)
             {
                 const auto& win = slidingWindows[static_cast<size_t>(oct)];
                 if (win.size() == static_cast<size_t>(signalBlockSize))
                 {
                     cqt.transform (win, cqtSpectrum);
-                    
+
                     // --- THE THRESHOLD FIX ---
                     // Adjust this gain until your attacks feel instantly snappy again.
                     const double inputGain = 8.0;
@@ -159,7 +176,6 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
             }
 
             const auto& smoothed = octaveBinSmoother->smooth (octaveBins);
-            // const auto& smoothed = octaveBins;
 
             {
                 const juce::CriticalSection::ScopedLockType lock (resultLock);
@@ -171,7 +187,7 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
             }
         }
 
-        wait (5); 
+        wait (1);
     }
 }
 
@@ -290,7 +306,7 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
         float rawVelocity = static_cast<float>(smoothedOctaveBins[i]);
 
         // Rank-based amplification
-        float renderVelocity = rawVelocity * (binOrders[i] * 0.008f);
+        float renderVelocity = rawVelocity * (binOrders[i] * 0.011f);
         if (i == biggestBinNumber) {
             renderVelocity *= 1.3f;
         }
