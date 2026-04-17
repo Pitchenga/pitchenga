@@ -93,14 +93,10 @@ void LineTuner::updateCachedGradient()
 
         // Label
         juce::String name = getNoteName(note);
-        int textY = stripY - 5 - static_cast<int>(name.length() * tunerFontSize);
-        if (textY < 0) textY = 0;
-        
-        for (int i = 0; i < name.length(); ++i) {
-            juce::String charStr = name.substring(i, i + 1);
-            graphics.drawText (charStr, static_cast<int>(x) - 15, textY, 30, static_cast<int>(tunerFontSize + 2), juce::Justification::centredTop);
-            textY += static_cast<int>(tunerFontSize);
-        }
+        graphics.saveState();
+        graphics.addTransform (juce::AffineTransform::rotation (-juce::MathConstants<float>::halfPi, x, static_cast<float>(stripY - 5)));
+        graphics.drawText (name, static_cast<int>(x), stripY - 5 - 15, 50, 30, juce::Justification::centredLeft);
+        graphics.restoreState();
 
         // 1x5 tick
         graphics.setColour (juce::Colours::black);
@@ -147,14 +143,8 @@ void LineTuner::paint (juce::Graphics& graphics)
             graphics.setColour (toneColor);
             juce::String name = getNoteName(nearestNote);
             
-            int textY = stripY - 5 - static_cast<int>(name.length() * tunerFontSize);
-            if (textY < 0) textY = 0;
-            
-            for (int i = 0; i < name.length(); ++i) {
-                juce::String charStr = name.substring(i, i + 1);
-                graphics.drawText (charStr, static_cast<int>(closestX) - 15, textY, 30, static_cast<int>(tunerFontSize + 2), juce::Justification::centredTop);
-                textY += static_cast<int>(tunerFontSize);
-            }
+            graphics.saveState();
+            graphics.addTransform (juce::AffineTransform::rotation (-juce::MathConstants<float>::halfPi, closestripY, closestX, name);
         }
 
         // Draw the exact float pitch indicator line at 100% brightness
