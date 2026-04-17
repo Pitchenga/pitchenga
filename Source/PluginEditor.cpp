@@ -24,7 +24,7 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::setupBuffers()
     const int binsPerOctave = cqt.getBinsPerOctave();
     const size_t signalBlockSize = static_cast<size_t>(cqt.getSignalBlockSize());
 
-    pcDetector = std::make_unique<HarmonicPatternPitchClassDetector> (binsPerOctave, config.binsPerHalftone);
+    pcDetector = std::make_unique<HarmonicPatternPitchClassDetector> (binsPerOctave, config.binsPerSemitone);
     spectralEqualizer = std::make_unique<SpectralEqualizer> (totalBins, 30);
     allBinSmoother = std::make_unique<ExpSmoother> (totalBins, 0.2);
     octaveBinSmoother = std::make_unique<ExpSmoother> (binsPerOctave, 0.2);
@@ -120,9 +120,11 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
                                   static_cast<size_t> (signalBlockSize - actualRead) * sizeof (float));
 
                     // Append the cleanly extracted data
-                    if (size1 > 0) std::copy (buffer.begin() + start1, buffer.begin() + start1 + size1,
+                    if (size1 > 0) std::copy (buffer.begin() + start1,
+                                             buffer.begin() + (start1 + size1),
                                              win.begin() + (static_cast<ptrdiff_t>(signalBlockSize) - actualRead));
-                    if (size2 > 0) std::copy (buffer.begin() + start2, buffer.begin() + start2 + size2,
+                    if (size2 > 0) std::copy (buffer.begin() + start2,
+                                             buffer.begin() + (start2 + size2),
                                              win.begin() + (static_cast<ptrdiff_t>(signalBlockSize) - actualRead) + size1);
 
                     fifo.finishedRead (actualRead);
@@ -244,7 +246,7 @@ juce::Colour PitchengaAudioProcessorEditor::calculateColor (float velocity, floa
     // 2. NO MODULO NEEDED.
     // wrappedRatio is strictly [0.0, 12.0), so toneNumber is strictly 0 to 11.
     int currentIdx = toneNumber;
-    juce::Colour toneColor = chromaticScale[static_cast<size_t>(currentIdx)].color;
+    juce::Colour toneColor = ColorPalette::chromaticScale[static_cast<size_t>(currentIdx)].color;
 
     // --- Port of getGuessAndPitchinessColor & transposePitch ---
     juce::Colour guessColor;
@@ -264,7 +266,7 @@ juce::Colour PitchengaAudioProcessorEditor::calculateColor (float velocity, floa
         if (pitchyIdx < 0) pitchyIdx = 11;
         else if (pitchyIdx > 11) pitchyIdx = 0;
 
-        juce::Colour pitchyColor = chromaticScale[static_cast<size_t>(pitchyIdx)].color;
+        juce::Colour pitchyColor = ColorPalette::chromaticScale[static_cast<size_t>(pitchyIdx)].color;
 
         // Simple approximation of the ordinal pitchinessDiff logic
         float pitchinessDiff = std::abs(diff);
@@ -289,7 +291,7 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
     struct BinData { int index; float velocity; };
     std::vector<BinData> sortedBins (totalFoldedBins);
     for (int i = 0; i < totalFoldedBins; ++i) {
-        sortedBins[i] = { i, static_cast<float>(smoothedOctaveBins[i]) };
+        sortedBins[static_cast<size_t>(i)] = { i, static_cast<float>(smoothedOctaveBins[static_cast<size_t>(i)]) };
     }
 
     std::sort (sortedBins.begin(), sortedBins.end(), [](const BinData& a, const BinData& b) {
@@ -298,7 +300,7 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
 
     std::vector<int> binOrders (totalFoldedBins);
     for (int rank = 0; rank < totalFoldedBins; ++rank) {
-        binOrders[sortedBins[rank].index] = rank;
+        binOrders[static_cast<size_t>(sortedBins[static_cast<size_t>(rank)].index)] = rank;
     }
 
     int biggestBinNumber = sortedBins.back().index;
@@ -306,10 +308,10 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
     // 2. Render Loop
     for (int i = 0; i < totalFoldedBins; ++i)
     {
-        float rawVelocity = static_cast<float>(smoothedOctaveBins[i]);
+        float rawVelocity = static_cast<float>(smoothedOctaveBins[static_cast<size_t>(i)]);
 
         // Rank-based amplification
-        float renderVelocity = rawVelocity * (binOrders[i] * 0.011f);
+        float renderVelocity = rawVelocity * (static_cast<float>(binOrders[static_cast<size_t>(i)]) * 0.011f);
         if (i == biggestBinNumber) {
             renderVelocity *= 1.3f;
         }

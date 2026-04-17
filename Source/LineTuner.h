@@ -10,7 +10,7 @@ public:
     void setPitchFrequency (float frequencyHz);
     void setRange (float minMidiNote, float maxMidiNote);
 
-    void paint (juce::Graphics& g) override;
+    void paint (juce::Graphics& graphics) override;
     void resized() override;
 
 private:

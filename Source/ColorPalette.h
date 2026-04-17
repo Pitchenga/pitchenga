@@ -8,6 +8,7 @@ enum class Tone { Do, Ra, Re, Me, Mi, Fa, Fi, So, Le, La, Te, Ti };
 
 struct Pitch {
     Tone tone;
+    juce::String toneName;
     int index;
     float frequency;
     juce::Colour color;

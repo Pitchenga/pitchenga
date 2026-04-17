@@ -4,8 +4,8 @@
 #include <numeric>
 
 // 1. ExpSmoother
-ExpSmoother::ExpSmoother(int size, double currentWeight)
-    : currentWeight(currentWeight), previousWeight(1.0 - currentWeight) {
+ExpSmoother::ExpSmoother(size_t size, double weight)
+    : currentWeight(weight), previousWeight(1.0 - weight) {
     data.resize(size, 0.0);
 }
 
@@ -23,41 +23,41 @@ const std::vector<double>& ExpSmoother::smooth(const std::vector<double>& curren
 }
 
 // 2. SpectralEqualizer
-SpectralEqualizer::SpectralEqualizer(int size, int windowSize)
+SpectralEqualizer::SpectralEqualizer(size_t size, size_t windowSize)
     : size(size), windowSize(windowSize) {
     filteredValues.resize(size, 0.0);
     window.resize(windowSize, 0.0);
 }
 
 const std::vector<double>& SpectralEqualizer::filter(const std::vector<double>& values) {
-    for (int i = 0; i < size; ++i) {
-        for (int winIndex = 0; winIndex < windowSize; ++winIndex) {
+    for (size_t i = 0; i < size; ++i) {
+        for (size_t winIndex = 0; winIndex < windowSize; ++winIndex) {
             // Forward-looking asymmetric window
-            int index = (i + winIndex + size) % size;
-            window[static_cast<size_t>(winIndex)] = values[static_cast<size_t>(index)];
+            size_t index = (i + winIndex + size) % size;
+            window[winIndex] = values[index];
         }
-        
+
         // Calculate median using nth_element (fast)
         std::vector<double> tempWindow = window; // Copy because nth_element mutates
-        int halfWindow = windowSize / 2;
-        std::nth_element(tempWindow.begin(), tempWindow.begin() + halfWindow, tempWindow.end());
-        double median = tempWindow[static_cast<size_t>(halfWindow)];
-        
+        size_t halfWindow = windowSize / 2;
+        std::nth_element(tempWindow.begin(), tempWindow.begin() + static_cast<ptrdiff_t>(halfWindow), tempWindow.end());
+        double median = tempWindow[halfWindow];
+
         // MEDIAN_WEIGHT = 0.75
-        filteredValues[static_cast<size_t>(i)] = values[static_cast<size_t>(i)] - 0.75 * median;
+        filteredValues[i] = values[i] - 0.75 * median;
     }
 
     // EXACT JAVA PORT: normalizeViaMax (Includes the bizarre Java scaling logic)
     double newMax = 0.0;
     double origMax = 0.0;
-    for (int i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
         newMax = std::max(newMax, filteredValues[i]);
         origMax = std::max(origMax, values[i]);
     }
 
     if (newMax > 0.0) {
         double factor = (origMax < 1.0) ? (origMax / newMax) : (1.0 / origMax);
-        for (int i = 0; i < size; ++i) {
+        for (size_t i = 0; i < size; ++i) {
             filteredValues[i] *= factor;
         }
     } else {
@@ -68,20 +68,20 @@ const std::vector<double>& SpectralEqualizer::filter(const std::vector<double>& 
 }
 
 // 3. HarmonicPatternPitchClassDetector
-HarmonicPatternPitchClassDetector::HarmonicPatternPitchClassDetector(int binsPerOctave, int binsPerHalftone, int harmonicCount)
-    : harmonicCount(harmonicCount), binsPerOctave(binsPerOctave), binsPerHalftoneHalf(binsPerHalftone / 2),
+HarmonicPatternPitchClassDetector::HarmonicPatternPitchClassDetector(int binsPerOctave, int binsPerSemitone, int harmonicCount)
+    : harmonicCount(harmonicCount), binsPerSemitoneHalf(binsPerSemitone / 2),
       harmonicCountMinusOneInv(1.0 / (harmonicCount - 1)) {
     
     harmonicBinsIndexes.resize(harmonicCount);
     for (int i = 0; i < harmonicCount; ++i) {
-        harmonicBinsIndexes[i] = static_cast<int>(std::round(binsPerOctave * std::log2(i + 1.0))) + binsPerHalftoneHalf;
+        harmonicBinsIndexes[i] = static_cast<int>(std::round(binsPerOctave * std::log2(i + 1.0))) + binsPerSemitoneHalf;
     }
 }
 
 double HarmonicPatternPitchClassDetector::extractHarmonics(const std::vector<double>& cqBins, int baseFreqBin) const {
     // EXACT JAVA PORT: Initialize with the fundamental energy (Adds the fundamental twice!)
     double dotProduct = cqBins[static_cast<size_t>(baseFreqBin)];
-    int centerFreqBin = baseFreqBin - binsPerHalftoneHalf;
+    int centerFreqBin = baseFreqBin - binsPerSemitoneHalf;
 
     for (int i = 1; i <= harmonicCount; ++i) {
         int harmonicBin = centerFreqBin + harmonicBinsIndexes[i - 1];

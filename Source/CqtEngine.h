@@ -15,8 +15,8 @@ public:
         int kernelOctaves = 1;
         double maxFreq = 4186.0090448064; // C8
         double samplingFreq = 44100.0;
-        int halftonesPerOctave = 12;
-        int binsPerHalftone = 9;
+        int semitonesPerOctave = 12;
+        int binsPerSemitone = 9;
         double chopThreshold = 0.005;
     };
 

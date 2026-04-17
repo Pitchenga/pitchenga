@@ -16,17 +16,16 @@ void PitchengaAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
     monoBuffer.assign (bufferSize, 0.0f);
     nextStageBuffer.assign (bufferSize, 0.0f);
     
-    for (int i = 0; i < numOctaves; ++i)
+    for (size_t i = 0; i < numOctaves; ++i)
     {
         octaves[i].fifo.reset();
         std::fill (octaves[i].buffer.begin(), octaves[i].buffer.end(), 0.0f);
         
-        double currentSR = sampleRate / std::pow(2.0, i);
         octaves[i].lowpass.reset();
         octaves[i].dropNext = false;
     }
 
-    pitchDetector.setSampleRate (sampleRate);
+    pitchDetector = std::make_unique<adamski::PitchMPM>(static_cast<int>(sampleRate), bufferSize);
 }
 
 void PitchengaAudioProcessor::releaseResources() {}
@@ -54,7 +53,7 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         buffer.clear (i, 0, buffer.getNumSamples());
 
     const int numSamples = buffer.getNumSamples();
-    if (numSamples == 0) return;
+    if (numSamples <= 0) return;
 
     // Safety check: if host exceeds promised block size, we must skip to avoid OOB/Allocation
     if (static_cast<size_t>(numSamples) > monoBuffer.size()) return;
@@ -76,9 +75,9 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
 
     // --- MPM Pitch Detection ---
     // Extract pitch from the summed mono buffer and safely store it for the GUI
-    if (totalNumInputChannels > 0)
+    if (totalNumInputChannels > 0 && pitchDetector != nullptr)
     {
-        float detectedPitch = pitchDetector.getPitch (monoData, numSamples);
+        float detectedPitch = pitchDetector->getPitch (monoData);
         currentPitchHz.store (detectedPitch, std::memory_order_relaxed);
     }
 
@@ -87,18 +86,18 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     float* nextStageData = nextStageBuffer.data();
     int currentStageSize = numSamples;
 
-    for (int oct = 0; oct < numOctaves; ++oct)
+    for (size_t oct = 0; oct < numOctaves; ++oct)
     {
         // 1. Push current stage samples to this octave's lock-free FIFO
         auto scope = octaves[oct].fifo.write (currentStageSize);
         
         if (scope.blockSize1 > 0) 
-            juce::FloatVectorOperations::copy (octaves[oct].buffer.data() + scope.startIndex1, 
+            juce::FloatVectorOperations::copy (octaves[oct].buffer.data() + static_cast<size_t>(scope.startIndex1), 
                                                currentStageData, 
                                                scope.blockSize1);
                                                
         if (scope.blockSize2 > 0) 
-            juce::FloatVectorOperations::copy (octaves[oct].buffer.data() + scope.startIndex2, 
+            juce::FloatVectorOperations::copy (octaves[oct].buffer.data() + static_cast<size_t>(scope.startIndex2), 
                                                currentStageData + scope.blockSize1, 
                                                scope.blockSize2);
 

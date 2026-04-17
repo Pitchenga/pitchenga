@@ -45,7 +45,6 @@ private:
         void setupBuffers();
 
         PitchengaAudioProcessor& processor;
-        LineTuner lineTuner;
         
         CqtEngine cqt;
         std::unique_ptr<HarmonicPatternPitchClassDetector> pcDetector;
@@ -67,6 +66,7 @@ private:
     };
 
     CqtWorkerThread worker;
+    LineTuner lineTuner;
 
     // Shared results for rendering
     std::vector<double> smoothedOctaveBins;
@@ -78,8 +78,6 @@ private:
 
     std::array<juce::Path, totalFoldedBins> segmentPaths;
     juce::PathStrokeType strokeType { 0.5f };
-
-    static const std::array<Pitch, 12> chromaticScale;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PitchengaAudioProcessorEditor)
 };

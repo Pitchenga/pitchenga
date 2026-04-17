@@ -11,12 +11,22 @@ FetchContent_MakeAvailable(eigen)
 FetchContent_Declare(
         pitch_detector
         GIT_REPOSITORY https://github.com/adamski/pitch_detector.git
-        GIT_TAG        master
+        GIT_TAG        d3b6097
+        SOURCE_DIR     ${CMAKE_BINARY_DIR}/_deps/pitch_detector
 )
-FetchContent_MakeAvailable(pitch_detector)
+FetchContent_Declare(
+        audio_fft
+        GIT_REPOSITORY https://github.com/adamski/audio_fft.git
+        GIT_TAG        922b30a
+        SOURCE_DIR     ${CMAKE_BINARY_DIR}/_deps/audio_fft
+)
+FetchContent_MakeAvailable(pitch_detector audio_fft)
 
 # 1. Tell CMake where to find the JUCE framework
 add_subdirectory(JUCE)
+
+juce_add_module(${CMAKE_BINARY_DIR}/_deps/pitch_detector)
+juce_add_module(${CMAKE_BINARY_DIR}/_deps/audio_fft)
 
 # 2. Define the exact plugin we are building
 juce_add_plugin(Pitchenga
@@ -56,6 +66,7 @@ target_link_libraries(Pitchenga PRIVATE
         juce::juce_dsp                 # Contains the fast FFT class
         Eigen3::Eigen
         pitch_detector
+        audio_fft
         PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags)

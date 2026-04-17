@@ -3,8 +3,10 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_utils/juce_audio_utils.h>
 #include <juce_dsp/juce_dsp.h>
+#include <pitch_detector/pitch_detector.h>
 #include <vector>
 #include <array>
+#include <memory>
 
 class FastButterworth
 {
@@ -18,7 +20,7 @@ public:
     float processSample (float signal)
     {
         // Shift history buffers
-        for (int i = 0; i < 6; ++i) {
+        for (size_t i = 0; i < 6; ++i) {
             inputSamples[i] = inputSamples[i + 1];
             outputSamples[i] = outputSamples[i + 1];
         }
@@ -27,7 +29,7 @@ public:
 
         float sumIn = 0.0f;
         float sumOut = 0.0f;
-        for (int i = 0; i < 7; ++i) {
+        for (size_t i = 0; i < 7; ++i) {
             sumIn += inCoeffs[i] * inputSamples[i];
             sumOut += outCoeffs[i] * outputSamples[i];
         }
@@ -96,7 +98,7 @@ private:
     std::array<OctaveBuffer, numOctaves> octaves;
     std::vector<float> monoBuffer;
     std::vector<float> nextStageBuffer;
-    pitch_detector::PitchDetector pitchDetector;
+    std::unique_ptr<adamski::PitchMPM> pitchDetector;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PitchengaAudioProcessor)
 };
