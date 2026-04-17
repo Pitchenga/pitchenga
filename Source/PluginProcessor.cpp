@@ -16,6 +16,11 @@ void PitchengaAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
     monoBuffer.assign (bufferSize, 0.0f);
     nextStageBuffer.assign (bufferSize, 0.0f);
     
+    pitchBuffer.assign (8192, 0.0f);
+    pitchAnalysisBuffer.assign (4096, 0.0f);
+    pitchFifo.reset();
+    samplesSinceLastPitchDetection = 0;
+
     for (size_t i = 0; i < numOctaves; ++i)
     {
         octaves[i].fifo.reset();
@@ -25,7 +30,7 @@ void PitchengaAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
         octaves[i].dropNext = false;
     }
 
-    pitchDetector = std::make_unique<adamski::PitchMPM>(static_cast<int>(sampleRate), bufferSize);
+    pitchDetector = std::make_unique<adamski::PitchMPM>(static_cast<int>(sampleRate), 4096);
 }
 
 void PitchengaAudioProcessor::releaseResources() {}
@@ -44,15 +49,16 @@ bool PitchengaAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts
 
 void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
-    juce::ignoreUnused (midiMessages);
-    juce::ScopedNoDenormals noDenormals;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
+    const int numSamples = buffer.getNumSamples();
+
+    juce::ignoreUnused (midiMessages);
+    juce::ScopedNoDenormals noDenormals;
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
+        buffer.clear (i, 0, numSamples);
 
-    const int numSamples = buffer.getNumSamples();
     if (numSamples <= 0) return;
 
     // Safety check: if host exceeds promised block size, we must skip to avoid OOB/Allocation
@@ -74,10 +80,42 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     }
 
     // --- MPM Pitch Detection ---
-    // Extract pitch from the summed mono buffer and safely store it for the GUI
-    if (totalNumInputChannels > 0 && pitchDetector != nullptr)
+    // Accumulate samples in pitch FIFO
     {
-        float detectedPitch = pitchDetector->getPitch (monoData);
+        auto scope = pitchFifo.write (numSamples);
+        if (scope.blockSize1 > 0) 
+            juce::FloatVectorOperations::copy (pitchBuffer.data() + scope.startIndex1, monoData, scope.blockSize1);
+        if (scope.blockSize2 > 0)
+            juce::FloatVectorOperations::copy (pitchBuffer.data() + scope.startIndex2, monoData + scope.blockSize1, scope.blockSize2);
+    }
+
+    samplesSinceLastPitchDetection += numSamples;
+
+    // Run MPM if we have enough new samples (e.g., every 1024 samples)
+    if (samplesSinceLastPitchDetection >= 1024 && pitchFifo.getNumReady() >= 4096 && pitchDetector != nullptr)
+    {
+        samplesSinceLastPitchDetection = 0;
+
+        int start1, size1, start2, size2;
+        // We want to analyze the MOST RECENT 4096 samples
+        int ready = pitchFifo.getNumReady();
+        int toSkip = ready - 4096;
+        if (toSkip > 0) {
+            pitchFifo.prepareToRead (toSkip, start1, size1, start2, size2);
+            pitchFifo.finishedRead (size1 + size2);
+        }
+
+        // Now read 4096 samples
+        pitchFifo.prepareToRead (4096, start1, size1, start2, size2);
+        if (size1 > 0) 
+            juce::FloatVectorOperations::copy (pitchAnalysisBuffer.data(), pitchBuffer.data() + start1, size1);
+        if (size2 > 0)
+            juce::FloatVectorOperations::copy (pitchAnalysisBuffer.data() + size1, pitchBuffer.data() + start2, size2);
+        
+        // Mark as read
+        pitchFifo.finishedRead (size1 + size2);
+
+        float detectedPitch = pitchDetector->getPitch (pitchAnalysisBuffer.data());
         currentPitchHz.store (detectedPitch, std::memory_order_relaxed);
     }
 

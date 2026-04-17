@@ -98,6 +98,13 @@ private:
     std::array<OctaveBuffer, numOctaves> octaves;
     std::vector<float> monoBuffer;
     std::vector<float> nextStageBuffer;
+    
+    // Pitch detection buffers
+    juce::AbstractFifo pitchFifo { 8192 };
+    std::vector<float> pitchBuffer;
+    std::vector<float> pitchAnalysisBuffer;
+    int samplesSinceLastPitchDetection = 0;
+
     std::unique_ptr<adamski::PitchMPM> pitchDetector;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PitchengaAudioProcessor)
