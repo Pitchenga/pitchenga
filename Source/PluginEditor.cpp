@@ -352,5 +352,5 @@ void PitchengaAudioProcessorEditor::resized()
     }
 
     auto bounds = getLocalBounds();
-    lineTuner.setBounds (bounds.removeFromBottom (24));
+    lineTuner.setBounds (bounds.removeFromBottom (80));
 }

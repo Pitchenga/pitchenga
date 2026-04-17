@@ -3,7 +3,7 @@
 
 LineTuner::LineTuner()
 {
-    setSize (800, 24); 
+    setSize (800, 80); 
 }
 
 void LineTuner::setPitchFrequency (float frequencyHz)
@@ -52,6 +52,9 @@ void LineTuner::updateCachedGradient()
     // Create a 2D image so we can bake the text and ticks directly into it
     cachedGradient = juce::Image (juce::Image::ARGB, width, height, true);
 
+    int stripHeight = 16;
+    int stripY = height - stripHeight;
+
     // 1. Bake the continuous gradient
     juce::Image::BitmapData data (cachedGradient, juce::Image::BitmapData::writeOnly);
     for (int x = 0; x < width; ++x)
@@ -64,7 +67,7 @@ void LineTuner::updateCachedGradient()
 
         juce::Colour fullColor = ColorPalette::getContinuousColor (chroma);
 
-        for (int y = 0; y < height; ++y) {
+        for (int y = stripY; y < height; ++y) {
             data.setPixelColour (x, y, fullColor);
         }
     }
@@ -90,11 +93,18 @@ void LineTuner::updateCachedGradient()
 
         // Label
         juce::String name = getNoteName(note);
-        graphics.drawText (name, static_cast<int>(x) - 15, 6, 30, height - 6, juce::Justification::centredTop);
+        int textY = stripY - 5 - static_cast<int>(name.length() * tunerFontSize);
+        if (textY < 0) textY = 0;
+        
+        for (int i = 0; i < name.length(); ++i) {
+            juce::String charStr = name.substring(i, i + 1);
+            graphics.drawText (charStr, static_cast<int>(x) - 15, textY, 30, static_cast<int>(tunerFontSize + 2), juce::Justification::centredTop);
+            textY += static_cast<int>(tunerFontSize);
+        }
 
         // 1x5 tick
         graphics.setColour (juce::Colours::black);
-        graphics.fillRect (x - 0.5f, 0.0f, 1.0f, 5.0f);
+        graphics.fillRect (x - 0.5f, static_cast<float>(stripY), 1.0f, 5.0f);
 
     }
 }
@@ -119,6 +129,9 @@ void LineTuner::paint (juce::Graphics& graphics)
     {
         graphics.setFont (getTunerFont());
 
+        int stripHeight = 16;
+        int stripY = height - stripHeight;
+
         // Find the nearest perfect whole note to illuminate
         int nearestNote = static_cast<int>(std::round(currentMidi));
 
@@ -133,7 +146,15 @@ void LineTuner::paint (juce::Graphics& graphics)
             juce::Colour toneColor = ColorPalette::chromaticScale[static_cast<size_t>(nearestChroma)].color;
             graphics.setColour (toneColor);
             juce::String name = getNoteName(nearestNote);
-            graphics.drawText (name, static_cast<int>(closestX) - 15, 6, 30, height - 6, juce::Justification::centredTop);
+            
+            int textY = stripY - 5 - static_cast<int>(name.length() * tunerFontSize);
+            if (textY < 0) textY = 0;
+            
+            for (int i = 0; i < name.length(); ++i) {
+                juce::String charStr = name.substring(i, i + 1);
+                graphics.drawText (charStr, static_cast<int>(closestX) - 15, textY, 30, static_cast<int>(tunerFontSize + 2), juce::Justification::centredTop);
+                textY += static_cast<int>(tunerFontSize);
+            }
         }
 
         // Draw the exact float pitch indicator line at 100% brightness
@@ -143,6 +164,6 @@ void LineTuner::paint (juce::Graphics& graphics)
         if (exactChroma < 0.0f) exactChroma += 12.0f;
         
         graphics.setColour (juce::Colours::black);
-        graphics.drawLine (pitchX, 0.0f, pitchX, static_cast<float>(height), 1.0f);
+        graphics.drawLine (pitchX, static_cast<float>(stripY), pitchX, static_cast<float>(height), 1.0f);
     }
 }
