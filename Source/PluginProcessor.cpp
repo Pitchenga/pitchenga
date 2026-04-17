@@ -16,9 +16,9 @@ void PitchengaAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
     monoBuffer.assign (bufferSize, 0.0f);
     nextStageBuffer.assign (bufferSize, 0.0f);
     
-    pitchBuffer.assign (8192, 0.0f);
+    pitchCircularBuffer.assign (8192, 0.0f);
     pitchAnalysisBuffer.assign (4096, 0.0f);
-    pitchFifo.reset();
+    pitchWritePos = 0;
     samplesSinceLastPitchDetection = 0;
 
     for (size_t i = 0; i < numOctaves; ++i)
@@ -80,40 +80,26 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     }
 
     // --- MPM Pitch Detection ---
-    // Accumulate samples in pitch FIFO
-    {
-        auto scope = pitchFifo.write (numSamples);
-        if (scope.blockSize1 > 0) 
-            juce::FloatVectorOperations::copy (pitchBuffer.data() + scope.startIndex1, monoData, scope.blockSize1);
-        if (scope.blockSize2 > 0)
-            juce::FloatVectorOperations::copy (pitchBuffer.data() + scope.startIndex2, monoData + scope.blockSize1, scope.blockSize2);
+    // Safely write to the circular buffer
+    for (int i = 0; i < numSamples; ++i) {
+        pitchCircularBuffer[static_cast<size_t>(pitchWritePos)] = monoData[i];
+        pitchWritePos = (pitchWritePos + 1) % 8192;
     }
-
     samplesSinceLastPitchDetection += numSamples;
 
-    // Run MPM if we have enough new samples (e.g., every 1024 samples)
-    if (samplesSinceLastPitchDetection >= 1024 && pitchFifo.getNumReady() >= 4096 && pitchDetector != nullptr)
+    // Run MPM if we have 1024 new samples
+    if (samplesSinceLastPitchDetection >= 1024 && pitchDetector != nullptr)
     {
         samplesSinceLastPitchDetection = 0;
 
-        int start1, size1, start2, size2;
-        // We want to analyze the MOST RECENT 4096 samples
-        int ready = pitchFifo.getNumReady();
-        int toSkip = ready - 4096;
-        if (toSkip > 0) {
-            pitchFifo.prepareToRead (toSkip, start1, size1, start2, size2);
-            pitchFifo.finishedRead (size1 + size2);
+        // Extract the most recent 4096 samples from the ring buffer
+        int readPos = (pitchWritePos - 4096 + 8192) % 8192;
+        for (int i = 0; i < 4096; ++i) {
+            pitchAnalysisBuffer[static_cast<size_t>(i)] = pitchCircularBuffer[static_cast<size_t>((readPos + i) % 8192)];
         }
 
-        // Now read 4096 samples
-        pitchFifo.prepareToRead (4096, start1, size1, start2, size2);
-        if (size1 > 0) 
-            juce::FloatVectorOperations::copy (pitchAnalysisBuffer.data(), pitchBuffer.data() + start1, size1);
-        if (size2 > 0)
-            juce::FloatVectorOperations::copy (pitchAnalysisBuffer.data() + size1, pitchBuffer.data() + start2, size2);
-        
-        // Mark as read - DO NOT consume these 4096 samples so we can overlap!
-        pitchFifo.finishedRead (size1 + size2);
+        // This forces weak fundamentals above the MPM clarity threshold.
+        juce::FloatVectorOperations::multiply (pitchAnalysisBuffer.data(), 12.0f, 4096);
 
         float detectedPitch = pitchDetector->getPitch (pitchAnalysisBuffer.data());
         currentPitchHz.store (detectedPitch, std::memory_order_relaxed);

@@ -18,9 +18,9 @@ private:
     float freqToMidi (float freq) const;
     juce::String getNoteName (int midiNote) const;
 
-    // Defaults: La0 (A0 = 21.0f) to Mi4 (E4 = 64.0f)
-    float minMidi = 21.0f;
-    float maxMidi = 64.0f;
+    // Range: Re1 to Re6
+    float minMidi = 26.0f;
+    float maxMidi = 86.0f;
     float currentMidi = -1.0f;
 
     juce::Image cachedGradient;
