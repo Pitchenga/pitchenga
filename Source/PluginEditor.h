@@ -5,22 +5,12 @@
 #include "PluginProcessor.h"
 #include "CqtEngine.h"
 #include "Analyzers.h"
+#include "LineTuner.h"
 #include <array>
 #include <vector>
 #include <memory>
 #include <atomic>
 
-enum class Tone { Do, Ra, Re, Me, Mi, Fa, Fi, So, Le, La, Te, Ti };
-
-struct Pitch
-{
-    Tone tone;
-    int number;
-    double frequency;
-    juce::Colour color;
-    const char* colorName;
-    const char* letterNote;
-};
 
 class PitchengaAudioProcessorEditor : public juce::AudioProcessorEditor,
                                       private juce::Timer
@@ -55,6 +45,7 @@ private:
         void setupBuffers();
 
         PitchengaAudioProcessor& processor;
+        LineTuner lineTuner;
         
         CqtEngine cqt;
         std::unique_ptr<HarmonicPatternPitchClassDetector> pcDetector;

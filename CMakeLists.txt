@@ -8,6 +8,12 @@ FetchContent_Declare(
   GIT_TAG        3.4.0
 )
 FetchContent_MakeAvailable(eigen)
+FetchContent_Declare(
+        pitch_detector
+        GIT_REPOSITORY https://github.com/adamski/pitch_detector.git
+        GIT_TAG        master
+)
+FetchContent_MakeAvailable(pitch_detector)
 
 # 1. Tell CMake where to find the JUCE framework
 add_subdirectory(JUCE)
@@ -38,13 +44,18 @@ target_sources(Pitchenga PRIVATE
         Source/CqtEngine.h
         Source/CqtEngine.cpp
         Source/Analyzers.h
-        Source/Analyzers.cpp)
+        Source/Analyzers.cpp
+        Source/ColorPalette.h
+        Source/ColorPalette.cpp
+        Source/LineTuner.h
+        Source/LineTuner.cpp)
 
 # 4. Link the heavy-lifting JUCE modules (Audio, GUI, and Hardware-Accelerated Math)
 target_link_libraries(Pitchenga PRIVATE
         juce::juce_audio_utils
         juce::juce_dsp                 # Contains the fast FFT class
         Eigen3::Eigen
+        pitch_detector
         PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags)

@@ -25,6 +25,8 @@ void PitchengaAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
         octaves[i].lowpass.reset();
         octaves[i].dropNext = false;
     }
+
+    pitchDetector.setSampleRate (sampleRate);
 }
 
 void PitchengaAudioProcessor::releaseResources() {}
@@ -70,6 +72,14 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         juce::FloatVectorOperations::copy (monoData, left, numSamples);
         juce::FloatVectorOperations::add (monoData, right, numSamples);
         juce::FloatVectorOperations::multiply (monoData, 0.5f, numSamples);
+    }
+
+    // --- MPM Pitch Detection ---
+    // Extract pitch from the summed mono buffer and safely store it for the GUI
+    if (totalNumInputChannels > 0)
+    {
+        float detectedPitch = pitchDetector.getPitch (monoData, numSamples);
+        currentPitchHz.store (detectedPitch, std::memory_order_relaxed);
     }
 
     // Cascade multi-rate decimation using pointer swapping

@@ -89,10 +89,14 @@ public:
 
     std::array<OctaveBuffer, numOctaves>& getOctaves() { return octaves; }
 
+    // This is the lock-free bridge to the GUI
+    std::atomic<float> currentPitchHz { -1.0f };
+
 private:
     std::array<OctaveBuffer, numOctaves> octaves;
     std::vector<float> monoBuffer;
     std::vector<float> nextStageBuffer;
+    pitch_detector::PitchDetector pitchDetector;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PitchengaAudioProcessor)
 };

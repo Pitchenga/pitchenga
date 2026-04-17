@@ -1,21 +1,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include <cmath>
+#include <pitch_detector/pitch_detector.h>
 
-const std::array<Pitch, 12> PitchengaAudioProcessorEditor::chromaticScale = {{
-    { Tone::Do,  0, 16.35, juce::Colour::fromRGB (255, 0, 0), "Red", "C" },
-    { Tone::Ra,  1, 17.32, juce::Colour::fromRGB (255, 87, 87), "Pink", "Db" },
-    { Tone::Re,  2, 18.35, juce::Colour::fromRGB (255, 87, 0), "Orange", "D" },
-    { Tone::Me,  3, 19.45, juce::Colour::fromRGB (171, 127, 0), "Ochre", "Eb" },
-    { Tone::Mi,  4, 20.60, juce::Colour::fromRGB (255, 255, 0), "Yellow", "E" },
-    { Tone::Fa,  5, 21.83, juce::Colour::fromRGB (0, 255, 0), "Green", "F" },
-    { Tone::Fi,  6, 23.12, juce::Colour::fromRGB (0, 171, 127), "Teal", "F#" },
-    { Tone::So,  7, 24.50, juce::Colour::fromRGB (0, 255, 255), "Cyan", "G" },
-    { Tone::Le,  8, 25.96, juce::Colour::fromRGB (87, 87, 223), "Lilac", "Ab" },
-    { Tone::La,  9, 27.50, juce::Colour::fromRGB (0, 0, 255), "Blue", "A" },
-    { Tone::Te, 10, 29.14, juce::Colour::fromRGB (127, 0, 255), "Violet", "Bb" },
-    { Tone::Ti, 11, 30.87, juce::Colour::fromRGB (255, 0, 255), "Magenta", "B" }
-}};
 
 // --- CqtWorkerThread Implementation ---
 
@@ -204,6 +191,13 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::getLatestResults (std::vect
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor (PitchengaAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p), worker (p)
 {
+    // Add the tuner to the UI
+    addAndMakeVisible (lineTuner);
+
+    //fixme: restore the Pitch enum
+    // Set up the default range: La0 (21) to Mi4 (64)
+    lineTuner.setRange (21.0f, 64.0f);
+
     smoothedOctaveBins.resize (static_cast<size_t> (totalFoldedBins), 0.0);
     
     setSize (600, 600);
@@ -219,6 +213,15 @@ PitchengaAudioProcessorEditor::~PitchengaAudioProcessorEditor()
 
 void PitchengaAudioProcessorEditor::timerCallback()
 {
+
+    // --- 1. Update the Tuner ---
+    // Read the lock-free atomic variable
+    float latestHz = audioProcessor.currentPitchHz.load (std::memory_order_relaxed);
+
+    // Feed it to the visualizer component
+    lineTuner.setPitchFrequency (latestHz);
+
+    // --- 2. Update the Circular Visualizer ---
     if (worker.hasNewData())
     {
         worker.getLatestResults (smoothedOctaveBins);
@@ -345,4 +348,7 @@ void PitchengaAudioProcessorEditor::resized()
 
         segmentPaths[static_cast<size_t>(i)] = p;
     }
+
+    auto bounds = getLocalBounds();
+    lineTuner.setBounds (bounds.removeFromBottom (24));
 }
