@@ -11,7 +11,7 @@ const std::array<Pitch, 12> PitchengaAudioProcessorEditor::chromaticScale = {{
     { Tone::Fa,  5, 21.83, juce::Colour::fromRGB (0, 255, 0), "Green", "F" },
     { Tone::Fi,  6, 23.12, juce::Colour::fromRGB (0, 171, 127), "Teal", "F#" },
     { Tone::So,  7, 24.50, juce::Colour::fromRGB (0, 255, 255), "Cyan", "G" },
-    { Tone::Le,  8, 25.96, juce::Colour::fromRGB (0, 42, 137), "Navy", "Ab" },
+    { Tone::Le,  8, 25.96, juce::Colour::fromRGB (87, 87, 223), "Lilac", "Ab" },
     { Tone::La,  9, 27.50, juce::Colour::fromRGB (0, 0, 255), "Blue", "A" },
     { Tone::Te, 10, 29.14, juce::Colour::fromRGB (127, 0, 255), "Violet", "Bb" },
     { Tone::Ti, 11, 30.87, juce::Colour::fromRGB (255, 0, 255), "Magenta", "B" }
@@ -77,6 +77,7 @@ double PitchengaAudioProcessorEditor::CqtWorkerThread::amplitudeToDbRescaled (do
     double db = 20.0 * std::log10 (amplitude);
     return std::max (0.0, 1.0 - (db * zeroAmplitudeDbInv));
 }
+
 void PitchengaAudioProcessorEditor::CqtWorkerThread::run()
 {
     while (! threadShouldExit())

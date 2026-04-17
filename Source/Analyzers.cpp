@@ -11,8 +11,8 @@ ExpSmoother::ExpSmoother(int size, double currentWeight)
 
 const std::vector<double>& ExpSmoother::smooth(const std::vector<double>& currentFrame) {
     for (size_t i = 0; i < data.size(); ++i) {
-        // Only attack instantly if it is a loud signal (> 0.5) AND it is increasing
-        if (currentFrame[i] >= 0.5 && currentFrame[i] > data[i]) {
+        // Only attack instantly if it is a loud signal AND it is increasing
+        if (currentFrame[i] >= 0.3 && currentFrame[i] > data[i]) {
             data[i] = currentFrame[i];
         } else {
             // Smooth decays AND smooth low-level noise
