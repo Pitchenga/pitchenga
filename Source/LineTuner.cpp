@@ -56,7 +56,7 @@ void LineTuner::updateCachedGradient()
     juce::Image::BitmapData data (cachedGradient, juce::Image::BitmapData::writeOnly);
     for (int x = 0; x < width; ++x)
     {
-        float horizontalFraction = static_cast<float>(x) / static_cast<float>(width - 1);
+        float horizontalFraction = width > 1 ? static_cast<float>(x) / static_cast<float>(width - 1) : 0.0f;
         float midiAtX = minMidi + horizontalFraction * (maxMidi - minMidi);
 
         float chroma = std::fmod (midiAtX, 12.0f);

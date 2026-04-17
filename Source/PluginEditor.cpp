@@ -250,7 +250,7 @@ juce::Colour PitchengaAudioProcessorEditor::calculateColor (float velocity, floa
 
     // --- Port of getGuessAndPitchinessColor & transposePitch ---
     juce::Colour guessColor;
-    if (std::abs(diff) < 0.000000000042f)
+    if (std::abs(diff) < 1e-5f)
     {
         guessColor = toneColor;
     }
