@@ -4,18 +4,9 @@
 
 LineViz::LineViz(PitchengaAudioProcessor& proc) : processor(proc) {}
 
-void LineViz::updateResults(const std::vector<double>& results) {
-    if (results.empty()) return;
-
-    if (smoother == nullptr || lastKnownSize != results.size()) {
-        smoother = std::make_unique<ExpSmoother>(results.size(), 0.1);
-        lastKnownSize = results.size();
-    }
-
-    displayMagnitudes = smoother->smooth(results);
-
+bool LineViz::expand() {
     const int totalBins = static_cast<int>(displayMagnitudes.size());
-    if (totalBins <= 0) return;
+    if (totalBins <= 0) return true;
 
     double* dataPointer = displayMagnitudes.data();
 
@@ -74,6 +65,20 @@ void LineViz::updateResults(const std::vector<double>& results) {
             dataPointer[startIndex + i] = static_cast<double>(std::min(renderVelocity, 1.0f));
         }
     }
+    return false;
+}
+
+void LineViz::updateResults(const std::vector<double>& results) {
+    if (results.empty()) return;
+
+    if (smoother == nullptr || lastKnownSize != results.size()) {
+        smoother = std::make_unique<ExpSmoother>(results.size(), 0.1);
+        lastKnownSize = results.size();
+    }
+
+    displayMagnitudes = smoother->smooth(results);
+
+    if (expand()) return;
 
     advanceBubbles();
     repaint();

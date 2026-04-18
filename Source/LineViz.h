@@ -9,6 +9,7 @@ class LineViz : public juce::Component
 {
 public:
     LineViz(PitchengaAudioProcessor&);
+    bool expand();
     void paint(juce::Graphics&) override;
     void resized() override;
     void updateResults(const std::vector<double>& results);
