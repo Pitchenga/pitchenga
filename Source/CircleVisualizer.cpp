@@ -135,11 +135,10 @@ void CircleVisualizer::paintLabel(
     const auto labelColor = calculateColor(0.1f, static_cast<float>(i));
     graphics.setColour(labelColor);
 
-    const float textWidth = juce::GlyphArrangement::getStringWidth(graphics.getCurrentFont(), name);
-    const float textHeight = graphics.getCurrentFont().getHeight();
-
-    const juce::Rectangle textBounds(initialX - textWidth * 0.5f, initialY - textHeight * 0.5f, textWidth, textHeight);
-    graphics.drawText(name, textBounds.toNearestInt(), juce::Justification::centred, false);
+    juce::GlyphArrangement arrangement;
+    arrangement.addLineOfText(graphics.getCurrentFont(), name, 0.0f, 0.0f);
+    arrangement.justifyGlyphs(0, arrangement.getNumGlyphs(), initialX, initialY, 0.0f, 0.0f, juce::Justification::centred);
+    arrangement.draw(graphics);
 }
 
 void CircleVisualizer::paintFrame(juce::Graphics& graphics) const {
