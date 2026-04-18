@@ -151,8 +151,6 @@ void LineTuner::paint (juce::Graphics& graphics)
                               pitchX - needleTriangleWidth * 0.5f, height,
                               pitchX + needleTriangleWidth * 0.5f, height);
 
-        graphics.setColour (juce::Colours::white);
-        graphics.fillPath (triangle);
         graphics.setColour (juce::Colours::black);
         graphics.strokePath (triangle, juce::PathStrokeType (2.0f));
     }

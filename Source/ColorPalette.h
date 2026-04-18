@@ -3,7 +3,6 @@
 #include <array>
 #include <cmath>
 
-// Include your Tone domain header if it exists separately
 enum class Tone { Do, Ra, Re, Me, Mi, Fa, Fi, So, Le, La, Te, Ti };
 
 struct Pitch {
@@ -12,7 +11,6 @@ struct Pitch {
     int index;
     float frequency;
     juce::Colour color;
-    juce::String colorName;
     juce::String letterNotation;
 };
 
