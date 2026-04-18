@@ -13,7 +13,7 @@ void CircleVisualizer::updateResults(const std::vector<double>& results) {
     }
 }
 
-juce::Colour CircleVisualizer::calculateColor(float velocity, float toneRatio) {
+juce::Colour CircleVisualizer::calculateColor(const float velocity, const float toneRatio) {
     // 1. NO std::fmod() NEEDED.
     // toneRatio only ever ranges from -0.444 to 11.444.
     // A single addition handles the negative wrap perfectly.
@@ -138,7 +138,7 @@ void CircleVisualizer::paintLabels(
     const float textWidth = juce::GlyphArrangement::getStringWidth(graphics.getCurrentFont(), name);
     const float textHeight = graphics.getCurrentFont().getHeight();
 
-    juce::Rectangle textBounds(lx - textWidth * 0.5f, ly - textHeight * 0.5f, textWidth, textHeight);
+    const juce::Rectangle textBounds(lx - textWidth * 0.5f, ly - textHeight * 0.5f, textWidth, textHeight);
     graphics.drawText(name, textBounds.toNearestInt(), juce::Justification::centred, false);
 }
 
@@ -173,8 +173,8 @@ void CircleVisualizer::paintFrame(juce::Graphics& graphics) const {
 }
 
 void CircleVisualizer::paintFrame() {
-    int width = getWidth();
-    int height = getHeight();
+    const int width = getWidth();
+    const int height = getHeight();
     if (width <= 0 || height <= 0) return;
 
     cachedFrame = juce::Image(juce::Image::ARGB, width, height, true);

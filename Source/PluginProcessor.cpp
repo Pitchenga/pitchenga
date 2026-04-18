@@ -10,7 +10,7 @@ PitchengaAudioProcessor::PitchengaAudioProcessor()
 
 PitchengaAudioProcessor::~PitchengaAudioProcessor() {}
 
-void PitchengaAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock) {
+void PitchengaAudioProcessor::prepareToPlay(const double sampleRate, const int samplesPerBlock) {
     const size_t bufferSize = static_cast<size_t>(std::max(samplesPerBlock, 4096));
     monoBuffer.assign(bufferSize, 0.0f);
     nextStageBuffer.assign(bufferSize, 0.0f);
@@ -45,8 +45,8 @@ bool PitchengaAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts)
 }
 
 void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
-    auto totalNumInputChannels = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
+    const auto totalNumInputChannels = getTotalNumInputChannels();
+    const auto totalNumOutputChannels = getTotalNumOutputChannels();
     const int numSamples = buffer.getNumSamples();
 
     juce::ignoreUnused(midiMessages);
@@ -83,7 +83,7 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
         samplesSinceLastPitchDetection = 0;
 
         // Extract the most recent 4096 samples from the ring buffer
-        int readPos = (pitchWritePos - 4096 + 8192) % 8192;
+        const int readPos = (pitchWritePos - 4096 + 8192) % 8192;
         for (int i = 0; i < 4096; ++i) {
             pitchAnalysisBuffer[static_cast<size_t>(i)] = pitchCircularBuffer[static_cast<size_t>((readPos + i) %
                 8192)];
@@ -92,7 +92,7 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
         // This forces weak fundamentals above the MPM clarity threshold.
         juce::FloatVectorOperations::multiply(pitchAnalysisBuffer.data(), 12.0f, 4096);
 
-        float detectedPitch = pitchDetector->getPitch(pitchAnalysisBuffer.data());
+        const float detectedPitch = pitchDetector->getPitch(pitchAnalysisBuffer.data());
         currentPitchHz.store(detectedPitch, std::memory_order_relaxed);
     }
 
@@ -103,7 +103,7 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
     for (size_t oct = 0; oct < numOctaves; ++oct) {
         // 1. Push current stage samples to this octave's lock-free FIFO
-        auto scope = octaves[oct].fifo.write(currentStageSize);
+        const auto scope = octaves[oct].fifo.write(currentStageSize);
 
         if (scope.blockSize1 > 0)
             juce::FloatVectorOperations::copy(
@@ -123,7 +123,7 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
         if (oct < numOctaves - 1) {
             int nextIdx = 0;
             for (int i = 0; i < currentStageSize; ++i) {
-                float filtered = octaves[oct].lowpass.processSample(currentStageData[i]);
+                const float filtered = octaves[oct].lowpass.processSample(currentStageData[i]);
                 if (!octaves[oct].dropNext) {
                     nextStageData[nextIdx++] = filtered;
                 }
@@ -151,9 +151,9 @@ void PitchengaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
     copyXmlToBinary(xml, destData);
 }
 
-void PitchengaAudioProcessor::setStateInformation(const void* data, int sizeInBytes) {
+void PitchengaAudioProcessor::setStateInformation(const void* data, const int sizeInBytes) {
     // Get the XML from the binary data provided by the host
-    std::unique_ptr xmlState(getXmlFromBinary(data, sizeInBytes));
+    const std::unique_ptr xmlState(getXmlFromBinary(data, sizeInBytes));
 
     if (xmlState != nullptr) {
         // Only if the tag matches our expected name

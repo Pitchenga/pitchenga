@@ -45,20 +45,20 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::setupBuffers() {
     }
 }
 
-void PitchengaAudioProcessorEditor::CqtWorkerThread::updateSampleRate(double newSampleRate) {
+void PitchengaAudioProcessorEditor::CqtWorkerThread::updateSampleRate(const double newSampleRate) {
     if (newSampleRate > 0 && std::abs(newSampleRate - cqt.getConfig().samplingFreq) > 0.01) {
         setupBuffers();
     }
 }
 
-double PitchengaAudioProcessorEditor::CqtWorkerThread::amplitudeToDbRescaled(double amplitude) {
+double PitchengaAudioProcessorEditor::CqtWorkerThread::amplitudeToDbRescaled(const double amplitude) {
     // Exact port of HarmonEye's DecibelCalculator.java
     constexpr double zeroAmplitudeDb = -90.30899869919436;
     constexpr double zeroAmplitudeDbInv = 1.0 / zeroAmplitudeDb;
 
     if (amplitude <= 0.00003051757) return 0.0;
 
-    double db = 20.0 * std::log10(amplitude);
+    const double db = 20.0 * std::log10(amplitude);
     return std::max(0.0, 1.0 - (db * zeroAmplitudeDbInv));
 }
 
@@ -85,7 +85,7 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run() {
             samplesToDrop = (samplesToDrop / 1024) * 1024; // Round down to perfect 1024 chunks
 
             for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct) {
-                int dropForOctave = samplesToDrop >> oct; // Accurately drop decimated amounts
+                const int dropForOctave = samplesToDrop >> oct; // Accurately drop decimated amounts
                 int start1, size1, start2, size2;
                 octaves[static_cast<size_t>(oct)].fifo.prepareToRead(dropForOctave, start1, size1, start2, size2);
                 octaves[static_cast<size_t>(oct)].fifo.finishedRead(size1 + size2);
@@ -102,10 +102,10 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run() {
 
                 // Calculate exactly how many samples this octave should process
                 // Oct 0: 1024, Oct 1: 512, Oct 2: 256...
-                int samplesWanted = 1024 >> oct;
+                const int samplesWanted = 1024 >> oct;
                 int start1, size1, start2, size2;
                 fifo.prepareToRead(samplesWanted, start1, size1, start2, size2);
-                int actualRead = size1 + size2;
+                const int actualRead = size1 + size2;
 
                 if (actualRead > 0) {
                     // Shift the sliding window left
@@ -143,9 +143,9 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run() {
                     // Adjust this gain until your attacks feel instantly snappy again.
                     const double inputGain = 8.0;
 
-                    int startIndex = (PitchengaAudioProcessor::numOctaves - 1 - oct) * binsPerOctave;
+                    const int startIndex = (PitchengaAudioProcessor::numOctaves - 1 - oct) * binsPerOctave;
                     for (size_t i = 0; i < cqtSpectrum.size(); ++i) {
-                        double amplitude = std::abs(cqtSpectrum[i]) * inputGain;
+                        const double amplitude = std::abs(cqtSpectrum[i]) * inputGain;
                         amplitudeSpectrumDb[static_cast<size_t>(startIndex) + i] = amplitudeToDbRescaled(amplitude);
                     }
                 }
@@ -209,7 +209,7 @@ PitchengaAudioProcessorEditor::~PitchengaAudioProcessorEditor() {
 void PitchengaAudioProcessorEditor::timerCallback() {
     // --- 1. Update the Tuner ---
     // Read the lock-free atomic variable
-    float latestHz = audioProcessor.currentPitchHz.load(std::memory_order_relaxed);
+    const float latestHz = audioProcessor.currentPitchHz.load(std::memory_order_relaxed);
 
     // Feed it to the visualizer component
     lineTuner.setPitchFrequency(latestHz);

@@ -4,7 +4,7 @@
 #include <numeric>
 
 // 1. ExpSmoother
-ExpSmoother::ExpSmoother(size_t size, double weight)
+ExpSmoother::ExpSmoother(const size_t size, const double weight)
     : currentWeight(weight), previousWeight(1.0 - weight) {
     data.resize(size, 0.0);
 }
@@ -23,7 +23,7 @@ const std::vector<double>& ExpSmoother::smooth(const std::vector<double>& curren
 }
 
 // 2. SpectralEqualizer
-SpectralEqualizer::SpectralEqualizer(size_t size, size_t windowSize)
+SpectralEqualizer::SpectralEqualizer(const size_t size, const size_t windowSize)
     : size(size), windowSize(windowSize) {
     filteredValues.resize(size, 0.0);
     window.resize(windowSize, 0.0);
@@ -33,15 +33,15 @@ const std::vector<double>& SpectralEqualizer::filter(const std::vector<double>& 
     for (size_t i = 0; i < size; ++i) {
         for (size_t winIndex = 0; winIndex < windowSize; ++winIndex) {
             // Forward-looking asymmetric window
-            size_t index = (i + winIndex + size) % size;
+            const size_t index = (i + winIndex + size) % size;
             window[winIndex] = values[index];
         }
 
         // Calculate median using nth_element (fast)
         std::vector<double> tempWindow = window; // Copy because nth_element mutates
-        size_t halfWindow = windowSize / 2;
-        std::nth_element(tempWindow.begin(), tempWindow.begin() + static_cast<ptrdiff_t>(halfWindow), tempWindow.end());
-        double median = tempWindow[halfWindow];
+        const size_t halfWindow = windowSize / 2;
+        std::ranges::nth_element(tempWindow, tempWindow.begin() + static_cast<ptrdiff_t>(halfWindow));
+        const double median = tempWindow[halfWindow];
 
         // MEDIAN_WEIGHT = 0.75
         filteredValues[i] = values[i] - 0.75 * median;
@@ -56,7 +56,7 @@ const std::vector<double>& SpectralEqualizer::filter(const std::vector<double>& 
     }
 
     if (newMax > 0.0) {
-        double factor = (origMax < 1.0) ? (origMax / newMax) : (1.0 / origMax);
+        const double factor = (origMax < 1.0) ? (origMax / newMax) : (1.0 / origMax);
         for (size_t i = 0; i < size; ++i) {
             filteredValues[i] *= factor;
         }
@@ -69,9 +69,9 @@ const std::vector<double>& SpectralEqualizer::filter(const std::vector<double>& 
 
 // 3. HarmonicPatternPitchClassDetector
 HarmonicPatternPitchClassDetector::HarmonicPatternPitchClassDetector(
-    int binsPerOctave,
-    int binsPerSemitone,
-    int harmonicCount
+    const int binsPerOctave,
+    const int binsPerSemitone,
+    const int harmonicCount
 )
     : harmonicCount(harmonicCount),
     binsPerSemitoneHalf(binsPerSemitone / 2),
@@ -82,16 +82,16 @@ HarmonicPatternPitchClassDetector::HarmonicPatternPitchClassDetector(
     }
 }
 
-double HarmonicPatternPitchClassDetector::extractHarmonics(const std::vector<double>& cqBins, int baseFreqBin) const {
+double HarmonicPatternPitchClassDetector::extractHarmonics(const std::vector<double>& cqBins, const int baseFreqBin) const {
     // EXACT JAVA PORT: Initialize with the fundamental energy (Adds the fundamental twice!)
     double dotProduct = cqBins[static_cast<size_t>(baseFreqBin)];
-    int centerFreqBin = baseFreqBin - binsPerSemitoneHalf;
+    const int centerFreqBin = baseFreqBin - binsPerSemitoneHalf;
 
     for (int i = 1; i <= harmonicCount; ++i) {
-        int harmonicBin = centerFreqBin + harmonicBinsIndexes[i - 1];
+        const int harmonicBin = centerFreqBin + harmonicBinsIndexes[i - 1];
 
         if (harmonicBin >= 0 && harmonicBin < static_cast<int>(cqBins.size())) {
-            double weight = 1.0 - 0.5 * (i - 1) * harmonicCountMinusOneInv; // HARMONIC_WEIGHT_FALLOFF = 0.5
+            const double weight = 1.0 - 0.5 * (i - 1) * harmonicCountMinusOneInv; // HARMONIC_WEIGHT_FALLOFF = 0.5
             dotProduct += weight * cqBins[static_cast<size_t>(harmonicBin)];
         }
     }
@@ -100,7 +100,7 @@ double HarmonicPatternPitchClassDetector::extractHarmonics(const std::vector<dou
 }
 
 const std::vector<double>& HarmonicPatternPitchClassDetector::detectPitchClasses(const std::vector<double>& cqBins) {
-    int size = static_cast<int>(cqBins.size());
+    const int size = static_cast<int>(cqBins.size());
     if (static_cast<int>(harmonicBins.size()) != size) {
         harmonicBins.resize(size, 0.0);
     }
@@ -109,11 +109,11 @@ const std::vector<double>& HarmonicPatternPitchClassDetector::detectPitchClasses
         harmonicBins[i] = extractHarmonics(cqBins, i);
     }
 
-    double harmonicSum = std::accumulate(harmonicBins.begin(), harmonicBins.end(), 0.0);
-    double origSum = std::accumulate(cqBins.begin(), cqBins.end(), 0.0);
+    const double harmonicSum = std::accumulate(harmonicBins.begin(), harmonicBins.end(), 0.0);
+    const double origSum = std::accumulate(cqBins.begin(), cqBins.end(), 0.0);
 
     if (harmonicSum > 0.0) {
-        double normalizationFactor = origSum / harmonicSum;
+        const double normalizationFactor = origSum / harmonicSum;
         for (int i = 0; i < size; ++i) {
             harmonicBins[i] *= normalizationFactor;
         }

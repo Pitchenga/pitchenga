@@ -16,7 +16,7 @@ class FastButterworth {
     const std::array<float, 7> outCoeffs = {-0.0017509260f, 0.0f, -0.1141994251f, 0.0f, -0.7776959619f, 0.0f, 0.0f};
 
 public:
-    float processSample(float signal) {
+    float processSample(const float signal) {
         // Shift history buffers
         for (size_t i = 0; i < 6; ++i) {
             inputSamples[i] = inputSamples[i + 1];

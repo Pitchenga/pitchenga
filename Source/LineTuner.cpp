@@ -4,7 +4,7 @@
 LineTuner::LineTuner()
 = default;
 
-void LineTuner::setPitchFrequency(float frequencyHz) {
+void LineTuner::setPitchFrequency(const float frequencyHz) {
     if (frequencyHz > 0.0f) {
         currentMidi = freqToMidi(frequencyHz);
     } else {
@@ -13,31 +13,31 @@ void LineTuner::setPitchFrequency(float frequencyHz) {
     repaint();
 }
 
-void LineTuner::setRange(float minMidiNote, float maxMidiNote) {
+void LineTuner::setRange(const float minMidiNote, const float maxMidiNote) {
     minMidi = minMidiNote;
     maxMidi = maxMidiNote;
     updateCachedGradient();
     repaint();
 }
 
-float LineTuner::freqToMidi(float freq) {
+float LineTuner::freqToMidi(const float freq) {
     if (freq <= 0.0f) return -1.0f;
     return 69.0f + 12.0f * std::log2(freq / 440.0f);
 }
 
-juce::String LineTuner::getNoteName(int midiNote) {
+juce::String LineTuner::getNoteName(const int midiNote) {
     int chroma = midiNote % 12;
     if (chroma < 0) chroma += 12;
-    int octave = midiNote / 12 - 1;
+    const int octave = midiNote / 12 - 1;
     return ColorPalette::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
 
-void LineTuner::paintLabel(juce::Graphics& graphics, int midiNote, float x, float stripY) {
-    juce::String name = getNoteName(midiNote);
+void LineTuner::paintLabel(juce::Graphics& graphics, const int midiNote, const float x, const float stripY) {
+    const juce::String name = getNoteName(midiNote);
     graphics.saveState();
 
-    float labelWidth = getLabelWidth();
-    float labelHeight = getLabelHeight();
+    const float labelWidth = getLabelWidth();
+    const float labelHeight = getLabelHeight();
 
     graphics.addTransform(juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, x, stripY - tickHeight));
 
@@ -78,25 +78,25 @@ float LineTuner::getPreferredHeight() {
 }
 
 void LineTuner::updateCachedGradient() {
-    int width = getWidth();
-    int height = getHeight();
+    const int width = getWidth();
+    const int height = getHeight();
     if (width <= 0 || height <= 0) return;
 
     // Create a 2D image so we can bake the text and ticks directly into it
     cachedGradient = juce::Image(juce::Image::ARGB, width, height, true);
 
-    float stripY = static_cast<float>(height) - stripHeight;
+    const float stripY = static_cast<float>(height) - stripHeight;
 
     // 1. Bake the continuous gradient
-    juce::Image::BitmapData data(cachedGradient, juce::Image::BitmapData::writeOnly);
+    const juce::Image::BitmapData data(cachedGradient, juce::Image::BitmapData::writeOnly);
     for (int x = 0; x < width; ++x) {
-        float horizontalFraction = width > 1 ? static_cast<float>(x) / static_cast<float>(width - 1) : 0.0f;
-        float midiAtX = minMidi + horizontalFraction * (maxMidi - minMidi);
+        const float horizontalFraction = width > 1 ? static_cast<float>(x) / static_cast<float>(width - 1) : 0.0f;
+        const float midiAtX = minMidi + horizontalFraction * (maxMidi - minMidi);
 
         float chroma = std::fmod(midiAtX, 12.0f);
         if (chroma < 0.0f) chroma += 12.0f;
 
-        juce::Colour fullColor = ColorPalette::getContinuousColor(chroma);
+        const juce::Colour fullColor = ColorPalette::getContinuousColor(chroma);
 
         for (int y = static_cast<int>(stripY); y < height; ++y) {
             data.setPixelColour(x, y, fullColor);
@@ -107,16 +107,16 @@ void LineTuner::updateCachedGradient() {
     juce::Graphics graphics(cachedGradient);
     graphics.setFont(getLabelFont());
 
-    int startMidi = static_cast<int>(std::ceil(minMidi));
-    int endMidi = static_cast<int>(std::floor(maxMidi));
+    const int startMidi = static_cast<int>(std::ceil(minMidi));
+    const int endMidi = static_cast<int>(std::floor(maxMidi));
 
     for (int note = startMidi; note <= endMidi; ++note) {
-        float x = static_cast<float>(width) * ((static_cast<float>(note) - minMidi) / (maxMidi - minMidi));
+        const float x = static_cast<float>(width) * ((static_cast<float>(note) - minMidi) / (maxMidi - minMidi));
 
         int chroma = note % 12;
         if (chroma < 0) chroma += 12;
 
-        juce::Colour fullColor = ColorPalette::chromaticScale[static_cast<size_t>(chroma)].color;
+        const juce::Colour fullColor = ColorPalette::chromaticScale[static_cast<size_t>(chroma)].color;
         graphics.setColour(fullColor);
 
         if (note > startMidi && note < endMidi) paintLabel(graphics, note, x, stripY);
@@ -132,8 +132,8 @@ void LineTuner::resized() {
 }
 
 void LineTuner::paint(juce::Graphics& graphics) {
-    auto bounds = getLocalBounds().toFloat();
-    auto height = static_cast<float>(getHeight());
+    const auto bounds = getLocalBounds().toFloat();
+    const auto height = static_cast<float>(getHeight());
 
     // 1. Draw the fully baked static background (Opaque overwrite, zero alpha tax)
     if (cachedGradient.isValid()) {
@@ -144,12 +144,12 @@ void LineTuner::paint(juce::Graphics& graphics) {
     if (currentMidi >= minMidi && currentMidi <= maxMidi) {
         graphics.setFont(getLabelFont());
 
-        float labelStripY = height - stripHeight;
+        const float labelStripY = height - stripHeight;
 
         // Find the nearest perfect whole note to illuminate
-        int nearestNote = static_cast<int>(std::round(currentMidi));
-        int startMidi = static_cast<int>(std::ceil(minMidi));
-        int endMidi = static_cast<int>(std::floor(maxMidi));
+        const int nearestNote = static_cast<int>(std::round(currentMidi));
+        const int startMidi = static_cast<int>(std::ceil(minMidi));
+        const int endMidi = static_cast<int>(std::floor(maxMidi));
 
         // Light up the label
         if (nearestNote > startMidi && nearestNote < endMidi) {
@@ -157,14 +157,14 @@ void LineTuner::paint(juce::Graphics& graphics) {
 
             int nearestChroma = nearestNote % 12;
             if (nearestChroma < 0) nearestChroma += 12;
-            juce::Colour toneColor = ColorPalette::chromaticScale[static_cast<size_t>(nearestChroma)].color;
+            const juce::Colour toneColor = ColorPalette::chromaticScale[static_cast<size_t>(nearestChroma)].color;
             graphics.setColour(toneColor);
             paintLabel(graphics, nearestNote, closestX, labelStripY);
         }
 
         // Draw the tuner needle
-        float pitchX = bounds.getWidth() * ((currentMidi - minMidi) / (maxMidi - minMidi));
-        float tunerStripY = height - stripHeight + tickHeight;
+        const float pitchX = bounds.getWidth() * ((currentMidi - minMidi) / (maxMidi - minMidi));
+        const float tunerStripY = height - stripHeight + tickHeight;
 
         juce::Path triangle;
         triangle.addTriangle(
