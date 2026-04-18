@@ -102,7 +102,7 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
     for (int i = 0; i < totalSemitones; ++i) {
         const int chroma = i % 12;
 
-        //fixme: move to
+        //fixme: move to Tone
         // Identify standard "black" keys
         const bool isBlackKey = (chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10);
 
@@ -110,14 +110,14 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
         const float binIndex = static_cast<float>(i) * (static_cast<float>(currentBinsPerOctave) / 12.0f);
 
         // 2. Find the visual center of that specific pitch bin
-        const float targetCenter = binIndex * barWidth + (barWidth * 0.5f);
+        const float targetCenter = binIndex * barWidth + barWidth * 0.5f;
 
         // 3. Route the line to the top half (black keys) or bottom half (white keys)
         constexpr float startY = 0.0f;
         const float endY = isBlackKey ? halfHeight : height;
 
         const juce::Colour baseColor = ColorPalette::chromaticScale[static_cast<size_t>(chroma)].color;
-        const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, 0.7f);
+        const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, 0.5f);
 
         graphics.setColour(color);
 
