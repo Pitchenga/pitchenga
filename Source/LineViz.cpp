@@ -63,7 +63,6 @@ void LineViz::paint(juce::Graphics& graphics) {
 }
 
 void LineViz::resized() {
-    // Re-bake the static background whenever the plugin window changes size
     paintFrame();
 }
 
@@ -83,11 +82,14 @@ void LineViz::paintFrame() {
 void LineViz::paintFrame(juce::Graphics& graphics) const {
     int totalOctaves = currentTotalBins / currentBinsPerOctave;
     if (totalOctaves <= 0) totalOctaves = PitchengaAudioProcessor::numOctaves;
-    int totalSemitones = totalOctaves * 12;
+    const int totalSemitones = totalOctaves * 12;
 
     if (totalSemitones <= 0) return;
 
-    // Every semitone gets exactly the same linear width on the X-axis
+    // The exact pixel width of one single CQT bin
+    const float barWidth = static_cast<float>(getWidth()) / static_cast<float>(currentTotalBins);
+
+    // The exact pixel width of one full semitone
     const float semitoneWidth = static_cast<float>(getWidth()) / static_cast<float>(totalSemitones);
     const float halfHeight = static_cast<float>(getHeight()) * 0.5f;
 
@@ -97,15 +99,23 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
         // Identify standard "black" keys
         const bool isBlackKey = (chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10);
 
-        // Stagger the Y position based on the key type
-        const float x = static_cast<float>(i) * semitoneWidth;
+        // 1. Find the exact pitch bin index for this semitone
+        const float binIndex = static_cast<float>(i) * (static_cast<float>(currentBinsPerOctave) / 12.0f);
+
+        // 2. Find the visual center of that specific pitch bin
+        const float targetCenter = binIndex * barWidth + (barWidth * 0.5f);
+
+        // 3. Shift the key left so its center perfectly aligns with the target
+        const float x = targetCenter - (semitoneWidth * 0.5f);
         const float y = isBlackKey ? 0.0f : halfHeight;
 
-        const juce::Rectangle rect(x, y, semitoneWidth, halfHeight);
+        // The width remains strictly semitoneWidth so white keys NEVER overlap
+        const juce::Rectangle<float> rect(x, y, semitoneWidth, halfHeight);
 
         const juce::Colour baseColor = ColorPalette::chromaticScale[static_cast<size_t>(chroma)].color;
         const juce::Colour color = baseColor.interpolatedWith(juce::Colours::black, 0.5f);
-        graphics.setColour(color);
+
+        graphics.setColour(baseColor);
         graphics.drawRect(rect, 1.0f);
     }
 }
