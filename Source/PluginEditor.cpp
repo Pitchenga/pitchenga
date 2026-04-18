@@ -204,8 +204,8 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run() {
                 if (results.size() == smoothed.size()) {
                     std::copy(smoothed.begin(), smoothed.end(), results.begin());
                 }
-                if (fullSpectrumResults.size() == equalizedPitchClasses.size()) {
-                    std::copy(equalizedPitchClasses.begin(), equalizedPitchClasses.end(), fullSpectrumResults.begin());
+                if (fullSpectrumResults.size() == filteredSpectrum.size()) {
+                    std::copy(filteredSpectrum.begin(), filteredSpectrum.end(), fullSpectrumResults.begin());
                 }
                 newDataAvailable.store(true);
             }

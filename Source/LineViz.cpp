@@ -10,62 +10,24 @@ bool LineViz::expand() {
 
     double* dataPointer = displayMagnitudes.data();
 
-    // --- 2. Per-Octave Ranking (Multiband Gating) ---
-    const int binsPerOct = totalBins / PitchengaAudioProcessor::numOctaves;
+    // MAnalyzer achieves its clean look by simply dropping the visual floor.
+    // Our raw data maps 0.0 to -90dB. A lot of low-level acoustic noise lives there.
+    // By setting the visual floor to 0.35 (approx -58dB), the noise falls entirely off the screen,
+    // leaving only the pure, distinct harmonic peaks.
+    constexpr double visualFloor = 0.35;
+    constexpr double rangeInv = 1.2/ (1.0 - visualFloor);
 
-    struct BinData {
-        int index;
-        float velocity;
-    };
+    for (int i = 0; i < totalBins; ++i) {
+        double val = dataPointer[i];
 
-    std::vector<BinData> sortedBins(static_cast<size_t>(binsPerOct));
-    std::vector<int> binOrders(static_cast<size_t>(binsPerOct));
-
-    for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct) {
-        const int startIndex = oct * binsPerOct;
-        const int endIndex = std::min(startIndex + binsPerOct, totalBins);
-        const int currentOctaveBins = endIndex - startIndex;
-
-        if (currentOctaveBins <= 0) break;
-
-        for (int i = 0; i < currentOctaveBins; ++i) {
-            sortedBins[static_cast<size_t>(i)] = {i, static_cast<float>(dataPointer[startIndex + i])};
-        }
-
-        std::ranges::sort(
-            sortedBins.begin(),
-            sortedBins.begin() + currentOctaveBins,
-            [](const BinData& a, const BinData& b) {
-                return a.velocity < b.velocity;
-            }
-        );
-
-        // --- NEW: Dynamic Octave Normalization ---
-        // Find the absolute highest peak in this specific octave
-        const float maxOctaveVelocity = sortedBins[static_cast<size_t>(currentOctaveBins - 1)].velocity;
-
-        // If the tilt pushed this peak past 1.0 calculate how much to scale the whole octave down.
-        // If it is below 1.0, leave it alone (1.0f multiplier).
-        const float octaveGainReduction = maxOctaveVelocity > 1.0f ? (1.0f / maxOctaveVelocity) : 1.0f;
-
-        for (int rank = 0; rank < currentOctaveBins; ++rank) {
-            binOrders[static_cast<size_t>(sortedBins[static_cast<size_t>(rank)].index)] = rank;
-        }
-
-        constexpr float expansionFactor = 1.5f;
-        const float rankMultiplier = expansionFactor / static_cast<float>(currentOctaveBins > 1 ? currentOctaveBins - 1 : 1);
-
-        for (int i = 0; i < currentOctaveBins; ++i) {
-            const auto rawVelocity = static_cast<float>(dataPointer[startIndex + i]);
-            const float rankContrast = static_cast<float>(binOrders[static_cast<size_t>(i)]) * rankMultiplier;
-
-            // Apply the gain reduction so the whole octave shrinks proportionally to fit
-            float renderVelocity = (rawVelocity * octaveGainReduction) * rankContrast;
-
-            // We still clamp safely, but the math guarantees it will never hard-clip
-            dataPointer[startIndex + i] = static_cast<double>(std::min(renderVelocity, 1.0f));
+        if (val <= visualFloor) {
+            dataPointer[i] = 0.0;
+        } else {
+            // Stretch the remaining peaks back to the 0.0 - 1.0 range for drawing
+            dataPointer[i] = (val - visualFloor) * rangeInv;
         }
     }
+
     return false;
 }
 
@@ -80,7 +42,7 @@ void LineViz::updateResults(const std::vector<double>& results) {
 
     if (expand()) return;
     advanceBubbles();
-    displayMagnitudes = smoother->smooth(displayMagnitudes);
+    // displayMagnitudes = smoother->smooth(displayMagnitudes);
 
     repaint();
 }

@@ -22,7 +22,7 @@ private:
     void paintFrame();
     void paintFrame(juce::Graphics& graphics) const;
 
-    const float bubbleThreshold = 0.4f;
+    const float bubbleThreshold = 0.3f;
     struct Bubble {
         float x;
         float y;
