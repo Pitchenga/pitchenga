@@ -28,6 +28,7 @@ private:
 
     static constexpr float stripHeight = 16.0f;
     static constexpr float tickHeight = 5.0f;
+    static constexpr float needleTriangleWidth = 12.0f;
     static constexpr float dimmingFactor = 0.9f;
     static constexpr float tunerFontSize = 15.0f;
     static constexpr auto tunerFontStyle = "Bold";

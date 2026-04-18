@@ -144,14 +144,12 @@ void LineTuner::paint (juce::Graphics& graphics)
 
         // Draw the tuner needle
         float pitchX = bounds.getWidth() * ((currentMidi - minMidi) / (maxMidi - minMidi));
-
-        float triangleWidth = 12.0f;
         float tunerStripY = height - stripHeight + tickHeight;
 
         juce::Path triangle;
         triangle.addTriangle (pitchX, tunerStripY,
-                              pitchX - triangleWidth * 0.5f, height,
-                              pitchX + triangleWidth * 0.5f, height);
+                              pitchX - needleTriangleWidth * 0.5f, height,
+                              pitchX + needleTriangleWidth * 0.5f, height);
 
         graphics.setColour (juce::Colours::white);
         graphics.fillPath (triangle);
