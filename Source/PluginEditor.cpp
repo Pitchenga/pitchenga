@@ -188,7 +188,7 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run() {
             const auto& detectedPitchClasses = pcDetector->detectPitchClasses(filteredSpectrum);
             const auto& equalizedPitchClasses = spectralEqualizer->filter(detectedPitchClasses);
 
-            std::fill(octaveBins.begin(), octaveBins.end(), 0.0);
+            std::ranges::fill(octaveBins, 0.0);
             for (int i = 0; i < binsPerOctave; ++i) {
                 double maxVal = 0.0;
                 for (int j = i; j < static_cast<int>(equalizedPitchClasses.size()); j += binsPerOctave) {
@@ -202,10 +202,10 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run() {
             {
                 const juce::CriticalSection::ScopedLockType lock(resultLock);
                 if (results.size() == smoothed.size()) {
-                    std::copy(smoothed.begin(), smoothed.end(), results.begin());
+                    std::ranges::copy(smoothed, results.begin());
                 }
                 if (fullSpectrumResults.size() == filteredSpectrum.size()) {
-                    std::copy(filteredSpectrum.begin(), filteredSpectrum.end(), fullSpectrumResults.begin());
+                    std::ranges::copy(filteredSpectrum, fullSpectrumResults.begin());
                 }
                 newDataAvailable.store(true);
             }
@@ -274,8 +274,9 @@ void PitchengaAudioProcessorEditor::resized() {
     audioProcessor.lastUIHeight = getHeight();
 
     auto bounds = getLocalBounds();
+    //fixme: WHen all three are enabled, share height between circle and line viz equally
+    //fixme: Crash when circle starts with zero height
     lineViz.setBounds(bounds);
-    //fixme: WHen all three are enabled, share between circle and line viz equally
     // lineViz.setBounds(bounds.removeFromTop(LineViz::getPreferredHeight()));
     // bounds.removeFromTop(1);
     // tunerViz.setBounds(bounds.removeFromBottom(static_cast<int>(TunerViz::getPreferredHeight() + 1)));
