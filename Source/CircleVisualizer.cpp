@@ -118,7 +118,7 @@ void CircleVisualizer::paint(juce::Graphics& g) {
     }
 }
 
-void CircleVisualizer::paintLabels(
+void CircleVisualizer::paintLabel(
     juce::Graphics& graphics,
     const juce::Point<float> center,
     const float baseRadius,
@@ -127,8 +127,8 @@ void CircleVisualizer::paintLabels(
     const float cos
 ) {
     const float rLabel = baseRadius * 0.8175f;
-    const float lx = center.x + rLabel * cos;
-    const float ly = center.y + rLabel * sin;
+    const float initialX = center.x + rLabel * cos;
+    const float initialY = center.y + rLabel * sin;
     const juce::String name = ColorPalette::chromaticScale[static_cast<size_t>(i)].toneName;
 
     graphics.setFont(juce::FontOptions(baseRadius * 0.11f).withStyle("Bold"));
@@ -138,7 +138,7 @@ void CircleVisualizer::paintLabels(
     const float textWidth = juce::GlyphArrangement::getStringWidth(graphics.getCurrentFont(), name);
     const float textHeight = graphics.getCurrentFont().getHeight();
 
-    const juce::Rectangle textBounds(lx - textWidth * 0.5f, ly - textHeight * 0.5f, textWidth, textHeight);
+    const juce::Rectangle textBounds(initialX - textWidth * 0.5f, initialY - textHeight * 0.5f, textWidth, textHeight);
     graphics.drawText(name, textBounds.toNearestInt(), juce::Justification::centred, false);
 }
 
@@ -162,7 +162,7 @@ void CircleVisualizer::paintFrame(juce::Graphics& graphics) const {
         const float r1 = baseRadius * 0.70f;
         graphics.drawLine(center.x, center.y, center.x + r1 * cos, center.y + r1 * sin, 2.0f);
 
-        paintLabels(graphics, center, baseRadius, i, sin, cos);
+        paintLabel(graphics, center, baseRadius, i, sin, cos);
 
         // Outer tick
         graphics.setColour(color);
