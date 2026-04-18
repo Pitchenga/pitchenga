@@ -20,11 +20,14 @@ public:
 
 private:
     void paintFrame(juce::Graphics& g);
+    void paintFrame();
     static juce::Colour calculateColor(float velocity, float toneRatio);
 
     std::vector<double> smoothedOctaveBins;
     std::array<juce::Path, totalFoldedBins> segmentPaths;
     juce::PathStrokeType strokeType{0.5f};
+
+    juce::Image cachedFrame;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CircleVisualizer)
 };

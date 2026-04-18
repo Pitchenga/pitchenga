@@ -57,11 +57,15 @@ juce::Colour CircleVisualizer::calculateColor(float velocity, float toneRatio) {
 }
 
 void CircleVisualizer::paint(juce::Graphics& g) {
+    if (cachedFrame.isValid()) {
+        g.drawImageAt(cachedFrame, 0, 0);
+    } else {
+        paintFrame(g);
+    }
+
     const auto bounds = getLocalBounds().toFloat();
     const auto center = bounds.getCentre();
     const auto baseRadius = std::min(bounds.getWidth(), bounds.getHeight()) * 0.45f;
-
-    paintFrame(g);
 
     // 1. Sort to get bin ranks (Matching Java indexToVelocityPairs)
     struct BinData {
@@ -139,7 +143,18 @@ void CircleVisualizer::paintFrame(juce::Graphics& g) {
     }
 }
 
+void CircleVisualizer::paintFrame() {
+    int width = getWidth();
+    int height = getHeight();
+    if (width <= 0 || height <= 0) return;
+
+    cachedFrame = juce::Image(juce::Image::ARGB, width, height, true);
+    juce::Graphics g(cachedFrame);
+    paintFrame(g);
+}
+
 void CircleVisualizer::resized() {
+    paintFrame();
     constexpr float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(totalFoldedBins);
     constexpr float rotation = 0.0f - 0.5f * angleStep;
 
