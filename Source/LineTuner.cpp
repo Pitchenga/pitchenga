@@ -96,7 +96,8 @@ void LineTuner::updateCachedGradient()
         juce::Colour dimmedColor = juce::Colours::black.interpolatedWith (fullColor, dimmingFactor);
         graphics.setColour (dimmedColor);
 
-        paintLabel (graphics, note, x, stripY);
+        if (note > startMidi && note < endMidi)
+            paintLabel (graphics, note, x, stripY);
 
         // Tick
         graphics.setColour (juce::Colours::black);
@@ -129,9 +130,11 @@ void LineTuner::paint (juce::Graphics& graphics)
 
         // Find the nearest perfect whole note to illuminate
         int nearestNote = static_cast<int>(std::round(currentMidi));
+        int startMidi = static_cast<int>(std::ceil(minMidi));
+        int endMidi = static_cast<int>(std::floor(maxMidi));
 
         // Light up the label
-        if (static_cast<float>(nearestNote) >= std::ceil(minMidi) && static_cast<float>(nearestNote) <= std::floor(maxMidi))
+        if (nearestNote > startMidi && nearestNote < endMidi)
         {
             float closestX = bounds.getWidth() * ((static_cast<float>(nearestNote) - minMidi) / (maxMidi - minMidi));
             
