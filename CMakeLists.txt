@@ -61,6 +61,8 @@ target_sources(Pitchenga PRIVATE
         Source/TunerViz.cpp
         Source/CircleViz.h
         Source/CircleViz.cpp
+        Source/LineViz.h
+        Source/LineViz.cpp
 )
 
 # 4. Link the heavy-lifting JUCE modules (Audio, GUI, and Hardware-Accelerated Math)

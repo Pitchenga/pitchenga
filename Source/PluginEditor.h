@@ -34,6 +34,8 @@ private:
         void run() override;
 
         void getLatestResults(std::vector<double>& dest);
+        void getFullSpectrumResults(std::vector<double>& dest);
+        const CqtEngine* getCqtEngine() const { return &cqt; }
         bool hasNewData() const { return newDataAvailable.load(); }
         void clearNewDataFlag() { newDataAvailable.store(false); }
 
@@ -62,6 +64,10 @@ private:
         std::atomic<bool> newDataAvailable{false};
 
         static double amplitudeToDbRescaled(double amplitude);
+
+        std::unique_ptr<adamski::PitchMPM> pitchDetector;
+        std::vector<float> pitchBuffer;
+        std::vector<float> pitchAnalysisBuffer;
     };
 
     CqtWorkerThread worker;

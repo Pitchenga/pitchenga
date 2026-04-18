@@ -105,14 +105,5 @@ private:
     std::vector<float> monoBuffer;
     std::vector<float> nextStageBuffer;
 
-    // Pitch detection buffers
-    std::vector<float> pitchCircularBuffer;
-    int pitchWritePos = 0;
-    std::vector<float> pitchAnalysisBuffer;
-    int samplesSinceLastPitchDetection = 0;
-
-    juce::dsp::IIR::Filter<float> pitchPreFilter;
-    std::unique_ptr<adamski::PitchMPM> pitchDetector;
-
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PitchengaAudioProcessor)
 };

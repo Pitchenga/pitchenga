@@ -43,6 +43,10 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::setupBuffers() {
         const juce::CriticalSection::ScopedLockType lock(resultLock);
         results.assign(static_cast<size_t>(binsPerOctave), 0.0);
     }
+
+    pitchDetector = std::make_unique<adamski::PitchMPM>(static_cast<int>(config.samplingFreq), 4096);
+    pitchBuffer.assign(4096, 0.0f);
+    pitchAnalysisBuffer.assign(4096, 0.0f);
 }
 
 void PitchengaAudioProcessorEditor::CqtWorkerThread::updateSampleRate(const double newSampleRate) {
@@ -128,6 +132,26 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run() {
                             buffer.begin() + (start2 + size2),
                             win.begin() + (static_cast<ptrdiff_t>(signalBlockSize) - actualRead) + size1
                         );
+
+                    if (oct == 0 && pitchDetector != nullptr) {
+                        // 1. Shift the pitch history left
+                        std::memmove(pitchBuffer.data(), pitchBuffer.data() + actualRead, static_cast<size_t>(4096 - actualRead) * sizeof(float));
+
+                        // 2. Append the exact same raw audio we just pulled from the FIFO
+                        if (size1 > 0)
+                            std::copy(buffer.begin() + start1, buffer.begin() + (start1 + size1), pitchBuffer.begin() + (4096 - actualRead));
+                        if (size2 > 0)
+                            std::copy(buffer.begin() + start2, buffer.begin() + (start2 + size2), pitchBuffer.begin() + (4096 - actualRead) + size1);
+
+                        // 3. Process Pitch (Multiply by 12.0f as you had before)
+                        std::copy(pitchBuffer.begin(), pitchBuffer.end(), pitchAnalysisBuffer.begin());
+                        juce::FloatVectorOperations::multiply(pitchAnalysisBuffer.data(), 12.0f, 4096);
+
+                        const float detectedPitch = pitchDetector->getPitch(pitchAnalysisBuffer.data());
+
+                        // 4. Update the atomic variable for the UI timer to read
+                        processor.currentPitchHz.store(detectedPitch, std::memory_order_relaxed);
+                    }
 
                     fifo.finishedRead(actualRead);
                 }
