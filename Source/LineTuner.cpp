@@ -145,13 +145,17 @@ void LineTuner::paint (juce::Graphics& graphics)
         // Draw the tuner needle
         float pitchX = bounds.getWidth() * ((currentMidi - minMidi) / (maxMidi - minMidi));
 
-        graphics.setColour (juce::Colours::black);
-        juce::Path triangle;
         float triangleWidth = 12.0f;
         float tunerStripY = height - stripHeight + tickHeight;
+
+        juce::Path triangle;
         triangle.addTriangle (pitchX, tunerStripY,
                               pitchX - triangleWidth * 0.5f, height,
                               pitchX + triangleWidth * 0.5f, height);
+
+        graphics.setColour (juce::Colours::white);
+        graphics.fillPath (triangle);
+        graphics.setColour (juce::Colours::black);
         graphics.strokePath (triangle, juce::PathStrokeType (2.0f));
     }
 }
