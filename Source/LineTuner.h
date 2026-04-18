@@ -15,9 +15,9 @@ public:
 
 private:
     void updateCachedGradient();
-    float freqToMidi (float freq) const;
-    juce::String getNoteName (int midiNote) const;
-    void paintLabel (juce::Graphics& graphics, int midiNote, float x, int stripY) const;
+    static float freqToMidi (float freq);
+    static juce::String getNoteName (int midiNote);
+    static void paintLabel (juce::Graphics& graphics, int midiNote, float x, float stripY);
 
     // Range: Re1 to Re6
     float minMidi = 26.0f;
@@ -26,11 +26,13 @@ private:
 
     juce::Image cachedGradient;
 
+    static constexpr float stripHeight = 16.0f;
+    static constexpr float tickHeight = 5.0f;
     static constexpr float dimmingFactor = 0.9f;
     static constexpr float tunerFontSize = 15.0f;
-    static constexpr const char* tunerFontStyle = "Bold";
+    static constexpr auto tunerFontStyle = "Bold";
 
-    juce::Font getTunerFont() const;
+    static juce::Font getTunerFont();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LineTuner)
 };

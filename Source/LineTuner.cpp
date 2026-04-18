@@ -2,8 +2,7 @@
 #include <cmath>
 
 LineTuner::LineTuner()
-{
-}
+= default;
 
 void LineTuner::setPitchFrequency (float frequencyHz)
 {
@@ -23,32 +22,32 @@ void LineTuner::setRange (float minMidiNote, float maxMidiNote)
     repaint();
 }
 
-float LineTuner::freqToMidi (float freq) const
+float LineTuner::freqToMidi (float freq)
 {
     if (freq <= 0.0f) return -1.0f;
     return 69.0f + 12.0f * std::log2 (freq / 440.0f);
 }
 
-juce::String LineTuner::getNoteName (int midiNote) const
+juce::String LineTuner::getNoteName (int midiNote)
 {
     int chroma = midiNote % 12;
     if (chroma < 0) chroma += 12;
-    int octave = (midiNote / 12) - 1;
+    int octave = midiNote / 12 - 1;
     return ColorPalette::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
 
-void LineTuner::paintLabel (juce::Graphics& graphics, int midiNote, float x, int stripY) const
+void LineTuner::paintLabel (juce::Graphics& graphics, int midiNote, float x, float stripY)
 {
     juce::String name = getNoteName(midiNote);
     graphics.saveState();
-    graphics.addTransform (juce::AffineTransform::rotation (-juce::MathConstants<float>::halfPi, x, static_cast<float>(stripY - 5)));
-    graphics.drawText (name, static_cast<int>(x), stripY - 5 - 15, 50, 30, juce::Justification::centredLeft);
+    graphics.addTransform (juce::AffineTransform::rotation (-juce::MathConstants<float>::halfPi, x, stripY - tickHeight));
+    graphics.drawText (name, static_cast<int>(x), static_cast<int>(stripY - tickHeight - stripHeight), 50, 30, juce::Justification::centredLeft);
     graphics.restoreState();
 }
 
-juce::Font LineTuner::getTunerFont() const
+juce::Font LineTuner::getTunerFont()
 {
-    return juce::Font (juce::FontOptions (tunerFontSize).withStyle (tunerFontStyle));
+    return {juce::FontOptions (tunerFontSize).withStyle (tunerFontStyle)};
 }
 
 void LineTuner::updateCachedGradient()
@@ -60,8 +59,7 @@ void LineTuner::updateCachedGradient()
     // Create a 2D image so we can bake the text and ticks directly into it
     cachedGradient = juce::Image (juce::Image::ARGB, width, height, true);
 
-    int stripHeight = 16;
-    int stripY = height - stripHeight;
+    float stripY = static_cast<float>(height) - stripHeight;
 
     // 1. Bake the continuous gradient
     juce::Image::BitmapData data (cachedGradient, juce::Image::BitmapData::writeOnly);
@@ -75,7 +73,7 @@ void LineTuner::updateCachedGradient()
 
         juce::Colour fullColor = ColorPalette::getContinuousColor (chroma);
 
-        for (int y = stripY; y < height; ++y) {
+        for (int y = static_cast<int>(stripY); y < height; ++y) {
             data.setPixelColour (x, y, fullColor);
         }
     }
@@ -100,9 +98,9 @@ void LineTuner::updateCachedGradient()
 
         paintLabel (graphics, note, x, stripY);
 
-        // 1x5 tick
+        // Tick
         graphics.setColour (juce::Colours::black);
-        graphics.fillRect (x - 0.5f, static_cast<float>(stripY), 1.0f, 5.0f);
+        graphics.fillRect (x - 0.5f, stripY, 1.0f, tickHeight);
 
     }
 }
@@ -115,7 +113,7 @@ void LineTuner::resized()
 void LineTuner::paint (juce::Graphics& graphics)
 {
     auto bounds = getLocalBounds().toFloat();
-    int height = getHeight();
+    auto height = static_cast<float>(getHeight());
 
     // 1. Draw the fully baked static background (Opaque overwrite, zero alpha tax)
     if (cachedGradient.isValid()) {
@@ -127,9 +125,7 @@ void LineTuner::paint (juce::Graphics& graphics)
     {
         graphics.setFont (getTunerFont());
 
-        //fixme: extract constant
-        int stripHeight = 16;
-        int labelStripY = height - stripHeight;
+        float labelStripY = height - stripHeight;
 
         // Find the nearest perfect whole note to illuminate
         int nearestNote = static_cast<int>(std::round(currentMidi));
@@ -148,17 +144,14 @@ void LineTuner::paint (juce::Graphics& graphics)
 
         // Draw the tuner needle
         float pitchX = bounds.getWidth() * ((currentMidi - minMidi) / (maxMidi - minMidi));
-        
-        float exactChroma = std::fmod (currentMidi, 12.0f);
-        if (exactChroma < 0.0f) exactChroma += 12.0f;
-        
+
         graphics.setColour (juce::Colours::black);
         juce::Path triangle;
         float triangleWidth = 12.0f;
-        int tunerStripY = height - stripHeight + 5;
-        triangle.addTriangle (pitchX, static_cast<float>(tunerStripY),
-                              pitchX - triangleWidth * 0.5f, static_cast<float>(height),
-                              pitchX + triangleWidth * 0.5f, static_cast<float>(height));
+        float tunerStripY = height - stripHeight + tickHeight;
+        triangle.addTriangle (pitchX, tunerStripY,
+                              pitchX - triangleWidth * 0.5f, height,
+                              pitchX + triangleWidth * 0.5f, height);
         graphics.strokePath (triangle, juce::PathStrokeType (2.0f));
     }
 }
