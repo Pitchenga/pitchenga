@@ -89,13 +89,13 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
     // The exact pixel width of one single CQT bin
     const float barWidth = static_cast<float>(getWidth()) / static_cast<float>(currentTotalBins);
 
-    // The exact pixel width of one full semitone
-    const float semitoneWidth = static_cast<float>(getWidth()) / static_cast<float>(totalSemitones);
-    const float halfHeight = static_cast<float>(getHeight()) * 0.5f;
+    const float height = static_cast<float>(getHeight());
+    const float halfHeight = height * 0.5f;
 
     for (int i = 0; i < totalSemitones; ++i) {
         const int chroma = i % 12;
 
+        //fixme: move to
         // Identify standard "black" keys
         const bool isBlackKey = (chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10);
 
@@ -105,17 +105,16 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
         // 2. Find the visual center of that specific pitch bin
         const float targetCenter = binIndex * barWidth + (barWidth * 0.5f);
 
-        // 3. Shift the key left so its center perfectly aligns with the target
-        const float x = targetCenter - (semitoneWidth * 0.5f);
-        const float y = isBlackKey ? 0.0f : halfHeight;
-
-        // The width remains strictly semitoneWidth so white keys NEVER overlap
-        const juce::Rectangle<float> rect(x, y, semitoneWidth, halfHeight);
+        // 3. Route the line to the top half (black keys) or bottom half (white keys)
+        constexpr float startY = 0.0f;
+        const float endY = isBlackKey ? halfHeight : height;
 
         const juce::Colour baseColor = ColorPalette::chromaticScale[static_cast<size_t>(chroma)].color;
-        const juce::Colour color = baseColor.interpolatedWith(juce::Colours::black, 0.5f);
+        const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, 0.7f);
 
-        graphics.setColour(baseColor);
-        graphics.drawRect(rect, 1.0f);
+        graphics.setColour(color);
+
+        // Draw a strict 1px vertical line exactly at the calculated center
+        graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
     }
 }
