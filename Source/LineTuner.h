@@ -2,16 +2,15 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "ColorPalette.h"
 
-class LineTuner : public juce::Component
-{
+class LineTuner : public juce::Component {
 public:
     LineTuner();
 
 
-    void setPitchFrequency (float frequencyHz);
-    void setRange (float minMidiNote, float maxMidiNote);
+    void setPitchFrequency(float frequencyHz);
+    void setRange(float minMidiNote, float maxMidiNote);
 
-    void paint (juce::Graphics& graphics) override;
+    void paint(juce::Graphics& graphics) override;
     void resized() override;
 
     static constexpr float stripHeight = 16.0f;
@@ -22,15 +21,15 @@ public:
     static float getPreferredHeight();
 
     static constexpr float needleTriangleWidth = 12.0f;
-    static constexpr float dimmingFactor = 0.9f;
+    static constexpr float dimmingFactor = 1.0f;
     static constexpr float tunerFontSize = 15.0f;
     static constexpr auto tunerFontStyle = "Bold";
 
 private:
     void updateCachedGradient();
-    static float freqToMidi (float freq);
-    static juce::String getNoteName (int midiNote);
-    static void paintLabel (juce::Graphics& graphics, int midiNote, float x, float stripY);
+    static float freqToMidi(float freq);
+    static juce::String getNoteName(int midiNote);
+    static void paintLabel(juce::Graphics& graphics, int midiNote, float x, float stripY);
 
     // fixme: restore the Pitch enum and use Pitch references instead of hard-coded mini
     // fixme: Does not work below Mi2
@@ -42,7 +41,7 @@ private:
     juce::Image cachedGradient;
 
 
-    static juce::Font getTunerFont();
+    static juce::Font getLabelFont();
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LineTuner)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LineTuner)
 };
