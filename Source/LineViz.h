@@ -7,13 +7,13 @@
 class LineViz : public juce::Component
 {
 public:
-    LineViz(PitchengaAudioProcessor& p);
-    void paint(juce::Graphics& g) override;
+    LineViz(PitchengaAudioProcessor& processor);
+    void paint(juce::Graphics& graphics) override;
     void updateResults(const std::vector<double>& results);
     
     void setEngine(const CqtEngine* e) { engine = e; }
 
-    static constexpr int getPreferredHeight() { return 100; }
+    static constexpr int getPreferredHeight() { return 300; }
 
 private:
     PitchengaAudioProcessor& processor;

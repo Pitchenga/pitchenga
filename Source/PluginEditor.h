@@ -7,6 +7,7 @@
 #include "Analyzers.h"
 #include "TunerViz.h"
 #include "CircleViz.h"
+#include "LineViz.h"
 #include <array>
 #include <vector>
 #include <memory>
@@ -61,6 +62,7 @@ private:
 
         juce::CriticalSection resultLock;
         std::vector<double> results;
+        std::vector<double> fullSpectrumResults;
         std::atomic<bool> newDataAvailable{false};
 
         static double amplitudeToDbRescaled(double amplitude);
@@ -72,10 +74,12 @@ private:
 
     CqtWorkerThread worker;
     TunerViz tunerViz;
+    LineViz lineViz;
     CircleViz circleViz;
 
     // Shared results for rendering
     std::vector<double> resultsBuffer;
+    std::vector<double> fullSpectrumBuffer;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PitchengaAudioProcessorEditor)
 };

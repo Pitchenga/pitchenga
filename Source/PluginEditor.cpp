@@ -3,6 +3,8 @@
 #include <cmath>
 #include <pitch_detector/pitch_detector.h>
 
+#include "LineViz.h"
+
 
 // --- CqtWorkerThread Implementation ---
 
@@ -20,7 +22,7 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::setupBuffers() {
 
     const int totalBins = cqt.getTotalBins();
     const int binsPerOctave = cqt.getBinsPerOctave();
-    const size_t signalBlockSize = static_cast<size_t>(cqt.getSignalBlockSize());
+    const auto signalBlockSize = static_cast<size_t>(cqt.getSignalBlockSize());
 
     pcDetector = std::make_unique<HarmonicPatternPitchClassDetector>(binsPerOctave, config.binsPerSemitone);
     spectralEqualizer = std::make_unique<SpectralEqualizer>(totalBins, 30);
@@ -135,15 +137,25 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run() {
 
                     if (oct == 0 && pitchDetector != nullptr) {
                         // 1. Shift the pitch history left
-                        std::memmove(pitchBuffer.data(), pitchBuffer.data() + actualRead, static_cast<size_t>(4096 - actualRead) * sizeof(float));
+                        std::memmove(
+                            pitchBuffer.data(),
+                            pitchBuffer.data() + actualRead,
+                            static_cast<size_t>(4096 - actualRead) * sizeof(float)
+                        );
 
                         // 2. Append the exact same raw audio we just pulled from the FIFO
-                        if (size1 > 0)
-                            std::copy(buffer.begin() + start1, buffer.begin() + (start1 + size1), pitchBuffer.begin() + (4096 - actualRead));
-                        if (size2 > 0)
-                            std::copy(buffer.begin() + start2, buffer.begin() + (start2 + size2), pitchBuffer.begin() + (4096 - actualRead) + size1);
+                        if (size1 > 0) std::copy(
+                            buffer.begin() + start1,
+                            buffer.begin() + (start1 + size1),
+                            pitchBuffer.begin() + (4096 - actualRead)
+                        );
+                        if (size2 > 0) std::copy(
+                            buffer.begin() + start2,
+                            buffer.begin() + (start2 + size2),
+                            pitchBuffer.begin() + (4096 - actualRead) + size1
+                        );
 
-                        // 3. Process Pitch (Multiply by 12.0f as you had before)
+                        // 3. Force weak fundamentals above the MPM clarity threshold.
                         std::copy(pitchBuffer.begin(), pitchBuffer.end(), pitchAnalysisBuffer.begin());
                         juce::FloatVectorOperations::multiply(pitchAnalysisBuffer.data(), 12.0f, 4096);
 
@@ -205,13 +217,17 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::getLatestResults(std::vecto
     std::copy(results.begin(), results.end(), dest.begin());
 }
 
-// --- Editor Implementation ---
+void PitchengaAudioProcessorEditor::CqtWorkerThread::getFullSpectrumResults(std::vector<double>& dest) {
+    const juce::CriticalSection::ScopedLockType lock(resultLock);
+    if (dest.size() != fullSpectrumResults.size()) dest.resize(fullSpectrumResults.size());
+    std::ranges::copy(fullSpectrumResults, dest.begin());
+}
 
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProcessor& p)
-    : AudioProcessorEditor(&p), audioProcessor(p), worker(p) {
-    // Add components to the UI
+    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), lineViz(p) {
     addAndMakeVisible(tunerViz);
     addAndMakeVisible(circleViz);
+    addAndMakeVisible(lineViz);
 
     resultsBuffer.resize(CircleViz::totalFoldedBins, 0.0);
 
@@ -252,5 +268,6 @@ void PitchengaAudioProcessorEditor::resized() {
 
     auto bounds = getLocalBounds();
     tunerViz.setBounds(bounds.removeFromBottom(static_cast<int>(TunerViz::getPreferredHeight() + 1)));
+    lineViz.setBounds(bounds.removeFromBottom(LineViz::getPreferredHeight()));
     circleViz.setBounds(bounds);
 }

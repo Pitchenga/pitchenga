@@ -2,14 +2,14 @@
 #include "ColorPalette.h"
 #include <algorithm>
 
-LineViz::LineViz(PitchengaAudioProcessor& p) : processor(p) {}
+LineViz::LineViz(PitchengaAudioProcessor& processor) : processor(processor) {}
 
 void LineViz::updateResults(const std::vector<double>& results) {
     displayMagnitudes = results;
     repaint();
 }
 
-void LineViz::paint(juce::Graphics& g) {
+void LineViz::paint(juce::Graphics& graphics) {
     if (engine) {
         currentTotalBins = engine->getTotalBins();
         currentBinsPerOctave = engine->getBinsPerOctave();
@@ -34,16 +34,16 @@ void LineViz::paint(juce::Graphics& g) {
         if (i >= static_cast<int>(displayMagnitudes.size())) break;
 
         // Add a multiplier to make weak signals more visible as requested by the specification
-        const double scalingMultiplier = 1.5;
+        constexpr double scalingMultiplier = 1.5;
         const double normalizedMagnitude = std::min(1.0, std::max(0.0, displayMagnitudes[static_cast<size_t>(i)] * scalingMultiplier));
-        const float barHeight = static_cast<float>(normalizedMagnitude * height);
+        const auto barHeight = static_cast<float>(normalizedMagnitude * height);
         
         const float chroma = static_cast<float>(i % currentBinsPerOctave) * 12.0f / static_cast<float>(currentBinsPerOctave);
         const juce::Colour color = ColorPalette::getContinuousColor(chroma);
         
-        g.setColour(color);
+        graphics.setColour(color);
         // Draw filled rectangle originating from the bottom boundary
-        g.fillRect(static_cast<float>(i) * barWidth, 
+        graphics.fillRect(static_cast<float>(i) * barWidth,
                    static_cast<float>(height) - barHeight, 
                    barWidth, 
                    barHeight);
