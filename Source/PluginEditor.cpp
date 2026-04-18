@@ -196,11 +196,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor (PitchengaAudioProc
     // Add the tuner to the UI
     addAndMakeVisible (lineTuner);
 
-    //fixme: restore the Pitch enum
-    // Set up the default range: La0 (21) to Mi4 (64)
-    lineTuner.setRange (21.0f, 64.0f);
-
-    smoothedOctaveBins.resize (static_cast<size_t> (totalFoldedBins), 0.0);
+    smoothedOctaveBins.resize (totalFoldedBins, 0.0);
 
     setResizable (true, true);
     setSize (audioProcessor.lastUIWidth, audioProcessor.lastUIHeight);

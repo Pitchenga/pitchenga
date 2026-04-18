@@ -3,14 +3,10 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_utils/juce_audio_utils.h>
 #include <juce_dsp/juce_dsp.h>
-
-// Include Cycfi Q's Pitch Detector
-#include <q/pitch/pitch_detector.hpp>
-
+#include <pitch_detector/pitch_detector.h>
 #include <vector>
 #include <array>
 #include <memory>
-#include <atomic>
 
 class FastButterworth
 {
@@ -113,7 +109,8 @@ private:
     std::vector<float> pitchAnalysisBuffer;
     int samplesSinceLastPitchDetection = 0;
 
-    std::unique_ptr<cycfi::q::pitch_detector> pitchDetector;
+    juce::dsp::IIR::Filter<float> pitchPreFilter;
+    std::unique_ptr<adamski::PitchMPM> pitchDetector;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PitchengaAudioProcessor)
 };

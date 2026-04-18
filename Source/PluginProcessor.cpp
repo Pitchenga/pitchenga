@@ -16,6 +16,11 @@ void PitchengaAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
     monoBuffer.assign (bufferSize, 0.0f);
     nextStageBuffer.assign (bufferSize, 0.0f);
 
+    pitchCircularBuffer.assign (8192, 0.0f);
+    pitchAnalysisBuffer.assign (4096, 0.0f);
+    pitchWritePos = 0;
+    samplesSinceLastPitchDetection = 0;
+
     // Reset decimation octaves for the visualizer
     for (size_t i = 0; i < numOctaves; ++i)
     {
@@ -26,17 +31,7 @@ void PitchengaAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
         octaves[i].dropNext = false;
     }
 
-    // --- CYCFI Q INITIALIZATION ---
-    // Import Cycfi Q's explicit mathematical literals
-    using namespace cycfi::q::literals;
-
-    // Initialize with safe literals
-    pitchDetector = std::make_unique<cycfi::q::pitch_detector>(
-        20_Hz,                               // Lowest expected frequency
-        1500_Hz,                             // Highest expected frequency
-        static_cast<float>(sampleRate),      // Samples per second
-        -45_dB                               // Hysteresis (Noise gate threshold)
-    );
+    pitchDetector = std::make_unique<adamski::PitchMPM>(static_cast<int>(sampleRate), 4096);
 }
 
 void PitchengaAudioProcessor::releaseResources() {}
@@ -85,25 +80,29 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         juce::FloatVectorOperations::multiply (monoData, 0.5f, numSamples);
     }
 
-    // --- CYCFI Q PITCH DETECTION ---
-    if (pitchDetector != nullptr)
-    {
-        for (int i = 0; i < numSamples; ++i)
-        {
-            // Push the sample into Q. It returns true the exact moment it establishes a mathematically stable pitch.
-            bool isReady = (*pitchDetector)(monoData[i]);
+    // --- MPM Pitch Detection ---
+    for (int i = 0; i < numSamples; ++i) {
+        pitchCircularBuffer[static_cast<size_t>(pitchWritePos)] = monoData[i];
+        pitchWritePos = (pitchWritePos + 1) % 8192;
+    }
+    samplesSinceLastPitchDetection += numSamples;
 
-            if (isReady)
-            {
-                // Extract the frequency and pipe it safely to the GUI
-                float freq = static_cast<float>(pitchDetector->get_frequency());
-                if (freq > 0.0f) {
-                    currentPitchHz.store(freq, std::memory_order_relaxed);
-                } else {
-                    currentPitchHz.store(-1.0f, std::memory_order_relaxed);
-                }
-            }
+    // Run MPM if we have 1024 new samples
+    if (samplesSinceLastPitchDetection >= 1024 && pitchDetector != nullptr)
+    {
+        samplesSinceLastPitchDetection = 0;
+
+        // Extract the most recent 4096 samples from the ring buffer
+        int readPos = (pitchWritePos - 4096 + 8192) % 8192;
+        for (int i = 0; i < 4096; ++i) {
+            pitchAnalysisBuffer[static_cast<size_t>(i)] = pitchCircularBuffer[static_cast<size_t>((readPos + i) % 8192)];
         }
+
+        // This forces weak fundamentals above the MPM clarity threshold.
+        juce::FloatVectorOperations::multiply (pitchAnalysisBuffer.data(), 12.0f, 4096);
+
+        float detectedPitch = pitchDetector->getPitch (pitchAnalysisBuffer.data());
+        currentPitchHz.store (detectedPitch, std::memory_order_relaxed);
     }
 
     // Cascade multi-rate decimation using pointer swapping

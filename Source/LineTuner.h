@@ -19,8 +19,10 @@ private:
     static juce::String getNoteName (int midiNote);
     static void paintLabel (juce::Graphics& graphics, int midiNote, float x, float stripY);
 
-    // Range: Re1 to Re6
-    float minMidi = 26.0f;
+    // fixme: restore the Pitch enum and use Pitch references instead of hard-coded mini
+    // fixme: Does not work below Mi2
+    // Range: Mi2 to Re6
+    float minMidi = 40.0f;
     float maxMidi = 86.0f;
     float currentMidi = -1.0f;
 
