@@ -44,6 +44,7 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::setupBuffers() {
     {
         const juce::CriticalSection::ScopedLockType lock(resultLock);
         results.assign(static_cast<size_t>(binsPerOctave), 0.0);
+        fullSpectrumResults.assign(static_cast<size_t>(totalBins), 0.0);
     }
 
     pitchDetector = std::make_unique<adamski::PitchMPM>(static_cast<int>(config.samplingFreq), 4096);
@@ -202,8 +203,11 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run() {
                 const juce::CriticalSection::ScopedLockType lock(resultLock);
                 if (results.size() == smoothed.size()) {
                     std::copy(smoothed.begin(), smoothed.end(), results.begin());
-                    newDataAvailable.store(true);
                 }
+                if (fullSpectrumResults.size() == equalizedPitchClasses.size()) {
+                    std::copy(equalizedPitchClasses.begin(), equalizedPitchClasses.end(), fullSpectrumResults.begin());
+                }
+                newDataAvailable.store(true);
             }
         }
 
@@ -228,6 +232,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     addAndMakeVisible(tunerViz);
     addAndMakeVisible(circleViz);
     addAndMakeVisible(lineViz);
+    lineViz.setEngine(worker.getCqtEngine());
 
     resultsBuffer.resize(CircleViz::totalFoldedBins, 0.0);
 
@@ -253,8 +258,10 @@ void PitchengaAudioProcessorEditor::timerCallback() {
     // --- 2. Update the Circular Visualizer ---
     if (worker.hasNewData()) {
         worker.getLatestResults(resultsBuffer);
+        worker.getFullSpectrumResults(fullSpectrumBuffer);
         worker.clearNewDataFlag();
         circleViz.updateResults(resultsBuffer);
+        lineViz.updateResults(fullSpectrumBuffer);
     }
 }
 
