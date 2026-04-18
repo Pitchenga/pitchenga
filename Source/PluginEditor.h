@@ -22,6 +22,7 @@ public:
     void paint(juce::Graphics&) override;
     void resized() override;
 
+    int uiRefreshRateHz = 48;
 private:
     void timerCallback() override;
 

@@ -194,7 +194,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     setResizable(true, true);
     setSize(audioProcessor.lastUIWidth, audioProcessor.lastUIHeight);
     worker.startThread(juce::Thread::Priority::high);
-    startTimerHz(48);
+    startTimerHz(uiRefreshRateHz);
 }
 
 PitchengaAudioProcessorEditor::~PitchengaAudioProcessorEditor() {
