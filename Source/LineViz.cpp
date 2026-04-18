@@ -5,7 +5,17 @@
 LineViz::LineViz(PitchengaAudioProcessor& processor) : processor(processor) {}
 
 void LineViz::updateResults(const std::vector<double>& results) {
-    displayMagnitudes = results;
+    if (results.empty()) return;
+
+    // 1. Initialize or Re-initialize the smoother if the number of bins changes
+    if (smoother == nullptr || lastKnownSize != results.size()) {
+        // We use 0.2 for the weight to match your existing octaveBinSmoother feel
+        smoother = std::make_unique<ExpSmoother>(results.size(), 0.2);
+        lastKnownSize = results.size();
+    }
+
+    displayMagnitudes = smoother->smooth(results);
+
     repaint();
 }
 

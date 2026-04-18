@@ -3,6 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "PluginProcessor.h"
 #include "CqtEngine.h"
+#include "Analyzers.h"
 
 class LineViz : public juce::Component
 {
@@ -18,8 +19,11 @@ public:
 private:
     PitchengaAudioProcessor& processor;
     const CqtEngine* engine = nullptr;
-    std::vector<double> displayMagnitudes; 
-    
+    std::vector<double> displayMagnitudes;
+
     int currentTotalBins = 0;
     int currentBinsPerOctave = 0;
+
+    std::unique_ptr<ExpSmoother> smoother;
+    size_t lastKnownSize = 0;
 };
