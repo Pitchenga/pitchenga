@@ -21,6 +21,7 @@ public:
 private:
     void paintFrame(juce::Graphics& g);
     void paintFrame();
+    void paintBins();
     static juce::Colour calculateColor(float velocity, float toneRatio);
 
     std::vector<double> smoothedOctaveBins;

@@ -153,8 +153,7 @@ void CircleVisualizer::paintFrame() {
     paintFrame(g);
 }
 
-void CircleVisualizer::resized() {
-    paintFrame();
+void CircleVisualizer::paintBins() {
     constexpr float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(totalFoldedBins);
     constexpr float rotation = 0.0f - 0.5f * angleStep;
 
@@ -169,4 +168,9 @@ void CircleVisualizer::resized() {
 
         segmentPaths[static_cast<size_t>(i)] = p;
     }
+}
+
+void CircleVisualizer::resized() {
+    paintFrame();
+    paintBins();
 }
