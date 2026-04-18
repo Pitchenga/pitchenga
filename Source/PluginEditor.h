@@ -40,6 +40,7 @@ private:
         void updateSampleRate(double newSampleRate);
 
     private:
+        static constexpr double inputGain = 6.0;
         void setupBuffers();
 
         PitchengaAudioProcessor& processor;

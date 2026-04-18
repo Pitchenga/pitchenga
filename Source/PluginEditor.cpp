@@ -139,10 +139,6 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run() {
                 if (win.size() == static_cast<size_t>(signalBlockSize)) {
                     cqt.transform(win, cqtSpectrum);
 
-                    // --- THE THRESHOLD FIX ---
-                    // Adjust this gain until your attacks feel instantly snappy again.
-                    const double inputGain = 6.0;
-
                     const int startIndex = (PitchengaAudioProcessor::numOctaves - 1 - oct) * binsPerOctave;
                     for (size_t i = 0; i < cqtSpectrum.size(); ++i) {
                         const double amplitude = std::abs(cqtSpectrum[i]) * inputGain;
