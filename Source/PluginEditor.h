@@ -6,6 +6,7 @@
 #include "CqtEngine.h"
 #include "Analyzers.h"
 #include "LineTuner.h"
+#include "CircleVisualizer.h"
 #include <array>
 #include <vector>
 #include <memory>
@@ -24,7 +25,6 @@ public:
 
 private:
     void timerCallback() override;
-    static juce::Colour calculateColor (float velocity, float toneRatio);
 
     PitchengaAudioProcessor& audioProcessor;
 
@@ -67,17 +67,10 @@ private:
 
     CqtWorkerThread worker;
     LineTuner lineTuner;
+    CircleVisualizer circleVisualizer;
 
     // Shared results for rendering
-    std::vector<double> smoothedOctaveBins;
-
-    // Rendering Constants
-    static constexpr int semitonesPerOctave = 12;
-    static constexpr int binsPerSemitone = 9;
-    static constexpr int totalFoldedBins = binsPerSemitone * semitonesPerOctave;
-
-    std::array<juce::Path, totalFoldedBins> segmentPaths;
-    juce::PathStrokeType strokeType { 0.5f };
+    std::vector<double> resultsBuffer;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PitchengaAudioProcessorEditor)
 };
