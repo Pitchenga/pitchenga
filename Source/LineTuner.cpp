@@ -40,9 +40,20 @@ void LineTuner::paintLabel (juce::Graphics& graphics, int midiNote, float x, flo
 {
     juce::String name = getNoteName(midiNote);
     graphics.saveState();
+    
+    float labelWidth = getLabelWidth();
+    float labelHeight = getLabelHeight();
+    
     graphics.addTransform (juce::AffineTransform::rotation (-juce::MathConstants<float>::halfPi, x, stripY - tickHeight));
-    graphics.drawText (name, static_cast<int>(x), static_cast<int>(stripY - tickHeight - stripHeight), 
-                       static_cast<int>(labelHeight), static_cast<int>(labelWidth),
+    
+    // In the rotated context:
+    // Local X goes UP physically. We start at x, so it extends UP from the tick by labelH (string length).
+    // Local Y goes RIGHT physically. To center horizontally, we start at -labelW/2 relative to rotation origin Y.
+    graphics.drawText (name, 
+                       static_cast<int>(x), 
+                       static_cast<int>(stripY - tickHeight - labelWidth / 2.0f),
+                       static_cast<int>(labelHeight),
+                       static_cast<int>(labelWidth),
                        juce::Justification::centredLeft);
     graphics.restoreState();
 }
@@ -50,6 +61,22 @@ void LineTuner::paintLabel (juce::Graphics& graphics, int midiNote, float x, flo
 juce::Font LineTuner::getTunerFont()
 {
     return {juce::FontOptions (tunerFontSize).withStyle (tunerFontStyle)};
+}
+
+float LineTuner::getLabelHeight()
+{
+    // Use the longest expected string to determine the physical height needed
+    return getTunerFont().getStringWidthFloat ("Ww8");
+}
+
+float LineTuner::getLabelWidth()
+{
+    return getTunerFont().getHeight();
+}
+
+float LineTuner::getPreferredHeight()
+{
+    return stripHeight + tickHeight + getLabelHeight();
 }
 
 void LineTuner::updateCachedGradient()

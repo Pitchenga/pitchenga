@@ -7,7 +7,6 @@ class LineTuner : public juce::Component
 public:
     LineTuner();
 
-    int getPreferredHeight() const;
 
     void setPitchFrequency (float frequencyHz);
     void setRange (float minMidiNote, float maxMidiNote);
@@ -18,9 +17,9 @@ public:
     static constexpr float stripHeight = 16.0f;
     static constexpr float tickHeight = 5.0f;
     // labelHeight and labelWidth names are intentionally swapped because the label is rendered sideways
-    static constexpr float labelHeight = 30.0f;
-    static constexpr float labelWidth = 30.0f;
-    static constexpr float tunerHeight = stripHeight + tickHeight + labelHeight;
+    static float getLabelHeight();
+    static float getLabelWidth();
+    static float getPreferredHeight();
 
     static constexpr float needleTriangleWidth = 12.0f;
     static constexpr float dimmingFactor = 0.9f;
