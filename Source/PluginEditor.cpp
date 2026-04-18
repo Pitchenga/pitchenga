@@ -231,6 +231,6 @@ void PitchengaAudioProcessorEditor::resized() {
     audioProcessor.lastUIHeight = getHeight();
 
     auto bounds = getLocalBounds();
-    lineTuner.setBounds(bounds.removeFromBottom(static_cast<int>(LineTuner::getPreferredHeight())));
+    lineTuner.setBounds(bounds.removeFromBottom(static_cast<int>(LineTuner::getPreferredHeight() + 1)));
     circleVisualizer.setBounds(bounds);
 }
