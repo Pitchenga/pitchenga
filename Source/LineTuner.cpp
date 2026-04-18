@@ -41,7 +41,9 @@ void LineTuner::paintLabel (juce::Graphics& graphics, int midiNote, float x, flo
     juce::String name = getNoteName(midiNote);
     graphics.saveState();
     graphics.addTransform (juce::AffineTransform::rotation (-juce::MathConstants<float>::halfPi, x, stripY - tickHeight));
-    graphics.drawText (name, static_cast<int>(x), static_cast<int>(stripY - tickHeight - stripHeight), 50, 30, juce::Justification::centredLeft);
+    graphics.drawText (name, static_cast<int>(x), static_cast<int>(stripY - tickHeight - stripHeight), 
+                       static_cast<int>(labelHeight), static_cast<int>(labelWidth),
+                       juce::Justification::centredLeft);
     graphics.restoreState();
 }
 

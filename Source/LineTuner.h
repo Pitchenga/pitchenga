@@ -7,11 +7,24 @@ class LineTuner : public juce::Component
 public:
     LineTuner();
 
+    int getPreferredHeight() const;
+
     void setPitchFrequency (float frequencyHz);
     void setRange (float minMidiNote, float maxMidiNote);
 
     void paint (juce::Graphics& graphics) override;
     void resized() override;
+
+    static constexpr float stripHeight = 16.0f;
+    static constexpr float tickHeight = 5.0f;
+    static constexpr float labelHeight = 50.0f;
+    static constexpr float labelWidth = 30.0f;
+    static constexpr float tunerHeight = stripHeight + tickHeight + labelHeight;
+
+    static constexpr float needleTriangleWidth = 12.0f;
+    static constexpr float dimmingFactor = 0.9f;
+    static constexpr float tunerFontSize = 15.0f;
+    static constexpr auto tunerFontStyle = "Bold";
 
 private:
     void updateCachedGradient();
@@ -28,12 +41,6 @@ private:
 
     juce::Image cachedGradient;
 
-    static constexpr float stripHeight = 16.0f;
-    static constexpr float tickHeight = 5.0f;
-    static constexpr float needleTriangleWidth = 12.0f;
-    static constexpr float dimmingFactor = 0.9f;
-    static constexpr float tunerFontSize = 15.0f;
-    static constexpr auto tunerFontStyle = "Bold";
 
     static juce::Font getTunerFont();
 
