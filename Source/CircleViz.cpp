@@ -210,6 +210,7 @@ void CircleViz::paintBins() {
         const float startAngle = static_cast<float>(i) * angleStep + rotation;
         const float endAngle = static_cast<float>(i + 1) * angleStep + rotation;
 
+        //fixme: Draw triangle fill and outline
         juce::Path path;
         path.addCentredArc(0.0f, 0.0f, 1.0f, 1.0f, 0.0f, startAngle, endAngle, true);
         path.lineTo(0.0f, 0.0f);

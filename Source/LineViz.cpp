@@ -106,13 +106,15 @@ void LineViz::paintBins(juce::Graphics& graphics) const {
         const juce::Colour color = ColorPalette::getContinuousColor(chroma);
         graphics.setColour(color);
 
-        // Draw filled rectangle originating from the bottom boundary
-        graphics.fillRect(
+        juce::Path rect;
+        rect.addRectangle(
             static_cast<float>(i) * barWidth,
             static_cast<float>(height) - barHeight,
             barWidth,
             barHeight
         );
+        graphics.fillPath(rect);
+        graphics.strokePath(rect, juce::PathStrokeType(1.0f));
     }
 }
 
