@@ -7,68 +7,85 @@ LineViz::LineViz(PitchengaAudioProcessor& processor) : processor(processor) {}
 void LineViz::updateResults(const std::vector<double>& results) {
     if (results.empty()) return;
 
-    // 1. Initialize or Re-initialize the smoother if the number of bins changes
     if (smoother == nullptr || lastKnownSize != results.size()) {
-        // We use 0.2 for the weight to match your existing octaveBinSmoother feel
         smoother = std::make_unique<ExpSmoother>(results.size(), 0.2);
         lastKnownSize = results.size();
     }
 
-    // 2. Extract the base smoothed data
     displayMagnitudes = smoother->smooth(results);
 
-    // 3. Rank-based Amplification
     const int totalBins = static_cast<int>(displayMagnitudes.size());
-    if (totalBins > 0) {
-        struct BinData {
-            int index;
-            float velocity;
-        };
+    if (totalBins <= 0) return;
 
-        std::vector<BinData> sortedBins(static_cast<size_t>(totalBins));
-        for (int i = 0; i < totalBins; ++i) {
-            sortedBins[static_cast<size_t>(i)] = {i, static_cast<float>(displayMagnitudes[static_cast<size_t>(i)])};
+    // --- 1. Spectral Tilt (Applied FIRST) ---
+    constexpr double maxTilt = 2.5;
+    const double tiltStep = (maxTilt - 1.0) / static_cast<double>(totalBins > 1 ? totalBins - 1 : 1);
+
+    double* dataPtr = displayMagnitudes.data();
+
+    for (int i = 0; i < totalBins; ++i) {
+        dataPtr[i] *= (1.0 + static_cast<double>(i) * tiltStep);
+    }
+
+    // --- 2. Per-Octave Ranking (Multiband Gating) ---
+    int binsPerOct = PitchengaAudioProcessor::numOctaves > 0
+                     ? totalBins / PitchengaAudioProcessor::numOctaves
+                     : 12;
+
+    struct BinData {
+        int index;
+        float velocity;
+    };
+
+    std::vector<BinData> sortedBins(static_cast<size_t>(binsPerOct));
+    std::vector<int> binOrders(static_cast<size_t>(binsPerOct));
+
+    for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct) {
+        const int startIndex = oct * binsPerOct;
+        const int endIndex = std::min(startIndex + binsPerOct, totalBins);
+        const int currentOctaveBins = endIndex - startIndex;
+
+        if (currentOctaveBins <= 0) break;
+
+        for (int i = 0; i < currentOctaveBins; ++i) {
+            sortedBins[static_cast<size_t>(i)] = {i, static_cast<float>(dataPtr[startIndex + i])};
         }
 
         std::ranges::sort(
-            sortedBins,
+            sortedBins.begin(),
+            sortedBins.begin() + currentOctaveBins,
             [](const BinData& a, const BinData& b) {
                 return a.velocity < b.velocity;
             }
         );
 
-        std::vector<int> binOrders(static_cast<size_t>(totalBins));
-        for (int rank = 0; rank < totalBins; ++rank) {
+        // --- NEW: Dynamic Octave Normalization ---
+        // Find the absolute highest peak in this specific octave
+        const float maxOctaveVelocity = sortedBins[static_cast<size_t>(currentOctaveBins - 1)].velocity;
+
+        // If the tilt pushed this peak past 1.0, calculate how much to scale the whole octave down.
+        // If it is below 1.0, leave it alone (1.0f multiplier).
+        const float octaveGainReduction = maxOctaveVelocity > 1.0f ? (1.0f / maxOctaveVelocity) : 1.0f;
+
+        for (int rank = 0; rank < currentOctaveBins; ++rank) {
             binOrders[static_cast<size_t>(sortedBins[static_cast<size_t>(rank)].index)] = rank;
         }
 
-        const int biggestBinNumber = sortedBins.back().index;
+        const float rankMultiplier = 1.0f / static_cast<float>(currentOctaveBins > 1 ? currentOctaveBins - 1 : 1);
 
-        // Push the ceiling to 1.0 so top signals are NOT attenuated
-        const float rankMultiplier = 1.0f / static_cast<float>(totalBins > 1 ? totalBins - 1 : 1);
-
-        for (int i = 0; i < totalBins; ++i) {
-            const auto rawVelocity = static_cast<float>(displayMagnitudes[static_cast<size_t>(i)]);
-
-            // Creates a contrast curve (Lowest rank = 0.0, Highest rank = 1.0)
+        for (int i = 0; i < currentOctaveBins; ++i) {
+            const auto rawVelocity = static_cast<float>(dataPtr[startIndex + i]);
             const float rankContrast = static_cast<float>(binOrders[static_cast<size_t>(i)]) * rankMultiplier;
 
-            // Base Scaling: Multiply by 1.5f to make it loud, then apply the contrast gate
-            float renderVelocity = (rawVelocity * 1.5f) * rankContrast;
+            // Apply the gain reduction so the whole octave shrinks proportionally to fit
+            float renderVelocity = (rawVelocity * octaveGainReduction) * rankContrast;
 
-            // The Champion Boost: The #1 loudest bin gets an extra 30% punch
-            if (i == biggestBinNumber) {
-                renderVelocity *= 1.3f;
-            }
-
-            // Overwrite with the safely capped amplified value
-            displayMagnitudes[static_cast<size_t>(i)] = static_cast<double>(std::min(renderVelocity, 1.15f));
+            // We still clamp safely, but the math guarantees it will never hard-clip
+            dataPtr[startIndex + i] = static_cast<double>(std::min(renderVelocity, 1.0f));
         }
     }
 
-    // Both bubbles and bars will now perfectly sync to the amplified heights
     advanceAndSpawnBubbles();
-
     repaint();
 }
 
@@ -177,11 +194,12 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
     }
 }
 
+//fixme: rename
 void LineViz::advanceAndSpawnBubbles() {
     // 1. Move existing bubbles up smoothly by 1 pixel per frame
-    constexpr float speed = 1.0f;
-    for (auto& b : bubbles) {
-        b.y -= speed;
+    for (auto& bubble : bubbles) {
+        constexpr float speed = 1.0f;
+        bubble.y -= speed;
     }
 
     // 2. Clean up bubbles that float completely off the top of the screen
