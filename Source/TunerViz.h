@@ -2,9 +2,9 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "ColorPalette.h"
 
-class LineTuner : public juce::Component {
+class TunerViz : public juce::Component {
 public:
-    LineTuner();
+    TunerViz();
 
 
     void setPitchFrequency(float frequencyHz);
@@ -42,5 +42,5 @@ private:
 
     static juce::Font getLabelFont();
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LineTuner)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TunerViz)
 };

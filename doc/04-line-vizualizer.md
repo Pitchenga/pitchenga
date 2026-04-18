@@ -1,11 +1,12 @@
 1\. Component Overview
 ----------------------
 
-The `LineVisualizer` is a JUCE `Component` that renders the magnitude of all analyzed pitch bins across the active
+The `LineViz` is a JUCE `Component` that renders the magnitude of all analyzed pitch bins across the active
 octaves. It presents the spectrum linearly, functioning as a horizontal frequency-domain UI element.
 
 * **Primary Data Source:** Spectral magnitude data provided by the `CqtEngine`.
-* **Coordinate System:** \* **X-axis:** Pitch bins (unfolded from the lowest to the highest frequency).
+* **Coordinate System:** 
+    * **X-axis:** Pitch bins (unfolded from the lowest to the highest frequency).
     * **Y-axis:** Bin magnitude/velocity (height from the bottom).
 * **Visual Style:** Vertical bars with chroma-based coloring.
 
@@ -20,8 +21,6 @@ octaves. It presents the spectrum linearly, functioning as a horizontal frequenc
   query the `CqtEngine` for its current configuration (`getOctaves()` and `getSemitonesPerOctave()`). It will
   automatically adapt its drawing logic to match these settings.
 * **Buffer Extraction:** The component must fetch the current magnitude array from the engine.
-* **Update Frequency:** The component should repaint at approximately 60 FPS using a `Timer` to ensure smooth visual
-  movement.
 
 ### B. Visual Mapping Logic
 
@@ -36,21 +35,20 @@ octaves. It presents the spectrum linearly, functioning as a horizontal frequenc
 3\. Implementation Details
 --------------------------
 
-### `LineVisualizer.h` Structure
+### `LineViz.h` Structure
 
 ```
-class LineVisualizer : public juce::Component, private juce::Timer
+class LineViz : public juce::Component
 {
 public:
-    LineVisualizer(PitchengaAudioProcessor&);
+    LineViz(PitchengaAudioProcessor&);
     void paint(juce::Graphics& g) override;
-    void timerCallback() override;
+    void updateResults(const std::vector<double>& results);
 
 private:
     PitchengaAudioProcessor& processor;
-    std::vector<float> displayMagnitudes; 
+    std::vector<double> displayMagnitudes; 
     
-    // Auto-adapting state variables
     int currentTotalBins = 0;
     int currentBinsPerOctave = 0;
 };
@@ -58,13 +56,12 @@ private:
 
 ### Rendering Logic (`paint` method)
 
-1. **Clear Background:** Fill with a solid dark background color.
-2. **Fetch Engine State:** Update `currentTotalBins` and `currentBinsPerOctave` directly from the `CqtEngine`.
-3. **Iterate Bins:** Loop through all available bins in the unfolded spectrum.
-4. **Calculate Bounds:**
+- **Fetch Engine State:** Update `currentTotalBins` and `currentBinsPerOctave` directly from the `CqtEngine`.
+- **Iterate Bins:** Loop through all available bins in the unfolded spectrum.
+- **Calculate Bounds:**
     * Width per bar: `totalWidth / currentTotalBins`.
     * Height: Use a scaling multiplier to make weak signals visible.
-5. **Draw Bars:**
+- **Draw Bars:**
     * Set the color based on the bin's chroma using the modulo operator.
     * Draw a filled rectangle (`juce::Graphics::fillRect`) originating from the bottom boundary.
 
@@ -73,25 +70,7 @@ private:
 4\. Layout Integration
 ----------------------
 
-The `LineVisualizer` must be integrated into `PluginEditor.cpp` directly below the existing tuner.
-
-**In `PluginEditor::resized()`:**
-
-```
-void PitchengaAudioProcessorEditor::resized()
-{
-    auto area = getLocalBounds();
-    
-    // 1. LineTuner takes the top portion
-    lineTunerComponent.setBounds(area.removeFromTop(100)); 
-    
-    // 2. LineVisualizer sits directly below the tuner
-    lineVisualizerComponent.setBounds(area.removeFromTop(150));
-    
-    // 3. Remaining area for the circular visualizer
-    cqtVisualizerComponent.setBounds(area);
-}
-```
+The `LineViz` must be integrated into `PluginEditor.cpp` directly below the existing line tuner.
 
 * * *
 

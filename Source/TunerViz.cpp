@@ -1,10 +1,10 @@
-#include "LineTuner.h"
+#include "TunerViz.h"
 #include <cmath>
 
-LineTuner::LineTuner()
+TunerViz::TunerViz()
 = default;
 
-void LineTuner::setPitchFrequency(const float frequencyHz) {
+void TunerViz::setPitchFrequency(const float frequencyHz) {
     if (frequencyHz > 0.0f) {
         currentMidi = freqToMidi(frequencyHz);
     } else {
@@ -13,26 +13,26 @@ void LineTuner::setPitchFrequency(const float frequencyHz) {
     repaint();
 }
 
-void LineTuner::setRange(const float minMidiNote, const float maxMidiNote) {
+void TunerViz::setRange(const float minMidiNote, const float maxMidiNote) {
     minMidi = minMidiNote;
     maxMidi = maxMidiNote;
     updateCachedGradient();
     repaint();
 }
 
-float LineTuner::freqToMidi(const float freq) {
+float TunerViz::freqToMidi(const float freq) {
     if (freq <= 0.0f) return -1.0f;
     return 69.0f + 12.0f * std::log2(freq / 440.0f);
 }
 
-juce::String LineTuner::getNoteName(const int midiNote) {
+juce::String TunerViz::getNoteName(const int midiNote) {
     int chroma = midiNote % 12;
     if (chroma < 0) chroma += 12;
     const int octave = midiNote / 12 - 1;
     return ColorPalette::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
 
-void LineTuner::paintLabel(juce::Graphics& graphics, const int midiNote, const float x, const float stripY) {
+void TunerViz::paintLabel(juce::Graphics& graphics, const int midiNote, const float x, const float stripY) {
     const juce::String name = getNoteName(midiNote);
     graphics.saveState();
 
@@ -58,7 +58,7 @@ void LineTuner::paintLabel(juce::Graphics& graphics, const int midiNote, const f
     graphics.restoreState();
 }
 
-juce::Font LineTuner::getLabelFont() {
+juce::Font TunerViz::getLabelFont() {
     return {
         juce::FontOptions(tunerFontSize)
         .withStyle(tunerFontStyle)
@@ -66,19 +66,19 @@ juce::Font LineTuner::getLabelFont() {
     };
 }
 
-float LineTuner::getLabelHeight() {
+float TunerViz::getLabelHeight() {
     return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8");
 }
 
-float LineTuner::getLabelWidth() {
+float TunerViz::getLabelWidth() {
     return getLabelFont().getHeight();
 }
 
-float LineTuner::getPreferredHeight() {
+float TunerViz::getPreferredHeight() {
     return stripHeight + tickHeight + getLabelHeight();
 }
 
-void LineTuner::updateCachedGradient() {
+void TunerViz::updateCachedGradient() {
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
@@ -128,11 +128,11 @@ void LineTuner::updateCachedGradient() {
     }
 }
 
-void LineTuner::resized() {
+void TunerViz::resized() {
     updateCachedGradient();
 }
 
-void LineTuner::paint(juce::Graphics& graphics) {
+void TunerViz::paint(juce::Graphics& graphics) {
     const auto bounds = getLocalBounds().toFloat();
     const auto height = static_cast<float>(getHeight());
 

@@ -5,8 +5,8 @@
 #include "PluginProcessor.h"
 #include "CqtEngine.h"
 #include "Analyzers.h"
-#include "LineTuner.h"
-#include "CircleVisualizer.h"
+#include "TunerViz.h"
+#include "CircleViz.h"
 #include <array>
 #include <vector>
 #include <memory>
@@ -19,13 +19,12 @@ public:
     explicit PitchengaAudioProcessorEditor(PitchengaAudioProcessor&);
     ~PitchengaAudioProcessorEditor() override;
 
+    void timerCallback() override;
     void paint(juce::Graphics&) override;
     void resized() override;
 
     int uiRefreshRateHz = 48;
 private:
-    void timerCallback() override;
-
     PitchengaAudioProcessor& audioProcessor;
 
     // Background worker for heavy DSP
@@ -66,8 +65,8 @@ private:
     };
 
     CqtWorkerThread worker;
-    LineTuner lineTuner;
-    CircleVisualizer circleVisualizer;
+    TunerViz tunerViz;
+    CircleViz circleViz;
 
     // Shared results for rendering
     std::vector<double> resultsBuffer;

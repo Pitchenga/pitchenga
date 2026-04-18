@@ -5,13 +5,13 @@
 #include <array>
 #include "ColorPalette.h"
 
-class CircleVisualizer : public juce::Component {
+class CircleViz : public juce::Component {
 public:
     static constexpr int semitonesPerOctave = 12;
     static constexpr int binsPerSemitone = 9;
     static constexpr int totalFoldedBins = binsPerSemitone * semitonesPerOctave;
 
-    CircleVisualizer();
+    CircleViz();
 
     void updateResults(const std::vector<double>& results);
 
@@ -39,5 +39,5 @@ private:
 
     juce::Image cachedFrame;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CircleVisualizer)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CircleViz)
 };

@@ -1,19 +1,19 @@
-#include "CircleVisualizer.h"
+#include "CircleViz.h"
 #include <cmath>
 #include <algorithm>
 
-CircleVisualizer::CircleVisualizer() {
+CircleViz::CircleViz() {
     smoothedOctaveBins.resize(totalFoldedBins, 0.0);
 }
 
-void CircleVisualizer::updateResults(const std::vector<double>& results) {
+void CircleViz::updateResults(const std::vector<double>& results) {
     if (results.size() == smoothedOctaveBins.size()) {
         std::ranges::copy(results, smoothedOctaveBins.begin());
         repaint();
     }
 }
 
-juce::Colour CircleVisualizer::calculateColor(const float velocity, const float toneRatio) {
+juce::Colour CircleViz::calculateColor(const float velocity, const float toneRatio) {
     // 1. NO std::fmod() NEEDED.
     // toneRatio only ever ranges from -0.444 to 11.444.
     // A single addition handles the negative wrap perfectly.
@@ -56,7 +56,7 @@ juce::Colour CircleVisualizer::calculateColor(const float velocity, const float 
     return juce::Colours::black.interpolatedWith(guessColor, colorVelocity);
 }
 
-void CircleVisualizer::paint(juce::Graphics& g) {
+void CircleViz::paint(juce::Graphics& g) {
     if (cachedFrame.isValid()) {
         g.drawImageAt(cachedFrame, 0, 0);
     } else {
@@ -118,7 +118,7 @@ void CircleVisualizer::paint(juce::Graphics& g) {
     }
 }
 
-void CircleVisualizer::paintLabel(
+void CircleViz::paintLabel(
     juce::Graphics& graphics,
     const juce::Point<float> center,
     const float baseRadius,
@@ -162,7 +162,7 @@ void CircleVisualizer::paintLabel(
     arrangement.draw(graphics);
 }
 
-void CircleVisualizer::paintFrame(juce::Graphics& graphics) const {
+void CircleViz::paintFrame(juce::Graphics& graphics) const {
     const auto bounds = getLocalBounds().toFloat();
     const auto center = bounds.getCentre();
     const auto outerRadius = std::min(bounds.getWidth(), bounds.getHeight()) / 2.0f;
@@ -191,7 +191,7 @@ void CircleVisualizer::paintFrame(juce::Graphics& graphics) const {
     }
 }
 
-void CircleVisualizer::paintFrame() {
+void CircleViz::paintFrame() {
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
@@ -201,7 +201,7 @@ void CircleVisualizer::paintFrame() {
     paintFrame(graphics);
 }
 
-void CircleVisualizer::paintBins() {
+void CircleViz::paintBins() {
     constexpr float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(totalFoldedBins);
     constexpr float rotation = 0.0f - 0.5f * angleStep;
 
@@ -218,7 +218,7 @@ void CircleVisualizer::paintBins() {
     }
 }
 
-void CircleVisualizer::resized() {
+void CircleViz::resized() {
     paintFrame();
     paintBins();
 }

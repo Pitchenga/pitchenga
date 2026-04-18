@@ -186,10 +186,10 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::getLatestResults(std::vecto
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p), worker(p) {
     // Add components to the UI
-    addAndMakeVisible(lineTuner);
-    addAndMakeVisible(circleVisualizer);
+    addAndMakeVisible(tunerViz);
+    addAndMakeVisible(circleViz);
 
-    resultsBuffer.resize(CircleVisualizer::totalFoldedBins, 0.0);
+    resultsBuffer.resize(CircleViz::totalFoldedBins, 0.0);
 
     setResizable(true, true);
     setSize(audioProcessor.lastUIWidth, audioProcessor.lastUIHeight);
@@ -205,16 +205,16 @@ PitchengaAudioProcessorEditor::~PitchengaAudioProcessorEditor() {
 void PitchengaAudioProcessorEditor::timerCallback() {
     // --- 1. Update the Tuner ---
     // Read the lock-free atomic variable
-    const float latestHz = audioProcessor.currentPitchHz.load(std::memory_order_relaxed);
+    const float latestPitchHz = audioProcessor.currentPitchHz.load(std::memory_order_relaxed);
 
-    // Feed it to the visualizer component
-    lineTuner.setPitchFrequency(latestHz);
+    // Feed it to the tuner visualizer component
+    tunerViz.setPitchFrequency(latestPitchHz);
 
     // --- 2. Update the Circular Visualizer ---
     if (worker.hasNewData()) {
         worker.getLatestResults(resultsBuffer);
         worker.clearNewDataFlag();
-        circleVisualizer.updateResults(resultsBuffer);
+        circleViz.updateResults(resultsBuffer);
     }
 }
 
@@ -227,6 +227,6 @@ void PitchengaAudioProcessorEditor::resized() {
     audioProcessor.lastUIHeight = getHeight();
 
     auto bounds = getLocalBounds();
-    lineTuner.setBounds(bounds.removeFromBottom(static_cast<int>(LineTuner::getPreferredHeight() + 1)));
-    circleVisualizer.setBounds(bounds);
+    tunerViz.setBounds(bounds.removeFromBottom(static_cast<int>(TunerViz::getPreferredHeight() + 1)));
+    circleViz.setBounds(bounds);
 }

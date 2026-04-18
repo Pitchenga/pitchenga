@@ -57,10 +57,10 @@ target_sources(Pitchenga PRIVATE
         Source/Analyzers.cpp
         Source/ColorPalette.h
         Source/ColorPalette.cpp
-        Source/LineTuner.h
-        Source/LineTuner.cpp
-        Source/CircleVisualizer.h
-        Source/CircleVisualizer.cpp
+        Source/TunerViz.h
+        Source/TunerViz.cpp
+        Source/CircleViz.h
+        Source/CircleViz.cpp
 )
 
 # 4. Link the heavy-lifting JUCE modules (Audio, GUI, and Hardware-Accelerated Math)
