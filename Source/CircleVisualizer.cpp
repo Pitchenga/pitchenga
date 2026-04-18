@@ -122,29 +122,38 @@ void CircleVisualizer::paintLabel(
     juce::Graphics& graphics,
     const juce::Point<float> center,
     const float baseRadius,
+    const float startRadius,
     const int i,
     const float sin,
     const float cos
 ) {
-    const float rLabel = baseRadius * 0.8175f;
+    const float rLabel = baseRadius * startRadius;
     const float initialX = center.x + rLabel * cos;
     const float initialY = center.y + rLabel * sin;
     const juce::String name = ColorPalette::chromaticScale[static_cast<size_t>(i)].toneName;
 
-    graphics.setFont(juce::FontOptions(baseRadius * 0.11f).withStyle("Bold"));
+    graphics.setFont(juce::FontOptions(baseRadius * 0.15f).withStyle("Bold"));
     const auto labelColor = calculateColor(0.1f, static_cast<float>(i));
     graphics.setColour(labelColor);
 
     juce::GlyphArrangement arrangement;
     arrangement.addLineOfText(graphics.getCurrentFont(), name, 0.0f, 0.0f);
-    arrangement.justifyGlyphs(0, arrangement.getNumGlyphs(), initialX, initialY, 0.0f, 0.0f, juce::Justification::centred);
+    arrangement.justifyGlyphs(
+        0,
+        arrangement.getNumGlyphs(),
+        initialX,
+        initialY,
+        0.0f,
+        0.0f,
+        juce::Justification::centred
+    );
     arrangement.draw(graphics);
 }
 
 void CircleVisualizer::paintFrame(juce::Graphics& graphics) const {
     const auto bounds = getLocalBounds().toFloat();
     const auto center = bounds.getCentre();
-    const auto baseRadius = std::min(bounds.getWidth(), bounds.getHeight()) * 0.45f;
+    const auto outerRadius = std::min(bounds.getWidth(), bounds.getHeight()) / 2.0f;
 
     constexpr float angleStep = juce::MathConstants<float>::twoPi / 12.0f;
     constexpr float startAngle = -juce::MathConstants<float>::halfPi;
@@ -157,17 +166,17 @@ void CircleVisualizer::paintFrame(juce::Graphics& graphics) const {
         const auto color = ColorPalette::chromaticScale[static_cast<size_t>(i)].color;
         graphics.setColour(color);
 
-        // Inner spoke
-        const float r1 = baseRadius * 0.70f;
-        graphics.drawLine(center.x, center.y, center.x + r1 * cos, center.y + r1 * sin, 2.0f);
+        graphics.drawLine(
+            center.x,
+            center.y,
+            center.x + outerRadius * cos,
+            center.y + outerRadius * sin,
+            2.0f
+        );
 
-        paintLabel(graphics, center, baseRadius, i, sin, cos);
+        constexpr float labelStartRadius = 0.83f;
+        paintLabel(graphics, center, outerRadius, labelStartRadius, i, sin, cos);
 
-        // Outer tick
-        graphics.setColour(color);
-        const float r2 = baseRadius * 0.935f;
-        const float r3 = baseRadius * 1.15f;
-        graphics.drawLine(center.x + r2 * cos, center.y + r2 * sin, center.x + r3 * cos, center.y + r3 * sin, 2.0f);
     }
 }
 

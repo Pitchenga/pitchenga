@@ -20,6 +20,7 @@ public:
         juce::Graphics& graphics,
         juce::Point<float> center,
         float baseRadius,
+        float startRadius,
         int i,
         float sin,
         float cos
