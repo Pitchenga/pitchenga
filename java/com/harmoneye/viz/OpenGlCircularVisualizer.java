@@ -252,15 +252,17 @@ public class OpenGlCircularVisualizer implements SwingVisualizer<AnalyzedFrame>,
         int biggestBinNumber = binOrders == null ? -1 : indexToVelocityPairs.get(indexToVelocityPairs.size() - 1).getLeft();
         Tone tone = getTone(biggestBinNumber, 0.4);
 //        debug("biggestBinNumber=" + biggestBinNumber + ", tone=" + tone);
+        gl.glLineWidth(2f);
 
         drawFrame(gl);
+        drawLabels(drawable, tone);
+
         gl.glBegin(GL_TRIANGLES);
         drawBins(gl, binOrders, biggestBinNumber);
         if (tone != null) {
             drawTuner(gl);
         }
         gl.glEnd();
-        drawLabels(drawable, tone);
 
         printScreen(gl, 1080, 1080);
         recordVideo();
@@ -426,7 +428,6 @@ public class OpenGlCircularVisualizer implements SwingVisualizer<AnalyzedFrame>,
     private void drawFrame(GL2 gl) {
         Color color;
         double halfToneCountInv = 1.0 / HALFTONE_NAMES.length;
-        gl.glLineWidth(2f);
         gl.glBegin(GL.GL_LINES);
         for (int i = 0; i < HALFTONE_NAMES.length; i++) {
             Tone tone = Tone.values()[i];
@@ -464,7 +465,6 @@ public class OpenGlCircularVisualizer implements SwingVisualizer<AnalyzedFrame>,
         if (binVelocities == null || binVelocities.length == 0) {
             return;
         }
-
         double radius = 0.8;
         double angle = 0.5 * (1 - binsPerHalftone) * stepAngle;
         for (int i = 0; i < binVelocities.length; i++, angle += stepAngle) {
@@ -646,31 +646,32 @@ public class OpenGlCircularVisualizer implements SwingVisualizer<AnalyzedFrame>,
             int x = (int) (centerX + radius * size * FastMath.sin(angle) - offsetX);
             int y = (int) (centerY + radius * size * FastMath.cos(angle) - offsetY);
             Color color;
-            if (DRAW_SNOWFLAKE || (tone != null && tone.name().equalsIgnoreCase(HALFTONE_NAMES[i]))) {
+//            if (DRAW_SNOWFLAKE || (tone != null && tone.name().equalsIgnoreCase(HALFTONE_NAMES[i]))) {
                 //fixme: There must be an easier way to render outlined font
-                int offset;
-                offset = 4;
-                renderer.setColor(BLACK);
-                renderer.draw3D(halftoneName, x + offset, y - offset, 0, scaleFactor);
-                renderer.draw3D(halftoneName, x - offset, y + offset, 0, scaleFactor);
-                renderer.draw3D(halftoneName, x + offset, y + offset, 0, scaleFactor);
-                renderer.draw3D(halftoneName, x - offset, y - offset, 0, scaleFactor);
-
-                offset = 1;
-                renderer.setColor(WHITE);
-                renderer.draw3D(halftoneName, x + offset, y - offset, 0, scaleFactor);
-                renderer.draw3D(halftoneName, x - offset, y + offset, 0, scaleFactor);
-                renderer.draw3D(halftoneName, x + offset, y + offset, 0, scaleFactor);
-                renderer.draw3D(halftoneName, x - offset, y - offset, 0, scaleFactor);
-                color = colorFunction.toColor(100, i);
-            } else {
-                Tone myTone = Pitchenga.TONE_BY_LOWERCASE_NAME.get(halftoneName);
-                if (myTone != null && myTone.name.equalsIgnoreCase(scaleName)) {
-                    color = LESS_DARK;
-                } else {
-                    color = DARK;
-                }
-            }
+//                int offset;
+//                offset = 4;
+//                renderer.setColor(BLACK);
+//                renderer.draw3D(halftoneName, x + offset, y - offset, 0, scaleFactor);
+//                renderer.draw3D(halftoneName, x - offset, y + offset, 0, scaleFactor);
+//                renderer.draw3D(halftoneName, x + offset, y + offset, 0, scaleFactor);
+//                renderer.draw3D(halftoneName, x - offset, y - offset, 0, scaleFactor);
+//
+//                offset = 1;
+//                renderer.setColor(WHITE);
+//                renderer.draw3D(halftoneName, x + offset, y - offset, 0, scaleFactor);
+//                renderer.draw3D(halftoneName, x - offset, y + offset, 0, scaleFactor);
+//                renderer.draw3D(halftoneName, x + offset, y + offset, 0, scaleFactor);
+//                renderer.draw3D(halftoneName, x - offset, y - offset, 0, scaleFactor);
+//                color = colorFunction.toColor(100, i);
+//            } else {
+//                Tone myTone = Pitchenga.TONE_BY_LOWERCASE_NAME.get(halftoneName);
+//                if (myTone != null && myTone.name.equalsIgnoreCase(scaleName)) {
+//                    color = LESS_DARK;
+//                } else {
+//                    color = DARK;
+//                }
+//            }
+            color = colorFunction.toColor(0, i);
             renderer.setColor(color);
             renderer.draw3D(halftoneName, x, y, 0, scaleFactor);
         }
