@@ -201,8 +201,9 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor (PitchengaAudioProc
     lineTuner.setRange (21.0f, 64.0f);
 
     smoothedOctaveBins.resize (static_cast<size_t> (totalFoldedBins), 0.0);
-    
-    setSize (600, 600);
+
+    setResizable (true, true);
+    setSize (700, 720);
     worker.startThread (juce::Thread::Priority::high);
     startTimerHz (48);
 }
@@ -335,6 +336,9 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
 
 void PitchengaAudioProcessorEditor::resized()
 {
+    auto bounds = getLocalBounds();
+
+    // fixme: Extract the clock into a component and bound size
     constexpr float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(totalFoldedBins);
     const float rotation = 0.0f - (0.5f * angleStep);
 
@@ -351,6 +355,5 @@ void PitchengaAudioProcessorEditor::resized()
         segmentPaths[static_cast<size_t>(i)] = p;
     }
 
-    auto bounds = getLocalBounds();
     lineTuner.setBounds (bounds.removeFromBottom (80));
 }

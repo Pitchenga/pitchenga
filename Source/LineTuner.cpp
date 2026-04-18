@@ -3,7 +3,6 @@
 
 LineTuner::LineTuner()
 {
-    setSize (800, 80); 
 }
 
 void LineTuner::setPitchFrequency (float frequencyHz)
@@ -81,7 +80,7 @@ void LineTuner::updateCachedGradient()
         }
     }
 
-    // 2. Bake the 30% dimmed labels and 1x5 ticks into the image
+    // 2. Bake the labels and ticks into the image
     juce::Graphics graphics (cachedGradient);
     graphics.setFont (getTunerFont());
 
@@ -128,8 +127,9 @@ void LineTuner::paint (juce::Graphics& graphics)
     {
         graphics.setFont (getTunerFont());
 
+        //fixme: extract constant
         int stripHeight = 16;
-        int stripY = height - stripHeight;
+        int labelStripY = height - stripHeight;
 
         // Find the nearest perfect whole note to illuminate
         int nearestNote = static_cast<int>(std::round(currentMidi));
@@ -143,7 +143,7 @@ void LineTuner::paint (juce::Graphics& graphics)
             if (nearestChroma < 0) nearestChroma += 12;
             juce::Colour toneColor = ColorPalette::chromaticScale[static_cast<size_t>(nearestChroma)].color;
             graphics.setColour (toneColor);
-            paintLabel (graphics, nearestNote, closestX, stripY);
+            paintLabel (graphics, nearestNote, closestX, labelStripY);
         }
 
         // Draw the tuner needle
@@ -153,6 +153,12 @@ void LineTuner::paint (juce::Graphics& graphics)
         if (exactChroma < 0.0f) exactChroma += 12.0f;
         
         graphics.setColour (juce::Colours::black);
-        graphics.drawLine (pitchX, static_cast<float>(stripY), pitchX, static_cast<float>(height), 1.0f);
+        juce::Path triangle;
+        float triangleWidth = 12.0f;
+        int tunerStripY = height - stripHeight + 5;
+        triangle.addTriangle (pitchX, static_cast<float>(tunerStripY),
+                              pitchX - triangleWidth * 0.5f, static_cast<float>(height),
+                              pitchX + triangleWidth * 0.5f, static_cast<float>(height));
+        graphics.strokePath (triangle, juce::PathStrokeType (2.0f));
     }
 }

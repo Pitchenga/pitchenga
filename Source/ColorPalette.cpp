@@ -2,7 +2,7 @@
 
 const std::array<Pitch, 12> ColorPalette::chromaticScale = {{
     { Tone::Do, "Do",  0, 16.35f, juce::Colour::fromRGB (255, 0, 0), "Red", "C" },
-    { Tone::Ra, "Ra",  1, 17.32f, juce::Colour::fromRGB (255, 87, 143), "Pink", "Db" },
+    { Tone::Ra, "Ra",  1, 17.32f, juce::Colour::fromRGB (255, 128, 128), "Pink", "Db" },
     { Tone::Re, "Re",  2, 18.35f, juce::Colour::fromRGB (255, 87, 0), "Orange", "D" },
     { Tone::Me, "Me",  3, 19.45f, juce::Colour::fromRGB (171, 171, 0), "Ochre", "Eb" },
     { Tone::Mi, "Mi",  4, 20.60f, juce::Colour::fromRGB (255, 255, 0), "Yellow", "E" },
