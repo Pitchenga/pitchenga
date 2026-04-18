@@ -14,8 +14,59 @@ void LineViz::updateResults(const std::vector<double>& results) {
         lastKnownSize = results.size();
     }
 
+    // 2. Extract the base smoothed data
     displayMagnitudes = smoother->smooth(results);
 
+    // 3. Rank-based Amplification
+    const int totalBins = static_cast<int>(displayMagnitudes.size());
+    if (totalBins > 0) {
+        struct BinData {
+            int index;
+            float velocity;
+        };
+
+        std::vector<BinData> sortedBins(static_cast<size_t>(totalBins));
+        for (int i = 0; i < totalBins; ++i) {
+            sortedBins[static_cast<size_t>(i)] = {i, static_cast<float>(displayMagnitudes[static_cast<size_t>(i)])};
+        }
+
+        std::ranges::sort(
+            sortedBins,
+            [](const BinData& a, const BinData& b) {
+                return a.velocity < b.velocity;
+            }
+        );
+
+        std::vector<int> binOrders(static_cast<size_t>(totalBins));
+        for (int rank = 0; rank < totalBins; ++rank) {
+            binOrders[static_cast<size_t>(sortedBins[static_cast<size_t>(rank)].index)] = rank;
+        }
+
+        const int biggestBinNumber = sortedBins.back().index;
+
+        // Push the ceiling to 1.0 so top signals are NOT attenuated
+        const float rankMultiplier = 1.0f / static_cast<float>(totalBins > 1 ? totalBins - 1 : 1);
+
+        for (int i = 0; i < totalBins; ++i) {
+            const auto rawVelocity = static_cast<float>(displayMagnitudes[static_cast<size_t>(i)]);
+
+            // Creates a contrast curve (Lowest rank = 0.0, Highest rank = 1.0)
+            const float rankContrast = static_cast<float>(binOrders[static_cast<size_t>(i)]) * rankMultiplier;
+
+            // Base Scaling: Multiply by 1.5f to make it loud, then apply the contrast gate
+            float renderVelocity = (rawVelocity * 1.5f) * rankContrast;
+
+            // The Champion Boost: The #1 loudest bin gets an extra 30% punch
+            if (i == biggestBinNumber) {
+                renderVelocity *= 1.3f;
+            }
+
+            // Overwrite with the safely capped amplified value
+            displayMagnitudes[static_cast<size_t>(i)] = static_cast<double>(std::min(renderVelocity, 1.15f));
+        }
+    }
+
+    // Both bubbles and bars will now perfectly sync to the amplified heights
     advanceAndSpawnBubbles();
 
     repaint();
