@@ -149,13 +149,14 @@ void CircleViz::paintLabel(
     );
 
     const auto textBounds = arrangement.getBoundingBox(0, arrangement.getNumGlyphs(), true);
-    const float circleRadius = std::max(textBounds.getWidth(), textBounds.getHeight()) * 0.5f + baseRadius * 0.03f;
+    const float ellipseHeight = textBounds.getWidth() * 0.5f + baseRadius * 0.03f;
+    const float ellipseWidth =  textBounds.getHeight() * 0.5f + baseRadius * 0.03f;
     graphics.setColour(juce::Colours::black);
     graphics.fillEllipse(
-        textBounds.getCentreX() - circleRadius,
-        textBounds.getCentreY() - circleRadius,
-        circleRadius * 2.0f,
-        circleRadius * 2.0f
+        textBounds.getCentreX() - ellipseHeight,
+        textBounds.getCentreY() - ellipseWidth,
+        ellipseHeight * 2.0f,
+        ellipseWidth * 2.0f
     );
 
     graphics.setColour(labelColor);
