@@ -141,7 +141,7 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run() {
 
                     // --- THE THRESHOLD FIX ---
                     // Adjust this gain until your attacks feel instantly snappy again.
-                    const double inputGain = 8.0;
+                    const double inputGain = 6.0;
 
                     const int startIndex = (PitchengaAudioProcessor::numOctaves - 1 - oct) * binsPerOctave;
                     for (size_t i = 0; i < cqtSpectrum.size(); ++i) {

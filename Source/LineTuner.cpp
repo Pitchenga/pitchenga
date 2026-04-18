@@ -52,7 +52,8 @@ void LineTuner::paintLabel(juce::Graphics& graphics, const int midiNote, const f
             labelHeight,
             labelWidth
         ),
-        juce::Justification::centredLeft
+        juce::Justification::centredLeft,
+        false
     );
     graphics.restoreState();
 }
