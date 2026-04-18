@@ -12,13 +12,25 @@ public:
     void paint(juce::Graphics&) override;
     void resized() override;
     void updateResults(const std::vector<double>& results);
-    
+    void paintBins(juce::Graphics& graphics) const;
+
     void setEngine(const CqtEngine* e) { engine = e; }
     static constexpr int getPreferredHeight() { return 300; }
 
 private:
     void paintFrame();
     void paintFrame(juce::Graphics& graphics) const;
+
+    struct Bubble {
+        float x;
+        float y;
+        float width;
+        juce::Colour color;
+    };
+    std::vector<Bubble> bubbles;
+
+    void advanceAndSpawnBubbles();
+    void paintBubbles(juce::Graphics& graphics) const;
 
     PitchengaAudioProcessor& processor;
     const CqtEngine* engine = nullptr;

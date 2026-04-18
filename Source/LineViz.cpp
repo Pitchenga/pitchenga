@@ -16,22 +16,12 @@ void LineViz::updateResults(const std::vector<double>& results) {
 
     displayMagnitudes = smoother->smooth(results);
 
+    advanceAndSpawnBubbles();
+
     repaint();
 }
 
-void LineViz::paint(juce::Graphics& graphics) {
-    if (!cachedFrame.isValid()) {
-        paintFrame(); // Generates it if the engine wasn't ready during resized()
-    }
-    if (cachedFrame.isValid()) {
-        graphics.drawImageAt(cachedFrame, 0, 0);
-    }
-
-    currentTotalBins = static_cast<int>(displayMagnitudes.size());
-    currentBinsPerOctave = currentTotalBins / PitchengaAudioProcessor::numOctaves;
-
-    if (currentTotalBins <= 0 || currentBinsPerOctave <= 0 || displayMagnitudes.empty()) return;
-
+void LineViz::paintBins(juce::Graphics& graphics) const {
     const int width = getWidth();
     const int height = getHeight();
 
@@ -60,6 +50,23 @@ void LineViz::paint(juce::Graphics& graphics) {
             barHeight
         );
     }
+}
+
+void LineViz::paint(juce::Graphics& graphics) {
+    if (!cachedFrame.isValid()) {
+        paintFrame(); // Generates it if the engine wasn't ready during resized()
+    }
+    if (cachedFrame.isValid()) {
+        graphics.drawImageAt(cachedFrame, 0, 0);
+    }
+
+    currentTotalBins = static_cast<int>(displayMagnitudes.size());
+    currentBinsPerOctave = currentTotalBins / PitchengaAudioProcessor::numOctaves;
+
+    if (currentTotalBins <= 0 || currentBinsPerOctave <= 0 || displayMagnitudes.empty()) return;
+
+    paintBubbles(graphics);
+    paintBins(graphics);
 }
 
 void LineViz::resized() {
@@ -116,5 +123,66 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
 
         // Draw a strict 1px vertical line exactly at the calculated center
         graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
+    }
+}
+
+void LineViz::advanceAndSpawnBubbles() {
+    // 1. Move existing bubbles up smoothly by 1 pixel per frame
+    constexpr float speed = 1.0f;
+    for (auto& b : bubbles) {
+        b.y -= speed;
+    }
+
+    // 2. Clean up bubbles that float completely off the top of the screen
+    std::erase_if(bubbles, [](const Bubble& b) { return b.y < 0.0f; });
+
+    if (displayMagnitudes.empty()) return;
+
+    const int totalBins = static_cast<int>(displayMagnitudes.size());
+    const int binsPerOctave = totalBins / PitchengaAudioProcessor::numOctaves;
+
+    const float width = static_cast<float>(getWidth());
+    const float height = static_cast<float>(getHeight());
+
+    if (width <= 0.0f || height <= 0.0f || totalBins <= 0) return;
+
+    const float barWidth = width / static_cast<float>(totalBins);
+    constexpr double bubbleThreshold = 0.5;
+
+    // 3. Spawn new trail elements
+    for (int i = 0; i < totalBins; ++i) {
+        const double magnitude = displayMagnitudes[static_cast<size_t>(i)];
+
+        if (magnitude > bubbleThreshold) {
+            const float normalizedMagnitude = static_cast<float>(std::min(1.0, std::max(0.0, magnitude)));
+            const float barHeight = normalizedMagnitude * height;
+
+            // Spawn exactly at the tip of the current signal bar
+            const float yPos = height - barHeight;
+
+            const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
+            const juce::Colour color = ColorPalette::getContinuousColor(chroma);
+
+            bubbles.push_back({static_cast<float>(i) * barWidth, yPos, barWidth, color});
+        }
+    }
+}
+
+void LineViz::paintBubbles(juce::Graphics& graphics) const {
+    const float height = static_cast<float>(getHeight());
+
+    // Calculate the Y coordinate that represents the bottom of the top 60%
+    const float limitY = height * 0.6f;
+
+    for (const auto& b : bubbles) {
+        // Only draw the bubble if it has floated into the top 0.6 territory
+        if (b.y <= limitY) {
+            // Dim the color to exactly 0.5 brightness by mixing it evenly with black
+            const juce::Colour dimmedColor = juce::Colours::black.interpolatedWith(b.color, 0.7f);
+            graphics.setColour(dimmedColor);
+
+            // Draw a 1px tall rect. Because it spawns every frame, it forms a seamless streak
+            graphics.fillRect(b.x, b.y, b.width, 1.0f);
+        }
     }
 }
