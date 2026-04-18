@@ -17,7 +17,8 @@ public:
 
     static constexpr float stripHeight = 16.0f;
     static constexpr float tickHeight = 5.0f;
-    static constexpr float labelHeight = 50.0f;
+    // labelHeight and labelWidth names are intentionally swapped because the label is rendered sideways
+    static constexpr float labelHeight = 30.0f;
     static constexpr float labelWidth = 30.0f;
     static constexpr float tunerHeight = stripHeight + tickHeight + labelHeight;
 
