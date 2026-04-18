@@ -2,44 +2,37 @@
 #include <cmath>
 #include <algorithm>
 
-CircleVisualizer::CircleVisualizer()
-{
-    smoothedOctaveBins.resize (totalFoldedBins, 0.0);
+CircleVisualizer::CircleVisualizer() {
+    smoothedOctaveBins.resize(totalFoldedBins, 0.0);
 }
 
-void CircleVisualizer::updateResults (const std::vector<double>& results)
-{
-    if (results.size() == smoothedOctaveBins.size())
-    {
-        std::ranges::copy (results, smoothedOctaveBins.begin());
+void CircleVisualizer::updateResults(const std::vector<double>& results) {
+    if (results.size() == smoothedOctaveBins.size()) {
+        std::ranges::copy(results, smoothedOctaveBins.begin());
         repaint();
     }
 }
 
-juce::Colour CircleVisualizer::calculateColor (float velocity, float toneRatio)
-{
+juce::Colour CircleVisualizer::calculateColor(float velocity, float toneRatio) {
     // 1. NO std::fmod() NEEDED.
     // toneRatio only ever ranges from -0.444 to 11.444.
     // A single addition handles the negative wrap perfectly.
     float wrappedRatio = toneRatio;
     if (wrappedRatio < 0.0f) wrappedRatio += 12.0f;
 
-    int toneNumber = static_cast<int> (std::floor (wrappedRatio));
-    float diff = wrappedRatio - static_cast<float> (toneNumber);
+    const int toneNumber = static_cast<int>(std::floor(wrappedRatio));
+    const float diff = wrappedRatio - static_cast<float>(toneNumber);
 
     // 2. NO MODULO NEEDED.
     // wrappedRatio is strictly [0.0, 12.0), so toneNumber is strictly 0 to 11.
-    int currentIdx = toneNumber;
-    juce::Colour toneColor = ColorPalette::chromaticScale[static_cast<size_t>(currentIdx)].color;
+    const int currentIdx = toneNumber;
+    const juce::Colour toneColor = ColorPalette::chromaticScale[static_cast<size_t>(currentIdx)].color;
 
     // --- Port of getGuessAndPitchinessColor & transposePitch ---
     juce::Colour guessColor;
-    if (std::abs(diff) < 1e-5f)
-    {
+    if (std::abs(diff) < 1e-5f) {
         guessColor = toneColor;
-    }
-    else
-    {
+    } else {
         // Transpose -1 or +1 step depending on diff direction
         int pitchyIdx = diff < 0 ? currentIdx - 1 : currentIdx + 1;
         if (pitchyIdx < 0) pitchyIdx += 12;
@@ -50,84 +43,113 @@ juce::Colour CircleVisualizer::calculateColor (float velocity, float toneRatio)
         if (pitchyIdx < 0) pitchyIdx = 11;
         else if (pitchyIdx > 11) pitchyIdx = 0;
 
-        juce::Colour pitchyColor = ColorPalette::chromaticScale[static_cast<size_t>(pitchyIdx)].color;
+        const juce::Colour pitchyColor = ColorPalette::chromaticScale[static_cast<size_t>(pitchyIdx)].color;
 
         // Simple approximation of the ordinal pitchinessDiff logic
-        float pitchinessDiff = std::abs(diff);
-        guessColor = toneColor.interpolatedWith (pitchyColor, pitchinessDiff);
+        const float pitchinessDiff = std::abs(diff);
+        guessColor = toneColor.interpolatedWith(pitchyColor, pitchinessDiff);
     }
 
     float colorVelocity = 0.3f + velocity * 1.2f;
     if (colorVelocity > 1.0f) colorVelocity = 1.0f;
 
-    return juce::Colours::black.interpolatedWith (guessColor, colorVelocity);
+    return juce::Colours::black.interpolatedWith(guessColor, colorVelocity);
 }
 
-void CircleVisualizer::paint (juce::Graphics& g)
-{
-    auto bounds = getLocalBounds().toFloat();
-    auto center = bounds.getCentre();
-    auto baseRadius = std::min (bounds.getWidth(), bounds.getHeight()) * 0.45f;
+void CircleVisualizer::paint(juce::Graphics& g) {
+    const auto bounds = getLocalBounds().toFloat();
+    const auto center = bounds.getCentre();
+    const auto baseRadius = std::min(bounds.getWidth(), bounds.getHeight()) * 0.45f;
+
+    paintFrame(g);
 
     // 1. Sort to get bin ranks (Matching Java indexToVelocityPairs)
-    struct BinData { int index; float velocity; };
-    std::vector<BinData> sortedBins (totalFoldedBins);
+    struct BinData {
+        int index;
+        float velocity;
+    };
+    std::vector<BinData> sortedBins(totalFoldedBins);
     for (int i = 0; i < totalFoldedBins; ++i) {
-        sortedBins[static_cast<size_t>(i)] = { i, static_cast<float>(smoothedOctaveBins[static_cast<size_t>(i)]) };
+        sortedBins[static_cast<size_t>(i)] = {i, static_cast<float>(smoothedOctaveBins[static_cast<size_t>(i)])};
     }
 
-    std::ranges::sort (sortedBins, [](const BinData& a, const BinData& b) {
-        return a.velocity < b.velocity;
-    });
+    std::ranges::sort(
+        sortedBins,
+        [](const BinData& a, const BinData& b) {
+            return a.velocity < b.velocity;
+        }
+    );
 
-    std::vector<int> binOrders (totalFoldedBins);
+    std::vector<int> binOrders(totalFoldedBins);
     for (int rank = 0; rank < totalFoldedBins; ++rank) {
         binOrders[static_cast<size_t>(sortedBins[static_cast<size_t>(rank)].index)] = rank;
     }
 
-    int biggestBinNumber = sortedBins.back().index;
+    const int biggestBinNumber = sortedBins.back().index;
 
     // 2. Render Loop
-    for (int i = 0; i < totalFoldedBins; ++i)
-    {
-        auto rawVelocity = static_cast<float>(smoothedOctaveBins[static_cast<size_t>(i)]);
+    for (int i = 0; i < totalFoldedBins; ++i) {
+        const auto rawVelocity = static_cast<float>(smoothedOctaveBins[static_cast<size_t>(i)]);
 
         // Rank-based amplification
         float renderVelocity = rawVelocity * (static_cast<float>(binOrders[static_cast<size_t>(i)]) * 0.011f);
         if (i == biggestBinNumber) {
             renderVelocity *= 1.3f;
         }
-        renderVelocity = std::min (renderVelocity, 1.15f);
+        renderVelocity = std::min(renderVelocity, 1.15f);
 
-        float toneRatio = static_cast<float> (i) / static_cast<float> (binsPerSemitone);
-        juce::Colour color = calculateColor (renderVelocity, toneRatio);
+        const float toneRatio = static_cast<float>(i) / static_cast<float>(binsPerSemitone);
+        const juce::Colour color = calculateColor(renderVelocity, toneRatio);
 
         // Use the amplified velocity for radius
-        float currentRadius = baseRadius * renderVelocity;
+        const float currentRadius = baseRadius * renderVelocity;
 
         auto& originalPath = segmentPaths[static_cast<size_t>(i)];
-        auto transform = juce::AffineTransform::scale (currentRadius, currentRadius).translated (center.x, center.y);
+        auto transform = juce::AffineTransform::scale(currentRadius, currentRadius).translated(center.x, center.y);
 
-        g.setColour (color);
-        g.fillPath (originalPath, transform);
+        g.setColour(color);
+        g.fillPath(originalPath, transform);
 
-        g.strokePath (originalPath, strokeType, transform);
+        g.strokePath(originalPath, strokeType, transform);
     }
 }
 
-void CircleVisualizer::resized()
-{
+void CircleVisualizer::paintFrame(juce::Graphics& g) {
+    const auto bounds = getLocalBounds().toFloat();
+    const auto center = bounds.getCentre();
+    const auto baseRadius = std::min(bounds.getWidth(), bounds.getHeight()) * 0.45f;
+
+    const float angleStep = juce::MathConstants<float>::twoPi / 12.0f;
+    const float startAngle = -juce::MathConstants<float>::halfPi;
+
+    for (int i = 0; i < 12; ++i) {
+        const float angle = startAngle + static_cast<float>(i) * angleStep;
+        const float sin = std::sin(angle);
+        const float cos = std::cos(angle);
+
+        const auto color = ColorPalette::chromaticScale[static_cast<size_t>(i)].color;
+        g.setColour(color);
+
+        const float r1 = baseRadius * 0.70f;
+        g.drawLine(center.x, center.y, center.x + r1 * cos, center.y + r1 * sin, 2.0f);
+        // Gap for the tone labels
+        const float r2 = baseRadius * 0.935f;
+        const float r3 = baseRadius * 1.15f;
+        g.drawLine(center.x + r2 * cos, center.y + r2 * sin, center.x + r3 * cos, center.y + r3 * sin, 2.0f);
+    }
+}
+
+void CircleVisualizer::resized() {
     constexpr float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(totalFoldedBins);
     constexpr float rotation = 0.0f - 0.5f * angleStep;
 
-    for (int i = 0; i < totalFoldedBins; ++i)
-    {
+    for (int i = 0; i < totalFoldedBins; ++i) {
         const float startAngle = static_cast<float>(i) * angleStep + rotation;
         const float endAngle = static_cast<float>(i + 1) * angleStep + rotation;
 
         juce::Path p;
-        p.addCentredArc (0.0f, 0.0f, 1.0f, 1.0f, 0.0f, startAngle, endAngle, true);
-        p.lineTo (0.0f, 0.0f);
+        p.addCentredArc(0.0f, 0.0f, 1.0f, 1.0f, 0.0f, startAngle, endAngle, true);
+        p.lineTo(0.0f, 0.0f);
         p.closeSubPath();
 
         segmentPaths[static_cast<size_t>(i)] = p;

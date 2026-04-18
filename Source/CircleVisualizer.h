@@ -19,6 +19,7 @@ public:
     void resized() override;
 
 private:
+    void paintFrame(juce::Graphics& g);
     static juce::Colour calculateColor(float velocity, float toneRatio);
 
     std::vector<double> smoothedOctaveBins;
