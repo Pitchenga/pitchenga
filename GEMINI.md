@@ -49,11 +49,7 @@ cmake -B cmake-build-debug
 
 # Build the project
 cmake --build cmake-build-debug
-```
 
-- Execute after completing every change request:
-
-```bash
 # Run the application
 killall Pitchenga; ./cmake-build-debug/Pitchenga_artefacts/Debug/Standalone/Pitchenga.app/Contents/MacOS/Pitchenga
 ```

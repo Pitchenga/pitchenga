@@ -147,6 +147,18 @@ void CircleVisualizer::paintLabel(
         0.0f,
         juce::Justification::centred
     );
+
+    const auto textBounds = arrangement.getBoundingBox(0, arrangement.getNumGlyphs(), true);
+    const float circleRadius = std::max(textBounds.getWidth(), textBounds.getHeight()) * 0.5f + baseRadius * 0.03f;
+    graphics.setColour(juce::Colours::black);
+    graphics.fillEllipse(
+        textBounds.getCentreX() - circleRadius,
+        textBounds.getCentreY() - circleRadius,
+        circleRadius * 2.0f,
+        circleRadius * 2.0f
+    );
+
+    graphics.setColour(labelColor);
     arrangement.draw(graphics);
 }
 
@@ -176,7 +188,6 @@ void CircleVisualizer::paintFrame(juce::Graphics& graphics) const {
 
         constexpr float labelStartRadius = 0.83f;
         paintLabel(graphics, center, outerRadius, labelStartRadius, i, sin, cos);
-
     }
 }
 
