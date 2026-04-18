@@ -52,7 +52,8 @@ bool LineViz::expand() {
             binOrders[static_cast<size_t>(sortedBins[static_cast<size_t>(rank)].index)] = rank;
         }
 
-        const float rankMultiplier = 1.0f / static_cast<float>(currentOctaveBins > 1 ? currentOctaveBins - 1 : 1);
+        constexpr float expansionFactor = 1.5f;
+        const float rankMultiplier = expansionFactor / static_cast<float>(currentOctaveBins > 1 ? currentOctaveBins - 1 : 1);
 
         for (int i = 0; i < currentOctaveBins; ++i) {
             const auto rawVelocity = static_cast<float>(dataPointer[startIndex + i]);
@@ -70,17 +71,17 @@ bool LineViz::expand() {
 
 void LineViz::updateResults(const std::vector<double>& results) {
     if (results.empty()) return;
+    displayMagnitudes = results;
 
     if (smoother == nullptr || lastKnownSize != results.size()) {
-        smoother = std::make_unique<ExpSmoother>(results.size(), 0.1);
+        smoother = std::make_unique<ExpSmoother>(results.size(), 0.5);
         lastKnownSize = results.size();
     }
 
-    displayMagnitudes = smoother->smooth(results);
-
     if (expand()) return;
-
     advanceBubbles();
+    displayMagnitudes = smoother->smooth(displayMagnitudes);
+
     repaint();
 }
 
@@ -180,7 +181,7 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
         const float endY = isBlackKey ? halfHeight : height;
 
         const juce::Colour baseColor = ColorPalette::chromaticScale[static_cast<size_t>(chroma)].color;
-        const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, 0.5f);
+        const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, 0.3f);
 
         graphics.setColour(color);
 
@@ -238,7 +239,7 @@ void LineViz::paintBubbles(juce::Graphics& graphics) const {
 
     for (const auto& b : bubbles) {
         if (b.y <= limitY) {
-            const juce::Colour dimmedColor = juce::Colours::black.interpolatedWith(b.color, 0.6f);
+            const juce::Colour dimmedColor = juce::Colours::black.interpolatedWith(b.color, 0.8f);
             graphics.setColour(dimmedColor);
 
             // Draw a 1px tall rect. Because it spawns every frame, it forms a seamless streak

@@ -16,7 +16,7 @@ public:
     void paintBins(juce::Graphics& graphics) const;
 
     void setEngine(const CqtEngine* e) { engine = e; }
-    static constexpr int getPreferredHeight() { return 300; }
+    static constexpr int getPreferredHeight() { return 700; }
 
 private:
     void paintFrame();
