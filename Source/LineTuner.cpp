@@ -117,8 +117,7 @@ void LineTuner::updateCachedGradient() {
         if (chroma < 0) chroma += 12;
 
         juce::Colour fullColor = ColorPalette::chromaticScale[static_cast<size_t>(chroma)].color;
-        juce::Colour dimmedColor = juce::Colours::black.interpolatedWith(fullColor, dimmingFactor);
-        graphics.setColour(dimmedColor);
+        graphics.setColour(fullColor);
 
         if (note > startMidi && note < endMidi) paintLabel(graphics, note, x, stripY);
 

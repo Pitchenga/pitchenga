@@ -21,7 +21,6 @@ public:
     static float getPreferredHeight();
 
     static constexpr float needleTriangleWidth = 12.0f;
-    static constexpr float dimmingFactor = 1.0f;
     static constexpr float tunerFontSize = 15.0f;
     static constexpr auto tunerFontStyle = "Bold";
 
