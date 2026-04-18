@@ -20,6 +20,13 @@ void LineViz::updateResults(const std::vector<double>& results) {
 }
 
 void LineViz::paint(juce::Graphics& graphics) {
+    if (!cachedFrame.isValid()) {
+        paintFrame(); // Generates it if the engine wasn't ready during resized()
+    }
+    if (cachedFrame.isValid()) {
+        graphics.drawImageAt(cachedFrame, 0, 0);
+    }
+
     currentTotalBins = static_cast<int>(displayMagnitudes.size());
     currentBinsPerOctave = currentTotalBins / PitchengaAudioProcessor::numOctaves;
 
@@ -52,5 +59,53 @@ void LineViz::paint(juce::Graphics& graphics) {
             barWidth,
             barHeight
         );
+    }
+}
+
+void LineViz::resized() {
+    // Re-bake the static background whenever the plugin window changes size
+    paintFrame();
+}
+
+void LineViz::paintFrame() {
+    const int width = getWidth();
+    const int height = getHeight();
+    if (width <= 0 || height <= 0) return;
+
+    if (currentTotalBins <= 0 || currentBinsPerOctave <= 0) return;
+
+    // Create a transparent image (the 'true' flag clears it to zero alpha)
+    cachedFrame = juce::Image(juce::Image::ARGB, width, height, true);
+    juce::Graphics graphics(cachedFrame);
+    paintFrame(graphics);
+}
+
+void LineViz::paintFrame(juce::Graphics& graphics) const {
+    int totalOctaves = currentTotalBins / currentBinsPerOctave;
+    if (totalOctaves <= 0) totalOctaves = PitchengaAudioProcessor::numOctaves;
+    int totalSemitones = totalOctaves * 12;
+
+    if (totalSemitones <= 0) return;
+
+    // Every semitone gets exactly the same linear width on the X-axis
+    const float semitoneWidth = static_cast<float>(getWidth()) / static_cast<float>(totalSemitones);
+    const float halfHeight = static_cast<float>(getHeight()) * 0.5f;
+
+    for (int i = 0; i < totalSemitones; ++i) {
+        const int chroma = i % 12;
+
+        // Identify standard "black" keys
+        const bool isBlackKey = (chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10);
+
+        // Stagger the Y position based on the key type
+        const float x = static_cast<float>(i) * semitoneWidth;
+        const float y = isBlackKey ? 0.0f : halfHeight;
+
+        const juce::Rectangle rect(x, y, semitoneWidth, halfHeight);
+
+        const juce::Colour baseColor = ColorPalette::chromaticScale[static_cast<size_t>(chroma)].color;
+        const juce::Colour color = baseColor.interpolatedWith(juce::Colours::black, 0.5f);
+        graphics.setColour(color);
+        graphics.drawRect(rect, 1.0f);
     }
 }
