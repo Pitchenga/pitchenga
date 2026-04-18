@@ -7,8 +7,7 @@
 #include <Eigen/Dense>
 #include <juce_dsp/juce_dsp.h>
 
-class CqtEngine
-{
+class CqtEngine {
 public:
     struct Config {
         int octaves = 6;
@@ -26,7 +25,7 @@ public:
 
     void updateConfig(const Config& newConfig);
     void init();
-    
+
     const Config& getConfig() const { return config; }
 
     // Transform one block of time-domain signal.

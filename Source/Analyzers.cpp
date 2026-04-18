@@ -68,10 +68,14 @@ const std::vector<double>& SpectralEqualizer::filter(const std::vector<double>& 
 }
 
 // 3. HarmonicPatternPitchClassDetector
-HarmonicPatternPitchClassDetector::HarmonicPatternPitchClassDetector(int binsPerOctave, int binsPerSemitone, int harmonicCount)
-    : harmonicCount(harmonicCount), binsPerSemitoneHalf(binsPerSemitone / 2),
-      harmonicCountMinusOneInv(1.0 / (harmonicCount - 1)) {
-    
+HarmonicPatternPitchClassDetector::HarmonicPatternPitchClassDetector(
+    int binsPerOctave,
+    int binsPerSemitone,
+    int harmonicCount
+)
+    : harmonicCount(harmonicCount),
+    binsPerSemitoneHalf(binsPerSemitone / 2),
+    harmonicCountMinusOneInv(1.0 / (harmonicCount - 1)) {
     harmonicBinsIndexes.resize(harmonicCount);
     for (int i = 0; i < harmonicCount; ++i) {
         harmonicBinsIndexes[i] = static_cast<int>(std::round(binsPerOctave * std::log2(i + 1.0))) + binsPerSemitoneHalf;

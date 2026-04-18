@@ -14,16 +14,14 @@ struct Pitch {
     juce::String letterNotation;
 };
 
-class ColorPalette
-{
+class ColorPalette {
 public:
     // The single source of truth for the chromatic scale
     static const std::array<Pitch, 12> chromaticScale;
 
     // Extracts a continuous interpolated color directly from a float chroma [0.0 to 12.0)
-    static juce::Colour getContinuousColor (float chroma)
-    {
-        float wrapped = std::fmod (chroma, 12.0f);
+    static juce::Colour getContinuousColor(float chroma) {
+        float wrapped = std::fmod(chroma, 12.0f);
         if (wrapped < 0.0f) wrapped += 12.0f;
 
         int index1 = static_cast<int>(std::floor(wrapped)) % 12;
@@ -31,7 +29,9 @@ public:
         float fraction = wrapped - std::floor(wrapped);
 
         return chromaticScale[static_cast<size_t>(index1)].color
-               .interpolatedWith(chromaticScale[static_cast<size_t>(index2)].color, fraction);
+            .interpolatedWith(
+                chromaticScale[static_cast<size_t>(index2)].color,
+                fraction
+            );
     }
 };
-

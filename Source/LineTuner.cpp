@@ -7,8 +7,7 @@ LineTuner::LineTuner()
 void LineTuner::setPitchFrequency(float frequencyHz) {
     if (frequencyHz > 0.0f) {
         currentMidi = freqToMidi(frequencyHz);
-    }
-    else {
+    } else {
         currentMidi = -1.0f;
     }
     repaint();
@@ -121,8 +120,7 @@ void LineTuner::updateCachedGradient() {
         juce::Colour dimmedColor = juce::Colours::black.interpolatedWith(fullColor, dimmingFactor);
         graphics.setColour(dimmedColor);
 
-        if (note > startMidi && note < endMidi)
-            paintLabel(graphics, note, x, stripY);
+        if (note > startMidi && note < endMidi) paintLabel(graphics, note, x, stripY);
 
         // Tick
         graphics.setColour(juce::Colours::black);
@@ -170,9 +168,14 @@ void LineTuner::paint(juce::Graphics& graphics) {
         float tunerStripY = height - stripHeight + tickHeight;
 
         juce::Path triangle;
-        triangle.addTriangle(pitchX, tunerStripY,
-                             pitchX - needleTriangleWidth * 0.5f, height,
-                             pitchX + needleTriangleWidth * 0.5f, height);
+        triangle.addTriangle(
+            pitchX,
+            tunerStripY,
+            pitchX - needleTriangleWidth * 0.5f,
+            height,
+            pitchX + needleTriangleWidth * 0.5f,
+            height
+        );
 
         graphics.setColour(juce::Colours::black);
         graphics.strokePath(triangle, juce::PathStrokeType(2.0f));

@@ -14,13 +14,12 @@
 
 
 class PitchengaAudioProcessorEditor : public juce::AudioProcessorEditor,
-                                      private juce::Timer
-{
+    private juce::Timer {
 public:
-    explicit PitchengaAudioProcessorEditor (PitchengaAudioProcessor&);
+    explicit PitchengaAudioProcessorEditor(PitchengaAudioProcessor&);
     ~PitchengaAudioProcessorEditor() override;
 
-    void paint (juce::Graphics&) override;
+    void paint(juce::Graphics&) override;
     void resized() override;
 
 private:
@@ -29,23 +28,22 @@ private:
     PitchengaAudioProcessor& audioProcessor;
 
     // Background worker for heavy DSP
-    class CqtWorkerThread : public juce::Thread
-    {
+    class CqtWorkerThread : public juce::Thread {
     public:
-        CqtWorkerThread (PitchengaAudioProcessor& p);
+        CqtWorkerThread(PitchengaAudioProcessor& p);
         void run() override;
-        
-        void getLatestResults (std::vector<double>& dest);
-        bool hasNewData() const { return newDataAvailable.load(); }
-        void clearNewDataFlag() { newDataAvailable.store (false); }
 
-        void updateSampleRate (double newSampleRate);
+        void getLatestResults(std::vector<double>& dest);
+        bool hasNewData() const { return newDataAvailable.load(); }
+        void clearNewDataFlag() { newDataAvailable.store(false); }
+
+        void updateSampleRate(double newSampleRate);
 
     private:
         void setupBuffers();
 
         PitchengaAudioProcessor& processor;
-        
+
         CqtEngine cqt;
         std::unique_ptr<HarmonicPatternPitchClassDetector> pcDetector;
         std::unique_ptr<SpectralEqualizer> spectralEqualizer;
@@ -57,12 +55,12 @@ private:
         std::vector<std::complex<float>> cqtSpectrum;
         std::vector<double> amplitudeSpectrumDb;
         std::vector<double> octaveBins;
-        
+
         juce::CriticalSection resultLock;
         std::vector<double> results;
-        std::atomic<bool> newDataAvailable { false };
-        
-        static double amplitudeToDbRescaled (double amplitude);
+        std::atomic<bool> newDataAvailable{false};
+
+        static double amplitudeToDbRescaled(double amplitude);
     };
 
     CqtWorkerThread worker;
@@ -72,5 +70,5 @@ private:
     // Shared results for rendering
     std::vector<double> resultsBuffer;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PitchengaAudioProcessorEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PitchengaAudioProcessorEditor)
 };

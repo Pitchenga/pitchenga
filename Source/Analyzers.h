@@ -8,7 +8,7 @@ class ExpSmoother {
 public:
     ExpSmoother(size_t size, double weight);
     const std::vector<double>& smooth(const std::vector<double>& currentFrame);
-    
+
 private:
     std::vector<double> data;
     double currentWeight;
@@ -21,7 +21,7 @@ class SpectralEqualizer {
 public:
     SpectralEqualizer(size_t size, size_t windowSize);
     const std::vector<double>& filter(const std::vector<double>& values);
-    
+
 private:
     size_t size;
     size_t windowSize;
@@ -35,14 +35,14 @@ class HarmonicPatternPitchClassDetector {
 public:
     HarmonicPatternPitchClassDetector(int binsPerOctave, int binsPerSemitone, int harmonicCount = 10);
     const std::vector<double>& detectPitchClasses(const std::vector<double>& cqBins);
-    
+
 private:
     int harmonicCount;
     int binsPerSemitoneHalf;
     double harmonicCountMinusOneInv;
-    
+
     std::vector<double> harmonicBins;
     std::vector<int> harmonicBinsIndexes;
-    
+
     double extractHarmonics(const std::vector<double>& cqBins, int baseFreqBin) const;
 };
