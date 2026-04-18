@@ -2,13 +2,13 @@
 #include "ColorPalette.h"
 #include <algorithm>
 
-LineViz::LineViz(PitchengaAudioProcessor& processor) : processor(processor) {}
+LineViz::LineViz(PitchengaAudioProcessor& proc) : processor(proc) {}
 
 void LineViz::updateResults(const std::vector<double>& results) {
     if (results.empty()) return;
 
     if (smoother == nullptr || lastKnownSize != results.size()) {
-        smoother = std::make_unique<ExpSmoother>(results.size(), 0.2);
+        smoother = std::make_unique<ExpSmoother>(results.size(), 0.1);
         lastKnownSize = results.size();
     }
 
@@ -17,20 +17,10 @@ void LineViz::updateResults(const std::vector<double>& results) {
     const int totalBins = static_cast<int>(displayMagnitudes.size());
     if (totalBins <= 0) return;
 
-    // --- 1. Spectral Tilt (Applied FIRST) ---
-    constexpr double maxTilt = 2.5;
-    const double tiltStep = (maxTilt - 1.0) / static_cast<double>(totalBins > 1 ? totalBins - 1 : 1);
-
-    double* dataPtr = displayMagnitudes.data();
-
-    for (int i = 0; i < totalBins; ++i) {
-        dataPtr[i] *= (1.0 + static_cast<double>(i) * tiltStep);
-    }
+    double* dataPointer = displayMagnitudes.data();
 
     // --- 2. Per-Octave Ranking (Multiband Gating) ---
-    int binsPerOct = PitchengaAudioProcessor::numOctaves > 0
-                     ? totalBins / PitchengaAudioProcessor::numOctaves
-                     : 12;
+    const int binsPerOct = totalBins / PitchengaAudioProcessor::numOctaves;
 
     struct BinData {
         int index;
@@ -48,7 +38,7 @@ void LineViz::updateResults(const std::vector<double>& results) {
         if (currentOctaveBins <= 0) break;
 
         for (int i = 0; i < currentOctaveBins; ++i) {
-            sortedBins[static_cast<size_t>(i)] = {i, static_cast<float>(dataPtr[startIndex + i])};
+            sortedBins[static_cast<size_t>(i)] = {i, static_cast<float>(dataPointer[startIndex + i])};
         }
 
         std::ranges::sort(
@@ -63,7 +53,7 @@ void LineViz::updateResults(const std::vector<double>& results) {
         // Find the absolute highest peak in this specific octave
         const float maxOctaveVelocity = sortedBins[static_cast<size_t>(currentOctaveBins - 1)].velocity;
 
-        // If the tilt pushed this peak past 1.0, calculate how much to scale the whole octave down.
+        // If the tilt pushed this peak past 1.0 calculate how much to scale the whole octave down.
         // If it is below 1.0, leave it alone (1.0f multiplier).
         const float octaveGainReduction = maxOctaveVelocity > 1.0f ? (1.0f / maxOctaveVelocity) : 1.0f;
 
@@ -74,18 +64,18 @@ void LineViz::updateResults(const std::vector<double>& results) {
         const float rankMultiplier = 1.0f / static_cast<float>(currentOctaveBins > 1 ? currentOctaveBins - 1 : 1);
 
         for (int i = 0; i < currentOctaveBins; ++i) {
-            const auto rawVelocity = static_cast<float>(dataPtr[startIndex + i]);
+            const auto rawVelocity = static_cast<float>(dataPointer[startIndex + i]);
             const float rankContrast = static_cast<float>(binOrders[static_cast<size_t>(i)]) * rankMultiplier;
 
             // Apply the gain reduction so the whole octave shrinks proportionally to fit
             float renderVelocity = (rawVelocity * octaveGainReduction) * rankContrast;
 
             // We still clamp safely, but the math guarantees it will never hard-clip
-            dataPtr[startIndex + i] = static_cast<double>(std::min(renderVelocity, 1.0f));
+            dataPointer[startIndex + i] = static_cast<double>(std::min(renderVelocity, 1.0f));
         }
     }
 
-    advanceAndSpawnBubbles();
+    advanceBubbles();
     repaint();
 }
 
@@ -194,8 +184,7 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
     }
 }
 
-//fixme: rename
-void LineViz::advanceAndSpawnBubbles() {
+void LineViz::advanceBubbles() {
     // 1. Move existing bubbles up smoothly by 1 pixel per frame
     for (auto& bubble : bubbles) {
         constexpr float speed = 1.0f;
@@ -216,9 +205,8 @@ void LineViz::advanceAndSpawnBubbles() {
     if (width <= 0.0f || height <= 0.0f || totalBins <= 0) return;
 
     const float barWidth = width / static_cast<float>(totalBins);
-    constexpr double bubbleThreshold = 0.5;
 
-    // 3. Spawn new trail elements
+    // 3. Spawn new bubbles
     for (int i = 0; i < totalBins; ++i) {
         const double magnitude = displayMagnitudes[static_cast<size_t>(i)];
 
@@ -241,13 +229,11 @@ void LineViz::paintBubbles(juce::Graphics& graphics) const {
     const float height = static_cast<float>(getHeight());
 
     // Calculate the Y coordinate that represents the bottom of the top 60%
-    const float limitY = height * 0.6f;
+    const float limitY = height * 1 - bubbleThreshold;
 
     for (const auto& b : bubbles) {
-        // Only draw the bubble if it has floated into the top 0.6 territory
         if (b.y <= limitY) {
-            // Dim the color to exactly 0.5 brightness by mixing it evenly with black
-            const juce::Colour dimmedColor = juce::Colours::black.interpolatedWith(b.color, 0.7f);
+            const juce::Colour dimmedColor = juce::Colours::black.interpolatedWith(b.color, 0.6f);
             graphics.setColour(dimmedColor);
 
             // Draw a 1px tall rect. Because it spawns every frame, it forms a seamless streak

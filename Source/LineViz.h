@@ -21,6 +21,7 @@ private:
     void paintFrame();
     void paintFrame(juce::Graphics& graphics) const;
 
+    const float bubbleThreshold = 0.4f;
     struct Bubble {
         float x;
         float y;
@@ -29,7 +30,7 @@ private:
     };
     std::vector<Bubble> bubbles;
 
-    void advanceAndSpawnBubbles();
+    void advanceBubbles();
     void paintBubbles(juce::Graphics& graphics) const;
 
     PitchengaAudioProcessor& processor;
