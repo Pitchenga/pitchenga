@@ -38,6 +38,7 @@ void PitchengaAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
         -45_dB                               // Hysteresis (Noise gate threshold)
     );
 }
+
 void PitchengaAudioProcessor::releaseResources() {}
 
 bool PitchengaAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -144,6 +145,41 @@ void PitchengaAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
             currentStageData = nextStageData;
             nextStageData = temp;
             currentStageSize = nextIdx;
+        }
+    }
+}
+
+void PitchengaAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+{
+    // Create an XML element to store settings
+    juce::XmlElement xml ("PITCHENGA_SETTINGS");
+
+    // Add width and height as attributes
+    xml.setAttribute ("uiWidth", lastUIWidth);
+    xml.setAttribute ("uiHeight", lastUIHeight);
+
+    // Convert XML to binary for the host to save
+    copyXmlToBinary (xml, destData);
+}
+
+void PitchengaAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+{
+    // Get the XML from the binary data provided by the host
+    std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+
+    if (xmlState != nullptr)
+    {
+        // Only if the tag matches our expected name
+        if (xmlState->hasTagName ("PITCHENGA_SETTINGS"))
+        {
+            // Update the processor variables.
+            // If the attributes don't exist, it keeps the defaults initialized in .h
+            lastUIWidth  = xmlState->getIntAttribute ("uiWidth", lastUIWidth);
+            lastUIHeight = xmlState->getIntAttribute ("uiHeight", lastUIHeight);
+
+            // If the UI is currently open, tell the Editor to resize
+            if (auto* editor = getActiveEditor())
+                editor->setSize (lastUIWidth, lastUIHeight);
         }
     }
 }

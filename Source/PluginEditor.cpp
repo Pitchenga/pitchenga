@@ -203,7 +203,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor (PitchengaAudioProc
     smoothedOctaveBins.resize (static_cast<size_t> (totalFoldedBins), 0.0);
 
     setResizable (true, true);
-    setSize (700, 720);
+    setSize (audioProcessor.lastUIWidth, audioProcessor.lastUIHeight);
     worker.startThread (juce::Thread::Priority::high);
     startTimerHz (48);
 }
@@ -336,6 +336,9 @@ void PitchengaAudioProcessorEditor::paint (juce::Graphics& g)
 
 void PitchengaAudioProcessorEditor::resized()
 {
+    audioProcessor.lastUIWidth  = getWidth();
+    audioProcessor.lastUIHeight = getHeight();
+
     auto bounds = getLocalBounds();
 
     // fixme: Extract the clock into a component and bound size
