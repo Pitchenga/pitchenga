@@ -26,7 +26,7 @@ private:
 
     juce::Image cachedGradient;
 
-    static constexpr float dimmingFactor = 0.8f;
+    static constexpr float dimmingFactor = 0.9f;
     static constexpr float tunerFontSize = 15.0f;
     static constexpr const char* tunerFontStyle = "Bold";
 

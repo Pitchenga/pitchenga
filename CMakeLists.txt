@@ -58,7 +58,8 @@ target_sources(Pitchenga PRIVATE
         Source/ColorPalette.h
         Source/ColorPalette.cpp
         Source/LineTuner.h
-        Source/LineTuner.cpp)
+        Source/LineTuner.cpp
+)
 
 # 4. Link the heavy-lifting JUCE modules (Audio, GUI, and Hardware-Accelerated Math)
 target_link_libraries(Pitchenga PRIVATE
@@ -70,6 +71,19 @@ target_link_libraries(Pitchenga PRIVATE
         PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags)
+
+FetchContent_Declare(
+        cycfi_q
+        GIT_REPOSITORY https://github.com/cycfi/q.git
+        GIT_TAG        master
+        GIT_SUBMODULES_RECURSE TRUE
+)
+FetchContent_MakeAvailable(cycfi_q)
+
+target_include_directories(Pitchenga PRIVATE
+        ${cycfi_q_SOURCE_DIR}/q_lib/include
+        ${CMAKE_BINARY_DIR}/_deps/cycfi_infra-src/include
+)
 
 # 5. Lock in the C++20 Standard
 target_compile_features(Pitchenga PUBLIC cxx_std_20)
