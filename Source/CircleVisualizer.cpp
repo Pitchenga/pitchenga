@@ -118,7 +118,7 @@ void CircleVisualizer::paint(juce::Graphics& g) {
     }
 }
 
-void CircleVisualizer::paintFrame(juce::Graphics& g) {
+void CircleVisualizer::paintFrame(juce::Graphics& graphics) {
     const auto bounds = getLocalBounds().toFloat();
     const auto center = bounds.getCentre();
     const auto baseRadius = std::min(bounds.getWidth(), bounds.getHeight()) * 0.45f;
@@ -132,14 +132,30 @@ void CircleVisualizer::paintFrame(juce::Graphics& g) {
         const float cos = std::cos(angle);
 
         const auto color = ColorPalette::chromaticScale[static_cast<size_t>(i)].color;
-        g.setColour(color);
+        graphics.setColour(color);
 
         const float r1 = baseRadius * 0.70f;
-        g.drawLine(center.x, center.y, center.x + r1 * cos, center.y + r1 * sin, 2.0f);
-        // Gap for the tone labels
+        graphics.drawLine(center.x, center.y, center.x + r1 * cos, center.y + r1 * sin, 2.0f);
+
+        // --- Tone Labels ---
+        const float rLabel = baseRadius * 0.8175f;
+        const float lx = center.x + rLabel * cos;
+        const float ly = center.y + rLabel * sin;
+        const juce::String name = ColorPalette::chromaticScale[static_cast<size_t>(i)].toneName;
+
+        graphics.setFont(juce::FontOptions(baseRadius * 0.11f).withStyle("Bold"));
+        const auto labelColor = calculateColor(0.0f, static_cast<float>(i));
+        graphics.setColour(labelColor);
+
+        const float textWidth = graphics.getFont().getStringWidthFloat(name);
+        const float textHeight = graphics.getFont().getHeight();
+        graphics.drawText(name, lx - textWidth * 0.5f, ly - textHeight * 0.5f, textWidth, textHeight, juce::Justification::centred);
+
+        // Outer Tick
+        graphics.setColour(color);
         const float r2 = baseRadius * 0.935f;
         const float r3 = baseRadius * 1.15f;
-        g.drawLine(center.x + r2 * cos, center.y + r2 * sin, center.x + r3 * cos, center.y + r3 * sin, 2.0f);
+        graphics.drawLine(center.x + r2 * cos, center.y + r2 * sin, center.x + r3 * cos, center.y + r3 * sin, 2.0f);
     }
 }
 
@@ -149,8 +165,8 @@ void CircleVisualizer::paintFrame() {
     if (width <= 0 || height <= 0) return;
 
     cachedFrame = juce::Image(juce::Image::ARGB, width, height, true);
-    juce::Graphics g(cachedFrame);
-    paintFrame(g);
+    juce::Graphics graphics(cachedFrame);
+    paintFrame(graphics);
 }
 
 void CircleVisualizer::paintBins() {
@@ -161,12 +177,12 @@ void CircleVisualizer::paintBins() {
         const float startAngle = static_cast<float>(i) * angleStep + rotation;
         const float endAngle = static_cast<float>(i + 1) * angleStep + rotation;
 
-        juce::Path p;
-        p.addCentredArc(0.0f, 0.0f, 1.0f, 1.0f, 0.0f, startAngle, endAngle, true);
-        p.lineTo(0.0f, 0.0f);
-        p.closeSubPath();
+        juce::Path path;
+        path.addCentredArc(0.0f, 0.0f, 1.0f, 1.0f, 0.0f, startAngle, endAngle, true);
+        path.lineTo(0.0f, 0.0f);
+        path.closeSubPath();
 
-        segmentPaths[static_cast<size_t>(i)] = p;
+        segmentPaths[static_cast<size_t>(i)] = path;
     }
 }
 

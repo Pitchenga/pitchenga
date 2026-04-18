@@ -19,7 +19,7 @@ public:
     void resized() override;
 
 private:
-    void paintFrame(juce::Graphics& g);
+    void paintFrame(juce::Graphics& graphics);
     void paintFrame();
     void paintBins();
     static juce::Colour calculateColor(float velocity, float toneRatio);
