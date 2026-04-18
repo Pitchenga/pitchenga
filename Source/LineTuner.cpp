@@ -66,7 +66,7 @@ juce::Font LineTuner::getLabelFont() {
 }
 
 float LineTuner::getLabelHeight() {
-    return getLabelFont().getStringWidthFloat("Ww8");
+    return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8");
 }
 
 float LineTuner::getLabelWidth() {
@@ -153,7 +153,7 @@ void LineTuner::paint(juce::Graphics& graphics) {
 
         // Light up the label
         if (nearestNote > startMidi && nearestNote < endMidi) {
-            float closestX = bounds.getWidth() * ((static_cast<float>(nearestNote) - minMidi) / (maxMidi - minMidi));
+            const float closestX = bounds.getWidth() * ((static_cast<float>(nearestNote) - minMidi) / (maxMidi - minMidi));
 
             int nearestChroma = nearestNote % 12;
             if (nearestChroma < 0) nearestChroma += 12;

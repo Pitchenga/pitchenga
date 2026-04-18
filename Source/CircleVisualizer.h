@@ -16,10 +16,18 @@ public:
     void updateResults(const std::vector<double>& results);
 
     void paint(juce::Graphics& g) override;
+    static void paintLabels(
+        juce::Graphics& graphics,
+        juce::Point<float> center,
+        float baseRadius,
+        int i,
+        float sin,
+        float cos
+    );
     void resized() override;
 
 private:
-    void paintFrame(juce::Graphics& graphics);
+    void paintFrame(juce::Graphics& graphics) const;
     void paintFrame();
     void paintBins();
     static juce::Colour calculateColor(float velocity, float toneRatio);

@@ -118,13 +118,37 @@ void CircleVisualizer::paint(juce::Graphics& g) {
     }
 }
 
-void CircleVisualizer::paintFrame(juce::Graphics& graphics) {
+void CircleVisualizer::paintLabels(
+    juce::Graphics& graphics,
+    const juce::Point<float> center,
+    const float baseRadius,
+    const int i,
+    const float sin,
+    const float cos
+) {
+    const float rLabel = baseRadius * 0.8175f;
+    const float lx = center.x + rLabel * cos;
+    const float ly = center.y + rLabel * sin;
+    const juce::String name = ColorPalette::chromaticScale[static_cast<size_t>(i)].toneName;
+
+    graphics.setFont(juce::FontOptions(baseRadius * 0.11f).withStyle("Bold"));
+    const auto labelColor = calculateColor(0.1f, static_cast<float>(i));
+    graphics.setColour(labelColor);
+
+    const float textWidth = juce::GlyphArrangement::getStringWidth(graphics.getCurrentFont(), name);
+    const float textHeight = graphics.getCurrentFont().getHeight();
+
+    juce::Rectangle textBounds(lx - textWidth * 0.5f, ly - textHeight * 0.5f, textWidth, textHeight);
+    graphics.drawText(name, textBounds.toNearestInt(), juce::Justification::centred, false);
+}
+
+void CircleVisualizer::paintFrame(juce::Graphics& graphics) const {
     const auto bounds = getLocalBounds().toFloat();
     const auto center = bounds.getCentre();
     const auto baseRadius = std::min(bounds.getWidth(), bounds.getHeight()) * 0.45f;
 
-    const float angleStep = juce::MathConstants<float>::twoPi / 12.0f;
-    const float startAngle = -juce::MathConstants<float>::halfPi;
+    constexpr float angleStep = juce::MathConstants<float>::twoPi / 12.0f;
+    constexpr float startAngle = -juce::MathConstants<float>::halfPi;
 
     for (int i = 0; i < 12; ++i) {
         const float angle = startAngle + static_cast<float>(i) * angleStep;
@@ -134,24 +158,13 @@ void CircleVisualizer::paintFrame(juce::Graphics& graphics) {
         const auto color = ColorPalette::chromaticScale[static_cast<size_t>(i)].color;
         graphics.setColour(color);
 
+        // Inner spoke
         const float r1 = baseRadius * 0.70f;
         graphics.drawLine(center.x, center.y, center.x + r1 * cos, center.y + r1 * sin, 2.0f);
 
-        // --- Tone Labels ---
-        const float rLabel = baseRadius * 0.8175f;
-        const float lx = center.x + rLabel * cos;
-        const float ly = center.y + rLabel * sin;
-        const juce::String name = ColorPalette::chromaticScale[static_cast<size_t>(i)].toneName;
+        paintLabels(graphics, center, baseRadius, i, sin, cos);
 
-        graphics.setFont(juce::FontOptions(baseRadius * 0.11f).withStyle("Bold"));
-        const auto labelColor = calculateColor(0.0f, static_cast<float>(i));
-        graphics.setColour(labelColor);
-
-        const float textWidth = graphics.getFont().getStringWidthFloat(name);
-        const float textHeight = graphics.getFont().getHeight();
-        graphics.drawText(name, lx - textWidth * 0.5f, ly - textHeight * 0.5f, textWidth, textHeight, juce::Justification::centred);
-
-        // Outer Tick
+        // Outer tick
         graphics.setColour(color);
         const float r2 = baseRadius * 0.935f;
         const float r3 = baseRadius * 1.15f;
