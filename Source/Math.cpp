@@ -67,7 +67,7 @@ void Math::updateSampleRate(const double newSampleRate) {
 }
 
 double Math::amplitudeToDbRescaled(const double amplitude) {
-    // Exact port of HarmonLineViz's DecibelCalculator.java
+    // Exact port of HarmonRoll's DecibelCalculator.java
     constexpr double zeroAmplitudeDb = -90.30899869919436;
     constexpr double zeroAmplitudeDbInv = 1.0 / zeroAmplitudeDb;
 
@@ -204,7 +204,7 @@ void Math::processCqtAndEqualization() {
     const int binsPerOctave = cqtEngine.getBinsPerOctave();
     const int signalBlockSize = cqtEngine.getSignalBlockSize();
 
-    // --- CQT Processing (For CircleViz) ---
+    // --- CQT Processing (For Eye) ---
     for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct) {
         const auto& window = slidingWindows[static_cast<size_t>(oct)];
         if (window.size() == static_cast<size_t>(signalBlockSize)) {
@@ -233,18 +233,18 @@ void Math::processCqtAndEqualization() {
     }
     const auto& smoothedCircleData = octaveBinSmoother->smooth(octaveBins);
 
-    currentCircleVizData = smoothedCircleData;
-    currentLineVizData = equalizedPitchClasses;
+    currentEyeData = smoothedCircleData;
+    currentRollData = equalizedPitchClasses;
 }
 
 void Math::publishResultsToUi() {
     // --- Push Results to UI ---
     const juce::CriticalSection::ScopedLockType lock(resultLock);
-    if (circleVisualizerResults.size() == currentCircleVizData.size()) {
-        std::ranges::copy(currentCircleVizData, circleVisualizerResults.begin());
+    if (circleVisualizerResults.size() == currentEyeData.size()) {
+        std::ranges::copy(currentEyeData, circleVisualizerResults.begin());
     }
-    if (lineVisualizerResults.size() == currentLineVizData.size()) {
-        std::ranges::copy(currentLineVizData, lineVisualizerResults.begin());
+    if (lineVisualizerResults.size() == currentRollData.size()) {
+        std::ranges::copy(currentRollData, lineVisualizerResults.begin());
     }
     newDataAvailable.store(true, std::memory_order_release);
 }

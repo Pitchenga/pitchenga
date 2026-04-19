@@ -3,9 +3,9 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "PluginProcessor.h"
 #include "Math.h"
-#include "Tuna.h"
-#include "Eye.h"
-#include "LineViz.h"
+#include "TheTuna.h"
+#include "TheEye.h"
+#include "TheRoll.h"
 #include "Control.h"
 #include "Splitter.h"
 
@@ -27,9 +27,9 @@ private:
     // Background worker for heavy DSP
     Math worker;
 
-    Tuna tunerViz;
-    Eye circleViz;
-    LineViz lineViz;
+    TheTuna tunaViz;
+    TheEye eye;
+    TheRoll roll;
     Splitter splitterBar;
 
     Control controlOverlay;

@@ -4,21 +4,21 @@
 Control::Control(PitchengaAudioProcessor& processorToUse)
     : audioProcessor(processorToUse) {
 
-    setupToggleButton(toggleLineViz, audioProcessor.uiSettings.showLineViz);
-    toggleLineViz.onClick = [this] {
-        audioProcessor.uiSettings.showLineViz = toggleLineViz.getToggleState();
+    setupToggleButton(toggleRoll, audioProcessor.uiSettings.showRoll);
+    toggleRoll.onClick = [this] {
+        audioProcessor.uiSettings.showRoll = toggleRoll.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleCircleViz, audioProcessor.uiSettings.showCircleViz);
-    toggleCircleViz.onClick = [this] {
-        audioProcessor.uiSettings.showCircleViz = toggleCircleViz.getToggleState();
+    setupToggleButton(toggleEye, audioProcessor.uiSettings.showEye);
+    toggleEye.onClick = [this] {
+        audioProcessor.uiSettings.showEye = toggleEye.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleTunerViz, audioProcessor.uiSettings.showTunerViz);
-    toggleTunerViz.onClick = [this] {
-        audioProcessor.uiSettings.showTunerViz = toggleTunerViz.getToggleState();
+    setupToggleButton(toggleTunaViz, audioProcessor.uiSettings.showTunaViz);
+    toggleTunaViz.onClick = [this] {
+        audioProcessor.uiSettings.showTunaViz = toggleTunaViz.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -34,9 +34,9 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    addAndMakeVisible(toggleTunerViz);
-    addAndMakeVisible(toggleCircleViz);
-    addAndMakeVisible(toggleLineViz);
+    addAndMakeVisible(toggleTunaViz);
+    addAndMakeVisible(toggleEye);
+    addAndMakeVisible(toggleRoll);
     addAndMakeVisible(toggleSteam);
     addAndMakeVisible(toggleForrest);
 }
@@ -51,9 +51,9 @@ void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
 }
 
 void Control::updateVisibilityFromState() {
-    toggleLineViz.setToggleState(audioProcessor.uiSettings.showLineViz, juce::NotificationType::dontSendNotification);
-    toggleCircleViz.setToggleState(audioProcessor.uiSettings.showCircleViz, juce::NotificationType::dontSendNotification);
-    toggleTunerViz.setToggleState(audioProcessor.uiSettings.showTunerViz, juce::NotificationType::dontSendNotification);
+    toggleRoll.setToggleState(audioProcessor.uiSettings.showRoll, juce::NotificationType::dontSendNotification);
+    toggleEye.setToggleState(audioProcessor.uiSettings.showEye, juce::NotificationType::dontSendNotification);
+    toggleTunaViz.setToggleState(audioProcessor.uiSettings.showTunaViz, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(audioProcessor.uiSettings.showForrest, juce::NotificationType::dontSendNotification);
     toggleSteam.setToggleState(audioProcessor.uiSettings.showSteam, juce::NotificationType::dontSendNotification);
 }
@@ -63,9 +63,9 @@ void Control::resized() {
 
     // fixme: Un-hardcode sizes
     // Pack the buttons to the left with minimal offsets
-    toggleLineViz.setBounds(bounds.removeFromLeft(60).reduced(2));
-    toggleCircleViz.setBounds(bounds.removeFromLeft(60).reduced(2));
-    toggleTunerViz.setBounds(bounds.removeFromLeft(60).reduced(2));
+    toggleRoll.setBounds(bounds.removeFromLeft(60).reduced(2));
+    toggleEye.setBounds(bounds.removeFromLeft(60).reduced(2));
+    toggleTunaViz.setBounds(bounds.removeFromLeft(60).reduced(2));
     toggleForrest.setBounds(bounds.removeFromLeft(80).reduced(2));
     toggleSteam.setBounds(bounds.removeFromLeft(95).reduced(2));
 }
@@ -79,9 +79,9 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("uiWidth", lastUIWidth);
     xml.setAttribute("uiHeight", lastUIHeight);
 
-    xml.setAttribute("showLineViz", showLineViz);
-    xml.setAttribute("showCircleViz", showCircleViz);
-    xml.setAttribute("showTunerViz", showTunerViz);
+    xml.setAttribute("showRoll", showRoll);
+    xml.setAttribute("showEye", showEye);
+    xml.setAttribute("showTunaViz", showTunaViz);
 
     xml.setAttribute("showForrest", showForrest);
     xml.setAttribute("showSteam", showSteam);
@@ -100,9 +100,9 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     lastUIWidth = xml.getIntAttribute("uiWidth", lastUIWidth);
     lastUIHeight = xml.getIntAttribute("uiHeight", lastUIHeight);
 
-    showLineViz = xml.getBoolAttribute("showLineViz", showLineViz);
-    showCircleViz = xml.getBoolAttribute("showCircleViz", showCircleViz);
-    showTunerViz = xml.getBoolAttribute("showTunerViz", showTunerViz);
+    showRoll = xml.getBoolAttribute("showRoll", showRoll);
+    showEye = xml.getBoolAttribute("showEye", showEye);
+    showTunaViz = xml.getBoolAttribute("showTunaViz", showTunaViz);
 
     showForrest = xml.getBoolAttribute("showForrest", showForrest);
     showSteam = xml.getBoolAttribute("showSteam", showSteam);

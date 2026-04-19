@@ -2,9 +2,9 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "Palette.h"
 
-class Tuna : public juce::Component {
+class TheTuna : public juce::Component {
 public:
-    Tuna();
+    TheTuna();
 
 
     void setPitchFrequency(float frequencyHz);
@@ -21,8 +21,8 @@ public:
     static float getPreferredHeight();
 
     static constexpr float needleTriangleWidth = 12.0f;
-    static constexpr float tunerFontSize = 15.0f;
-    static constexpr auto tunerFontStyle = "Bold";
+    static constexpr float tunaFontSize = 15.0f;
+    static constexpr auto tunaFontStyle = "Bold";
 
 private:
     void updateCachedGradient();
@@ -42,5 +42,5 @@ private:
 
     static juce::Font getLabelFont();
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Tuna)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TheTuna)
 };

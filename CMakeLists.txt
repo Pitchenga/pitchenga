@@ -57,12 +57,12 @@ target_sources(Pitchenga PRIVATE
         Source/Analyzers.cpp
         Source/Palette.h
         Source/Palette.cpp
-        Source/Tuna.h
-        Source/Tuna.cpp
-        Source/Eye.h
-        Source/Eye.cpp
-        Source/LineViz.h
-        Source/LineViz.cpp
+        Source/TheTuna.h
+        Source/TheTuna.cpp
+        Source/TheEye.h
+        Source/TheEye.cpp
+        Source/TheRoll.h
+        Source/TheRoll.cpp
         Source/Math.h
         Source/Math.cpp
         Source/Control.h

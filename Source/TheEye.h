@@ -4,13 +4,13 @@
 #include <vector>
 #include <array>
 
-class Eye : public juce::Component {
+class TheEye : public juce::Component {
 public:
     static constexpr int semitonesPerOctave = 12;
     static constexpr int binsPerSemitone = 9;
     static constexpr int totalFoldedBins = binsPerSemitone * semitonesPerOctave;
 
-    Eye();
+    TheEye();
 
     void updateResults(const std::vector<double>& results);
 
@@ -38,5 +38,5 @@ private:
 
     juce::Image cachedFrame;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Eye)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TheEye)
 };

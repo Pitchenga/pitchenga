@@ -59,8 +59,8 @@ private:
     std::vector<float> rawAudioHistoryBuffer;
     std::vector<float> pitchAnalysisBuffer;
 
-    std::vector<double> currentCircleVizData;
-    std::vector<double> currentLineVizData;
+    std::vector<double> currentEyeData;
+    std::vector<double> currentRollData;
 
     // --- Thread-Safe Output Buffers ---
     juce::CriticalSection resultLock;

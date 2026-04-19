@@ -1,21 +1,21 @@
-#include "Eye.h"
+#include "TheEye.h"
 #include <cmath>
 #include <algorithm>
 
 #include "Palette.h"
 
-Eye::Eye() {
+TheEye::TheEye() {
     smoothedOctaveBins.resize(totalFoldedBins, 0.0);
 }
 
-void Eye::updateResults(const std::vector<double>& results) {
+void TheEye::updateResults(const std::vector<double>& results) {
     if (results.size() == smoothedOctaveBins.size()) {
         std::ranges::copy(results, smoothedOctaveBins.begin());
         repaint();
     }
 }
 
-juce::Colour Eye::calculateColor(const float velocity, const float toneRatio) {
+juce::Colour TheEye::calculateColor(const float velocity, const float toneRatio) {
     // NO std::fmod() NEEDED.
     // toneRatio only ever ranges from -0.444 to 11.444.
     // A single addition handles the negative wrap perfectly.
@@ -58,7 +58,7 @@ juce::Colour Eye::calculateColor(const float velocity, const float toneRatio) {
     return juce::Colours::black.interpolatedWith(guessColor, colorVelocity);
 }
 
-void Eye::paint(juce::Graphics& g) {
+void TheEye::paint(juce::Graphics& g) {
     if (cachedFrame.isValid()) {
         g.drawImageAt(cachedFrame, 0, 0);
     } else {
@@ -120,7 +120,7 @@ void Eye::paint(juce::Graphics& g) {
     }
 }
 
-void Eye::paintLabel(
+void TheEye::paintLabel(
     juce::Graphics& graphics,
     const juce::Point<float> center,
     const float baseRadius,
@@ -165,7 +165,7 @@ void Eye::paintLabel(
     arrangement.draw(graphics);
 }
 
-void Eye::paintFrame(juce::Graphics& graphics) const {
+void TheEye::paintFrame(juce::Graphics& graphics) const {
     const auto bounds = getLocalBounds().toFloat();
     const auto center = bounds.getCentre();
     const auto outerRadius = std::min(bounds.getWidth(), bounds.getHeight()) / 2.0f;
@@ -194,7 +194,7 @@ void Eye::paintFrame(juce::Graphics& graphics) const {
     }
 }
 
-void Eye::paintFrame() {
+void TheEye::paintFrame() {
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
@@ -204,7 +204,7 @@ void Eye::paintFrame() {
     paintFrame(graphics);
 }
 
-void Eye::paintBins() {
+void TheEye::paintBins() {
     constexpr float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(totalFoldedBins);
     constexpr float rotation = 0.0f - 0.5f * angleStep;
 
@@ -223,7 +223,7 @@ void Eye::paintBins() {
     }
 }
 
-void Eye::resized() {
+void TheEye::resized() {
     paintFrame();
     paintBins();
 }

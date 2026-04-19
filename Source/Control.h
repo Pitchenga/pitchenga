@@ -14,9 +14,9 @@ public:
         int lastUIWidth = 800;
         int lastUIHeight = 600;
 
-        bool showLineViz = true;
-        bool showCircleViz = true;
-        bool showTunerViz = true;
+        bool showRoll = true;
+        bool showEye = true;
+        bool showTunaViz = true;
 
         bool showForrest = true;
         bool showSteam = true;
@@ -41,9 +41,9 @@ private:
 
     PitchengaAudioProcessor& audioProcessor;
 
-    juce::TextButton toggleLineViz{"Roll"};
-    juce::TextButton toggleCircleViz{"LineViz"};
-    juce::TextButton toggleTunerViz{"Tuna"};
+    juce::TextButton toggleRoll{"Roll"};
+    juce::TextButton toggleEye{"Roll"};
+    juce::TextButton toggleTunaViz{"Tuna"};
 
     juce::TextButton toggleForrest{"Forest"};
     juce::TextButton toggleSteam{"Steam"};

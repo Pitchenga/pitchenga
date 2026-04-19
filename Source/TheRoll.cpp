@@ -1,13 +1,13 @@
-#include "LineViz.h"
+#include "TheRoll.h"
 #include "Palette.h"
 #include <algorithm>
 #include <cmath>
 
-#include "Eye.h"
+#include "TheEye.h"
 
-LineViz::LineViz(PitchengaAudioProcessor& proc) : processor(proc) {}
+TheRoll::TheRoll(PitchengaAudioProcessor& proc) : processor(proc) {}
 
-bool LineViz::expand() {
+bool TheRoll::expand() {
     const int totalBins = static_cast<int>(displayMagnitudes.size());
     if (totalBins <= 0) return true;
 
@@ -32,7 +32,7 @@ bool LineViz::expand() {
     return false;
 }
 
-void LineViz::updateResults(const std::vector<double>& results) {
+void TheRoll::updateResults(const std::vector<double>& results) {
     if (results.empty()) return;
     displayMagnitudes = results;
 
@@ -52,7 +52,7 @@ void LineViz::updateResults(const std::vector<double>& results) {
     repaint();
 }
 
-void LineViz::resized() {
+void TheRoll::resized() {
     const int width = getWidth();
     const int height = getHeight();
 
@@ -64,7 +64,7 @@ void LineViz::resized() {
     }
 }
 
-juce::Font LineViz::getLabelFont() {
+juce::Font TheRoll::getLabelFont() {
     return {
         juce::FontOptions(15.0f)
         .withStyle("Bold")
@@ -72,11 +72,11 @@ juce::Font LineViz::getLabelFont() {
     };
 }
 
-float LineViz::getLabelAreaHeight() {
+float TheRoll::getLabelAreaHeight() {
     return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8") + 4.0f;
 }
 
-void LineViz::paint(juce::Graphics& graphics) {
+void TheRoll::paint(juce::Graphics& graphics) {
     if (!cachedFrame.isValid()) {
         paintFrame(); // Generates it if the engine wasn't ready during resized()
     }
@@ -98,7 +98,7 @@ void LineViz::paint(juce::Graphics& graphics) {
     }
 }
 
-void LineViz::paintFrame() {
+void TheRoll::paintFrame() {
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
@@ -111,14 +111,14 @@ void LineViz::paintFrame() {
     paintFrame(graphics);
 }
 
-juce::String LineViz::getNoteName(const int midiNote) {
+juce::String TheRoll::getNoteName(const int midiNote) {
     int chroma = midiNote % 12;
     if (chroma < 0) chroma += 12;
     const int octave = midiNote / 12 - 1;
     return Palette::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
 
-void LineViz::paintLabel(
+void TheRoll::paintLabel(
     juce::Graphics& graphics,
     const float labelHeight,
     const float maxTextWidth,
@@ -153,7 +153,7 @@ void LineViz::paintLabel(
     graphics.restoreState();
 }
 
-void LineViz::paintFrame(juce::Graphics& graphics) const {
+void TheRoll::paintFrame(juce::Graphics& graphics) const {
     int totalOctaves = currentTotalBins / currentBinsPerOctave;
     if (totalOctaves <= 0) totalOctaves = PitchengaAudioProcessor::numOctaves;
     const int totalSemitones = totalOctaves * 12;
@@ -196,7 +196,7 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
         paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, startY, baseColor);
     }
 }
-void LineViz::paintBins(juce::Graphics& graphics) const {
+void TheRoll::paintBins(juce::Graphics& graphics) const {
     const int width = getWidth();
     const int height = getHeight();
 
@@ -228,7 +228,7 @@ void LineViz::paintBins(juce::Graphics& graphics) const {
 }
 
 
-void LineViz::pumpSteam() {
+void TheRoll::pumpSteam() {
     if (displayMagnitudes.empty() || !steamImage.isValid()) return;
 
     const int width = getWidth();
@@ -253,7 +253,7 @@ void LineViz::pumpSteam() {
     const float barWidth = static_cast<float>(width) / static_cast<float>(totalBins);
 
     for (int i = 0; i < totalBins; ++i) {
-        if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > bubbleThreshold) {
+        if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > steamThreshold) {
             const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
             const juce::Colour baseColor = Palette::getContinuousColor(chroma);
             constexpr float undimmingGain = 1.6f;
@@ -273,7 +273,7 @@ void LineViz::pumpSteam() {
     }
 }
 
-void LineViz::paintSteam(const juce::Graphics& graphics) const {
+void TheRoll::paintSteam(const juce::Graphics& graphics) const {
     if (!steamImage.isValid()) return;
 
     const int height = getHeight();

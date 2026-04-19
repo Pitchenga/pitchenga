@@ -5,10 +5,10 @@
 #include "Cqt.h"
 #include "Analyzers.h"
 
-class LineViz : public juce::Component
+class TheRoll : public juce::Component
 {
 public:
-    LineViz(PitchengaAudioProcessor&);
+    TheRoll(PitchengaAudioProcessor&);
     bool expand();
     void paint(juce::Graphics&) override;
     void resized() override;
@@ -37,8 +37,8 @@ private:
     );
 
     const float steamSpeedPxPerFrame = 2.0f;
-    const float bubbleThreshold = 0.0001f;
-    struct Bubble {
+    const float steamThreshold = 0.0001f;
+    struct Steam {
         float x;
         float y;
         float width;

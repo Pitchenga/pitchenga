@@ -2,11 +2,11 @@
 #include "PluginEditor.h"
 
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProcessor& p)
-    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), lineViz(p), splitterBar(p), controlOverlay(p) {
+    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), roll(p), splitterBar(p), controlOverlay(p) {
 
-    addAndMakeVisible(tunerViz);
-    addAndMakeVisible(circleViz);
-    addAndMakeVisible(lineViz);
+    addAndMakeVisible(tunaViz);
+    addAndMakeVisible(eye);
+    addAndMakeVisible(roll);
 
     addAndMakeVisible(controlOverlay);
     controlOverlay.onVisibilityChanged = [this] { resized(); };
@@ -14,9 +14,9 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     addAndMakeVisible(splitterBar);
     splitterBar.onDragged = [this] { resized(); };
 
-    lineViz.setEngine(worker.getCqtEngine());
+    roll.setEngine(worker.getCqtEngine());
 
-    circleBuffer.resize(Eye::totalFoldedBins, 0.0);
+    circleBuffer.resize(TheEye::totalFoldedBins, 0.0);
 
     setResizable(true, true);
     setSize(audioProcessor.uiSettings.lastUIWidth, audioProcessor.uiSettings.lastUIHeight);
@@ -36,12 +36,12 @@ void PitchengaAudioProcessorEditor::updateVisibilityFromState() {
 }
 
 void PitchengaAudioProcessorEditor::timerCallback() {
-    // --- Update the Tuner ---
+    // --- Update the Tuna ---
     // Read the lock-free atomic variable
     const float latestPitchHz = audioProcessor.currentPitchHz.load(std::memory_order_relaxed);
 
-    // Feed it to the tuner visualizer component
-    tunerViz.setPitchFrequency(latestPitchHz);
+    // Feed it to the tuna visualizer component
+    tunaViz.setPitchFrequency(latestPitchHz);
 
     // --- Update the Circular Visualizer ---
     if (worker.hasNewData()) {
@@ -49,8 +49,8 @@ void PitchengaAudioProcessorEditor::timerCallback() {
         worker.getLineResults(lineBuffer);
         worker.clearNewDataFlag();
 
-        if (audioProcessor.uiSettings.showCircleViz) circleViz.updateResults(circleBuffer);
-        if (audioProcessor.uiSettings.showLineViz) lineViz.updateResults(lineBuffer);
+        if (audioProcessor.uiSettings.showEye) eye.updateResults(circleBuffer);
+        if (audioProcessor.uiSettings.showRoll) roll.updateResults(lineBuffer);
     }
 }
 
@@ -67,27 +67,27 @@ void PitchengaAudioProcessorEditor::resized() {
     // Give the control bar its own dedicated, non-overlapping space at the top left
     controlOverlay.setBounds(bounds.removeFromTop(24));
 
-    lineViz.setVisible(audioProcessor.uiSettings.showLineViz);
-    circleViz.setVisible(audioProcessor.uiSettings.showCircleViz);
-    tunerViz.setVisible(audioProcessor.uiSettings.showTunerViz);
+    roll.setVisible(audioProcessor.uiSettings.showRoll);
+    eye.setVisible(audioProcessor.uiSettings.showEye);
+    tunaViz.setVisible(audioProcessor.uiSettings.showTunaViz);
 
     // Only show the drag bar if both resizable elements are active
-    splitterBar.setVisible(audioProcessor.uiSettings.showLineViz && audioProcessor.uiSettings.showCircleViz);
+    splitterBar.setVisible(audioProcessor.uiSettings.showRoll && audioProcessor.uiSettings.showEye);
 
-    if (audioProcessor.uiSettings.showTunerViz) {
-        tunerViz.setBounds(bounds.removeFromBottom(static_cast<int>(Tuna::getPreferredHeight() + 1)));
+    if (audioProcessor.uiSettings.showTunaViz) {
+        tunaViz.setBounds(bounds.removeFromBottom(static_cast<int>(TheTuna::getPreferredHeight() + 1)));
     }
 
-    if (audioProcessor.uiSettings.showLineViz && audioProcessor.uiSettings.showCircleViz) {
+    if (audioProcessor.uiSettings.showRoll && audioProcessor.uiSettings.showEye) {
         const int availableHeight = bounds.getHeight();
-        const int lineVizHeight = static_cast<int>(static_cast<float>(availableHeight) * audioProcessor.uiSettings.splitRatio);
+        const int rollHeight = static_cast<int>(static_cast<float>(availableHeight) * audioProcessor.uiSettings.splitRatio);
 
-        lineViz.setBounds(bounds.removeFromTop(lineVizHeight));
+        roll.setBounds(bounds.removeFromTop(rollHeight));
         splitterBar.setBounds(bounds.removeFromTop(4)); // Dedicated 4px hit-box for the resizer
-        circleViz.setBounds(bounds);
-    } else if (audioProcessor.uiSettings.showLineViz) {
-        lineViz.setBounds(bounds);
-    } else if (audioProcessor.uiSettings.showCircleViz) {
-        circleViz.setBounds(bounds);
+        eye.setBounds(bounds);
+    } else if (audioProcessor.uiSettings.showRoll) {
+        roll.setBounds(bounds);
+    } else if (audioProcessor.uiSettings.showEye) {
+        eye.setBounds(bounds);
     }
 }
