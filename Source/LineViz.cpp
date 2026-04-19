@@ -241,7 +241,7 @@ void LineViz::blowBubbles() {
         if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > bubbleThreshold) {
             const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
             const juce::Colour baseColor = ColorPalette::getContinuousColor(chroma);
-            constexpr float undimmingGain = 2.0f;
+            constexpr float undimmingGain = 1.6f;
             const juce::Colour color = juce::Colours::black.interpolatedWith(
                 baseColor,
                 static_cast<float>(magnitude * undimmingGain)

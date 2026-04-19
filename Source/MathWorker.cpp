@@ -217,6 +217,7 @@ void MathWorker::processCqtAndEqualization() {
         }
     }
 
+    // Pre-analyze smoothing does not seem to improve anything for the circle, but it smears the spectrogram
     // const auto& smoothedSpectrum = allBinSmoother->smooth(amplitudeSpectrumDb);
     const auto& smoothedSpectrum = amplitudeSpectrumDb;
     const auto& detectedPitchClasses = pitchClassDetector->detectPitchClasses(smoothedSpectrum);
