@@ -27,7 +27,7 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::setupBuffers() {
     pcDetector = std::make_unique<HarmonicPatternPitchClassDetector>(binsPerOctave, config.binsPerSemitone);
     spectralEqualizer = std::make_unique<SpectralEqualizer>(totalBins, 30);
     allBinSmoother = std::make_unique<ExpSmoother>(totalBins, 0.2);
-    octaveBinSmoother = std::make_unique<ExpSmoother>(binsPerOctave, 0.07);
+    octaveBinSmoother = std::make_unique<ExpSmoother>(binsPerOctave, 0.05);
 
     workBuffer.assign(signalBlockSize, 0.0f);
 
