@@ -69,25 +69,33 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     float* nextStageData = nextStageBuffer.data();
     int currentStageSize = numSamples;
 
+    // NEW: Enforce Temporal Integrity across the decimation cascade.
+    // If the UI thread falls behind and Octave 0 fills up, we MUST drop the audio for ALL octaves.
+    // Otherwise, lower octaves secretly record seconds of audio into the past, permanently desyncing the spectrum.
+    const bool fifoOverflow = (octaves[0].fifo.getFreeSpace() < currentStageSize);
+
     for (size_t oct = 0; oct < numOctaves; ++oct) {
-        // Push current stage samples to this octave's lock-free FIFO
-        const auto scope = octaves[oct].fifo.write(currentStageSize);
+        // Push current stage samples to this octave's lock-free FIFO (ONLY if we aren't overflowing)
+        if (!fifoOverflow) {
+            const auto scope = octaves[oct].fifo.write(currentStageSize);
 
-        if (scope.blockSize1 > 0)
-            juce::FloatVectorOperations::copy(
-                octaves[oct].buffer.data() + static_cast<size_t>(scope.startIndex1),
-                currentStageData,
-                scope.blockSize1
-            );
+            if (scope.blockSize1 > 0)
+                juce::FloatVectorOperations::copy(
+                    octaves[oct].buffer.data() + static_cast<size_t>(scope.startIndex1),
+                    currentStageData,
+                    scope.blockSize1
+                );
 
-        if (scope.blockSize2 > 0)
-            juce::FloatVectorOperations::copy(
-                octaves[oct].buffer.data() + static_cast<size_t>(scope.startIndex2),
-                currentStageData + scope.blockSize1,
-                scope.blockSize2
-            );
+            if (scope.blockSize2 > 0)
+                juce::FloatVectorOperations::copy(
+                    octaves[oct].buffer.data() + static_cast<size_t>(scope.startIndex2),
+                    currentStageData + scope.blockSize1,
+                    scope.blockSize2
+                );
+        }
 
         // Filter and Decimate by 2 for the next octave
+        // (We ALWAYS run this math even during overflow to keep the Butterworth filter states stable)
         if (oct < numOctaves - 1) {
             int nextIdx = 0;
             for (int i = 0; i < currentStageSize; ++i) {

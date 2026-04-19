@@ -113,13 +113,23 @@ void Math::flushStaleAudioData(int& availableSamples) {
         samplesToDrop = (samplesToDrop / 1024) * 1024; // Round down to perfect 1024 chunks
 
         auto& octaves = audioProcessor.getOctaves();
+
+        // Individually flush every octave to prevent Decimation Cascade Desync.
+        // If a lower octave secretly hoarded seconds of audio while the top octave was full,
+        // this guarantees it gets completely wiped out to real-time.
         for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct) {
-            const int dropForOctave = samplesToDrop >> oct; // Accurately drop decimated amounts
-            int startOne, sizeOne, startTwo, sizeTwo;
-            octaves[static_cast<size_t>(oct)].fifo.prepareToRead(dropForOctave, startOne, sizeOne, startTwo, sizeTwo);
-            octaves[static_cast<size_t>(oct)].fifo.finishedRead(sizeOne + sizeTwo);
+            int ready = octaves[oct].fifo.getNumReady();
+            int keepWanted = 1024 >> oct;
+
+            if (ready > keepWanted) {
+                int drop = ready - keepWanted;
+                int startOne, sizeOne, startTwo, sizeTwo;
+                octaves[oct].fifo.prepareToRead(drop, startOne, sizeOne, startTwo, sizeTwo);
+                octaves[oct].fifo.finishedRead(sizeOne + sizeTwo);
+            }
         }
-        availableSamples = octaves[0].fifo.getNumReady(); // Recalculate what's left
+        // Recalculate what's left for the main run loop
+        availableSamples = octaves[0].fifo.getNumReady();
     }
 }
 
