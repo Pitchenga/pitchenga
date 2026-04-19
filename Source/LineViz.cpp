@@ -37,8 +37,15 @@ void LineViz::updateResults(const std::vector<double>& results) {
     if (results.empty()) return;
     displayMagnitudes = results;
 
-    if (expand()) return;
+    if (smoother == nullptr || lastKnownSize != results.size()) {
+        smoother = std::make_unique<ExpSmoother>(results.size(), 0.5);
+        lastKnownSize = results.size();
+    }
+
     advanceBubbles();
+    if (expand()) return;
+    displayMagnitudes = smoother->smooth(displayMagnitudes);
+
     repaint();
 }
 
@@ -125,9 +132,10 @@ void LineViz::paintBins(juce::Graphics& graphics) const {
     for (int i = 0; i < currentTotalBins; ++i) {
         if (i >= static_cast<int>(displayMagnitudes.size())) break;
 
+        std::vector<double>::value_type magnitude = displayMagnitudes[static_cast<size_t>(i)];
         const double normalizedMagnitude = std::min(
             1.0,
-            std::max(0.0, displayMagnitudes[static_cast<size_t>(i)])
+            std::max(0.0, magnitude)
         );
         const auto barHeight = static_cast<float>(normalizedMagnitude * height);
 
@@ -148,6 +156,7 @@ void LineViz::paintBins(juce::Graphics& graphics) const {
 
 
 void LineViz::advanceBubbles() {
+
     // 1. Move existing bubbles up
     for (auto& bubble : bubbles) {
         bubble.y -= bubblesSpeedPxPerFrame;
@@ -172,8 +181,8 @@ void LineViz::advanceBubbles() {
     for (int i = 0; i < totalBins; ++i) {
         if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > bubbleThreshold) {
             const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
-            juce::Colour color = ColorPalette::getContinuousColor(chroma);
-            color = juce::Colours::black.interpolatedWith(color, static_cast<float>(magnitude));
+            const juce::Colour baseColor = ColorPalette::getContinuousColor(chroma);
+            const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, static_cast<float>(magnitude));
             //fixme: Unify color logic and fix CPU
             bubbles.push_back({static_cast<float>(i) * barWidth, height, barWidth, color});
         }
