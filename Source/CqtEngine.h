@@ -37,6 +37,7 @@ public:
     int getBinsPerOctave() const { return binsPerOctave; }
     int getOctaves() const { return config.octaves; }
     int getKernelBins() const { return kernelBins; }
+    double centerFreq(int binIndex) const;
 
 private:
     Config config;
@@ -60,7 +61,7 @@ private:
 
     void updateContext();
     void computeSpectralKernels();
-    double centerFreq(int binIndex) const;
+
     int bandWidth(int binIndex) const;
     std::vector<std::complex<float>> temporalKernel(int kernelBinIndex) const;
     std::vector<std::complex<float>> conjugatedNormalizedSpectralKernel(int k);
