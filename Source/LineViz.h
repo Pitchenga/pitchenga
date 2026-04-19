@@ -18,6 +18,9 @@ public:
     void setEngine(const CqtEngine* e) { engine = e; }
     static constexpr int getPreferredHeight() { return 619; }
 
+    static juce::Font getLabelFont();
+    static float getLabelAreaHeight();
+
 private:
     void paintFrame();
     void paintFrame(juce::Graphics& graphics) const;

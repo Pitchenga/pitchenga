@@ -60,6 +60,18 @@ void LineViz::resized() {
     }
 }
 
+juce::Font LineViz::getLabelFont() {
+    return {
+        juce::FontOptions(15.0f)
+        .withStyle("Bold")
+        .withName(juce::Font::getDefaultMonospacedFontName())
+    };
+}
+
+float LineViz::getLabelAreaHeight() {
+    return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8") + 4.0f;
+}
+
 void LineViz::paint(juce::Graphics& graphics) {
     if (!cachedFrame.isValid()) {
         paintFrame(); // Generates it if the engine wasn't ready during resized()
@@ -145,12 +157,7 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
     const auto height = static_cast<float>(getHeight());
     const float halfHeight = height * 0.5f;
 
-    //fixme: Extract font
-    const juce::Font labelFont{
-        juce::FontOptions(15.0f)
-        .withStyle("Bold")
-        .withName(juce::Font::getDefaultMonospacedFontName())
-    };
+    const juce::Font labelFont = getLabelFont();
     graphics.setFont(labelFont);
     const float labelHeight = labelFont.getHeight();
     const float maxTextWidth = juce::GlyphArrangement::getStringWidth(labelFont, "Ww8");
@@ -169,7 +176,7 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
         const float targetCenter = binIndex * barWidth + barWidth * 0.5f;
 
         // Route the line to the top half (black keys) or bottom half (white keys)
-        const float startY = maxTextWidth + 4.0f;
+        const float startY = getLabelAreaHeight();
         const float endY = isBlackKey ? halfHeight : height;
 
         const juce::Colour baseColor = ColorPalette::chromaticScale[static_cast<size_t>(chroma)].color;
@@ -180,7 +187,6 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
         paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, startY, baseColor);
     }
 }
-
 void LineViz::paintBins(juce::Graphics& graphics) const {
     const int width = getWidth();
     const int height = getHeight();

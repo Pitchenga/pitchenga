@@ -65,6 +65,8 @@ target_sources(Pitchenga PRIVATE
         Source/LineViz.cpp
         Source/MathWorker.h
         Source/MathWorker.cpp
+        Source/Control.h
+        Source/Control.cpp
 )
 
 # 4. Link the heavy-lifting JUCE modules (Audio, GUI, and Hardware-Accelerated Math)

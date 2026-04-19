@@ -2,33 +2,14 @@
 #include "PluginEditor.h"
 
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProcessor& p)
-    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), lineViz(p) {
+    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), lineViz(p), controlOverlay(p) {
 
     addAndMakeVisible(tunerViz);
     addAndMakeVisible(circleViz);
     addAndMakeVisible(lineViz);
 
-    setupToggleButton(toggleLineViz, audioProcessor.showLineViz);
-    toggleLineViz.onClick = [this] {
-        audioProcessor.showLineViz = toggleLineViz.getToggleState();
-        resized();
-    };
-
-    setupToggleButton(toggleCircleViz, audioProcessor.showCircleViz);
-    toggleCircleViz.onClick = [this] {
-        audioProcessor.showCircleViz = toggleCircleViz.getToggleState();
-        resized();
-    };
-
-    setupToggleButton(toggleTunerViz, audioProcessor.showTunerViz);
-    toggleTunerViz.onClick = [this] {
-        audioProcessor.showTunerViz = toggleTunerViz.getToggleState();
-        resized();
-    };
-
-    addAndMakeVisible(toggleLineViz);
-    addAndMakeVisible(toggleCircleViz);
-    addAndMakeVisible(toggleTunerViz);
+    addAndMakeVisible(controlOverlay);
+    controlOverlay.onVisibilityChanged = [this] { resized(); };
 
     lineViz.setEngine(worker.getCqtEngine());
 
@@ -46,19 +27,8 @@ PitchengaAudioProcessorEditor::~PitchengaAudioProcessorEditor() {
     stopTimer();
 }
 
-void PitchengaAudioProcessorEditor::setupToggleButton(juce::TextButton& button, bool initialState) {
-    button.setClickingTogglesState(true);
-    button.setToggleState(initialState, juce::NotificationType::dontSendNotification);
-    button.setColour(juce::TextButton::buttonColourId, juce::Colours::black.withAlpha(0.4f));
-    button.setColour(juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha(0.2f));
-    button.setColour(juce::TextButton::textColourOffId, juce::Colours::grey);
-    button.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
-}
-
 void PitchengaAudioProcessorEditor::updateVisibilityFromState() {
-    toggleLineViz.setToggleState(audioProcessor.showLineViz, juce::NotificationType::dontSendNotification);
-    toggleCircleViz.setToggleState(audioProcessor.showCircleViz, juce::NotificationType::dontSendNotification);
-    toggleTunerViz.setToggleState(audioProcessor.showTunerViz, juce::NotificationType::dontSendNotification);
+    controlOverlay.updateVisibilityFromState();
     resized();
 }
 
@@ -91,11 +61,7 @@ void PitchengaAudioProcessorEditor::resized() {
 
     auto bounds = getLocalBounds();
 
-    // Position translucent toggle overlay independently of the main bounds
-    juce::Rectangle<int> buttonArea(getWidth() - 190, 10, 180, 24);
-    toggleTunerViz.setBounds(buttonArea.removeFromRight(60).reduced(2));
-    toggleCircleViz.setBounds(buttonArea.removeFromRight(60).reduced(2));
-    toggleLineViz.setBounds(buttonArea.removeFromRight(60).reduced(2));
+    controlOverlay.setBounds(bounds.removeFromTop(24));
 
     lineViz.setVisible(audioProcessor.showLineViz);
     circleViz.setVisible(audioProcessor.showCircleViz);

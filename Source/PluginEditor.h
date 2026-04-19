@@ -6,6 +6,7 @@
 #include "TunerViz.h"
 #include "CircleViz.h"
 #include "LineViz.h"
+#include "Control.h"
 
 class PitchengaAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::Timer {
 public:
@@ -19,7 +20,6 @@ public:
 
 private:
     void timerCallback() override;
-    void setupToggleButton(juce::TextButton& button, bool initialState);
 
     PitchengaAudioProcessor& audioProcessor;
 
@@ -30,9 +30,7 @@ private:
     CircleViz circleViz;
     LineViz lineViz;
 
-    juce::TextButton toggleLineViz{"Line"};
-    juce::TextButton toggleCircleViz{"Circle"};
-    juce::TextButton toggleTunerViz{"Tuner"};
+    Control controlOverlay;
 
     // Shared results for rendering
     std::vector<double> circleBuffer;
