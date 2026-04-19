@@ -49,6 +49,7 @@ private:
     juce::TextButton toggleRoll{"Roll"};
     juce::TextButton toggleForrest{"Forest"};
     juce::TextButton toggleSteam{"Steam"};
+    juce::Label buildTimestampLabel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Control)
 };

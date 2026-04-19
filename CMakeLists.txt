@@ -83,3 +83,7 @@ target_link_libraries(Pitchenga PRIVATE
         juce::juce_recommended_warning_flags)
 
 target_compile_features(Pitchenga PUBLIC cxx_std_20)
+
+# Pass current timestamp as a compile definition for the UI
+string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d %H:%M:%S")
+target_compile_definitions(Pitchenga PRIVATE "BUILD_TIMESTAMP=\"${BUILD_TIMESTAMP}\"")

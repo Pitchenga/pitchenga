@@ -41,6 +41,16 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
     addAndMakeVisible(toggleForrest);
     addAndMakeVisible(toggleSteam);
 
+#ifndef BUILD_TIMESTAMP
+#define BUILD_TIMESTAMP "Unknown"
+#endif
+
+    buildTimestampLabel.setText(juce::String("Build: ") + BUILD_TIMESTAMP, juce::NotificationType::dontSendNotification);
+    buildTimestampLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
+    buildTimestampLabel.setFont(juce::FontOptions(13.0f));
+    buildTimestampLabel.setJustificationType(juce::Justification::centredLeft);
+    addAndMakeVisible(buildTimestampLabel);
+
     updateButtonStates();
 }
 
@@ -91,6 +101,9 @@ void Control::resized() {
     positionButton(toggleRoll);
     positionButton(toggleForrest);
     positionButton(toggleSteam);
+
+    bounds.removeFromLeft(8);
+    buildTimestampLabel.setBounds(bounds);
 }
 
 // --- Settings Persistence ---
