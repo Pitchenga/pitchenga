@@ -74,7 +74,7 @@ void LineViz::paint(juce::Graphics& graphics) {
     if (currentTotalBins <= 0 || currentBinsPerOctave <= 0 || displayMagnitudes.empty()) return;
 
     paintBubbles(graphics);
-    paintBins(graphics);
+    // paintBins(graphics);
 }
 
 void LineViz::paintFrame() {
