@@ -22,8 +22,19 @@ private:
     void paintFrame();
     void paintFrame(juce::Graphics& graphics) const;
 
+    static juce::String getNoteName(int midiNote);
+    static void paintLabel(
+        juce::Graphics& graphics,
+        float labelHeight,
+        float maxTextWidth,
+        int midiNote,
+        float targetCenter,
+        float startY,
+        juce::Colour baseColor
+    );
+
     const float bubblesSpeedPxPerFrame = 2.0f;
-    const float bubbleThreshold = 0.2f;
+    const float bubbleThreshold = 0.1f;
     struct Bubble {
         float x;
         float y;
@@ -34,7 +45,7 @@ private:
     int bubblesScrollOffset = 0;
 
     void advanceBubbles();
-    void paintBubbles(juce::Graphics& graphics) const;
+    void paintBubbles(const juce::Graphics& graphics) const;
 
     PitchengaAudioProcessor& processor;
     const CqtEngine* engine = nullptr;
