@@ -22,9 +22,23 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
+    setupToggleButton(toggleSpectrum, audioProcessor.uiSettings.showSpectrum);
+    toggleSpectrum.onClick = [this] {
+        audioProcessor.uiSettings.showSpectrum = toggleSpectrum.getToggleState();
+        if (onVisibilityChanged) onVisibilityChanged();
+    };
+
+    setupToggleButton(toggleSpectrogram, audioProcessor.uiSettings.showSpectrogram);
+    toggleSpectrogram.onClick = [this] {
+        audioProcessor.uiSettings.showSpectrogram = toggleSpectrogram.getToggleState();
+        if (onVisibilityChanged) onVisibilityChanged();
+    };
+
     addAndMakeVisible(toggleLineViz);
     addAndMakeVisible(toggleCircleViz);
     addAndMakeVisible(toggleTunerViz);
+    addAndMakeVisible(toggleSpectrum);
+    addAndMakeVisible(toggleSpectrogram);
 }
 
 void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
@@ -40,6 +54,8 @@ void Control::updateVisibilityFromState() {
     toggleLineViz.setToggleState(audioProcessor.uiSettings.showLineViz, juce::NotificationType::dontSendNotification);
     toggleCircleViz.setToggleState(audioProcessor.uiSettings.showCircleViz, juce::NotificationType::dontSendNotification);
     toggleTunerViz.setToggleState(audioProcessor.uiSettings.showTunerViz, juce::NotificationType::dontSendNotification);
+    toggleSpectrum.setToggleState(audioProcessor.uiSettings.showSpectrum, juce::NotificationType::dontSendNotification);
+    toggleSpectrogram.setToggleState(audioProcessor.uiSettings.showSpectrogram, juce::NotificationType::dontSendNotification);
 }
 
 void Control::resized() {
@@ -50,6 +66,8 @@ void Control::resized() {
     toggleLineViz.setBounds(bounds.removeFromLeft(60).reduced(2));
     toggleCircleViz.setBounds(bounds.removeFromLeft(60).reduced(2));
     toggleTunerViz.setBounds(bounds.removeFromLeft(60).reduced(2));
+    toggleSpectrum.setBounds(bounds.removeFromLeft(80).reduced(2));
+    toggleSpectrogram.setBounds(bounds.removeFromLeft(95).reduced(2));
 }
 
 // --- Settings Persistence ---
@@ -64,6 +82,9 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("showLineViz", showLineViz);
     xml.setAttribute("showCircleViz", showCircleViz);
     xml.setAttribute("showTunerViz", showTunerViz);
+
+    xml.setAttribute("showSpectrum", showSpectrum);
+    xml.setAttribute("showSpectrogram", showSpectrogram);
 
     xml.setAttribute("splitRatio", static_cast<double>(splitRatio));
 
@@ -82,6 +103,9 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     showLineViz = xml.getBoolAttribute("showLineViz", showLineViz);
     showCircleViz = xml.getBoolAttribute("showCircleViz", showCircleViz);
     showTunerViz = xml.getBoolAttribute("showTunerViz", showTunerViz);
+
+    showSpectrum = xml.getBoolAttribute("showSpectrum", showSpectrum);
+    showSpectrogram = xml.getBoolAttribute("showSpectrogram", showSpectrogram);
 
     splitRatio = static_cast<float>(xml.getDoubleAttribute("splitRatio", splitRatio));
 

@@ -17,6 +17,10 @@ public:
         bool showLineViz = true;
         bool showCircleViz = true;
         bool showTunerViz = true;
+
+        bool showSpectrum = true;
+        bool showSpectrogram = true;
+
         float splitRatio = 0.5f;
 
         juce::XmlElement createXml() const;
@@ -40,6 +44,9 @@ private:
     juce::TextButton toggleLineViz{"Line"};
     juce::TextButton toggleCircleViz{"Circle"};
     juce::TextButton toggleTunerViz{"Tuner"};
+
+    juce::TextButton toggleSpectrum{"Spectrum"};
+    juce::TextButton toggleSpectrogram{"Spectrogram"};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Control)
 };

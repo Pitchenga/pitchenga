@@ -42,7 +42,11 @@ void LineViz::updateResults(const std::vector<double>& results) {
     }
 
     if (expand()) return;
-    blowBubbles();
+
+    if (processor.uiSettings.showSpectrogram) {
+        blowBubbles();
+    }
+
     displayMagnitudes = smoother->smooth(displayMagnitudes);
 
     repaint();
@@ -85,8 +89,13 @@ void LineViz::paint(juce::Graphics& graphics) {
 
     if (currentTotalBins <= 0 || currentBinsPerOctave <= 0 || displayMagnitudes.empty()) return;
 
-    paintBubbles(graphics);
-    // paintBins(graphics);
+    if (processor.uiSettings.showSpectrogram) {
+        paintBubbles(graphics);
+    }
+
+    if (processor.uiSettings.showSpectrum) {
+        paintBins(graphics);
+    }
 }
 
 void LineViz::paintFrame() {
