@@ -36,7 +36,7 @@ private:
         juce::Colour baseColor
     );
 
-    const float steamSpeedPxPerFrame = 2.0f;
+    const float steamSpeedPxPerFrame = 1.0f;
     const float steamThreshold = 0.0001f;
     struct Steam {
         float x;
