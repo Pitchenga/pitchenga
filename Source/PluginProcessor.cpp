@@ -71,7 +71,7 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     int currentStageSize = numSamples;
 
     for (size_t oct = 0; oct < numOctaves; ++oct) {
-        // 1. Push current stage samples to this octave's lock-free FIFO
+        // Push current stage samples to this octave's lock-free FIFO
         const auto scope = octaves[oct].fifo.write(currentStageSize);
 
         if (scope.blockSize1 > 0)
@@ -88,7 +88,7 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
                 scope.blockSize2
             );
 
-        // 2. Filter and Decimate by 2 for the next octave
+        // Filter and Decimate by 2 for the next octave
         if (oct < numOctaves - 1) {
             int nextIdx = 0;
             for (int i = 0; i < currentStageSize; ++i) {

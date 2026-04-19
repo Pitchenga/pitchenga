@@ -2,7 +2,6 @@
 
 #include <vector>
 
-// 1. Exponential Smoother
 // Asymmetric smoothing for punchy visual attack and slower decay.
 class ExpSmoother {
 public:
@@ -15,7 +14,6 @@ private:
     double previousWeight;
 };
 
-// 2. Spectral Equalizer
 // Uses a rolling median filter to shave off the noise floor and the "skirts" of spectral leakage.
 class SpectralEqualizer {
 public:
@@ -29,7 +27,6 @@ private:
     std::vector<double> window;
 };
 
-// 3. Harmonic Pattern Pitch Class Detector
 // Weights each bin by checking if its harmonic overtones exist, silencing non-harmonic noise.
 class HarmonicPatternPitchClassDetector {
 public:
@@ -44,5 +41,5 @@ private:
     std::vector<double> harmonicBins;
     std::vector<int> harmonicBinsIndexes;
 
-    double extractHarmonics(const std::vector<double>& cqBins, int baseFreqBin) const;
+    [[nodiscard]] double extractHarmonics(const std::vector<double>& cqBins, int baseFreqBin) const;
 };

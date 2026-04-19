@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <numeric>
 
-// 1. ExpSmoother
 ExpSmoother::ExpSmoother(const size_t size, const double weight)
     : currentWeight(weight), previousWeight(1.0 - weight) {
     data.resize(size, 0.0);
@@ -22,7 +21,6 @@ const std::vector<double>& ExpSmoother::smooth(const std::vector<double>& curren
     return data;
 }
 
-// 2. SpectralEqualizer
 SpectralEqualizer::SpectralEqualizer(const size_t size, const size_t windowSize)
     : size(size), windowSize(windowSize) {
     filteredValues.resize(size, 0.0);
@@ -67,7 +65,6 @@ const std::vector<double>& SpectralEqualizer::filter(const std::vector<double>& 
     return filteredValues;
 }
 
-// 3. HarmonicPatternPitchClassDetector
 HarmonicPatternPitchClassDetector::HarmonicPatternPitchClassDetector(
     const int binsPerOctave,
     const int binsPerSemitone,

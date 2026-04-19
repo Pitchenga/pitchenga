@@ -14,7 +14,7 @@ void CircleViz::updateResults(const std::vector<double>& results) {
 }
 
 juce::Colour CircleViz::calculateColor(const float velocity, const float toneRatio) {
-    // 1. NO std::fmod() NEEDED.
+    // NO std::fmod() NEEDED.
     // toneRatio only ever ranges from -0.444 to 11.444.
     // A single addition handles the negative wrap perfectly.
     float wrappedRatio = toneRatio;
@@ -23,7 +23,7 @@ juce::Colour CircleViz::calculateColor(const float velocity, const float toneRat
     const int toneNumber = static_cast<int>(std::floor(wrappedRatio));
     const float diff = wrappedRatio - static_cast<float>(toneNumber);
 
-    // 2. NO MODULO NEEDED.
+    // NO MODULO NEEDED.
     // wrappedRatio is strictly [0.0, 12.0), so toneNumber is strictly 0 to 11.
     const int currentIdx = toneNumber;
     const juce::Colour toneColor = ColorPalette::chromaticScale[static_cast<size_t>(currentIdx)].color;
@@ -38,7 +38,7 @@ juce::Colour CircleViz::calculateColor(const float velocity, const float toneRat
         if (pitchyIdx < 0) pitchyIdx += 12;
         pitchyIdx %= 12;
 
-        // 3. NO MODULO NEEDED.
+        // NO MODULO NEEDED.
         // It only moves by exactly 1 step, so a simple bounds check wraps it perfectly.
         if (pitchyIdx < 0) pitchyIdx = 11;
         else if (pitchyIdx > 11) pitchyIdx = 0;
@@ -67,7 +67,7 @@ void CircleViz::paint(juce::Graphics& g) {
     const auto center = bounds.getCentre();
     const auto baseRadius = std::min(bounds.getWidth(), bounds.getHeight()) * 0.45f;
 
-    // 1. Sort to get bin ranks (Matching Java indexToVelocityPairs)
+    // Sort to get bin ranks (Matching Java indexToVelocityPairs)
     struct BinData {
         int index;
         float velocity;
@@ -91,7 +91,7 @@ void CircleViz::paint(juce::Graphics& g) {
 
     const int biggestBinNumber = sortedBins.back().index;
 
-    // 2. Render Loop
+    // Render Loop
     for (int i = 0; i < totalFoldedBins; ++i) {
         const auto rawVelocity = static_cast<float>(smoothedOctaveBins[static_cast<size_t>(i)]);
 

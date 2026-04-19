@@ -88,7 +88,7 @@ void TunerViz::updateCachedGradient() {
 
     const float stripY = static_cast<float>(height) - stripHeight;
 
-    // 1. Bake the continuous gradient
+    // Bake the continuous gradient
     const juce::Image::BitmapData data(cachedGradient, juce::Image::BitmapData::writeOnly);
     for (int x = 0; x < width; ++x) {
         const float horizontalFraction = width > 1 ? static_cast<float>(x) / static_cast<float>(width - 1) : 0.0f;
@@ -104,7 +104,7 @@ void TunerViz::updateCachedGradient() {
         }
     }
 
-    // 2. Bake the labels and ticks into the image
+    // Bake the labels and ticks into the image
     juce::Graphics graphics(cachedGradient);
     graphics.setFont(getLabelFont());
 
@@ -136,12 +136,12 @@ void TunerViz::paint(juce::Graphics& graphics) {
     const auto bounds = getLocalBounds().toFloat();
     const auto height = static_cast<float>(getHeight());
 
-    // 1. Draw the fully baked static background (Opaque overwrite, zero alpha tax)
+    // Draw the fully baked static background (Opaque overwrite, zero alpha tax)
     if (cachedGradient.isValid()) {
         graphics.drawImageAt(cachedGradient, 0, 0);
     }
 
-    // 2. Dynamic Illumination Overlay
+    // Dynamic Illumination Overlay
     if (currentMidi >= minMidi && currentMidi <= maxMidi) {
         graphics.setFont(getLabelFont());
 

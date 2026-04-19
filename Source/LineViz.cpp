@@ -162,13 +162,13 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
         // Identify standard "black" keys
         const bool isBlackKey = chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10;
 
-        // 1. Find the exact pitch bin index for this semitone
+        // Find the exact pitch bin index for this semitone
         const float binIndex = static_cast<float>(i) * (static_cast<float>(currentBinsPerOctave) / 12.0f);
 
-        // 2. Find the visual center of that specific pitch bin
+        // Find the visual center of that specific pitch bin
         const float targetCenter = binIndex * barWidth + barWidth * 0.5f;
 
-        // 3. Route the line to the top half (black keys) or bottom half (white keys)
+        // Route the line to the top half (black keys) or bottom half (white keys)
         const float startY = maxTextWidth + 4.0f;
         const float endY = isBlackKey ? halfHeight : height;
 
@@ -229,7 +229,7 @@ void LineViz::blowBubbles() {
     const int drawY = (height - speedPx + bubblesScrollOffset) % height;
 
     // Native JUCE memory wipe: clears the specific row to completely transparent
-    bubblesImage.clear(juce::Rectangle<int>(0, drawY, width, speedPx), juce::Colours::transparentBlack);
+    bubblesImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
 
     juce::Graphics graphics(bubblesImage);
 
