@@ -33,18 +33,20 @@ public:
     void resized() override;
     void updateVisibilityFromState();
 
+    static float getPreferredHeight();
+
     // Callback so the Editor knows when the user clicked a toggle
     std::function<void()> onVisibilityChanged;
 
 private:
     static void setupToggleButton(juce::TextButton& button, bool initialState);
+    void updateButtonStates();
 
     PitchengaAudioProcessor& audioProcessor;
 
-    juce::TextButton toggleRoll{"Roll"};
-    juce::TextButton toggleEye{"Roll"};
     juce::TextButton toggleTunaViz{"Tuna"};
-
+    juce::TextButton toggleEye{"Eye"};
+    juce::TextButton toggleRoll{"Roll"};
     juce::TextButton toggleForrest{"Forest"};
     juce::TextButton toggleSteam{"Steam"};
 

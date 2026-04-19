@@ -2,7 +2,7 @@
 #include "PluginEditor.h"
 
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProcessor& p)
-    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), roll(p), splitterBar(p), control(p) {
+    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), roll(p), splitter(p), control(p) {
 
     addAndMakeVisible(tunaViz);
     addAndMakeVisible(eye);
@@ -11,8 +11,8 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     addAndMakeVisible(control);
     control.onVisibilityChanged = [this] { resized(); };
 
-    addAndMakeVisible(splitterBar);
-    splitterBar.onDragged = [this] { resized(); };
+    addAndMakeVisible(splitter);
+    splitter.onDragged = [this] { resized(); };
 
     roll.setEngine(worker.getCqtEngine());
 
@@ -65,14 +65,14 @@ void PitchengaAudioProcessorEditor::resized() {
     auto bounds = getLocalBounds();
 
     // Give the control bar its own dedicated, non-overlapping space at the top left
-    control.setBounds(bounds.removeFromTop(24));
+    control.setBounds(bounds.removeFromTop(static_cast<int>(Control::getPreferredHeight())));
 
     roll.setVisible(audioProcessor.uiSettings.showRoll);
     eye.setVisible(audioProcessor.uiSettings.showEye);
     tunaViz.setVisible(audioProcessor.uiSettings.showTunaViz);
 
-    // Only show the drag bar if both resizable elements are active
-    splitterBar.setVisible(audioProcessor.uiSettings.showRoll && audioProcessor.uiSettings.showEye);
+    // Only show splitter if both resizable elements are active
+    splitter.setVisible(audioProcessor.uiSettings.showRoll && audioProcessor.uiSettings.showEye);
 
     if (audioProcessor.uiSettings.showTunaViz) {
         tunaViz.setBounds(bounds.removeFromBottom(static_cast<int>(TheTuna::getPreferredHeight() + 1)));
@@ -83,7 +83,7 @@ void PitchengaAudioProcessorEditor::resized() {
         const int rollHeight = static_cast<int>(static_cast<float>(availableHeight) * audioProcessor.uiSettings.splitRatio);
 
         roll.setBounds(bounds.removeFromTop(rollHeight));
-        splitterBar.setBounds(bounds.removeFromTop(4)); // Dedicated 4px hit-box for the resizer
+        splitter.setBounds(bounds.removeFromTop(4)); // Dedicated 4px hit-box for the resizer
         eye.setBounds(bounds);
     } else if (audioProcessor.uiSettings.showRoll) {
         roll.setBounds(bounds);

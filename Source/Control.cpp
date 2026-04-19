@@ -37,8 +37,10 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
     addAndMakeVisible(toggleTunaViz);
     addAndMakeVisible(toggleEye);
     addAndMakeVisible(toggleRoll);
-    addAndMakeVisible(toggleSteam);
     addAndMakeVisible(toggleForrest);
+    addAndMakeVisible(toggleSteam);
+
+    updateButtonStates();
 }
 
 void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
@@ -56,18 +58,38 @@ void Control::updateVisibilityFromState() {
     toggleTunaViz.setToggleState(audioProcessor.uiSettings.showTunaViz, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(audioProcessor.uiSettings.showForrest, juce::NotificationType::dontSendNotification);
     toggleSteam.setToggleState(audioProcessor.uiSettings.showSteam, juce::NotificationType::dontSendNotification);
+
+    updateButtonStates();
+}
+
+void Control::updateButtonStates() {
+    const bool rollActive = audioProcessor.uiSettings.showRoll;
+    toggleForrest.setEnabled(rollActive);
+    toggleSteam.setEnabled(rollActive);
+}
+
+float Control::getPreferredHeight() {
+    const juce::Font font = juce::FontOptions(15.0f).withStyle("Bold");
+    return font.getHeight() + 8.0f;
 }
 
 void Control::resized() {
     auto bounds = getLocalBounds();
 
-    // fixme: Un-hardcode sizes
-    // Pack the buttons to the left with minimal offsets
-    toggleRoll.setBounds(bounds.removeFromLeft(60).reduced(2));
-    toggleEye.setBounds(bounds.removeFromLeft(60).reduced(2));
-    toggleTunaViz.setBounds(bounds.removeFromLeft(60).reduced(2));
-    toggleForrest.setBounds(bounds.removeFromLeft(80).reduced(2));
-    toggleSteam.setBounds(bounds.removeFromLeft(95).reduced(2));
+    const juce::Font font = juce::FontOptions(15.0f).withStyle("Bold");
+
+    // Pack the buttons to the left with minimal offsets dynamically sizing to their text
+    auto positionButton = [&](juce::TextButton& btn) {
+        const float textWidth = juce::GlyphArrangement::getStringWidth(font, btn.getButtonText());
+        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 16; // 16px horizontal padding
+        btn.setBounds(bounds.removeFromLeft(buttonWidth).reduced(2));
+    };
+
+    positionButton(toggleTunaViz);
+    positionButton(toggleEye);
+    positionButton(toggleRoll);
+    positionButton(toggleForrest);
+    positionButton(toggleSteam);
 }
 
 // --- Settings Persistence ---

@@ -30,7 +30,7 @@ private:
     TheTuna tunaViz;
     TheEye eye;
     TheRoll roll;
-    Splitter splitterBar;
+    Splitter splitter;
 
     Control control;
 
