@@ -7,7 +7,7 @@
 #include <Eigen/Dense>
 #include <juce_dsp/juce_dsp.h>
 
-class CqtEngine {
+class Cqt {
 public:
     struct Config {
         int octaves = 6;
@@ -19,9 +19,9 @@ public:
         double chopThreshold = 0.005;
     };
 
-    CqtEngine();
-    explicit CqtEngine(const Config& config);
-    ~CqtEngine() = default;
+    Cqt();
+    explicit Cqt(const Config& config);
+    ~Cqt() = default;
 
     void updateConfig(const Config& newConfig);
     void init();
@@ -30,7 +30,7 @@ public:
 
     // Transform one block of time-domain signal.
     // The signal MUST be exactly getSignalBlockSize() in length.
-    void transform(const std::vector<float>& timeDomainSignal, std::vector<std::complex<float>>& cqtSpectrumOut);
+    void transform(const std::vector<float>& timeDomainSignal, std::vector<std::complex<float>>& cqtForrestOut);
 
     int getSignalBlockSize() const { return signalBlockSize; }
     int getTotalBins() const { return totalBins; }

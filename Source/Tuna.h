@@ -1,10 +1,10 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "ColorPalette.h"
+#include "Palette.h"
 
-class TunerViz : public juce::Component {
+class Tuna : public juce::Component {
 public:
-    TunerViz();
+    Tuna();
 
 
     void setPitchFrequency(float frequencyHz);
@@ -42,5 +42,5 @@ private:
 
     static juce::Font getLabelFont();
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TunerViz)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Tuna)
 };

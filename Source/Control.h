@@ -8,7 +8,7 @@ class PitchengaAudioProcessor;
 
 class Control : public juce::Component {
 public:
-    // Pure data model for UI settings.
+    // Data model for UI settings.
     // Handles its own XML parsing, but lives in the Processor to survive window closures.
     struct Settings {
         int lastUIWidth = 800;
@@ -18,12 +18,12 @@ public:
         bool showCircleViz = true;
         bool showTunerViz = true;
 
-        bool showSpectrum = true;
-        bool showSpectrogram = true;
+        bool showForrest = true;
+        bool showSteam = true;
 
         float splitRatio = 0.5f;
 
-        juce::XmlElement createXml() const;
+        [[nodiscard]] juce::XmlElement createXml() const;
         bool loadFromXml(const juce::XmlElement& xml);
     };
 
@@ -33,7 +33,7 @@ public:
     void resized() override;
     void updateVisibilityFromState();
 
-    // Callback so the Editor knows when a user clicked a toggle
+    // Callback so the Editor knows when the user clicked a toggle
     std::function<void()> onVisibilityChanged;
 
 private:
@@ -41,12 +41,12 @@ private:
 
     PitchengaAudioProcessor& audioProcessor;
 
-    juce::TextButton toggleLineViz{"Line"};
-    juce::TextButton toggleCircleViz{"Circle"};
-    juce::TextButton toggleTunerViz{"Tuner"};
+    juce::TextButton toggleLineViz{"Roll"};
+    juce::TextButton toggleCircleViz{"LineViz"};
+    juce::TextButton toggleTunerViz{"Tuna"};
 
-    juce::TextButton toggleSpectrum{"Spectrum"};
-    juce::TextButton toggleSpectrogram{"Spectrogram"};
+    juce::TextButton toggleForrest{"Forest"};
+    juce::TextButton toggleSteam{"Steam"};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Control)
 };

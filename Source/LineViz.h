@@ -2,7 +2,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "PluginProcessor.h"
-#include "CqtEngine.h"
+#include "Cqt.h"
 #include "Analyzers.h"
 
 class LineViz : public juce::Component
@@ -15,7 +15,7 @@ public:
     void updateResults(const std::vector<double>& results);
     void paintBins(juce::Graphics& graphics) const;
 
-    void setEngine(const CqtEngine* e) { engine = e; }
+    void setEngine(const Cqt* e) { engine = e; }
     static constexpr int getPreferredHeight() { return 619; }
 
     static juce::Font getLabelFont();
@@ -36,7 +36,7 @@ private:
         juce::Colour baseColor
     );
 
-    const float bubblesSpeedPxPerFrame = 2.0f;
+    const float steamSpeedPxPerFrame = 2.0f;
     const float bubbleThreshold = 0.0001f;
     struct Bubble {
         float x;
@@ -44,14 +44,14 @@ private:
         float width;
         juce::Colour color;
     };
-    juce::Image bubblesImage;
-    int bubblesScrollOffset = 0;
+    juce::Image steamImage;
+    int steamScrollOffset = 0;
 
-    void blowBubbles();
-    void paintBubbles(const juce::Graphics& graphics) const;
+    void pumpSteam();
+    void paintSteam(const juce::Graphics& graphics) const;
 
     PitchengaAudioProcessor& processor;
-    const CqtEngine* engine = nullptr;
+    const Cqt* engine = nullptr;
     std::vector<double> displayMagnitudes;
 
     int currentTotalBins = 0;

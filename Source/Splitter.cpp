@@ -1,21 +1,21 @@
-#include "SplitterBar.h"
-#include "TunerViz.h"
+#include "Splitter.h"
+#include "Tuna.h"
 
-SplitterBar::SplitterBar(PitchengaAudioProcessor& processorToUse) : audioProcessor(processorToUse) {
+Splitter::Splitter(PitchengaAudioProcessor& processorToUse) : audioProcessor(processorToUse) {
     setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
 }
 
-void SplitterBar::mouseEnter(const juce::MouseEvent&) {
+void Splitter::mouseEnter(const juce::MouseEvent&) {
     isHovered = true;
     repaint();
 }
 
-void SplitterBar::mouseExit(const juce::MouseEvent&) {
+void Splitter::mouseExit(const juce::MouseEvent&) {
     isHovered = false;
     repaint();
 }
 
-void SplitterBar::paint(juce::Graphics& g) {
+void Splitter::paint(juce::Graphics& g) {
     if (isHovered) {
         g.fillAll(juce::Colours::white.withAlpha(0.2f));
     } else {
@@ -23,13 +23,13 @@ void SplitterBar::paint(juce::Graphics& g) {
     }
 }
 
-void SplitterBar::mouseDrag(const juce::MouseEvent& e) {
+void Splitter::mouseDrag(const juce::MouseEvent& e) {
     if (auto* parent = getParentComponent()) {
         auto eventInParent = e.getEventRelativeTo(parent);
 
         // Calculate dynamic bounds exactly matching resized() architecture
         const float topControlHeight = 24.0f;
-        const float bottomTunerHeight = audioProcessor.uiSettings.showTunerViz ? TunerViz::getPreferredHeight() + 1.0f : 0.0f;
+        const float bottomTunerHeight = audioProcessor.uiSettings.showTunerViz ? Tuna::getPreferredHeight() + 1.0f : 0.0f;
         const float availableHeight = static_cast<float>(parent->getHeight()) - topControlHeight - bottomTunerHeight;
 
         const float adjustedY = static_cast<float>(eventInParent.y) - topControlHeight;

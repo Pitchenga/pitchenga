@@ -2,14 +2,14 @@
 
 #include <juce_core/juce_core.h>
 #include "PluginProcessor.h"
-#include "CqtEngine.h"
+#include "Cqt.h"
 #include "Analyzers.h"
 #include <pitch_detector/pitch_detector.h>
 
-class MathWorker : public juce::Thread {
+class Math : public juce::Thread {
 public:
-    explicit MathWorker(PitchengaAudioProcessor& processorToUse);
-    ~MathWorker() override;
+    explicit Math(PitchengaAudioProcessor& processorToUse);
+    ~Math() override;
 
     void run() override;
     
@@ -20,7 +20,7 @@ public:
     bool hasNewData() const { return newDataAvailable.load(std::memory_order_acquire); }
     void clearNewDataFlag() { newDataAvailable.store(false, std::memory_order_release); }
 
-    const CqtEngine* getCqtEngine() const { return &cqtEngine; }
+    const Cqt* getCqtEngine() const { return &cqtEngine; }
 
 private:
     static constexpr double inputGain = 6.0;
@@ -41,8 +41,8 @@ private:
 
     PitchengaAudioProcessor& audioProcessor;
 
-    // --- CQT Engine (For CircleViz) ---
-    CqtEngine cqtEngine;
+    // --- CQT Engine (For Eye) ---
+    Cqt cqtEngine;
     std::unique_ptr<HarmonicPatternPitchClassDetector> pitchClassDetector;
     std::unique_ptr<SpectralEqualizer> spectralEqualizer;
     std::unique_ptr<ExpSmoother> octaveBinSmoother;
@@ -50,11 +50,11 @@ private:
 
     std::vector<float> workingBuffer;
     std::vector<std::vector<float>> slidingWindows;
-    std::vector<std::complex<float>> cqtSpectrum;
-    std::vector<double> amplitudeSpectrumDb;
+    std::vector<std::complex<float>> cqtForrest;
+    std::vector<double> amplitudeForrestDb;
     std::vector<double> octaveBins;
 
-    // --- Pitch Engine (For TunerViz) ---
+    // --- Pitch Engine (For Tuna) ---
     std::unique_ptr<adamski::PitchMPM> pitchDetector;
     std::vector<float> rawAudioHistoryBuffer;
     std::vector<float> pitchAnalysisBuffer;

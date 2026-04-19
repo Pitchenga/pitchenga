@@ -2,7 +2,7 @@
 #include "PluginEditor.h"
 
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProcessor& p)
-    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), lineViz(p), controlOverlay(p), splitterBar(p) {
+    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), lineViz(p), splitterBar(p), controlOverlay(p) {
 
     addAndMakeVisible(tunerViz);
     addAndMakeVisible(circleViz);
@@ -16,7 +16,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
 
     lineViz.setEngine(worker.getCqtEngine());
 
-    circleBuffer.resize(CircleViz::totalFoldedBins, 0.0);
+    circleBuffer.resize(Eye::totalFoldedBins, 0.0);
 
     setResizable(true, true);
     setSize(audioProcessor.uiSettings.lastUIWidth, audioProcessor.uiSettings.lastUIHeight);
@@ -75,7 +75,7 @@ void PitchengaAudioProcessorEditor::resized() {
     splitterBar.setVisible(audioProcessor.uiSettings.showLineViz && audioProcessor.uiSettings.showCircleViz);
 
     if (audioProcessor.uiSettings.showTunerViz) {
-        tunerViz.setBounds(bounds.removeFromBottom(static_cast<int>(TunerViz::getPreferredHeight() + 1)));
+        tunerViz.setBounds(bounds.removeFromBottom(static_cast<int>(Tuna::getPreferredHeight() + 1)));
     }
 
     if (audioProcessor.uiSettings.showLineViz && audioProcessor.uiSettings.showCircleViz) {

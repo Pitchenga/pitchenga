@@ -3,15 +3,14 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <vector>
 #include <array>
-#include "ColorPalette.h"
 
-class CircleViz : public juce::Component {
+class Eye : public juce::Component {
 public:
     static constexpr int semitonesPerOctave = 12;
     static constexpr int binsPerSemitone = 9;
     static constexpr int totalFoldedBins = binsPerSemitone * semitonesPerOctave;
 
-    CircleViz();
+    Eye();
 
     void updateResults(const std::vector<double>& results);
 
@@ -39,5 +38,5 @@ private:
 
     juce::Image cachedFrame;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CircleViz)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Eye)
 };

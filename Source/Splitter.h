@@ -5,9 +5,9 @@
 #include "PluginProcessor.h"
 
 // Custom draggable 4px horizontal split bar
-class SplitterBar : public juce::Component {
+class Splitter : public juce::Component {
 public:
-    explicit SplitterBar(PitchengaAudioProcessor& processorToUse);
+    explicit Splitter(PitchengaAudioProcessor& processorToUse);
     void mouseDrag(const juce::MouseEvent& e) override;
     void paint(juce::Graphics& g) override;
     void mouseEnter(const juce::MouseEvent& e) override;
@@ -19,5 +19,5 @@ private:
     PitchengaAudioProcessor& audioProcessor;
     bool isHovered = false;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SplitterBar)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Splitter)
 };

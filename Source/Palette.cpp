@@ -1,6 +1,6 @@
-#include "ColorPalette.h"
+#include "Palette.h"
 
-const std::array<Pitch, 12> ColorPalette::chromaticScale = {
+const std::array<Pitch, 12> Palette::chromaticScale = {
     {
         {Tone::Do, "Do", 0, 16.35f, juce::Colour::fromRGB(255, 0, 0), "C"},
         {Tone::Ra, "Ra", 1, 17.32f, juce::Colour::fromRGB(255, 127, 127), "Db"},

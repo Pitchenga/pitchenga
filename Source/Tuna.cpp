@@ -1,10 +1,10 @@
-#include "TunerViz.h"
+#include "Tuna.h"
 #include <cmath>
 
-TunerViz::TunerViz()
+Tuna::Tuna()
 = default;
 
-void TunerViz::setPitchFrequency(const float frequencyHz) {
+void Tuna::setPitchFrequency(const float frequencyHz) {
     if (frequencyHz > 0.0f) {
         currentMidi = freqToMidi(frequencyHz);
     } else {
@@ -13,26 +13,26 @@ void TunerViz::setPitchFrequency(const float frequencyHz) {
     repaint();
 }
 
-void TunerViz::setRange(const float minMidiNote, const float maxMidiNote) {
+void Tuna::setRange(const float minMidiNote, const float maxMidiNote) {
     minMidi = minMidiNote;
     maxMidi = maxMidiNote;
     updateCachedGradient();
     repaint();
 }
 
-float TunerViz::freqToMidi(const float freq) {
+float Tuna::freqToMidi(const float freq) {
     if (freq <= 0.0f) return -1.0f;
     return 69.0f + 12.0f * std::log2(freq / 440.0f);
 }
 
-juce::String TunerViz::getNoteName(const int midiNote) {
+juce::String Tuna::getNoteName(const int midiNote) {
     int chroma = midiNote % 12;
     if (chroma < 0) chroma += 12;
     const int octave = midiNote / 12 - 1;
-    return ColorPalette::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
+    return Palette::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
 
-void TunerViz::paintLabel(juce::Graphics& graphics, const int midiNote, const float x, const float stripY) {
+void Tuna::paintLabel(juce::Graphics& graphics, const int midiNote, const float x, const float stripY) {
     const juce::String name = getNoteName(midiNote);
     graphics.saveState();
 
@@ -58,7 +58,7 @@ void TunerViz::paintLabel(juce::Graphics& graphics, const int midiNote, const fl
     graphics.restoreState();
 }
 
-juce::Font TunerViz::getLabelFont() {
+juce::Font Tuna::getLabelFont() {
     return {
         juce::FontOptions(tunerFontSize)
         .withStyle(tunerFontStyle)
@@ -66,19 +66,19 @@ juce::Font TunerViz::getLabelFont() {
     };
 }
 
-float TunerViz::getLabelHeight() {
+float Tuna::getLabelHeight() {
     return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8");
 }
 
-float TunerViz::getLabelWidth() {
+float Tuna::getLabelWidth() {
     return getLabelFont().getHeight();
 }
 
-float TunerViz::getPreferredHeight() {
+float Tuna::getPreferredHeight() {
     return stripHeight + tickHeight + getLabelHeight();
 }
 
-void TunerViz::updateCachedGradient() {
+void Tuna::updateCachedGradient() {
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
@@ -97,7 +97,7 @@ void TunerViz::updateCachedGradient() {
         float chroma = std::fmod(midiAtX, 12.0f);
         if (chroma < 0.0f) chroma += 12.0f;
 
-        const juce::Colour fullColor = ColorPalette::getContinuousColor(chroma);
+        const juce::Colour fullColor = Palette::getContinuousColor(chroma);
 
         for (int y = static_cast<int>(stripY); y < height; ++y) {
             data.setPixelColour(x, y, fullColor);
@@ -117,7 +117,7 @@ void TunerViz::updateCachedGradient() {
         int chroma = note % 12;
         if (chroma < 0) chroma += 12;
 
-        const juce::Colour fullColor = ColorPalette::chromaticScale[static_cast<size_t>(chroma)].color;
+        const juce::Colour fullColor = Palette::chromaticScale[static_cast<size_t>(chroma)].color;
         graphics.setColour(fullColor);
 
         if (note > startMidi && note < endMidi) paintLabel(graphics, note, x, stripY);
@@ -128,11 +128,11 @@ void TunerViz::updateCachedGradient() {
     }
 }
 
-void TunerViz::resized() {
+void Tuna::resized() {
     updateCachedGradient();
 }
 
-void TunerViz::paint(juce::Graphics& graphics) {
+void Tuna::paint(juce::Graphics& graphics) {
     const auto bounds = getLocalBounds().toFloat();
     const auto height = static_cast<float>(getHeight());
 
@@ -158,7 +158,7 @@ void TunerViz::paint(juce::Graphics& graphics) {
 
             int nearestChroma = nearestNote % 12;
             if (nearestChroma < 0) nearestChroma += 12;
-            const juce::Colour toneColor = ColorPalette::chromaticScale[static_cast<size_t>(nearestChroma)].color;
+            const juce::Colour toneColor = Palette::chromaticScale[static_cast<size_t>(nearestChroma)].color;
             graphics.setColour(toneColor);
             paintLabel(graphics, nearestNote, closestX, labelStripY);
         }

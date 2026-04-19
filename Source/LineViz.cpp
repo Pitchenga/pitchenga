@@ -1,9 +1,9 @@
 #include "LineViz.h"
-#include "ColorPalette.h"
+#include "Palette.h"
 #include <algorithm>
 #include <cmath>
 
-#include "CircleViz.h"
+#include "Eye.h"
 
 LineViz::LineViz(PitchengaAudioProcessor& proc) : processor(proc) {}
 
@@ -43,8 +43,8 @@ void LineViz::updateResults(const std::vector<double>& results) {
 
     if (expand()) return;
 
-    if (processor.uiSettings.showSpectrogram) {
-        blowBubbles();
+    if (processor.uiSettings.showSteam) {
+        pumpSteam();
     }
 
     displayMagnitudes = smoother->smooth(displayMagnitudes);
@@ -58,8 +58,8 @@ void LineViz::resized() {
 
     if (width > 0 && height > 0) {
         // Initialize the rolling buffer whenever the window resizes
-        bubblesImage = juce::Image(juce::Image::ARGB, width, height, true);
-        bubblesScrollOffset = 0;
+        steamImage = juce::Image(juce::Image::ARGB, width, height, true);
+        steamScrollOffset = 0;
         paintFrame();
     }
 }
@@ -89,11 +89,11 @@ void LineViz::paint(juce::Graphics& graphics) {
 
     if (currentTotalBins <= 0 || currentBinsPerOctave <= 0 || displayMagnitudes.empty()) return;
 
-    if (processor.uiSettings.showSpectrogram) {
-        paintBubbles(graphics);
+    if (processor.uiSettings.showSteam) {
+        paintSteam(graphics);
     }
 
-    if (processor.uiSettings.showSpectrum) {
+    if (processor.uiSettings.showForrest) {
         paintBins(graphics);
     }
 }
@@ -115,7 +115,7 @@ juce::String LineViz::getNoteName(const int midiNote) {
     int chroma = midiNote % 12;
     if (chroma < 0) chroma += 12;
     const int octave = midiNote / 12 - 1;
-    return ColorPalette::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
+    return Palette::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
 
 void LineViz::paintLabel(
@@ -188,7 +188,7 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
         const float startY = getLabelAreaHeight();
         const float endY = isBlackKey ? halfHeight : height;
 
-        const juce::Colour baseColor = ColorPalette::chromaticScale[static_cast<size_t>(chroma)].color;
+        const juce::Colour baseColor = Palette::chromaticScale[static_cast<size_t>(chroma)].color;
         const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.1f);
         graphics.setColour(gridColor);
         graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
@@ -215,7 +215,7 @@ void LineViz::paintBins(juce::Graphics& graphics) const {
         const float chroma =
             static_cast<float>(i % currentBinsPerOctave) * 12.0f / static_cast<float>(currentBinsPerOctave);
 
-        const juce::Colour color = ColorPalette::getContinuousColor(chroma);
+        const juce::Colour color = Palette::getContinuousColor(chroma);
         graphics.setColour(color);
 
         graphics.fillRect(
@@ -228,25 +228,25 @@ void LineViz::paintBins(juce::Graphics& graphics) const {
 }
 
 
-void LineViz::blowBubbles() {
-    if (displayMagnitudes.empty() || !bubblesImage.isValid()) return;
+void LineViz::pumpSteam() {
+    if (displayMagnitudes.empty() || !steamImage.isValid()) return;
 
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
 
-    const int speedPx = static_cast<int>(bubblesSpeedPxPerFrame);
+    const int speedPx = static_cast<int>(steamSpeedPxPerFrame);
 
     // Advance the scroll offset and wrap it like a treadmill
-    bubblesScrollOffset = (bubblesScrollOffset + speedPx) % height;
+    steamScrollOffset = (steamScrollOffset + speedPx) % height;
 
     // Calculate where in the image memory the new row should be drawn
-    const int drawY = (height - speedPx + bubblesScrollOffset) % height;
+    const int drawY = (height - speedPx + steamScrollOffset) % height;
 
     // Native JUCE memory wipe: clears the specific row to completely transparent
-    bubblesImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
+    steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
 
-    juce::Graphics graphics(bubblesImage);
+    juce::Graphics graphics(steamImage);
 
     const int totalBins = static_cast<int>(displayMagnitudes.size());
     const int binsPerOctave = totalBins / PitchengaAudioProcessor::numOctaves;
@@ -255,7 +255,7 @@ void LineViz::blowBubbles() {
     for (int i = 0; i < totalBins; ++i) {
         if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > bubbleThreshold) {
             const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
-            const juce::Colour baseColor = ColorPalette::getContinuousColor(chroma);
+            const juce::Colour baseColor = Palette::getContinuousColor(chroma);
             constexpr float undimmingGain = 1.6f;
             const juce::Colour color = juce::Colours::black.interpolatedWith(
                 baseColor,
@@ -267,18 +267,18 @@ void LineViz::blowBubbles() {
                 static_cast<float>(i) * barWidth,
                 static_cast<float>(drawY),
                 barWidth + 0.5f,
-                bubblesSpeedPxPerFrame
+                steamSpeedPxPerFrame
             );
         }
     }
 }
 
-void LineViz::paintBubbles(const juce::Graphics& graphics) const {
-    if (!bubblesImage.isValid()) return;
+void LineViz::paintSteam(const juce::Graphics& graphics) const {
+    if (!steamImage.isValid()) return;
 
     const int height = getHeight();
 
     // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
-    graphics.drawImageAt(bubblesImage, 0, -bubblesScrollOffset);
-    graphics.drawImageAt(bubblesImage, 0, height - bubblesScrollOffset);
+    graphics.drawImageAt(steamImage, 0, -steamScrollOffset);
+    graphics.drawImageAt(steamImage, 0, height - steamScrollOffset);
 }

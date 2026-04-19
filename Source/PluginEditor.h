@@ -2,12 +2,12 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "PluginProcessor.h"
-#include "MathWorker.h"
-#include "TunerViz.h"
-#include "CircleViz.h"
+#include "Math.h"
+#include "Tuna.h"
+#include "Eye.h"
 #include "LineViz.h"
 #include "Control.h"
-#include "SplitterBar.h"
+#include "Splitter.h"
 
 class PitchengaAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::Timer {
 public:
@@ -25,12 +25,12 @@ private:
     PitchengaAudioProcessor& audioProcessor;
 
     // Background worker for heavy DSP
-    MathWorker worker;
+    Math worker;
 
-    TunerViz tunerViz;
-    CircleViz circleViz;
+    Tuna tunerViz;
+    Eye circleViz;
     LineViz lineViz;
-    SplitterBar splitterBar;
+    Splitter splitterBar;
 
     Control controlOverlay;
 

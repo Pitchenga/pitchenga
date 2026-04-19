@@ -51,24 +51,24 @@ target_sources(Pitchenga PRIVATE
         Source/PluginProcessor.h
         Source/PluginEditor.cpp
         Source/PluginEditor.h
-        Source/CqtEngine.h
-        Source/CqtEngine.cpp
+        Source/Cqt.h
+        Source/Cqt.cpp
         Source/Analyzers.h
         Source/Analyzers.cpp
-        Source/ColorPalette.h
-        Source/ColorPalette.cpp
-        Source/TunerViz.h
-        Source/TunerViz.cpp
-        Source/CircleViz.h
-        Source/CircleViz.cpp
+        Source/Palette.h
+        Source/Palette.cpp
+        Source/Tuna.h
+        Source/Tuna.cpp
+        Source/Eye.h
+        Source/Eye.cpp
         Source/LineViz.h
         Source/LineViz.cpp
-        Source/MathWorker.h
-        Source/MathWorker.cpp
+        Source/Math.h
+        Source/Math.cpp
         Source/Control.h
         Source/Control.cpp
-        Source/SplitterBar.h
-        Source/SplitterBar.cpp
+        Source/Splitter.h
+        Source/Splitter.cpp
 )
 
 # 4. Link the heavy-lifting JUCE modules (Audio, GUI, and Hardware-Accelerated Math)

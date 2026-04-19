@@ -22,23 +22,23 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleSpectrum, audioProcessor.uiSettings.showSpectrum);
-    toggleSpectrum.onClick = [this] {
-        audioProcessor.uiSettings.showSpectrum = toggleSpectrum.getToggleState();
+    setupToggleButton(toggleForrest, audioProcessor.uiSettings.showForrest);
+    toggleForrest.onClick = [this] {
+        audioProcessor.uiSettings.showForrest = toggleForrest.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleSpectrogram, audioProcessor.uiSettings.showSpectrogram);
-    toggleSpectrogram.onClick = [this] {
-        audioProcessor.uiSettings.showSpectrogram = toggleSpectrogram.getToggleState();
+    setupToggleButton(toggleSteam, audioProcessor.uiSettings.showSteam);
+    toggleSteam.onClick = [this] {
+        audioProcessor.uiSettings.showSteam = toggleSteam.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    addAndMakeVisible(toggleLineViz);
-    addAndMakeVisible(toggleCircleViz);
     addAndMakeVisible(toggleTunerViz);
-    addAndMakeVisible(toggleSpectrum);
-    addAndMakeVisible(toggleSpectrogram);
+    addAndMakeVisible(toggleCircleViz);
+    addAndMakeVisible(toggleLineViz);
+    addAndMakeVisible(toggleSteam);
+    addAndMakeVisible(toggleForrest);
 }
 
 void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
@@ -54,8 +54,8 @@ void Control::updateVisibilityFromState() {
     toggleLineViz.setToggleState(audioProcessor.uiSettings.showLineViz, juce::NotificationType::dontSendNotification);
     toggleCircleViz.setToggleState(audioProcessor.uiSettings.showCircleViz, juce::NotificationType::dontSendNotification);
     toggleTunerViz.setToggleState(audioProcessor.uiSettings.showTunerViz, juce::NotificationType::dontSendNotification);
-    toggleSpectrum.setToggleState(audioProcessor.uiSettings.showSpectrum, juce::NotificationType::dontSendNotification);
-    toggleSpectrogram.setToggleState(audioProcessor.uiSettings.showSpectrogram, juce::NotificationType::dontSendNotification);
+    toggleForrest.setToggleState(audioProcessor.uiSettings.showForrest, juce::NotificationType::dontSendNotification);
+    toggleSteam.setToggleState(audioProcessor.uiSettings.showSteam, juce::NotificationType::dontSendNotification);
 }
 
 void Control::resized() {
@@ -66,8 +66,8 @@ void Control::resized() {
     toggleLineViz.setBounds(bounds.removeFromLeft(60).reduced(2));
     toggleCircleViz.setBounds(bounds.removeFromLeft(60).reduced(2));
     toggleTunerViz.setBounds(bounds.removeFromLeft(60).reduced(2));
-    toggleSpectrum.setBounds(bounds.removeFromLeft(80).reduced(2));
-    toggleSpectrogram.setBounds(bounds.removeFromLeft(95).reduced(2));
+    toggleForrest.setBounds(bounds.removeFromLeft(80).reduced(2));
+    toggleSteam.setBounds(bounds.removeFromLeft(95).reduced(2));
 }
 
 // --- Settings Persistence ---
@@ -83,8 +83,8 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("showCircleViz", showCircleViz);
     xml.setAttribute("showTunerViz", showTunerViz);
 
-    xml.setAttribute("showSpectrum", showSpectrum);
-    xml.setAttribute("showSpectrogram", showSpectrogram);
+    xml.setAttribute("showForrest", showForrest);
+    xml.setAttribute("showSteam", showSteam);
 
     xml.setAttribute("splitRatio", static_cast<double>(splitRatio));
 
@@ -104,8 +104,8 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     showCircleViz = xml.getBoolAttribute("showCircleViz", showCircleViz);
     showTunerViz = xml.getBoolAttribute("showTunerViz", showTunerViz);
 
-    showSpectrum = xml.getBoolAttribute("showSpectrum", showSpectrum);
-    showSpectrogram = xml.getBoolAttribute("showSpectrogram", showSpectrogram);
+    showForrest = xml.getBoolAttribute("showForrest", showForrest);
+    showSteam = xml.getBoolAttribute("showSteam", showSteam);
 
     splitRatio = static_cast<float>(xml.getDoubleAttribute("splitRatio", splitRatio));
 

@@ -41,7 +41,7 @@ Legacy:
 
 Modern:                                                                                                                                                                           
 @Source/Analyzers.cpp @Source/Analyzers.h                                                                                                                                         
-@Source/CqtEngine.cpp @Source/CqtEngine.h                                                                                                                                         
+@Source/Cqt.cpp @Source/CqtEngine.h                                                                                                                                         
 @Source/PluginEditor.h @Source/PluginEditor.cpp                                                                                                                                   
 @Source/PluginProcessor.h @Source/PluginProcessor.cpp                                                                                                                             
 ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄

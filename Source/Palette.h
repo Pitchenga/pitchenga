@@ -14,7 +14,7 @@ struct Pitch {
     juce::String letterNotation;
 };
 
-class ColorPalette {
+class Palette {
 public:
     // The single source of truth for the chromatic scale
     static const std::array<Pitch, 12> chromaticScale;

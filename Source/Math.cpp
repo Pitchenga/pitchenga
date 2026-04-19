@@ -1,22 +1,22 @@
-#include "MathWorker.h"
+#include "Math.h"
 
-MathWorker::MathWorker(PitchengaAudioProcessor& processorToUse)
+Math::Math(PitchengaAudioProcessor& processorToUse)
     : Thread("VisualizeWorker"), audioProcessor(processorToUse) {
     setupBuffers();
 }
 
-MathWorker::~MathWorker() {
+Math::~Math() {
     stopThread(2000);
 }
 
-void MathWorker::setupBuffers() {
+void Math::setupBuffers() {
     setupCqtEngine();
     setupCqtBuffers();
     setupPitchDetection();
 }
 
-void MathWorker::setupCqtEngine() {
-    CqtEngine::Config config;
+void Math::setupCqtEngine() {
+    Cqt::Config config;
     config.octaves = PitchengaAudioProcessor::numOctaves;
     config.samplingFreq = audioProcessor.getSampleRate() > 0 ? audioProcessor.getSampleRate() : 44100.0;
     cqtEngine.updateConfig(config);
@@ -31,7 +31,7 @@ void MathWorker::setupCqtEngine() {
     octaveBinSmoother = std::make_unique<ExpSmoother>(binsPerOctave, 0.05);
 }
 
-void MathWorker::setupCqtBuffers() {
+void Math::setupCqtBuffers() {
     const int totalBins = cqtEngine.getTotalBins();
     const int binsPerOctave = cqtEngine.getBinsPerOctave();
     const auto signalBlockSize = static_cast<size_t>(cqtEngine.getSignalBlockSize());
@@ -40,8 +40,8 @@ void MathWorker::setupCqtBuffers() {
     // Initialize sliding windows for each octave
     slidingWindows.assign(PitchengaAudioProcessor::numOctaves, std::vector(signalBlockSize, 0.0f));
 
-    cqtSpectrum.resize(static_cast<size_t>(cqtEngine.getKernelBins()));
-    amplitudeSpectrumDb.assign(static_cast<size_t>(totalBins), 0.0);
+    cqtForrest.resize(static_cast<size_t>(cqtEngine.getKernelBins()));
+    amplitudeForrestDb.assign(static_cast<size_t>(totalBins), 0.0);
     octaveBins.assign(static_cast<size_t>(binsPerOctave), 0.0);
 
     {
@@ -51,7 +51,7 @@ void MathWorker::setupCqtBuffers() {
     }
 }
 
-void MathWorker::setupPitchDetection() {
+void Math::setupPitchDetection() {
     const double samplingFreq = audioProcessor.getSampleRate() > 0 ? audioProcessor.getSampleRate() : 44100.0;
 
     // --- Pitch Setup ---
@@ -60,14 +60,14 @@ void MathWorker::setupPitchDetection() {
     pitchAnalysisBuffer.assign(4096, 0.0f);
 }
 
-void MathWorker::updateSampleRate(const double newSampleRate) {
+void Math::updateSampleRate(const double newSampleRate) {
     if (newSampleRate > 0 && std::abs(newSampleRate - cqtEngine.getConfig().samplingFreq) > 0.01) {
         setupBuffers();
     }
 }
 
-double MathWorker::amplitudeToDbRescaled(const double amplitude) {
-    // Exact port of HarmonEye's DecibelCalculator.java
+double Math::amplitudeToDbRescaled(const double amplitude) {
+    // Exact port of HarmonLineViz's DecibelCalculator.java
     constexpr double zeroAmplitudeDb = -90.30899869919436;
     constexpr double zeroAmplitudeDbInv = 1.0 / zeroAmplitudeDb;
 
@@ -77,7 +77,7 @@ double MathWorker::amplitudeToDbRescaled(const double amplitude) {
     return std::max(0.0, 1.0 - decibels * zeroAmplitudeDbInv);
 }
 
-void MathWorker::run() {
+void Math::run() {
     while (!threadShouldExit()) {
         updateSampleRate(audioProcessor.getSampleRate());
 
@@ -104,7 +104,7 @@ void MathWorker::run() {
     }
 }
 
-void MathWorker::flushStaleAudioData(int& availableSamples) {
+void Math::flushStaleAudioData(int& availableSamples) {
     // --- THE LATENCY KILLER (FRAME DROPPING) ---
     // If the DSP math falls behind real-time, the FIFO backs up and creates massive visual latency.
     // If we have more than a few blocks waiting, instantly flush the old ones to catch up to live audio.
@@ -123,7 +123,7 @@ void MathWorker::flushStaleAudioData(int& availableSamples) {
     }
 }
 
-void MathWorker::consumeAudioFromFifo() {
+void Math::consumeAudioFromFifo() {
     auto& octaves = audioProcessor.getOctaves();
     const int signalBlockSize = cqtEngine.getSignalBlockSize();
 
@@ -188,7 +188,7 @@ void MathWorker::consumeAudioFromFifo() {
     }
 }
 
-void MathWorker::processPitchDetection() {
+void Math::processPitchDetection() {
     // --- Pitch Detection (Using latest 4096 samples) ---
     if (pitchDetector != nullptr) {
         // Force weak fundamentals above the MPM clarity threshold.
@@ -200,7 +200,7 @@ void MathWorker::processPitchDetection() {
     }
 }
 
-void MathWorker::processCqtAndEqualization() {
+void Math::processCqtAndEqualization() {
     const int binsPerOctave = cqtEngine.getBinsPerOctave();
     const int signalBlockSize = cqtEngine.getSignalBlockSize();
 
@@ -208,19 +208,19 @@ void MathWorker::processCqtAndEqualization() {
     for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct) {
         const auto& window = slidingWindows[static_cast<size_t>(oct)];
         if (window.size() == static_cast<size_t>(signalBlockSize)) {
-            cqtEngine.transform(window, cqtSpectrum);
+            cqtEngine.transform(window, cqtForrest);
             const int startIndex = (PitchengaAudioProcessor::numOctaves - 1 - oct) * binsPerOctave;
-            for (size_t i = 0; i < cqtSpectrum.size(); ++i) {
-                const double amplitude = std::abs(cqtSpectrum[i]) * inputGain;
-                amplitudeSpectrumDb[static_cast<size_t>(startIndex) + i] = amplitudeToDbRescaled(amplitude);
+            for (size_t i = 0; i < cqtForrest.size(); ++i) {
+                const double amplitude = std::abs(cqtForrest[i]) * inputGain;
+                amplitudeForrestDb[static_cast<size_t>(startIndex) + i] = amplitudeToDbRescaled(amplitude);
             }
         }
     }
 
-    // Pre-analyze smoothing does not seem to improve anything for the circle, but it smears the spectrogram
-    // const auto& smoothedSpectrum = allBinSmoother->smooth(amplitudeSpectrumDb);
-    const auto& smoothedSpectrum = amplitudeSpectrumDb;
-    const auto& detectedPitchClasses = pitchClassDetector->detectPitchClasses(smoothedSpectrum);
+    // Pre-analyze smoothing does not seem to improve anything for the circle, but it smears the steam
+    // const auto& smoothedForrest = allBinSmoother->smooth(amplitudeForrestDb);
+    const auto& smoothedForrest = amplitudeForrestDb;
+    const auto& detectedPitchClasses = pitchClassDetector->detectPitchClasses(smoothedForrest);
     const auto& equalizedPitchClasses = spectralEqualizer->filter(detectedPitchClasses);
 
     std::ranges::fill(octaveBins, 0.0);
@@ -237,7 +237,7 @@ void MathWorker::processCqtAndEqualization() {
     currentLineVizData = equalizedPitchClasses;
 }
 
-void MathWorker::publishResultsToUi() {
+void Math::publishResultsToUi() {
     // --- Push Results to UI ---
     const juce::CriticalSection::ScopedLockType lock(resultLock);
     if (circleVisualizerResults.size() == currentCircleVizData.size()) {
@@ -249,7 +249,7 @@ void MathWorker::publishResultsToUi() {
     newDataAvailable.store(true, std::memory_order_release);
 }
 
-void MathWorker::getCircleResults(std::vector<double>& destinationArray) {
+void Math::getCircleResults(std::vector<double>& destinationArray) {
     const juce::CriticalSection::ScopedLockType lock(resultLock);
     if (destinationArray.size() != circleVisualizerResults.size()) destinationArray.resize(
         circleVisualizerResults.size()
@@ -257,7 +257,7 @@ void MathWorker::getCircleResults(std::vector<double>& destinationArray) {
     std::copy(circleVisualizerResults.begin(), circleVisualizerResults.end(), destinationArray.begin());
 }
 
-void MathWorker::getLineResults(std::vector<double>& destinationArray) {
+void Math::getLineResults(std::vector<double>& destinationArray) {
     const juce::CriticalSection::ScopedLockType lock(resultLock);
     if (destinationArray.size() != lineVisualizerResults.size()) destinationArray.resize(lineVisualizerResults.size());
     std::copy(lineVisualizerResults.begin(), lineVisualizerResults.end(), destinationArray.begin());

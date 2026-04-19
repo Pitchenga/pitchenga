@@ -1,19 +1,21 @@
-#include "CircleViz.h"
+#include "Eye.h"
 #include <cmath>
 #include <algorithm>
 
-CircleViz::CircleViz() {
+#include "Palette.h"
+
+Eye::Eye() {
     smoothedOctaveBins.resize(totalFoldedBins, 0.0);
 }
 
-void CircleViz::updateResults(const std::vector<double>& results) {
+void Eye::updateResults(const std::vector<double>& results) {
     if (results.size() == smoothedOctaveBins.size()) {
         std::ranges::copy(results, smoothedOctaveBins.begin());
         repaint();
     }
 }
 
-juce::Colour CircleViz::calculateColor(const float velocity, const float toneRatio) {
+juce::Colour Eye::calculateColor(const float velocity, const float toneRatio) {
     // NO std::fmod() NEEDED.
     // toneRatio only ever ranges from -0.444 to 11.444.
     // A single addition handles the negative wrap perfectly.
@@ -26,7 +28,7 @@ juce::Colour CircleViz::calculateColor(const float velocity, const float toneRat
     // NO MODULO NEEDED.
     // wrappedRatio is strictly [0.0, 12.0), so toneNumber is strictly 0 to 11.
     const int currentIdx = toneNumber;
-    const juce::Colour toneColor = ColorPalette::chromaticScale[static_cast<size_t>(currentIdx)].color;
+    const juce::Colour toneColor = Palette::chromaticScale[static_cast<size_t>(currentIdx)].color;
 
     // --- Port of getGuessAndPitchinessColor & transposePitch ---
     juce::Colour guessColor;
@@ -43,7 +45,7 @@ juce::Colour CircleViz::calculateColor(const float velocity, const float toneRat
         if (pitchyIdx < 0) pitchyIdx = 11;
         else if (pitchyIdx > 11) pitchyIdx = 0;
 
-        const juce::Colour pitchyColor = ColorPalette::chromaticScale[static_cast<size_t>(pitchyIdx)].color;
+        const juce::Colour pitchyColor = Palette::chromaticScale[static_cast<size_t>(pitchyIdx)].color;
 
         // Simple approximation of the ordinal pitchinessDiff logic
         const float pitchinessDiff = std::abs(diff);
@@ -56,7 +58,7 @@ juce::Colour CircleViz::calculateColor(const float velocity, const float toneRat
     return juce::Colours::black.interpolatedWith(guessColor, colorVelocity);
 }
 
-void CircleViz::paint(juce::Graphics& g) {
+void Eye::paint(juce::Graphics& g) {
     if (cachedFrame.isValid()) {
         g.drawImageAt(cachedFrame, 0, 0);
     } else {
@@ -118,7 +120,7 @@ void CircleViz::paint(juce::Graphics& g) {
     }
 }
 
-void CircleViz::paintLabel(
+void Eye::paintLabel(
     juce::Graphics& graphics,
     const juce::Point<float> center,
     const float baseRadius,
@@ -130,7 +132,7 @@ void CircleViz::paintLabel(
     const float rLabel = baseRadius * startRadius;
     const float initialX = center.x + rLabel * cos;
     const float initialY = center.y + rLabel * sin;
-    const juce::String name = ColorPalette::chromaticScale[static_cast<size_t>(i)].toneName;
+    const juce::String name = Palette::chromaticScale[static_cast<size_t>(i)].toneName;
 
     graphics.setFont(juce::FontOptions(baseRadius * 0.15f).withStyle("Bold"));
     const auto labelColor = calculateColor(0.1f, static_cast<float>(i));
@@ -163,7 +165,7 @@ void CircleViz::paintLabel(
     arrangement.draw(graphics);
 }
 
-void CircleViz::paintFrame(juce::Graphics& graphics) const {
+void Eye::paintFrame(juce::Graphics& graphics) const {
     const auto bounds = getLocalBounds().toFloat();
     const auto center = bounds.getCentre();
     const auto outerRadius = std::min(bounds.getWidth(), bounds.getHeight()) / 2.0f;
@@ -176,7 +178,7 @@ void CircleViz::paintFrame(juce::Graphics& graphics) const {
         const float sin = std::sin(angle);
         const float cos = std::cos(angle);
 
-        const auto color = ColorPalette::chromaticScale[static_cast<size_t>(i)].color;
+        const auto color = Palette::chromaticScale[static_cast<size_t>(i)].color;
         graphics.setColour(color);
 
         graphics.drawLine(
@@ -192,7 +194,7 @@ void CircleViz::paintFrame(juce::Graphics& graphics) const {
     }
 }
 
-void CircleViz::paintFrame() {
+void Eye::paintFrame() {
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
@@ -202,7 +204,7 @@ void CircleViz::paintFrame() {
     paintFrame(graphics);
 }
 
-void CircleViz::paintBins() {
+void Eye::paintBins() {
     constexpr float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(totalFoldedBins);
     constexpr float rotation = 0.0f - 0.5f * angleStep;
 
@@ -221,7 +223,7 @@ void CircleViz::paintBins() {
     }
 }
 
-void CircleViz::resized() {
+void Eye::resized() {
     paintFrame();
     paintBins();
 }

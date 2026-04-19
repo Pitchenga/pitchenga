@@ -1,22 +1,22 @@
-#include "CqtEngine.h"
+#include "Cqt.h"
 #include <cmath>
 #include <iostream>
 #include <algorithm>
 
-CqtEngine::CqtEngine() {
+Cqt::Cqt() {
     updateContext();
 }
 
-CqtEngine::CqtEngine(const Config& c) : config(c) {
+Cqt::Cqt(const Config& c) : config(c) {
     updateContext();
 }
 
-void CqtEngine::updateConfig(const Config& newConfig) {
+void Cqt::updateConfig(const Config& newConfig) {
     config = newConfig;
     updateContext();
 }
 
-int CqtEngine::nextPowerOf2(int value) const {
+int Cqt::nextPowerOf2(int value) const {
     value--;
     value |= (value >> 1);
     value |= (value >> 2);
@@ -27,11 +27,11 @@ int CqtEngine::nextPowerOf2(int value) const {
     return value;
 }
 
-double CqtEngine::centerFreq(const int binIndex) const {
+double Cqt::centerFreq(const int binIndex) const {
     return (baseFreq * std::pow(2.0, static_cast<double>(binIndex) * binsPerOctaveInv));
 }
 
-int CqtEngine::bandWidth(const int binIndex) const {
+int Cqt::bandWidth(const int binIndex) const {
     return static_cast<int>(std::ceil(q * config.samplingFreq / centerFreq(binIndex)));
 }
 
@@ -40,7 +40,7 @@ static double calculateHammingIntegral() {
     return 0.54;
 }
 
-void CqtEngine::updateContext() {
+void Cqt::updateContext() {
     baseFreq = std::pow(2.0, -config.octaves) * config.maxFreq;
     binsPerOctave = config.semitonesPerOctave * config.binsPerSemitone;
     binsPerOctaveInv = 1.0 / binsPerOctave;
@@ -59,7 +59,7 @@ void CqtEngine::updateContext() {
     fftWorkspace.resize(static_cast<size_t>(signalBlockSize), {0.0f, 0.0f});
 }
 
-std::vector<std::complex<float>> CqtEngine::temporalKernel(const int kernelBinIndex) const {
+std::vector<std::complex<float>> Cqt::temporalKernel(const int kernelBinIndex) const {
     const int size = bandWidth(kernelBinIndex + firstKernelBin);
     std::vector<std::complex<float>> coeffs(static_cast<size_t>(size), {0.0f, 0.0f});
 
@@ -82,7 +82,7 @@ std::vector<std::complex<float>> CqtEngine::temporalKernel(const int kernelBinIn
     return coeffs;
 }
 
-std::vector<std::complex<float>> CqtEngine::conjugatedNormalizedSpectralKernel(const int k) {
+std::vector<std::complex<float>> Cqt::conjugatedNormalizedSpectralKernel(const int k) {
     const auto tk = temporalKernel(k);
 
     // Left pad with zeros to match signalBlockSize
@@ -118,7 +118,7 @@ std::vector<std::complex<float>> CqtEngine::conjugatedNormalizedSpectralKernel(c
     return result;
 }
 
-void CqtEngine::computeSpectralKernels() {
+void Cqt::computeSpectralKernels() {
     const int rows = kernelBins;
     const int cols = signalBlockSize;
 
@@ -138,15 +138,15 @@ void CqtEngine::computeSpectralKernels() {
     spectralKernels.makeCompressed();
 }
 
-void CqtEngine::init() {
+void Cqt::init() {
     computeSpectralKernels();
     cqtRes.resize(kernelBins);
     cqtRes.setZero();
 }
 
-void CqtEngine::transform(
+void Cqt::transform(
     const std::vector<float>& timeDomainSignal,
-    std::vector<std::complex<float>>& cqtSpectrumOut
+    std::vector<std::complex<float>>& cqtForrestOut
 ) {
     if (timeDomainSignal.size() < static_cast<size_t>(signalBlockSize)) return;
 
@@ -161,14 +161,14 @@ void CqtEngine::transform(
         false
     );
 
-    // Wrap the spectrum via Eigen Map
+    // Wrap the forrest via Eigen Map
     const Eigen::Map<const Eigen::VectorXcf> signalFft(fftWorkspace.data(), signalBlockSize);
 
     // Standard Complex Sparse Matrix * Vector Multiplication into pre-allocated result
     cqtRes.noalias() = spectralKernels * signalFft;
 
-    cqtSpectrumOut.resize(static_cast<size_t>(kernelBins));
+    cqtForrestOut.resize(static_cast<size_t>(kernelBins));
     for (int i = 0; i < kernelBins; ++i) {
-        cqtSpectrumOut[static_cast<size_t>(i)] = cqtRes(i);
+        cqtForrestOut[static_cast<size_t>(i)] = cqtRes(i);
     }
 }
