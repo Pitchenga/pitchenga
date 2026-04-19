@@ -2,6 +2,8 @@
 #include "ColorPalette.h"
 #include <algorithm>
 
+#include "CircleViz.h"
+
 LineViz::LineViz(PitchengaAudioProcessor& proc) : processor(proc) {}
 
 bool LineViz::expand() {
@@ -14,8 +16,8 @@ bool LineViz::expand() {
     // Our raw data maps 0.0 to -90dB. A lot of low-level acoustic noise lives there.
     // By setting the visual floor to 0.35 (approx -58dB), the noise falls entirely off the screen,
     // leaving only the pure, distinct harmonic peaks.
-    constexpr double visualFloor = 0.35;
-    constexpr double rangeInv = 1.2/ (1.0 - visualFloor);
+    constexpr double visualFloor = 0.2;
+    constexpr double rangeInv = 1.2 / (1.0 - visualFloor);
 
     for (int i = 0; i < totalBins; ++i) {
         double val = dataPointer[i];
@@ -42,7 +44,6 @@ void LineViz::updateResults(const std::vector<double>& results) {
 
     if (expand()) return;
     advanceBubbles();
-    // displayMagnitudes = smoother->smooth(displayMagnitudes);
 
     repaint();
 }
@@ -124,7 +125,7 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
     // The exact pixel width of one single CQT bin
     const float barWidth = static_cast<float>(getWidth()) / static_cast<float>(currentTotalBins);
 
-    const float height = static_cast<float>(getHeight());
+    const auto height = static_cast<float>(getHeight());
     const float halfHeight = height * 0.5f;
 
     for (int i = 0; i < totalSemitones; ++i) {
@@ -169,8 +170,8 @@ void LineViz::advanceBubbles() {
     const int totalBins = static_cast<int>(displayMagnitudes.size());
     const int binsPerOctave = totalBins / PitchengaAudioProcessor::numOctaves;
 
-    const float width = static_cast<float>(getWidth());
-    const float height = static_cast<float>(getHeight());
+    const auto width = static_cast<float>(getWidth());
+    const auto height = static_cast<float>(getHeight());
 
     if (width <= 0.0f || height <= 0.0f || totalBins <= 0) return;
 
@@ -178,36 +179,26 @@ void LineViz::advanceBubbles() {
 
     // 3. Spawn new bubbles
     for (int i = 0; i < totalBins; ++i) {
-        const double magnitude = displayMagnitudes[static_cast<size_t>(i)];
-
-        if (magnitude > bubbleThreshold) {
-            const float normalizedMagnitude = static_cast<float>(std::min(1.0, std::max(0.0, magnitude)));
-            const float barHeight = normalizedMagnitude * height;
-
-            // Spawn exactly at the tip of the current signal bar
-            const float yPos = height - barHeight;
-
+        if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > bubbleThreshold) {
             const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
-            const juce::Colour color = ColorPalette::getContinuousColor(chroma);
-
-            bubbles.push_back({static_cast<float>(i) * barWidth, yPos, barWidth, color});
+            // const juce::Colour baseColor = ColorPalette::getContinuousColor(chroma);
+            // const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, 0.8f);
+            //fixme: Unify color logic and fix CPU +30%
+            const float toneRatio = static_cast<float>(i) / static_cast<float>(CircleViz::binsPerSemitone);
+            const juce::Colour color = CircleViz::calculateColor(static_cast<float>(magnitude * 0.9), toneRatio);
+            bubbles.push_back({static_cast<float>(i) * barWidth, height, barWidth, color});
         }
     }
 }
 
 void LineViz::paintBubbles(juce::Graphics& graphics) const {
-    const float height = static_cast<float>(getHeight());
+    for (const auto& [x, y, width, color] : bubbles) {
+        graphics.setColour(color);
 
-    // Calculate the Y coordinate that represents the bottom of the top 60%
-    const float limitY = height * 1 - bubbleThreshold;
-
-    for (const auto& b : bubbles) {
-        if (b.y <= limitY) {
-            const juce::Colour dimmedColor = juce::Colours::black.interpolatedWith(b.color, 0.8f);
-            graphics.setColour(dimmedColor);
-
-            // Draw a 1px tall rect. Because it spawns every frame, it forms a seamless streak
-            graphics.fillRect(b.x, b.y, b.width, 1.0f);
-        }
+        // Draw a 1px tall rect. Because it spawns every frame, it forms a seamless streak
+        juce::Path rect;
+        rect.addRectangle(x, y, width, 1.0f);
+        graphics.fillPath(rect);
+        graphics.strokePath(rect, juce::PathStrokeType(1.0f));
     }
 }

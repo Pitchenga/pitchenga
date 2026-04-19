@@ -26,12 +26,12 @@ public:
         float cos
     );
     void resized() override;
+    static juce::Colour calculateColor(float velocity, float toneRatio);
 
 private:
     void paintFrame(juce::Graphics& graphics) const;
     void paintFrame();
     void paintBins();
-    static juce::Colour calculateColor(float velocity, float toneRatio);
 
     std::vector<double> smoothedOctaveBins;
     std::array<juce::Path, totalFoldedBins> segmentPaths;
