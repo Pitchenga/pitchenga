@@ -52,8 +52,8 @@ void PitchengaAudioProcessorEditor::resized() {
     audioProcessor.lastUIHeight = getHeight();
 
     auto bounds = getLocalBounds();
-    //fixme: WHen all three are enabled, share height between circle and line viz equally
-    //fixme: Crash when circle starts with zero height
+    //fixme: WHen both circle and linear are enabled, share height equally
+    //fixme: Crashes when circle starts with zero height
     // lineViz.setBounds(bounds);
     lineViz.setBounds(bounds.removeFromTop(LineViz::getPreferredHeight()));
     bounds.removeFromTop(1);
