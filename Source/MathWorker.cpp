@@ -32,14 +32,14 @@ void MathWorker::setupBuffers() {
     amplitudeSpectrumDb.assign(static_cast<size_t>(totalBins), 0.0);
     octaveBins.assign(static_cast<size_t>(binsPerOctave), 0.0);
 
-    // FFT Setup
-    fft = std::make_unique<juce::dsp::FFT>(fftOrder);
+    // - Bumped to 16384 samples for higher bass resolution.
+    fastFourierTransform = std::make_unique<juce::dsp::FFT>(fastFourierTransformOrder);
     windowingFunction = std::make_unique<juce::dsp::WindowingFunction<float>>(
-        fftSize, juce::dsp::WindowingFunction<float>::hamming
+        fastFourierTransformSize, juce::dsp::WindowingFunction<float>::hamming
     );
-    rawAudioHistoryBuffer.assign(fftSize, 0.0f);
-    windowedFftBuffer.assign(fftSize, 0.0f);
-    complexFftWorkspace.assign(fftSize * 2, 0.0f);
+    rawAudioHistoryBuffer.assign(fastFourierTransformSize, 0.0f);
+    windowedFftBuffer.assign(fastFourierTransformSize, 0.0f);
+    complexFftWorkspace.assign(fastFourierTransformSize * 2, 0.0f);
     linearFftMagnitudes.assign(static_cast<size_t>(totalBins), 0.0);
 
     // --- Pitch Setup ---
@@ -91,8 +91,8 @@ void MathWorker::run() {
             consumeAudioFromFifo();
             processPitchDetection();
             processCqtAndEqualization();
-            processFftForLineViz();
-            publishResultsToUi();
+            processFftForLinearVisualizer();
+            publishResultsToUserInterface();
         }
         wait(1);
     }
@@ -159,19 +159,19 @@ void MathWorker::consumeAudioFromFifo() {
                 std::memmove(
                     rawAudioHistoryBuffer.data(),
                     rawAudioHistoryBuffer.data() + actualRead,
-                    static_cast<size_t>(fftSize - actualRead) * sizeof(float)
+                    static_cast<size_t>(fastFourierTransformSize - actualRead) * sizeof(float)
                 );
 
                 // Append the exact same raw audio we just pulled from the FIFO
                 if (sizeOne > 0) std::copy(
                     buffer.begin() + startOne,
                     buffer.begin() + (startOne + sizeOne),
-                    rawAudioHistoryBuffer.begin() + (fftSize - actualRead)
+                    rawAudioHistoryBuffer.begin() + (fastFourierTransformSize - actualRead)
                 );
                 if (sizeTwo > 0) std::copy(
                     buffer.begin() + startTwo,
                     buffer.begin() + (startTwo + sizeTwo),
-                    rawAudioHistoryBuffer.begin() + (fftSize - actualRead) + sizeOne
+                    rawAudioHistoryBuffer.begin() + (fastFourierTransformSize - actualRead) + sizeOne
                 );
             }
             fifo.finishedRead(actualRead);
@@ -226,36 +226,24 @@ void MathWorker::processCqtAndEqualization() {
     circleVisualizerResults = smoothedCircleData;
 }
 
-void MathWorker::processFftForLineViz() {
+void MathWorker::processFftForLinearVisualizer() {
     const int totalBins = cqtEngine.getTotalBins();
 
     // --- FFT Processing (For LineViz) ---
     // Copy and apply window to purely real data
     std::copy(rawAudioHistoryBuffer.begin(), rawAudioHistoryBuffer.end(), windowedFftBuffer.begin());
-
-    // Fix for the Raging Wall/Low-End Noise: Strip the DC Offset BEFORE the FFT runs
-    // This perfectly silences the digital rumble causing spectral leakage.
-    double sum = 0.0;
-    for (float val : windowedFftBuffer) {
-        sum += val;
-    }
-    const float mean = static_cast<float>(sum / fftSize);
-    for (float& val : windowedFftBuffer) {
-        val -= mean;
-    }
-
-    windowingFunction->multiplyWithWindowingTable(windowedFftBuffer.data(), fftSize);
+    windowingFunction->multiplyWithWindowingTable(windowedFftBuffer.data(), fastFourierTransformSize);
 
     // Safely unpack into Complex memory layout [Real, Imaginary, Real, Imaginary...]
-    for (int i = 0; i < fftSize; ++i) {
+    for (int i = 0; i < fastFourierTransformSize; ++i) {
         complexFftWorkspace[static_cast<size_t>(i * 2)] = windowedFftBuffer[static_cast<size_t>(i)];
         complexFftWorkspace[static_cast<size_t>(i * 2 + 1)] = 0.0f;
     }
 
-    fft->performFrequencyOnlyForwardTransform(complexFftWorkspace.data());
+    fastFourierTransform->performFrequencyOnlyForwardTransform(complexFftWorkspace.data());
 
     const double sampleRate = cqtEngine.getConfig().samplingFreq;
-    constexpr double fftNormalizationFactor = 2.0 / (static_cast<double>(fftSize) * 0.54);
+    constexpr double fftNormalizationFactor = 2.0 / (static_cast<double>(fastFourierTransformSize) * 0.54);
 
     // Map linear FFT to Pitchenga Grid using Hybrid Fractional Interpolation
     for (int i = 0; i < totalBins; ++i) {
@@ -265,23 +253,19 @@ void MathWorker::processFftForLineViz() {
         const double lowerFrequency = centerFrequency / halfStepRatio;
         const double upperFrequency = centerFrequency * halfStepRatio;
 
-        const double exactLower = (lowerFrequency * static_cast<double>(fftSize)) / sampleRate;
-        const double exactUpper = (upperFrequency * static_cast<double>(fftSize)) / sampleRate;
-        const double exactCenter = (centerFrequency * static_cast<double>(fftSize)) / sampleRate;
+        const double exactLower = (lowerFrequency * static_cast<double>(fastFourierTransformSize)) / sampleRate;
+        const double exactUpper = (upperFrequency * static_cast<double>(fastFourierTransformSize)) / sampleRate;
 
         double maximumEnergyInBand = 0.0;
 
         if (exactUpper - exactLower < 1.0) {
             // LOW FREQUENCIES: Sub-bin resolution needed. Apply linear interpolation between the two closest FFT bins.
+            const double exactCenter = (centerFrequency * static_cast<double>(fastFourierTransformSize)) / sampleRate;
 
-            // OUTDATED: Fix: Enforce reading from Bin 1+ to escape DC offset noise at Bin 0
-            // Replaced by native DC subtraction above.
-            int index1 = static_cast<int>(exactCenter);
-            if (index1 < 1) index1 = 1;
-            const int index2 = std::min(index1 + 1, fftSize / 2 - 1);
-
-            // Smooth fraction calculation guarantees perfectly distinct peaks instead of chunks
-            const double fraction = std::max(0.0, exactCenter - static_cast<double>(index1));
+            // Fix: Enforce reading from Bin 1+ to escape DC offset noise at Bin 0
+            const int index1 = std::max(1, static_cast<int>(exactCenter));
+            const int index2 = std::min(index1 + 1, fastFourierTransformSize / 2 - 1);
+            const double fraction = exactCenter - index1;
 
             const double mag1 = complexFftWorkspace[static_cast<size_t>(index1)];
             const double mag2 = complexFftWorkspace[static_cast<size_t>(index2)];
@@ -290,21 +274,15 @@ void MathWorker::processFftForLineViz() {
         } else {
             // HIGH FREQUENCIES: A visual bin spans multiple FFT bins. Pick the peak.
 
-            // OUTDATED: Fix: Enforce reading from Bin 1+ to escape DC offset noise at Bin 0
-            // Strict Rounding Fix: Using non-overlapping `< endBin` boundaries kills identical plateaus.
-            const int startBin = std::max(1, static_cast<int>(std::round(exactLower)));
-            const int endBin = std::min(fftSize / 2 - 1, static_cast<int>(std::round(exactUpper)));
+            // Fix: Enforce reading from Bin 1+ to escape DC offset noise at Bin 0
+            const int lowerIndex = std::max(1, static_cast<int>(exactLower));
+            const int upperIndex = static_cast<int>(exactUpper);
 
-            for (int binIndex = startBin; binIndex < endBin; ++binIndex) {
+            for (int binIndex = lowerIndex; binIndex <= upperIndex && binIndex < (fastFourierTransformSize / 2); ++binIndex) {
                 const double energy = complexFftWorkspace[static_cast<size_t>(binIndex)];
                 if (energy > maximumEnergyInBand) {
                     maximumEnergyInBand = energy;
                 }
-            }
-
-            // Fallback: If rounding caused startBin == endBin on a narrow band, grab exact center
-            if (maximumEnergyInBand == 0.0) {
-                maximumEnergyInBand = complexFftWorkspace[static_cast<size_t>(std::round(exactCenter))];
             }
         }
 
@@ -315,10 +293,10 @@ void MathWorker::processFftForLineViz() {
     }
 }
 
-void MathWorker::publishResultsToUi() {
+void MathWorker::publishResultsToUserInterface() {
     // --- Push Results to UI ---
-    // (circleVisualizerResults is already populated locally inside processCqtAndEqualization)
     const juce::CriticalSection::ScopedLockType lock(resultLock);
+    // (circleVisualizerResults is already populated locally inside processCqtAndEqualization)
     if (lineVisualizerResults.size() == linearFftMagnitudes.size()) {
         std::ranges::copy(linearFftMagnitudes, lineVisualizerResults.begin());
     }
