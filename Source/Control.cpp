@@ -8,6 +8,7 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
     toggleRoll.onClick = [this] {
         audioProcessor.uiSettings.showRoll = toggleRoll.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
+        updateButtonStates();
     };
 
     setupToggleButton(toggleEye, audioProcessor.uiSettings.showEye);
@@ -16,9 +17,9 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleTunaViz, audioProcessor.uiSettings.showTunaViz);
-    toggleTunaViz.onClick = [this] {
-        audioProcessor.uiSettings.showTunaViz = toggleTunaViz.getToggleState();
+    setupToggleButton(toggleTuna, audioProcessor.uiSettings.showTuna);
+    toggleTuna.onClick = [this] {
+        audioProcessor.uiSettings.showTuna = toggleTuna.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -34,7 +35,7 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    addAndMakeVisible(toggleTunaViz);
+    addAndMakeVisible(toggleTuna);
     addAndMakeVisible(toggleEye);
     addAndMakeVisible(toggleRoll);
     addAndMakeVisible(toggleForrest);
@@ -55,7 +56,7 @@ void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
 void Control::updateVisibilityFromState() {
     toggleRoll.setToggleState(audioProcessor.uiSettings.showRoll, juce::NotificationType::dontSendNotification);
     toggleEye.setToggleState(audioProcessor.uiSettings.showEye, juce::NotificationType::dontSendNotification);
-    toggleTunaViz.setToggleState(audioProcessor.uiSettings.showTunaViz, juce::NotificationType::dontSendNotification);
+    toggleTuna.setToggleState(audioProcessor.uiSettings.showTuna, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(audioProcessor.uiSettings.showForrest, juce::NotificationType::dontSendNotification);
     toggleSteam.setToggleState(audioProcessor.uiSettings.showSteam, juce::NotificationType::dontSendNotification);
 
@@ -85,7 +86,7 @@ void Control::resized() {
         btn.setBounds(bounds.removeFromLeft(buttonWidth).reduced(2));
     };
 
-    positionButton(toggleTunaViz);
+    positionButton(toggleTuna);
     positionButton(toggleEye);
     positionButton(toggleRoll);
     positionButton(toggleForrest);
@@ -103,7 +104,7 @@ juce::XmlElement Control::Settings::createXml() const {
 
     xml.setAttribute("showRoll", showRoll);
     xml.setAttribute("showEye", showEye);
-    xml.setAttribute("showTunaViz", showTunaViz);
+    xml.setAttribute("showTuna", showTuna);
 
     xml.setAttribute("showForrest", showForrest);
     xml.setAttribute("showSteam", showSteam);
@@ -124,7 +125,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
 
     showRoll = xml.getBoolAttribute("showRoll", showRoll);
     showEye = xml.getBoolAttribute("showEye", showEye);
-    showTunaViz = xml.getBoolAttribute("showTunaViz", showTunaViz);
+    showTuna = xml.getBoolAttribute("showTuna", showTuna);
 
     showForrest = xml.getBoolAttribute("showForrest", showForrest);
     showSteam = xml.getBoolAttribute("showSteam", showSteam);

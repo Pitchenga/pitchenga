@@ -27,7 +27,7 @@ private:
     // Background worker for heavy DSP
     Math worker;
 
-    TheTuna tunaViz;
+    TheTuna tuna;
     TheEye eye;
     TheRoll roll;
     Splitter splitter;

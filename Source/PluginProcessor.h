@@ -85,7 +85,7 @@ public:
 
     bool showRoll = true;
     bool showEye = true;
-    bool showTunaViz = true;
+    bool showTuna = true;
 
     static constexpr int numOctaves = 8;
     // 32768 is sufficient to hold the lowest octave buffers without overrun at 30fps

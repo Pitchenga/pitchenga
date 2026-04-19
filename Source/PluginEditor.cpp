@@ -4,7 +4,7 @@
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p), worker(p), roll(p), splitter(p), control(p) {
 
-    addAndMakeVisible(tunaViz);
+    addAndMakeVisible(tuna);
     addAndMakeVisible(eye);
     addAndMakeVisible(roll);
 
@@ -41,7 +41,7 @@ void PitchengaAudioProcessorEditor::timerCallback() {
     const float latestPitchHz = audioProcessor.currentPitchHz.load(std::memory_order_relaxed);
 
     // Feed it to the tuna visualizer component
-    tunaViz.setPitchFrequency(latestPitchHz);
+    tuna.setPitchFrequency(latestPitchHz);
 
     // --- Update the Circular Visualizer ---
     if (worker.hasNewData()) {
@@ -69,13 +69,13 @@ void PitchengaAudioProcessorEditor::resized() {
 
     roll.setVisible(audioProcessor.uiSettings.showRoll);
     eye.setVisible(audioProcessor.uiSettings.showEye);
-    tunaViz.setVisible(audioProcessor.uiSettings.showTunaViz);
+    tuna.setVisible(audioProcessor.uiSettings.showTuna);
 
     // Only show splitter if both resizable elements are active
     splitter.setVisible(audioProcessor.uiSettings.showRoll && audioProcessor.uiSettings.showEye);
 
-    if (audioProcessor.uiSettings.showTunaViz) {
-        tunaViz.setBounds(bounds.removeFromBottom(static_cast<int>(TheTuna::getPreferredHeight() + 1)));
+    if (audioProcessor.uiSettings.showTuna) {
+        tuna.setBounds(bounds.removeFromBottom(static_cast<int>(TheTuna::getPreferredHeight() + 1)));
     }
 
     if (audioProcessor.uiSettings.showRoll && audioProcessor.uiSettings.showEye) {

@@ -16,7 +16,7 @@ public:
 
         bool showRoll = true;
         bool showEye = true;
-        bool showTunaViz = true;
+        bool showTuna = true;
 
         bool showForrest = true;
         bool showSteam = true;
@@ -44,7 +44,7 @@ private:
 
     PitchengaAudioProcessor& audioProcessor;
 
-    juce::TextButton toggleTunaViz{"Tuna"};
+    juce::TextButton toggleTuna{"Tuna"};
     juce::TextButton toggleEye{"Eye"};
     juce::TextButton toggleRoll{"Roll"};
     juce::TextButton toggleForrest{"Forest"};
