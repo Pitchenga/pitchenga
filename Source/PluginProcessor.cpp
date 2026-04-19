@@ -38,22 +38,22 @@ bool PitchengaAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts)
 }
 
 void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
-    static uint32_t lastProcessLog = 0;
-    uint32_t now = juce::Time::getMillisecondCounter();
-    if (now - lastProcessLog > 1000) {
-        double playheadTime = 0.0;
-        if (auto* ph = getPlayHead()) {
-            if (auto pos = ph->getPosition()) {
-                playheadTime = pos->getTimeInSeconds().orFallback(0.0);
-            }
-        }
-        DBG("=== PROCESS BLOCK ===");
-        DBG("DAW Playhead Time: " << playheadTime << "s");
-        DBG("Block Size: " << buffer.getNumSamples());
-        DBG("FIFO Free Space: " << octaves[0].fifo.getFreeSpace());
-        lastProcessLog = now;
-    }
-    // --------------------------
+    // static uint32_t lastProcessLog = 0;
+    // uint32_t now = juce::Time::getMillisecondCounter();
+    // if (now - lastProcessLog > 1000) {
+    //     double playheadTime = 0.0;
+    //     if (auto* ph = getPlayHead()) {
+    //         if (auto pos = ph->getPosition()) {
+    //             playheadTime = pos->getTimeInSeconds().orFallback(0.0);
+    //         }
+    //     }
+    //     DBG("=== PROCESS BLOCK ===");
+    //     DBG("DAW Playhead Time: " << playheadTime << "s");
+    //     DBG("Block Size: " << buffer.getNumSamples());
+    //     DBG("FIFO Free Space: " << octaves[0].fifo.getFreeSpace());
+    //     lastProcessLog = now;
+    // }
+    // // --------------------------
 
     const auto totalNumInputChannels = getTotalNumInputChannels();
     const auto totalNumOutputChannels = getTotalNumOutputChannels();
