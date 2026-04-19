@@ -173,7 +173,7 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
         const float endY = isBlackKey ? halfHeight : height;
 
         const juce::Colour baseColor = ColorPalette::chromaticScale[static_cast<size_t>(chroma)].color;
-        const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.3f);
+        const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.2f);
         graphics.setColour(gridColor);
         graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
 
