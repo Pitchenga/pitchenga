@@ -8,7 +8,7 @@ PitchengaAudioProcessor::PitchengaAudioProcessor()
         .withOutput("Output", juce::AudioChannelSet::stereo(), true)
     ) {}
 
-PitchengaAudioProcessor::~PitchengaAudioProcessor() {}
+PitchengaAudioProcessor::~PitchengaAudioProcessor() = default;
 
 void PitchengaAudioProcessor::prepareToPlay(const double sampleRate, const int samplesPerBlock) {
     const size_t bufferSize = static_cast<size_t>(std::max(samplesPerBlock, 4096));
@@ -18,7 +18,7 @@ void PitchengaAudioProcessor::prepareToPlay(const double sampleRate, const int s
     // Reset decimation octaves for the visualizer
     for (size_t i = 0; i < numOctaves; ++i) {
         octaves[i].fifo.reset();
-        std::fill(octaves[i].buffer.begin(), octaves[i].buffer.end(), 0.0f);
+        std::ranges::fill(octaves[i].buffer, 0.0f);
 
         octaves[i].lowpass.reset();
         octaves[i].dropNext = false;
