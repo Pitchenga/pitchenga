@@ -46,7 +46,7 @@ juce_add_plugin(Pitchenga
         MICROPHONE_PERMISSION_ENABLED TRUE)    # This ensures the Info.plist has the usage description for macOS TCC
 
 # 3. Tell CMake which C++ files to compile
-target_sources(Pitchenga PRIVATE
+set(PITCHENGA_SOURCES
         Source/PluginProcessor.cpp
         Source/PluginProcessor.h
         Source/PluginEditor.cpp
@@ -71,6 +71,17 @@ target_sources(Pitchenga PRIVATE
         Source/Splitter.cpp
 )
 
+add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/build_timestamp.h
+        COMMAND ${CMAKE_COMMAND} -DOUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/build_timestamp.h -P ${CMAKE_CURRENT_SOURCE_DIR}/generate_timestamp.cmake
+        DEPENDS ${PITCHENGA_SOURCES}
+)
+
+target_sources(Pitchenga PRIVATE
+        ${PITCHENGA_SOURCES}
+        ${CMAKE_CURRENT_BINARY_DIR}/build_timestamp.h
+)
+
 # 4. Link the heavy-lifting JUCE modules (Audio, GUI, and Hardware-Accelerated Math)
 target_link_libraries(Pitchenga PRIVATE
         juce::juce_audio_utils
@@ -84,6 +95,5 @@ target_link_libraries(Pitchenga PRIVATE
 
 target_compile_features(Pitchenga PUBLIC cxx_std_20)
 
-# Pass current timestamp as a compile definition for the UI
-string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d %H:%M:%S")
-target_compile_definitions(Pitchenga PRIVATE "BUILD_TIMESTAMP=\"${BUILD_TIMESTAMP}\"")
+# Make generated timestamp header available to the build
+target_include_directories(Pitchenga PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

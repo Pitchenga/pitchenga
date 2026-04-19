@@ -41,9 +41,7 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
     addAndMakeVisible(toggleForrest);
     addAndMakeVisible(toggleSteam);
 
-#ifndef BUILD_TIMESTAMP
-#define BUILD_TIMESTAMP "Unknown"
-#endif
+#include "build_timestamp.h"
 
     buildTimestampLabel.setText(juce::String("Build: ") + BUILD_TIMESTAMP, juce::NotificationType::dontSendNotification);
     buildTimestampLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
