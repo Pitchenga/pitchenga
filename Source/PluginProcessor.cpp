@@ -116,6 +116,10 @@ void PitchengaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
     xml.setAttribute("uiWidth", lastUIWidth);
     xml.setAttribute("uiHeight", lastUIHeight);
 
+    xml.setAttribute("showLineViz", showLineViz);
+    xml.setAttribute("showCircleViz", showCircleViz);
+    xml.setAttribute("showTunerViz", showTunerViz);
+
     // Convert XML to binary for the host to save
     copyXmlToBinary(xml, destData);
 }
@@ -132,8 +136,17 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, const int si
             lastUIWidth = xmlState->getIntAttribute("uiWidth", lastUIWidth);
             lastUIHeight = xmlState->getIntAttribute("uiHeight", lastUIHeight);
 
+            showLineViz = xmlState->getBoolAttribute("showLineViz", true);
+            showCircleViz = xmlState->getBoolAttribute("showCircleViz", true);
+            showTunerViz = xmlState->getBoolAttribute("showTunerViz", true);
+
             // If the UI is currently open, tell the Editor to resize
-            if (auto* editor = getActiveEditor()) editor->setSize(lastUIWidth, lastUIHeight);
+            if (auto* editor = getActiveEditor()) {
+                editor->setSize(lastUIWidth, lastUIHeight);
+                if (auto* pitchengaEditor = dynamic_cast<PitchengaAudioProcessorEditor*>(editor)) {
+                    pitchengaEditor->updateVisibilityFromState();
+                }
+            }
         }
     }
 }

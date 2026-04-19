@@ -82,6 +82,10 @@ public:
     int lastUIWidth = 700;
     int lastUIHeight = 730;
 
+    bool showLineViz = true;
+    bool showCircleViz = true;
+    bool showTunerViz = true;
+
     static constexpr int numOctaves = 8;
     // 32768 is sufficient to hold the lowest octave buffers without overrun at 30fps
     static constexpr int fifoSize = 32768;

@@ -15,10 +15,11 @@ public:
     void paint(juce::Graphics&) override;
     void resized() override;
 
-    int uiRefreshRateHz = 24;
+    void updateVisibilityFromState();
 
 private:
     void timerCallback() override;
+    void setupToggleButton(juce::TextButton& button, bool initialState);
 
     PitchengaAudioProcessor& audioProcessor;
 
@@ -26,12 +27,18 @@ private:
     MathWorker worker;
 
     TunerViz tunerViz;
-    LineViz lineViz;
     CircleViz circleViz;
+    LineViz lineViz;
+
+    juce::TextButton toggleLineViz{"Line"};
+    juce::TextButton toggleCircleViz{"Circle"};
+    juce::TextButton toggleTunerViz{"Tuner"};
 
     // Shared results for rendering
     std::vector<double> circleBuffer;
     std::vector<double> lineBuffer;
+
+    static constexpr int uiRefreshRateHz = 48;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PitchengaAudioProcessorEditor)
 };

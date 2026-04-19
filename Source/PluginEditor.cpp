@@ -8,6 +8,28 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     addAndMakeVisible(circleViz);
     addAndMakeVisible(lineViz);
 
+    setupToggleButton(toggleLineViz, audioProcessor.showLineViz);
+    toggleLineViz.onClick = [this] {
+        audioProcessor.showLineViz = toggleLineViz.getToggleState();
+        resized();
+    };
+
+    setupToggleButton(toggleCircleViz, audioProcessor.showCircleViz);
+    toggleCircleViz.onClick = [this] {
+        audioProcessor.showCircleViz = toggleCircleViz.getToggleState();
+        resized();
+    };
+
+    setupToggleButton(toggleTunerViz, audioProcessor.showTunerViz);
+    toggleTunerViz.onClick = [this] {
+        audioProcessor.showTunerViz = toggleTunerViz.getToggleState();
+        resized();
+    };
+
+    addAndMakeVisible(toggleLineViz);
+    addAndMakeVisible(toggleCircleViz);
+    addAndMakeVisible(toggleTunerViz);
+
     lineViz.setEngine(worker.getCqtEngine());
 
     circleBuffer.resize(CircleViz::totalFoldedBins, 0.0);
@@ -24,6 +46,22 @@ PitchengaAudioProcessorEditor::~PitchengaAudioProcessorEditor() {
     stopTimer();
 }
 
+void PitchengaAudioProcessorEditor::setupToggleButton(juce::TextButton& button, bool initialState) {
+    button.setClickingTogglesState(true);
+    button.setToggleState(initialState, juce::NotificationType::dontSendNotification);
+    button.setColour(juce::TextButton::buttonColourId, juce::Colours::black.withAlpha(0.4f));
+    button.setColour(juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha(0.2f));
+    button.setColour(juce::TextButton::textColourOffId, juce::Colours::grey);
+    button.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
+}
+
+void PitchengaAudioProcessorEditor::updateVisibilityFromState() {
+    toggleLineViz.setToggleState(audioProcessor.showLineViz, juce::NotificationType::dontSendNotification);
+    toggleCircleViz.setToggleState(audioProcessor.showCircleViz, juce::NotificationType::dontSendNotification);
+    toggleTunerViz.setToggleState(audioProcessor.showTunerViz, juce::NotificationType::dontSendNotification);
+    resized();
+}
+
 void PitchengaAudioProcessorEditor::timerCallback() {
     // --- Update the Tuner ---
     // Read the lock-free atomic variable
@@ -38,8 +76,8 @@ void PitchengaAudioProcessorEditor::timerCallback() {
         worker.getLineResults(lineBuffer);
         worker.clearNewDataFlag();
 
-        circleViz.updateResults(circleBuffer);
-        lineViz.updateResults(lineBuffer);
+        if (audioProcessor.showCircleViz) circleViz.updateResults(circleBuffer);
+        if (audioProcessor.showLineViz) lineViz.updateResults(lineBuffer);
     }
 }
 
@@ -52,11 +90,27 @@ void PitchengaAudioProcessorEditor::resized() {
     audioProcessor.lastUIHeight = getHeight();
 
     auto bounds = getLocalBounds();
-    //fixme: WHen both circle and linear are enabled, share height equally
-    //fixme: Crashes when circle starts with zero height
-    // lineViz.setBounds(bounds);
-    lineViz.setBounds(bounds.removeFromTop(LineViz::getPreferredHeight()));
-    bounds.removeFromTop(1);
-    tunerViz.setBounds(bounds.removeFromBottom(static_cast<int>(TunerViz::getPreferredHeight() + 1)));
-    circleViz.setBounds(bounds);
+
+    // Position translucent toggle overlay independently of the main bounds
+    juce::Rectangle<int> buttonArea(getWidth() - 190, 10, 180, 24);
+    toggleTunerViz.setBounds(buttonArea.removeFromRight(60).reduced(2));
+    toggleCircleViz.setBounds(buttonArea.removeFromRight(60).reduced(2));
+    toggleLineViz.setBounds(buttonArea.removeFromRight(60).reduced(2));
+
+    lineViz.setVisible(audioProcessor.showLineViz);
+    circleViz.setVisible(audioProcessor.showCircleViz);
+    tunerViz.setVisible(audioProcessor.showTunerViz);
+
+    if (audioProcessor.showTunerViz) {
+        tunerViz.setBounds(bounds.removeFromBottom(static_cast<int>(TunerViz::getPreferredHeight() + 1)));
+    }
+
+    if (audioProcessor.showLineViz && audioProcessor.showCircleViz) {
+        lineViz.setBounds(bounds.removeFromTop(bounds.getHeight() / 2));
+        circleViz.setBounds(bounds);
+    } else if (audioProcessor.showLineViz) {
+        lineViz.setBounds(bounds);
+    } else if (audioProcessor.showCircleViz) {
+        circleViz.setBounds(bounds);
+    }
 }
