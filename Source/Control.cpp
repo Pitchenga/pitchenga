@@ -75,8 +75,9 @@ void Control::updateVisibilityFromState() {
 
 void Control::updateButtonStates() {
     const bool rollActive = audioProcessor.uiSettings.showRoll;
-    toggleForrest.setEnabled(rollActive);
-    toggleSteam.setEnabled(rollActive);
+    toggleForrest.setVisible(rollActive);
+    toggleSteam.setVisible(rollActive);
+    resized();
 }
 
 float Control::getPreferredHeight() {
