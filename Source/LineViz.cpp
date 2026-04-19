@@ -1,6 +1,7 @@
 #include "LineViz.h"
 #include "ColorPalette.h"
 #include <algorithm>
+#include <cmath>
 
 #include "CircleViz.h"
 
@@ -10,7 +11,7 @@ bool LineViz::expand() {
     const int totalBins = static_cast<int>(displayMagnitudes.size());
     if (totalBins <= 0) return true;
 
-    double* dataPointer = displayMagnitudes.data();
+    double* magnitudes = displayMagnitudes.data();
 
     // MAnalyzer achieves its clean look by simply dropping the visual floor.
     // Our raw data maps 0.0 to -90dB. A lot of low-level acoustic noise lives there.
@@ -20,13 +21,11 @@ bool LineViz::expand() {
     constexpr double rangeInv = 1.2 / (1.0 - visualFloor);
 
     for (int i = 0; i < totalBins; ++i) {
-        double val = dataPointer[i];
-
-        if (val <= visualFloor) {
-            dataPointer[i] = 0.0;
+        if (const double magnitude = magnitudes[i]; magnitude <= visualFloor) {
+            magnitudes[i] = 0.0;
         } else {
             // Stretch the remaining peaks back to the 0.0 - 1.0 range for drawing
-            dataPointer[i] = (val - visualFloor) * rangeInv;
+            magnitudes[i] = (magnitude - visualFloor) * rangeInv;
         }
     }
 
@@ -91,6 +90,48 @@ void LineViz::paintFrame() {
     paintFrame(graphics);
 }
 
+juce::String LineViz::getNoteName(const int midiNote) {
+    int chroma = midiNote % 12;
+    if (chroma < 0) chroma += 12;
+    const int octave = midiNote / 12 - 1;
+    return ColorPalette::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
+}
+
+void LineViz::paintLabel(
+    juce::Graphics& graphics,
+    const float labelHeight,
+    const float maxTextWidth,
+    const int i,
+    const float targetCenter,
+    const float startY,
+    const juce::Colour baseColor
+) {
+    if (i == 0) {
+        // Not drawing a half label
+        return;
+    }
+    constexpr int startMidiNote = 12;
+    const int midiNote = i + startMidiNote;
+
+    const juce::Colour labelColor = juce::Colours::black.interpolatedWith(baseColor, 0.6f);
+
+    const juce::String name = getNoteName(midiNote);
+
+    graphics.setColour(labelColor);
+    graphics.saveState();
+    graphics.addTransform(
+        juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, targetCenter, startY - 2.0f)
+    );
+
+    graphics.drawText(
+        name,
+        juce::Rectangle(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
+        juce::Justification::centredLeft,
+        false
+    );
+    graphics.restoreState();
+}
+
 void LineViz::paintFrame(juce::Graphics& graphics) const {
     int totalOctaves = currentTotalBins / currentBinsPerOctave;
     if (totalOctaves <= 0) totalOctaves = PitchengaAudioProcessor::numOctaves;
@@ -104,12 +145,22 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
     const auto height = static_cast<float>(getHeight());
     const float halfHeight = height * 0.5f;
 
+    //fixme: Extract font
+    const juce::Font labelFont{
+        juce::FontOptions(15.0f)
+        .withStyle("Bold")
+        .withName(juce::Font::getDefaultMonospacedFontName())
+    };
+    graphics.setFont(labelFont);
+    const float labelHeight = labelFont.getHeight();
+    const float maxTextWidth = juce::GlyphArrangement::getStringWidth(labelFont, "Ww8");
+
     for (int i = 0; i < totalSemitones; ++i) {
         const int chroma = i % 12;
 
         //fixme: move to Tone
         // Identify standard "black" keys
-        const bool isBlackKey = (chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10);
+        const bool isBlackKey = chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10;
 
         // 1. Find the exact pitch bin index for this semitone
         const float binIndex = static_cast<float>(i) * (static_cast<float>(currentBinsPerOctave) / 12.0f);
@@ -118,16 +169,15 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
         const float targetCenter = binIndex * barWidth + barWidth * 0.5f;
 
         // 3. Route the line to the top half (black keys) or bottom half (white keys)
-        constexpr float startY = 0.0f;
+        const float startY = maxTextWidth + 4.0f;
         const float endY = isBlackKey ? halfHeight : height;
 
         const juce::Colour baseColor = ColorPalette::chromaticScale[static_cast<size_t>(chroma)].color;
-        const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, 0.3f);
-
-        graphics.setColour(color);
-
-        // Draw a strict 1px vertical line exactly at the calculated center
+        const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.3f);
+        graphics.setColour(gridColor);
         graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
+
+        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, startY, baseColor);
     }
 }
 
@@ -191,7 +241,11 @@ void LineViz::advanceBubbles() {
         if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > bubbleThreshold) {
             const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
             const juce::Colour baseColor = ColorPalette::getContinuousColor(chroma);
-            const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, static_cast<float>(magnitude * 1.5f));
+            constexpr float dimmingFactor = 2.0f;
+            const juce::Colour color = juce::Colours::black.interpolatedWith(
+                baseColor,
+                static_cast<float>(magnitude * dimmingFactor)
+            );
 
             graphics.setColour(color);
             graphics.fillRect(
@@ -204,7 +258,7 @@ void LineViz::advanceBubbles() {
     }
 }
 
-void LineViz::paintBubbles(juce::Graphics& graphics) const {
+void LineViz::paintBubbles(const juce::Graphics& graphics) const {
     if (!bubblesImage.isValid()) return;
 
     const int height = getHeight();
