@@ -50,7 +50,15 @@ void LineViz::updateResults(const std::vector<double>& results) {
 }
 
 void LineViz::resized() {
-    paintFrame();
+    const int width = getWidth();
+    const int height = getHeight();
+
+    if (width > 0 && height > 0) {
+        // Initialize the rolling buffer whenever the window resizes
+        bubblesImage = juce::Image(juce::Image::ARGB, width, height, true);
+        bubblesScrollOffset = 0;
+        paintFrame();
+    }
 }
 
 void LineViz::paint(juce::Graphics& graphics) {
@@ -156,43 +164,52 @@ void LineViz::paintBins(juce::Graphics& graphics) const {
 
 
 void LineViz::advanceBubbles() {
+    if (displayMagnitudes.empty() || !bubblesImage.isValid()) return;
 
-    // 1. Move existing bubbles up
-    for (auto& bubble : bubbles) {
-        bubble.y -= bubblesSpeedPxPerFrame;
-    }
+    const int width = getWidth();
+    const int height = getHeight();
+    if (width <= 0 || height <= 0) return;
 
-    // 2. Clean up bubbles that float completely off the top of the screen
-    std::erase_if(bubbles, [](const Bubble& b) { return b.y < 0.0f; });
+    const int speedPx = static_cast<int>(bubblesSpeedPxPerFrame);
 
-    if (displayMagnitudes.empty()) return;
+    // Advance the scroll offset and wrap it like a treadmill
+    bubblesScrollOffset = (bubblesScrollOffset + speedPx) % height;
+
+    // Calculate where in the image memory the new row should be drawn
+    const int drawY = (height - speedPx + bubblesScrollOffset) % height;
+
+    // Native JUCE memory wipe: clears the specific row to completely transparent
+    bubblesImage.clear(juce::Rectangle<int>(0, drawY, width, speedPx), juce::Colours::transparentBlack);
+
+    juce::Graphics graphics(bubblesImage);
 
     const int totalBins = static_cast<int>(displayMagnitudes.size());
     const int binsPerOctave = totalBins / PitchengaAudioProcessor::numOctaves;
+    const float barWidth = static_cast<float>(width) / static_cast<float>(totalBins);
 
-    const auto width = static_cast<float>(getWidth());
-    const auto height = static_cast<float>(getHeight());
-
-    if (width <= 0.0f || height <= 0.0f || totalBins <= 0) return;
-
-    const float barWidth = width / static_cast<float>(totalBins);
-
-    // 3. Spawn new bubbles
     for (int i = 0; i < totalBins; ++i) {
         if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > bubbleThreshold) {
             const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
             const juce::Colour baseColor = ColorPalette::getContinuousColor(chroma);
-            const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, static_cast<float>(magnitude));
-            //fixme: Unify color logic and fix CPU
-            bubbles.push_back({static_cast<float>(i) * barWidth, height, barWidth, color});
+            const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, static_cast<float>(magnitude * 1.5f));
+
+            graphics.setColour(color);
+            graphics.fillRect(
+                static_cast<float>(i) * barWidth,
+                static_cast<float>(drawY),
+                barWidth + 0.5f,
+                bubblesSpeedPxPerFrame
+            );
         }
     }
 }
 
 void LineViz::paintBubbles(juce::Graphics& graphics) const {
-    for (const auto& [x, y, width, color] : bubbles) {
-        // Draw a 1px tall rect. Because it spawns every frame, it forms a seamless streak
-        graphics.setColour(color);
-        graphics.fillRect(x, y, width + 0.5f, bubblesSpeedPxPerFrame);
-    }
+    if (!bubblesImage.isValid()) return;
+
+    const int height = getHeight();
+
+    // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
+    graphics.drawImageAt(bubblesImage, 0, -bubblesScrollOffset);
+    graphics.drawImageAt(bubblesImage, 0, height - bubblesScrollOffset);
 }
