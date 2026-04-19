@@ -27,14 +27,14 @@ private:
         juce::Graphics& graphics,
         float labelHeight,
         float maxTextWidth,
-        int midiNote,
+        int i,
         float targetCenter,
         float startY,
         juce::Colour baseColor
     );
 
     const float bubblesSpeedPxPerFrame = 2.0f;
-    const float bubbleThreshold = 0.1f;
+    const float bubbleThreshold = 0.0001f;
     struct Bubble {
         float x;
         float y;
@@ -44,7 +44,7 @@ private:
     juce::Image bubblesImage;
     int bubblesScrollOffset = 0;
 
-    void advanceBubbles();
+    void blowBubbles();
     void paintBubbles(const juce::Graphics& graphics) const;
 
     PitchengaAudioProcessor& processor;
