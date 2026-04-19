@@ -13,11 +13,11 @@ public:
     ~MathWorker() override;
 
     void run() override;
-    
+
     // Thread-safe data getters for the UI
     void getCircleResults(std::vector<double>& destinationArray);
     void getLineResults(std::vector<double>& destinationArray);
-    
+
     bool hasNewData() const { return newDataAvailable.load(std::memory_order_acquire); }
     void clearNewDataFlag() { newDataAvailable.store(false, std::memory_order_release); }
 
@@ -25,8 +25,8 @@ public:
 
 private:
     static constexpr double inputGain = 6.0;
-    static constexpr int fastFourierTransformOrder = 14;
-    static constexpr int fastFourierTransformSize = 1 << fastFourierTransformOrder;
+    static constexpr int fftOrder = 14;
+    static constexpr int fftSize = 1 << fftOrder;
 
     void setupBuffers();
     void updateSampleRate(double newSampleRate);
@@ -36,8 +36,8 @@ private:
     void consumeAudioFromFifo();
     void processPitchDetection();
     void processCqtAndEqualization();
-    void processFftForLinearVisualizer();
-    void publishResultsToUserInterface();
+    void processFftForLineViz();
+    void publishResultsToUi();
 
     PitchengaAudioProcessor& audioProcessor;
 
@@ -55,10 +55,12 @@ private:
     std::vector<double> octaveBins;
 
     // --- FFT Engine (For LineViz) ---
-    std::unique_ptr<juce::dsp::FFT> fastFourierTransform;
+    std::unique_ptr<juce::dsp::FFT> fft;
     std::unique_ptr<juce::dsp::WindowingFunction<float>> windowingFunction;
     std::vector<float> rawAudioHistoryBuffer;
-    std::vector<float> windowedFftBuffer; // NEW: Holds the windowed real data
+
+    // Holds the windowed real data
+    std::vector<float> windowedFftBuffer;
     std::vector<float> complexFftWorkspace;
     std::vector<double> linearFftMagnitudes;
 
