@@ -23,7 +23,6 @@ void PitchengaAudioProcessor::prepareToPlay(const double sampleRate, const int s
         octaves[i].lowpass.reset();
         octaves[i].dropNext = false;
     }
-
 }
 
 void PitchengaAudioProcessor::releaseResources() {}
@@ -109,43 +108,21 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 }
 
 void PitchengaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
-    // Create an XML element to store settings
-    juce::XmlElement xml("PITCHENGA_SETTINGS");
-
-    // Add width and height as attributes
-    xml.setAttribute("uiWidth", lastUIWidth);
-    xml.setAttribute("uiHeight", lastUIHeight);
-
-    xml.setAttribute("showLineViz", showLineViz);
-    xml.setAttribute("showCircleViz", showCircleViz);
-    xml.setAttribute("showTunerViz", showTunerViz);
-
     // Convert XML to binary for the host to save
+    const juce::XmlElement xml = uiSettings.createXml();
     copyXmlToBinary(xml, destData);
 }
 
 void PitchengaAudioProcessor::setStateInformation(const void* data, const int sizeInBytes) {
     // Get the XML from the binary data provided by the host
-    const std::unique_ptr xmlState(getXmlFromBinary(data, sizeInBytes));
+    const std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
 
-    if (xmlState != nullptr) {
-        // Only if the tag matches our expected name
-        if (xmlState->hasTagName("PITCHENGA_SETTINGS")) {
-            // Update the processor variables.
-            // If the attributes don't exist, it keeps the defaults initialized in .h
-            lastUIWidth = xmlState->getIntAttribute("uiWidth", lastUIWidth);
-            lastUIHeight = xmlState->getIntAttribute("uiHeight", lastUIHeight);
-
-            showLineViz = xmlState->getBoolAttribute("showLineViz", true);
-            showCircleViz = xmlState->getBoolAttribute("showCircleViz", true);
-            showTunerViz = xmlState->getBoolAttribute("showTunerViz", true);
-
-            // If the UI is currently open, tell the Editor to resize
-            if (auto* editor = getActiveEditor()) {
-                editor->setSize(lastUIWidth, lastUIHeight);
-                if (auto* pitchengaEditor = dynamic_cast<PitchengaAudioProcessorEditor*>(editor)) {
-                    pitchengaEditor->updateVisibilityFromState();
-                }
+    if (xmlState != nullptr && uiSettings.loadFromXml(*xmlState)) {
+        // If the UI is currently open, tell the Editor to resize
+        if (auto* editor = getActiveEditor()) {
+            editor->setSize(uiSettings.lastUIWidth, uiSettings.lastUIHeight);
+            if (auto* pitchengaEditor = dynamic_cast<PitchengaAudioProcessorEditor*>(editor)) {
+                pitchengaEditor->updateVisibilityFromState();
             }
         }
     }

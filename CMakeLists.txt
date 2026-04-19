@@ -67,6 +67,8 @@ target_sources(Pitchenga PRIVATE
         Source/MathWorker.cpp
         Source/Control.h
         Source/Control.cpp
+        Source/SplitterBar.h
+        Source/SplitterBar.cpp
 )
 
 # 4. Link the heavy-lifting JUCE modules (Audio, GUI, and Hardware-Accelerated Math)

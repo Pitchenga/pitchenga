@@ -1,12 +1,11 @@
 #pragma once
 
 #include <juce_audio_processors/juce_audio_processors.h>
-#include <juce_audio_utils/juce_audio_utils.h>
 #include <juce_dsp/juce_dsp.h>
 #include <pitch_detector/pitch_detector.h>
 #include <vector>
 #include <array>
-#include <memory>
+#include "Control.h"
 
 class FastButterworth {
     std::array<float, 7> inputSamples{0.0f};
@@ -46,6 +45,8 @@ class PitchengaAudioProcessor : public juce::AudioProcessor {
 public:
     PitchengaAudioProcessor();
     ~PitchengaAudioProcessor() override;
+
+    Control::Settings uiSettings;
 
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;

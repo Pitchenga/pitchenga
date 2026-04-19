@@ -7,6 +7,7 @@
 #include "CircleViz.h"
 #include "LineViz.h"
 #include "Control.h"
+#include "SplitterBar.h"
 
 class PitchengaAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::Timer {
 public:
@@ -29,6 +30,7 @@ private:
     TunerViz tunerViz;
     CircleViz circleViz;
     LineViz lineViz;
+    SplitterBar splitterBar;
 
     Control controlOverlay;
 

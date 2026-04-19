@@ -2,7 +2,7 @@
 #include "PluginEditor.h"
 
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProcessor& p)
-    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), lineViz(p), controlOverlay(p) {
+    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), lineViz(p), controlOverlay(p), splitterBar(p) {
 
     addAndMakeVisible(tunerViz);
     addAndMakeVisible(circleViz);
@@ -11,12 +11,15 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     addAndMakeVisible(controlOverlay);
     controlOverlay.onVisibilityChanged = [this] { resized(); };
 
+    addAndMakeVisible(splitterBar);
+    splitterBar.onDragged = [this] { resized(); };
+
     lineViz.setEngine(worker.getCqtEngine());
 
     circleBuffer.resize(CircleViz::totalFoldedBins, 0.0);
 
     setResizable(true, true);
-    setSize(audioProcessor.lastUIWidth, audioProcessor.lastUIHeight);
+    setSize(audioProcessor.uiSettings.lastUIWidth, audioProcessor.uiSettings.lastUIHeight);
 
     worker.startThread(juce::Thread::Priority::high);
     startTimerHz(uiRefreshRateHz);
@@ -46,8 +49,8 @@ void PitchengaAudioProcessorEditor::timerCallback() {
         worker.getLineResults(lineBuffer);
         worker.clearNewDataFlag();
 
-        if (audioProcessor.showCircleViz) circleViz.updateResults(circleBuffer);
-        if (audioProcessor.showLineViz) lineViz.updateResults(lineBuffer);
+        if (audioProcessor.uiSettings.showCircleViz) circleViz.updateResults(circleBuffer);
+        if (audioProcessor.uiSettings.showLineViz) lineViz.updateResults(lineBuffer);
     }
 }
 
@@ -56,27 +59,35 @@ void PitchengaAudioProcessorEditor::paint(juce::Graphics& g) {
 }
 
 void PitchengaAudioProcessorEditor::resized() {
-    audioProcessor.lastUIWidth = getWidth();
-    audioProcessor.lastUIHeight = getHeight();
+    audioProcessor.uiSettings.lastUIWidth = getWidth();
+    audioProcessor.uiSettings.lastUIHeight = getHeight();
 
     auto bounds = getLocalBounds();
 
+    // Give the control bar its own dedicated, non-overlapping space at the top left
     controlOverlay.setBounds(bounds.removeFromTop(24));
 
-    lineViz.setVisible(audioProcessor.showLineViz);
-    circleViz.setVisible(audioProcessor.showCircleViz);
-    tunerViz.setVisible(audioProcessor.showTunerViz);
+    lineViz.setVisible(audioProcessor.uiSettings.showLineViz);
+    circleViz.setVisible(audioProcessor.uiSettings.showCircleViz);
+    tunerViz.setVisible(audioProcessor.uiSettings.showTunerViz);
 
-    if (audioProcessor.showTunerViz) {
+    // Only show the drag bar if both resizable elements are active
+    splitterBar.setVisible(audioProcessor.uiSettings.showLineViz && audioProcessor.uiSettings.showCircleViz);
+
+    if (audioProcessor.uiSettings.showTunerViz) {
         tunerViz.setBounds(bounds.removeFromBottom(static_cast<int>(TunerViz::getPreferredHeight() + 1)));
     }
 
-    if (audioProcessor.showLineViz && audioProcessor.showCircleViz) {
-        lineViz.setBounds(bounds.removeFromTop(bounds.getHeight() / 2));
+    if (audioProcessor.uiSettings.showLineViz && audioProcessor.uiSettings.showCircleViz) {
+        const int availableHeight = bounds.getHeight();
+        const int lineVizHeight = static_cast<int>(static_cast<float>(availableHeight) * audioProcessor.uiSettings.splitRatio);
+
+        lineViz.setBounds(bounds.removeFromTop(lineVizHeight));
+        splitterBar.setBounds(bounds.removeFromTop(4)); // Dedicated 4px hit-box for the resizer
         circleViz.setBounds(bounds);
-    } else if (audioProcessor.showLineViz) {
+    } else if (audioProcessor.uiSettings.showLineViz) {
         lineViz.setBounds(bounds);
-    } else if (audioProcessor.showCircleViz) {
+    } else if (audioProcessor.uiSettings.showCircleViz) {
         circleViz.setBounds(bounds);
     }
 }
