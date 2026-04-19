@@ -14,40 +14,35 @@ void CircleViz::updateResults(const std::vector<double>& results) {
 }
 
 juce::Colour CircleViz::calculateColor(const float velocity, const float toneRatio) {
-    // 1. NO std::fmod() NEEDED.
-    // toneRatio only ever ranges from -0.444 to 11.444.
-    // A single addition handles the negative wrap perfectly.
     float wrappedRatio = toneRatio;
-    if (wrappedRatio < 0.0f) wrappedRatio += 12.0f;
+    while (wrappedRatio < 0.0f) wrappedRatio += 12.0f;
+    while (wrappedRatio >= 12.0f) wrappedRatio -= 12.0f;
 
-    const int toneNumber = static_cast<int>(std::floor(wrappedRatio));
-    const float diff = wrappedRatio - static_cast<float>(toneNumber);
+    // Use std::round to snap to the NEAREST pitch center (C, C#, etc.)
+    const float nearestPitch = std::round(wrappedRatio);
 
-    // 2. NO MODULO NEEDED.
-    // wrappedRatio is strictly [0.0, 12.0), so toneNumber is strictly 0 to 11.
-    const int currentIdx = toneNumber;
+    // Diff will now perfectly range from -0.5 to +0.5 symmetrically
+    const float diff = wrappedRatio - nearestPitch;
+
+    int currentIdx = static_cast<int>(nearestPitch);
+    if (currentIdx >= 12) currentIdx = 0; // Wrap B (11.6) -> 12 -> 0 (C)
+
     const juce::Colour toneColor = ColorPalette::chromaticScale[static_cast<size_t>(currentIdx)].color;
 
-    // --- Port of getGuessAndPitchinessColor & transposePitch ---
     juce::Colour guessColor;
     if (std::abs(diff) < 1e-5f) {
         guessColor = toneColor;
     } else {
-        // Transpose -1 or +1 step depending on diff direction
+        // Find the adjacent pitch we are bleeding into
         int pitchyIdx = diff < 0 ? currentIdx - 1 : currentIdx + 1;
-        if (pitchyIdx < 0) pitchyIdx += 12;
-        pitchyIdx %= 12;
-
-        // 3. NO MODULO NEEDED.
-        // It only moves by exactly 1 step, so a simple bounds check wraps it perfectly.
         if (pitchyIdx < 0) pitchyIdx = 11;
         else if (pitchyIdx > 11) pitchyIdx = 0;
 
         const juce::Colour pitchyColor = ColorPalette::chromaticScale[static_cast<size_t>(pitchyIdx)].color;
 
-        // Simple approximation of the ordinal pitchinessDiff logic
-        const float pitchinessDiff = std::abs(diff);
-        guessColor = toneColor.interpolatedWith(pitchyColor, pitchinessDiff);
+        // Multiply by 2.0 so a 0.5 distance equals a 100% color blend
+        const float interpolationWeight = std::abs(diff) * 2.0f;
+        guessColor = toneColor.interpolatedWith(pitchyColor, interpolationWeight);
     }
 
     float colorVelocity = 0.3f + velocity * 1.2f;

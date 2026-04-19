@@ -276,9 +276,9 @@ void PitchengaAudioProcessorEditor::resized() {
     auto bounds = getLocalBounds();
     //fixme: WHen all three are enabled, share height between circle and line viz equally
     //fixme: Crash when circle starts with zero height
-    lineViz.setBounds(bounds);
-    // lineViz.setBounds(bounds.removeFromTop(LineViz::getPreferredHeight()));
-    // bounds.removeFromTop(1);
-    // tunerViz.setBounds(bounds.removeFromBottom(static_cast<int>(TunerViz::getPreferredHeight() + 1)));
-    // circleViz.setBounds(bounds);
+    // lineViz.setBounds(bounds);
+    lineViz.setBounds(bounds.removeFromTop(LineViz::getPreferredHeight()));
+    bounds.removeFromTop(1);
+    tunerViz.setBounds(bounds.removeFromBottom(static_cast<int>(TunerViz::getPreferredHeight() + 1)));
+    circleViz.setBounds(bounds);
 }

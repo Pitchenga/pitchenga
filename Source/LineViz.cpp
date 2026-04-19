@@ -69,15 +69,12 @@ void LineViz::paintBins(juce::Graphics& graphics) const {
         const juce::Colour color = ColorPalette::getContinuousColor(chroma);
         graphics.setColour(color);
 
-        juce::Path rect;
-        rect.addRectangle(
+        graphics.fillRect(
             static_cast<float>(i) * barWidth,
             static_cast<float>(height) - barHeight,
             barWidth,
             barHeight
         );
-        graphics.fillPath(rect);
-        graphics.strokePath(rect, juce::PathStrokeType(1.0f));
     }
 }
 
@@ -183,7 +180,7 @@ void LineViz::advanceBubbles() {
             const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
             // const juce::Colour baseColor = ColorPalette::getContinuousColor(chroma);
             // const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, 0.8f);
-            //fixme: Unify color logic and fix CPU +30%
+            //fixme: Unify color logic and fix CPU
             const float toneRatio = static_cast<float>(i) / static_cast<float>(CircleViz::binsPerSemitone);
             const juce::Colour color = CircleViz::calculateColor(static_cast<float>(magnitude * 0.9), toneRatio);
             bubbles.push_back({static_cast<float>(i) * barWidth, height, barWidth, color});
@@ -193,12 +190,8 @@ void LineViz::advanceBubbles() {
 
 void LineViz::paintBubbles(juce::Graphics& graphics) const {
     for (const auto& [x, y, width, color] : bubbles) {
-        graphics.setColour(color);
-
         // Draw a 1px tall rect. Because it spawns every frame, it forms a seamless streak
-        juce::Path rect;
-        rect.addRectangle(x, y, width, 1.0f);
-        graphics.fillPath(rect);
-        graphics.strokePath(rect, juce::PathStrokeType(1.0f));
+        graphics.setColour(color);
+        graphics.fillRect(x, y, width, 1.0f);
     }
 }
