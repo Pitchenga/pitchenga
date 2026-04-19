@@ -40,8 +40,8 @@ void Math::setupCqtBuffers() {
     // Initialize sliding windows for each octave
     slidingWindows.assign(PitchengaAudioProcessor::numOctaves, std::vector(signalBlockSize, 0.0f));
 
-    cqtForrest.resize(static_cast<size_t>(cqtEngine.getKernelBins()));
-    amplitudeForrestDb.assign(static_cast<size_t>(totalBins), 0.0);
+    cqtSpectrum.resize(static_cast<size_t>(cqtEngine.getKernelBins()));
+    amplitudeSpectrumDb.assign(static_cast<size_t>(totalBins), 0.0);
     octaveBins.assign(static_cast<size_t>(binsPerOctave), 0.0);
 
     {
@@ -218,19 +218,19 @@ void Math::processCqtAndEqualization() {
     for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct) {
         const auto& window = slidingWindows[static_cast<size_t>(oct)];
         if (window.size() == static_cast<size_t>(signalBlockSize)) {
-            cqtEngine.transform(window, cqtForrest);
+            cqtEngine.transform(window, cqtSpectrum);
             const int startIndex = (PitchengaAudioProcessor::numOctaves - 1 - oct) * binsPerOctave;
-            for (size_t i = 0; i < cqtForrest.size(); ++i) {
-                const double amplitude = std::abs(cqtForrest[i]) * inputGain;
-                amplitudeForrestDb[static_cast<size_t>(startIndex) + i] = amplitudeToDbRescaled(amplitude);
+            for (size_t i = 0; i < cqtSpectrum.size(); ++i) {
+                const double amplitude = std::abs(cqtSpectrum[i]) * inputGain;
+                amplitudeSpectrumDb[static_cast<size_t>(startIndex) + i] = amplitudeToDbRescaled(amplitude);
             }
         }
     }
 
     // Pre-analyze smoothing does not seem to improve anything for the circle, but it smears the steam
-    // const auto& smoothedForrest = allBinSmoother->smooth(amplitudeForrestDb);
-    const auto& smoothedForrest = amplitudeForrestDb;
-    const auto& detectedPitchClasses = pitchClassDetector->detectPitchClasses(smoothedForrest);
+    const auto& smoothedSpectrum = allBinSmoother->smooth(amplitudeSpectrumDb);
+    // const auto& smoothedSpectrum = amplitudeSpectrumDb;
+    const auto& detectedPitchClasses = pitchClassDetector->detectPitchClasses(smoothedSpectrum);
     const auto& equalizedPitchClasses = spectralEqualizer->filter(detectedPitchClasses);
 
     std::ranges::fill(octaveBins, 0.0);

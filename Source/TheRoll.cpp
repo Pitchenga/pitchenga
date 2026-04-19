@@ -1,7 +1,6 @@
 #include "TheRoll.h"
 #include "Palette.h"
 #include <algorithm>
-#include <cmath>
 
 #include "TheEye.h"
 

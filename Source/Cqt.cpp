@@ -146,7 +146,7 @@ void Cqt::init() {
 
 void Cqt::transform(
     const std::vector<float>& timeDomainSignal,
-    std::vector<std::complex<float>>& cqtForrestOut
+    std::vector<std::complex<float>>& cqtSpectrumOut
 ) {
     if (timeDomainSignal.size() < static_cast<size_t>(signalBlockSize)) return;
 
@@ -161,14 +161,14 @@ void Cqt::transform(
         false
     );
 
-    // Wrap the forrest via Eigen Map
+    // Wrap the spectrum via Eigen Map
     const Eigen::Map<const Eigen::VectorXcf> signalFft(fftWorkspace.data(), signalBlockSize);
 
     // Standard Complex Sparse Matrix * Vector Multiplication into pre-allocated result
     cqtRes.noalias() = spectralKernels * signalFft;
 
-    cqtForrestOut.resize(static_cast<size_t>(kernelBins));
+    cqtSpectrumOut.resize(static_cast<size_t>(kernelBins));
     for (int i = 0; i < kernelBins; ++i) {
-        cqtForrestOut[static_cast<size_t>(i)] = cqtRes(i);
+        cqtSpectrumOut[static_cast<size_t>(i)] = cqtRes(i);
     }
 }

@@ -50,8 +50,8 @@ private:
 
     std::vector<float> workingBuffer;
     std::vector<std::vector<float>> slidingWindows;
-    std::vector<std::complex<float>> cqtForrest;
-    std::vector<double> amplitudeForrestDb;
+    std::vector<std::complex<float>> cqtSpectrum;
+    std::vector<double> amplitudeSpectrumDb;
     std::vector<double> octaveBins;
 
     // --- Pitch Engine (For Tuna) ---

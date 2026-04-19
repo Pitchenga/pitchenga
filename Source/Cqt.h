@@ -30,7 +30,7 @@ public:
 
     // Transform one block of time-domain signal.
     // The signal MUST be exactly getSignalBlockSize() in length.
-    void transform(const std::vector<float>& timeDomainSignal, std::vector<std::complex<float>>& cqtForrestOut);
+    void transform(const std::vector<float>& timeDomainSignal, std::vector<std::complex<float>>& cqtSpectrumOut);
 
     int getSignalBlockSize() const { return signalBlockSize; }
     int getTotalBins() const { return totalBins; }
