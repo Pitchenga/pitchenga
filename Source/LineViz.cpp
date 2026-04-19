@@ -37,45 +37,13 @@ void LineViz::updateResults(const std::vector<double>& results) {
     if (results.empty()) return;
     displayMagnitudes = results;
 
-    if (smoother == nullptr || lastKnownSize != results.size()) {
-        smoother = std::make_unique<ExpSmoother>(results.size(), 0.5);
-        lastKnownSize = results.size();
-    }
-
     if (expand()) return;
     advanceBubbles();
-
     repaint();
 }
 
-void LineViz::paintBins(juce::Graphics& graphics) const {
-    const int width = getWidth();
-    const int height = getHeight();
-
-    const float barWidth = static_cast<float>(width) / static_cast<float>(currentTotalBins);
-
-    for (int i = 0; i < currentTotalBins; ++i) {
-        if (i >= static_cast<int>(displayMagnitudes.size())) break;
-
-        const double normalizedMagnitude = std::min(
-            1.0,
-            std::max(0.0, displayMagnitudes[static_cast<size_t>(i)])
-        );
-        const auto barHeight = static_cast<float>(normalizedMagnitude * height);
-
-        const float chroma =
-            static_cast<float>(i % currentBinsPerOctave) * 12.0f / static_cast<float>(currentBinsPerOctave);
-
-        const juce::Colour color = ColorPalette::getContinuousColor(chroma);
-        graphics.setColour(color);
-
-        graphics.fillRect(
-            static_cast<float>(i) * barWidth,
-            static_cast<float>(height) - barHeight,
-            barWidth,
-            barHeight
-        );
-    }
+void LineViz::resized() {
+    paintFrame();
 }
 
 void LineViz::paint(juce::Graphics& graphics) {
@@ -93,10 +61,6 @@ void LineViz::paint(juce::Graphics& graphics) {
 
     paintBubbles(graphics);
     paintBins(graphics);
-}
-
-void LineViz::resized() {
-    paintFrame();
 }
 
 void LineViz::paintFrame() {
@@ -152,11 +116,41 @@ void LineViz::paintFrame(juce::Graphics& graphics) const {
     }
 }
 
+void LineViz::paintBins(juce::Graphics& graphics) const {
+    const int width = getWidth();
+    const int height = getHeight();
+
+    const float barWidth = static_cast<float>(width) / static_cast<float>(currentTotalBins);
+
+    for (int i = 0; i < currentTotalBins; ++i) {
+        if (i >= static_cast<int>(displayMagnitudes.size())) break;
+
+        const double normalizedMagnitude = std::min(
+            1.0,
+            std::max(0.0, displayMagnitudes[static_cast<size_t>(i)])
+        );
+        const auto barHeight = static_cast<float>(normalizedMagnitude * height);
+
+        const float chroma =
+            static_cast<float>(i % currentBinsPerOctave) * 12.0f / static_cast<float>(currentBinsPerOctave);
+
+        const juce::Colour color = ColorPalette::getContinuousColor(chroma);
+        graphics.setColour(color);
+
+        graphics.fillRect(
+            static_cast<float>(i) * barWidth,
+            static_cast<float>(height) - barHeight,
+            barWidth + 0.5f,
+            barHeight
+        );
+    }
+}
+
+
 void LineViz::advanceBubbles() {
-    // 1. Move existing bubbles up smoothly by 1 pixel per frame
+    // 1. Move existing bubbles up
     for (auto& bubble : bubbles) {
-        constexpr float speed = 1.0f;
-        bubble.y -= speed;
+        bubble.y -= bubblesSpeedPxPerFrame;
     }
 
     // 2. Clean up bubbles that float completely off the top of the screen
@@ -178,11 +172,9 @@ void LineViz::advanceBubbles() {
     for (int i = 0; i < totalBins; ++i) {
         if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > bubbleThreshold) {
             const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
-            // const juce::Colour baseColor = ColorPalette::getContinuousColor(chroma);
-            // const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, 0.8f);
+            juce::Colour color = ColorPalette::getContinuousColor(chroma);
+            color = juce::Colours::black.interpolatedWith(color, static_cast<float>(magnitude));
             //fixme: Unify color logic and fix CPU
-            const float toneRatio = static_cast<float>(i) / static_cast<float>(CircleViz::binsPerSemitone);
-            const juce::Colour color = CircleViz::calculateColor(static_cast<float>(magnitude * 0.9), toneRatio);
             bubbles.push_back({static_cast<float>(i) * barWidth, height, barWidth, color});
         }
     }
@@ -192,6 +184,6 @@ void LineViz::paintBubbles(juce::Graphics& graphics) const {
     for (const auto& [x, y, width, color] : bubbles) {
         // Draw a 1px tall rect. Because it spawns every frame, it forms a seamless streak
         graphics.setColour(color);
-        graphics.fillRect(x, y, width, 1.0f);
+        graphics.fillRect(x, y, width + 0.5f, bubblesSpeedPxPerFrame);
     }
 }

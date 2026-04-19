@@ -24,7 +24,7 @@ public:
     void paint(juce::Graphics&) override;
     void resized() override;
 
-    int uiRefreshRateHz = 48;
+    int uiRefreshRateHz = 24;
 private:
     PitchengaAudioProcessor& audioProcessor;
 

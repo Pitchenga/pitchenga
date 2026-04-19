@@ -22,6 +22,7 @@ private:
     void paintFrame();
     void paintFrame(juce::Graphics& graphics) const;
 
+    const float bubblesSpeedPxPerFrame = 2.0f;
     const float bubbleThreshold = 0.1f;
     struct Bubble {
         float x;
