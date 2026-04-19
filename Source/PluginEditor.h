@@ -32,7 +32,7 @@ private:
     TheRoll roll;
     Splitter splitterBar;
 
-    Control controlOverlay;
+    Control control;
 
     // Shared results for rendering
     std::vector<double> circleBuffer;

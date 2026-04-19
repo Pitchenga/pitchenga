@@ -2,14 +2,14 @@
 #include "PluginEditor.h"
 
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProcessor& p)
-    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), roll(p), splitterBar(p), controlOverlay(p) {
+    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), roll(p), splitterBar(p), control(p) {
 
     addAndMakeVisible(tunaViz);
     addAndMakeVisible(eye);
     addAndMakeVisible(roll);
 
-    addAndMakeVisible(controlOverlay);
-    controlOverlay.onVisibilityChanged = [this] { resized(); };
+    addAndMakeVisible(control);
+    control.onVisibilityChanged = [this] { resized(); };
 
     addAndMakeVisible(splitterBar);
     splitterBar.onDragged = [this] { resized(); };
@@ -31,7 +31,7 @@ PitchengaAudioProcessorEditor::~PitchengaAudioProcessorEditor() {
 }
 
 void PitchengaAudioProcessorEditor::updateVisibilityFromState() {
-    controlOverlay.updateVisibilityFromState();
+    control.updateVisibilityFromState();
     resized();
 }
 
@@ -65,7 +65,7 @@ void PitchengaAudioProcessorEditor::resized() {
     auto bounds = getLocalBounds();
 
     // Give the control bar its own dedicated, non-overlapping space at the top left
-    controlOverlay.setBounds(bounds.removeFromTop(24));
+    control.setBounds(bounds.removeFromTop(24));
 
     roll.setVisible(audioProcessor.uiSettings.showRoll);
     eye.setVisible(audioProcessor.uiSettings.showEye);
