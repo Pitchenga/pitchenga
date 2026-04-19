@@ -96,13 +96,21 @@ void Control::resized() {
         btn.setBounds(bounds.removeFromLeft(buttonWidth).reduced(2));
     };
 
+    auto positionButtonRight = [&](juce::TextButton& button) {
+        if (!button.isVisible()) return;
+        const float textWidth = juce::GlyphArrangement::getStringWidth(font, button.getButtonText());
+        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 16; // 16px horizontal padding
+        button.setBounds(bounds.removeFromRight(buttonWidth).reduced(2));
+    };
+
     positionButton(toggleTuna);
     positionButton(toggleEye);
     positionButton(toggleRoll);
-    positionButton(toggleForrest);
-    positionButton(toggleSteam);
 
-    bounds.removeFromLeft(8);
+    positionButtonRight(toggleSteam);
+    positionButtonRight(toggleForrest);
+
+    bounds.removeFromRight(8);
     buildTimestampLabel.setBounds(bounds);
 }
 
