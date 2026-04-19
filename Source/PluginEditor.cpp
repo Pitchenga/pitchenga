@@ -185,8 +185,8 @@ void PitchengaAudioProcessorEditor::CqtWorkerThread::run() {
             }
 
             // const auto& filteredSpectrum = allBinSmoother->smooth(amplitudeSpectrumDb);
-            const auto& filteredSpectrum = amplitudeSpectrumDb;
-            const auto& detectedPitchClasses = pcDetector->detectPitchClasses(filteredSpectrum);
+            const auto& smoothedSpectrum = amplitudeSpectrumDb;
+            const auto& detectedPitchClasses = pcDetector->detectPitchClasses(smoothedSpectrum);
             const auto& equalizedPitchClasses = spectralEqualizer->filter(detectedPitchClasses);
 
             std::ranges::fill(octaveBins, 0.0);
