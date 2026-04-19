@@ -25,9 +25,19 @@ public:
 
 private:
     static constexpr double inputGain = 6.0;
+    static constexpr int fastFourierTransformOrder = 14;
+    static constexpr int fastFourierTransformSize = 1 << fastFourierTransformOrder;
+
     void setupBuffers();
     void updateSampleRate(double newSampleRate);
     static double amplitudeToDbRescaled(double amplitude);
+
+    void flushStaleAudioData(int& availableSamples);
+    void consumeAudioFromFifo();
+    void processPitchDetection();
+    void processCqtAndEqualization();
+    void processFftForLinearVisualizer();
+    void publishResultsToUserInterface();
 
     PitchengaAudioProcessor& audioProcessor;
 
@@ -48,6 +58,7 @@ private:
     std::unique_ptr<juce::dsp::FFT> fastFourierTransform;
     std::unique_ptr<juce::dsp::WindowingFunction<float>> windowingFunction;
     std::vector<float> rawAudioHistoryBuffer;
+    std::vector<float> windowedFftBuffer; // NEW: Holds the windowed real data
     std::vector<float> complexFftWorkspace;
     std::vector<double> linearFftMagnitudes;
 
