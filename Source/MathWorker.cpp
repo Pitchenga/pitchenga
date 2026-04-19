@@ -188,7 +188,8 @@ void MathWorker::run() {
             }
 
             // const auto& smoothedSpectrum = allBinSmoother->smooth(amplitudeSpectrumDb);
-            const auto& detectedPitchClasses = pitchClassDetector->detectPitchClasses(amplitudeSpectrumDb);
+            const auto& smoothedSpectrum = amplitudeSpectrumDb;
+            const auto& detectedPitchClasses = pitchClassDetector->detectPitchClasses(smoothedSpectrum);
             const auto& equalizedPitchClasses = spectralEqualizer->filter(detectedPitchClasses);
 
             std::ranges::fill(octaveBins, 0.0);
@@ -201,12 +202,16 @@ void MathWorker::run() {
             }
             const auto& smoothedCircleData = octaveBinSmoother->smooth(octaveBins);
 
-            // --- FFT Processing (For LineViz) ---
+// --- FFT Processing (For LineViz) ---
             std::copy(rawAudioHistoryBuffer.begin(), rawAudioHistoryBuffer.end(), complexFftWorkspace.begin());
             windowingFunction->multiplyWithWindowingTable(complexFftWorkspace.data(), fftSize);
             fastFourierTransform->performFrequencyOnlyForwardTransform(complexFftWorkspace.data());
 
             const double sampleRate = cqtEngine.getConfig().samplingFreq;
+
+            // NEW: Calculate the exact normalization factor to counter the raw FFT scaling
+            // The Hamming window integral is ~0.54.
+            const double fftNormalizationFactor = 2.0 / (static_cast<double>(fftSize) * 0.54);
 
             // Map the linear FFT bins logarithmically onto the Pitchenga grid
             for (int i = 0; i < totalBins; ++i) {
@@ -233,8 +238,10 @@ void MathWorker::run() {
                     }
                 }
 
-                // Apply the exact same global input gain so the two visualizers feel connected
-                linearFftMagnitudes[static_cast<size_t>(i)] = amplitudeToDbRescaled(maximumEnergyInBand);
+                // Apply the normalization factor to shrink the massive FFT numbers back down to 0.0 - 1.0
+                // I have re-added the inputGain here so it mathematically matches CircleViz!
+                const double normalizedAmplitude = maximumEnergyInBand * fftNormalizationFactor * inputGain;
+                linearFftMagnitudes[static_cast<size_t>(i)] = amplitudeToDbRescaled(normalizedAmplitude);
             }
 
             // --- 4. Push Results to UI ---
