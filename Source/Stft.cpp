@@ -91,7 +91,7 @@ void Stft::performSTFT(const std::vector<float>& timeDomainSignal) {
         return band.magnitudes[static_cast<size_t>(indexZero)] * (1.0f - fraction) + band.magnitudes[static_cast<size_t>(indexOne)] * fraction;
     };
 
-    // 2. Stitch and Cross-Fade the bands into a single unified high-resolution array
+    // Stitch and Cross-Fade the bands into a single unified high-resolution array
     const float unifiedBinResolution = static_cast<float>(currentSampleRate) / 65536.0f;
 
     for (int i = 0; i < stitchedSize; ++i) {
@@ -118,12 +118,13 @@ void Stft::performSTFT(const std::vector<float>& timeDomainSignal) {
         stitchedMagnitudes[static_cast<size_t>(i)] = magnitude;
     }
 
-    // 3. Apply Unified Progressive Temporal Smoothing
+    // Apply Unified Progressive Temporal Smoothing
     constexpr float minFrequencyHz = 20.0f;
     constexpr float logMinFrequency = 1.301f;
     constexpr float logFrequencyRangeInv = 1.0f / 3.0f;
-    constexpr float minSmoothWeight = 0.05f; // Extremely heavy smoothing for bass to cure jerkiness
-    constexpr float smoothWeightRange = 0.75f; // Sweeps up to 0.80 for treble to cure sluggishness
+
+    constexpr float bassSmoothWeight = 0.40f;   // Medium math smoothing for bass to cure jerkiness while avoiding sluggishness
+    constexpr float trebleSmoothWeight = 0.04f; // Extreme math smoothing for treble to lock down jitter
 
     for (int i = 0; i < stitchedSize; ++i) {
         const float freq = static_cast<float>(i) * unifiedBinResolution;
@@ -135,7 +136,8 @@ void Stft::performSTFT(const std::vector<float>& timeDomainSignal) {
             const float logFrequency = std::log10(std::max(minFrequencyHz, freq));
             // Maps log10(20) to log10(20000) -> 0.0 to 1.0
             const float logFrequencyNorm = std::min(1.0f, std::max(0.0f, (logFrequency - logMinFrequency) * logFrequencyRangeInv));
-            dynamicSmoothWeight = minSmoothWeight + logFrequencyNorm * smoothWeightRange;
+
+            dynamicSmoothWeight = bassSmoothWeight - logFrequencyNorm * (bassSmoothWeight - trebleSmoothWeight);
         }
 
         const float smoothDecay = 1.0f - dynamicSmoothWeight;
