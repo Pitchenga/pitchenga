@@ -29,13 +29,19 @@ void Stft::initialize(const double sampleRateToUse) {
         multiResolutionBands.push_back(std::move(band));
     };
 
-    // All bands use Order 15 (32768 FFT Size = 1.34Hz precision) to guarantee continuous high-density peaks!
+    // OUTDATED: All bands use Order 15 (32768 FFT Size = 1.34Hz precision) to guarantee continuous high-density peaks!
     // The window size shrinks for high frequencies to preserve transient timing via heavy zero-padding.
-    // The smoothWeight is custom-tuned: low band is naturally sluggish so it gets light mathematical smoothing.
+    // OUTDATED: The smoothWeight is custom-tuned: low band is naturally sluggish so it gets light mathematical smoothing.
     // High band is extremely jittery so it gets heavy mathematical smoothing.
-    addResolutionBand(16384, 15, 0.85f); // Low: 371ms window. Light smoothing to prevent over-smearing.
-    addResolutionBand(4096,  15, 0.40f); // Mid: 92ms window. Medium smoothing.
-    addResolutionBand(1024,  15, 0.15f); // High: 23ms window. Heavy smoothing to cure "neurotic" jerking.
+
+    // OUTDATED: Low: 371ms window. Light smoothing to prevent over-smearing.
+    addResolutionBand(8192, 16, 0.60f); // Low: 185ms window. Order 16 (65536) for ultra-dense 0.67Hz sub-bass precision. Fast response.
+
+    // OUTDATED: Mid: 92ms window. Medium smoothing.
+    addResolutionBand(4096, 15, 0.20f); // Mid: 92ms window. Order 15 (32768) for 1.34Hz precision. Medium response.
+
+    // OUTDATED: High: 23ms window. Heavy smoothing to cure "neurotic" jerking.
+    addResolutionBand(2048, 14, 0.05f); // High: 46ms window. Order 14 (16384) for 2.69Hz precision. Extreme smoothing to cure jitter.
 
     finalPeaks.reserve(1024);
 }
@@ -62,7 +68,7 @@ void Stft::performSTFT(const std::vector<float>& timeDomainSignal) {
         const float smoothWeight = band.smoothWeight;
         const float smoothDecay = 1.0f - smoothWeight;
 
-        // Zero-padding happens naturally because we only copy `windowSize` samples, leaving the rest of the workspace 0.0f
+        // Zero-padding happens naturally because we only copy windowSize samples, leaving the rest of the workspace 0.0f
         const size_t offset = timeDomainSignal.size() - static_cast<size_t>(band.windowSize);
         std::copy(timeDomainSignal.begin() + static_cast<ptrdiff_t>(offset), timeDomainSignal.end(), band.fftWorkspace.begin());
         std::fill(band.fftWorkspace.begin() + band.windowSize, band.fftWorkspace.end(), 0.0f);
@@ -120,7 +126,8 @@ void Stft::extractPeaks() {
                     const float exactMagnitude = magnitudeCenter - 0.25f * (magnitudeLeft - magnitudeRight) * fraction;
 
                     if (exactMagnitude > 1e-4f) {
-                        finalPeaks.push_back({interpolatedFrequency, exactMagnitude});
+                        // For interpolated peaks, bandwidth is technically zero, so we pass 0.0f to force a razor-thin visual stem
+                        finalPeaks.push_back({interpolatedFrequency, exactMagnitude, 0.0f});
                     }
                 }
             }
@@ -149,7 +156,8 @@ void Stft::extractRawBins() {
             if (inActiveBand) {
                 const float exactMagnitude = band.magnitudes[static_cast<size_t>(index)];
                 if (exactMagnitude > 1e-6f) {
-                    finalPeaks.push_back({exactFrequency, exactMagnitude});
+                    // For raw bins, pass the exact mathematical width so the UI can paint contiguous blocks
+                    finalPeaks.push_back({exactFrequency, exactMagnitude, binResolution});
                 }
             }
         }

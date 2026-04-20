@@ -1,8 +1,7 @@
 #include "Util.h"
 #include "build_timestamp.h"
 
-static bool debugLogEnabled = false;
-
+bool Util::debugLogEnabled = false;
 juce::String Util::startTimestamp = getTimestamp();
 
 juce::File Util::logFile = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
