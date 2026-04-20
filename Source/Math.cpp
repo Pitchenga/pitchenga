@@ -1,4 +1,5 @@
 #include "Math.h"
+#include "Util.h"
 
 Math::Math(PitchengaAudioProcessor& processorToUse)
     : Thread("VisualizeWorker"), audioProcessor(processorToUse) {
@@ -78,6 +79,8 @@ double Math::amplitudeToDbRescaled(const double amplitude) {
 }
 
 void Math::run() {
+    double targetTimeMs = juce::Time::getMillisecondCounterHiRes();
+
     while (!threadShouldExit()) {
         updateSampleRate(audioProcessor.getSampleRate());
 
@@ -91,14 +94,46 @@ void Math::run() {
 
         int availableSamples = octaves[0].fifo.getNumReady();
 
+        // --- DIAGNOSTIC LOGGING ---
+        static uint32_t lastMathLog = 0;
+        uint32_t nowMath = juce::Time::getMillisecondCounter();
+        if (nowMath - lastMathLog > 1000) {
+            Util::debug("=== MATH THREAD ===");
+            Util::debug("Available Samples in FIFO: " + juce::String(availableSamples));
+            lastMathLog = nowMath;
+        }
+        // --------------------------
+
         flushStaleAudioData(availableSamples);
 
-        // Process exactly ONE 1024-sample block per wake-up
+        flushStaleAudioData(availableSamples);
+
         if (availableSamples >= 1024) {
             consumeAudioFromFifo();
             processPitchDetection();
             processCqtAndEqualization();
             publishResultsToUi();
+
+            // Strict High-Res Pacing.
+            // Batch-processing overwrites the UI buffer faster than 48Hz, causing massive skipped frames (steam gaps).
+            // By mathematically pacing the thread to exact real-time playback, we guarantee the UI catches EVERY frame.
+            double sr = audioProcessor.getSampleRate() > 0 ? audioProcessor.getSampleRate() : 44100.0;
+            double frameDurationMs = (1024.0 / sr) * 1000.0;
+
+            targetTimeMs += frameDurationMs;
+            double now = juce::Time::getMillisecondCounterHiRes();
+
+            if (targetTimeMs > now) {
+                int sleepTime = static_cast<int>(targetTimeMs - now);
+                if (sleepTime > 0) wait(sleepTime);
+            } else {
+                // If we fall behind or the DAW is paused, snap the timeline back to reality.
+                targetTimeMs = now;
+            }
+        } else {
+            wait(2);
+            // Keep the target time anchored to reality while waiting for the DAW to play
+            targetTimeMs = juce::Time::getMillisecondCounterHiRes();
         }
         wait(1);
     }
@@ -108,27 +143,25 @@ void Math::flushStaleAudioData(int& availableSamples) {
     // --- THE LATENCY KILLER (FRAME DROPPING) ---
     // If the DSP math falls behind real-time, the FIFO backs up and creates massive visual latency.
     // If we have more than a few blocks waiting, instantly flush the old ones to catch up to live audio.
-    if (availableSamples > 4096) {
-        int samplesToDrop = availableSamples - 1024;
-        samplesToDrop = (samplesToDrop / 1024) * 1024; // Round down to perfect 1024 chunks
 
+    if (availableSamples > 16384) {
+        // --- DIAGNOSTIC LOGGING ---
+        Util::debug("!!! FLUSHING STALE AUDIO !!! Dropping from " + juce::String(availableSamples) + " samples.");
+        // --------------------------
         auto& octaves = audioProcessor.getOctaves();
 
         // Individually flush every octave to prevent Decimation Cascade Desync.
-        // If a lower octave secretly hoarded seconds of audio while the top octave was full,
-        // this guarantees it gets completely wiped out to real-time.
         for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct) {
-            int ready = octaves[oct].fifo.getNumReady();
+            int ready = octaves[static_cast<size_t>(oct)].fifo.getNumReady();
             int keepWanted = 1024 >> oct;
 
             if (ready > keepWanted) {
                 int drop = ready - keepWanted;
                 int startOne, sizeOne, startTwo, sizeTwo;
-                octaves[oct].fifo.prepareToRead(drop, startOne, sizeOne, startTwo, sizeTwo);
-                octaves[oct].fifo.finishedRead(sizeOne + sizeTwo);
+                octaves[static_cast<size_t>(oct)].fifo.prepareToRead(drop, startOne, sizeOne, startTwo, sizeTwo);
+                octaves[static_cast<size_t>(oct)].fifo.finishedRead(sizeOne + sizeTwo);
             }
         }
-        // Recalculate what's left for the main run loop
         availableSamples = octaves[0].fifo.getNumReady();
     }
 }
