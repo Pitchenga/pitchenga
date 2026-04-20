@@ -45,7 +45,6 @@ const std::vector<double>& SpectralEqualizer::filter(const std::vector<double>& 
         filteredValues[i] = values[i] - 0.75 * median;
     }
 
-    // EXACT JAVA PORT: normalizeViaMax (Includes the bizarre Java scaling logic)
     double newMax = 0.0;
     double origMax = 0.0;
     for (size_t i = 0; i < size; ++i) {
@@ -54,12 +53,12 @@ const std::vector<double>& SpectralEqualizer::filter(const std::vector<double>& 
     }
 
     if (newMax > 0.0) {
-        const double factor = (origMax < 1.0) ? (origMax / newMax) : (1.0 / origMax);
+        const double factor = (origMax < 1.0) ? (origMax / newMax) : (1.0 / newMax);
         for (size_t i = 0; i < size; ++i) {
             filteredValues[i] *= factor;
         }
     } else {
-        std::fill(filteredValues.begin(), filteredValues.end(), 0.0);
+        std::ranges::fill(filteredValues, 0.0);
     }
 
     return filteredValues;

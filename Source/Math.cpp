@@ -98,8 +98,6 @@ void Math::run() {
         static uint32_t lastMathLog = 0;
         uint32_t nowMath = juce::Time::getMillisecondCounter();
         if (nowMath - lastMathLog > 1000) {
-            Util::debug("=== MATH THREAD ===");
-            Util::debug("Available Samples in FIFO: " + juce::String(availableSamples));
             lastMathLog = nowMath;
         }
         // --------------------------
@@ -145,7 +143,6 @@ void Math::flushStaleAudioData(int& availableSamples) {
     // If we have more than a few blocks waiting, instantly flush the old ones to catch up to live audio.
 
     if (availableSamples > 16384) {
-        // --- DIAGNOSTIC LOGGING ---
         Util::debug("!!! FLUSHING STALE AUDIO !!! Dropping from " + juce::String(availableSamples) + " samples.");
         // --------------------------
         auto& octaves = audioProcessor.getOctaves();

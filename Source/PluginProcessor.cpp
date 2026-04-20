@@ -48,10 +48,6 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
                 playheadTime = pos->getTimeInSeconds().orFallback(0.0);
             }
         }
-        Util::debug("=== PROCESS BLOCK ===");
-        Util::debug("DAW Playhead Time: " + juce::String(playheadTime) + "s");
-        Util::debug("Block Size: " + juce::String(buffer.getNumSamples()));
-        Util::debug("FIFO Free Space: " + juce::String(octaves[0].fifo.getFreeSpace()));
         lastProcessLog = now;
     }
     // --------------------------
