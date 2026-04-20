@@ -9,12 +9,11 @@ void Stft::initialize(const double sampleRateToUse) {
     currentSampleRate = sampleRateToUse > 0.0 ? sampleRateToUse : 44100.0;
     multiResolutionBands.clear();
 
-    auto addResolutionBand = [this](const int windowSize, const int order, const float smoothWeight) {
+    auto addResolutionBand = [this](const int windowSize, const int order) {
         StftBand band;
         band.windowSize = windowSize;
         band.fftOrder = order;
         band.fftSize = 1 << order;
-        band.smoothWeight = smoothWeight;
 
         band.fft = std::make_unique<juce::dsp::FFT>(order);
         band.window = std::make_unique<juce::dsp::WindowingFunction<float>>(
@@ -29,19 +28,16 @@ void Stft::initialize(const double sampleRateToUse) {
         multiResolutionBands.push_back(std::move(band));
     };
 
-    // OUTDATED: All bands use Order 15 (32768 FFT Size = 1.34Hz precision) to guarantee continuous high-density peaks!
     // The window size shrinks for high frequencies to preserve transient timing via heavy zero-padding.
-    // OUTDATED: The smoothWeight is custom-tuned: low band is naturally sluggish so it gets light mathematical smoothing.
-    // High band is extremely jittery so it gets heavy mathematical smoothing.
 
     // OUTDATED: Low: 371ms window. Light smoothing to prevent over-smearing.
-    addResolutionBand(8192, 16, 0.60f); // Low: 185ms window. Order 16 (65536) for ultra-dense 0.67Hz sub-bass precision. Fast response.
+    addResolutionBand(8192, 16); // Low: 185ms window. Order 16 (65536) for ultra-dense 0.67Hz sub-bass precision. Fast response.
 
     // OUTDATED: Mid: 92ms window. Medium smoothing.
-    addResolutionBand(4096, 15, 0.20f); // Mid: 92ms window. Order 15 (32768) for 1.34Hz precision. Medium response.
+    addResolutionBand(4096, 15); // Mid: 92ms window. Order 15 (32768) for 1.34Hz precision. Medium response.
 
     // OUTDATED: High: 23ms window. Heavy smoothing to cure "neurotic" jerking.
-    addResolutionBand(2048, 14, 0.05f); // High: 46ms window. Order 14 (16384) for 2.69Hz precision. Extreme smoothing to cure jitter.
+    addResolutionBand(2048, 14); // High: 46ms window. Order 14 (16384) for 2.69Hz precision. Extreme smoothing to cure jitter.
 
     finalPeaks.reserve(1024);
 }
@@ -64,10 +60,13 @@ void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
 }
 
 void Stft::performSTFT(const std::vector<float>& timeDomainSignal) {
-    for (auto& band : multiResolutionBands) {
-        const float smoothWeight = band.smoothWeight;
-        const float smoothDecay = 1.0f - smoothWeight;
+    constexpr float minFrequencyHz = 20.0f;
+    constexpr float logMinFrequency = 1.301f;
+    constexpr float logFrequencyRangeInv = 1.0f / 3.0f;
+    constexpr float minSmoothWeight = 0.15f;
+    constexpr float smoothWeightRange = 0.45f;
 
+    for (auto& band : multiResolutionBands) {
         // Zero-padding happens naturally because we only copy windowSize samples, leaving the rest of the workspace 0.0f
         const size_t offset = timeDomainSignal.size() - static_cast<size_t>(band.windowSize);
         std::copy(timeDomainSignal.begin() + static_cast<ptrdiff_t>(offset), timeDomainSignal.end(), band.fftWorkspace.begin());
@@ -77,14 +76,25 @@ void Stft::performSTFT(const std::vector<float>& timeDomainSignal) {
         band.fft->performFrequencyOnlyForwardTransform(band.fftWorkspace.data());
 
         const float normalization = 1.0f / static_cast<float>(band.fftSize);
+        const float binResolution = static_cast<float>(currentSampleRate) / static_cast<float>(band.fftSize);
 
         for (int index = 0; index < band.fftSize / 2; ++index) {
-            const float rawMag = band.fftWorkspace[static_cast<size_t>(index)] * normalization;
+            // Logarithmic Progressive Smoother:
+            // Calculates smooth weight continuously based on exact frequency. Eliminates all crossover tears.
+            const float exactFrequency = static_cast<float>(index) * binResolution;
+            const float logFrequency = std::log10(std::max(minFrequencyHz, exactFrequency));
+
+            // Maps log10(20) to log10(20000) -> 0.0 to 1.0
+            const float logFrequencyNorm = std::min(1.0f, std::max(0.0f, (logFrequency - logMinFrequency) * logFrequencyRangeInv));
+            const float dynamicSmoothWeight = minSmoothWeight + logFrequencyNorm * smoothWeightRange;
+            const float smoothDecay = 1.0f - dynamicSmoothWeight;
+
+            const float rawMagnitude = band.fftWorkspace[static_cast<size_t>(index)] * normalization;
             if (enableTemporalSmoothing) {
-                band.smoothedMagnitudes[static_cast<size_t>(index)] = smoothDecay * band.smoothedMagnitudes[static_cast<size_t>(index)] + smoothWeight * rawMag;
+                band.smoothedMagnitudes[static_cast<size_t>(index)] = smoothDecay * band.smoothedMagnitudes[static_cast<size_t>(index)] + dynamicSmoothWeight * rawMagnitude;
                 band.magnitudes[static_cast<size_t>(index)] = band.smoothedMagnitudes[static_cast<size_t>(index)];
             } else {
-                band.magnitudes[static_cast<size_t>(index)] = rawMag;
+                band.magnitudes[static_cast<size_t>(index)] = rawMagnitude;
             }
         }
     }

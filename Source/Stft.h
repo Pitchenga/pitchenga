@@ -14,7 +14,6 @@ struct StftBand {
     int windowSize = 0;
     int fftOrder = 0;
     int fftSize = 0;
-    float smoothWeight = 0.4f;
 
     std::unique_ptr<juce::dsp::FFT> fft;
     std::unique_ptr<juce::dsp::WindowingFunction<float>> window;
