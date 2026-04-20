@@ -23,21 +23,22 @@ void Stft::initialize(const double sampleRateToUse) {
 
         band.fftWorkspace.assign(static_cast<size_t>(band.fftSize * 2), 0.0f);
         band.magnitudes.assign(static_cast<size_t>(band.fftSize / 2), 0.0f);
-        band.smoothedMagnitudes.assign(static_cast<size_t>(band.fftSize / 2), 0.0f);
 
         multiResolutionBands.push_back(std::move(band));
     };
 
     // The window size shrinks for high frequencies to preserve transient timing via heavy zero-padding.
+    // OUTDATED: Low: 185ms window. Order 16 (65536) for ultra-dense 0.67Hz sub-bass precision. Fast response.
+    addResolutionBand(8192, 16);
 
-    // OUTDATED: Low: 371ms window. Light smoothing to prevent over-smearing.
-    addResolutionBand(8192, 16); // Low: 185ms window. Order 16 (65536) for ultra-dense 0.67Hz sub-bass precision. Fast response.
+    // OUTDATED: Mid: 92ms window. Order 15 (32768) for 1.34Hz precision. Medium response.
+    addResolutionBand(4096, 15);
 
-    // OUTDATED: Mid: 92ms window. Medium smoothing.
-    addResolutionBand(4096, 15); // Mid: 92ms window. Order 15 (32768) for 1.34Hz precision. Medium response.
+    // OUTDATED: High: 46ms window. Order 14 (16384) for 2.69Hz precision. Extreme smoothing to cure jitter.
+    addResolutionBand(2048, 14);
 
-    // OUTDATED: High: 23ms window. Heavy smoothing to cure "neurotic" jerking.
-    addResolutionBand(2048, 14); // High: 46ms window. Order 14 (16384) for 2.69Hz precision. Extreme smoothing to cure jitter.
+    stitchedMagnitudes.assign(stitchedSize, 0.0f);
+    smoothedMagnitudes.assign(stitchedSize, 0.0f);
 
     finalPeaks.reserve(1024);
 }
@@ -60,12 +61,7 @@ void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
 }
 
 void Stft::performSTFT(const std::vector<float>& timeDomainSignal) {
-    constexpr float minFrequencyHz = 20.0f;
-    constexpr float logMinFrequency = 1.301f;
-    constexpr float logFrequencyRangeInv = 1.0f / 3.0f;
-    constexpr float minSmoothWeight = 0.15f;
-    constexpr float smoothWeightRange = 0.45f;
-
+    // 1. Calculate raw FFT magnitudes for all distinct bands
     for (auto& band : multiResolutionBands) {
         // Zero-padding happens naturally because we only copy windowSize samples, leaving the rest of the workspace 0.0f
         const size_t offset = timeDomainSignal.size() - static_cast<size_t>(band.windowSize);
@@ -76,69 +72,102 @@ void Stft::performSTFT(const std::vector<float>& timeDomainSignal) {
         band.fft->performFrequencyOnlyForwardTransform(band.fftWorkspace.data());
 
         const float normalization = 1.0f / static_cast<float>(band.fftSize);
-        const float binResolution = static_cast<float>(currentSampleRate) / static_cast<float>(band.fftSize);
 
         for (int index = 0; index < band.fftSize / 2; ++index) {
+            band.magnitudes[static_cast<size_t>(index)] = band.fftWorkspace[static_cast<size_t>(index)] * normalization;
+        }
+    }
+
+    // Interpolation helper
+    auto getMagnitudeAtFreq = [](const StftBand& band, const float freq, const float sampleRate) {
+        const float binRes = sampleRate / static_cast<float>(band.fftSize);
+        const float exactIndex = freq / binRes;
+        const int indexZero = static_cast<int>(exactIndex);
+        const int indexOne = indexZero + 1;
+
+        if (indexZero < 0 || indexOne >= band.fftSize / 2) return 0.0f;
+
+        const float fraction = exactIndex - static_cast<float>(indexZero);
+        return band.magnitudes[static_cast<size_t>(indexZero)] * (1.0f - fraction) + band.magnitudes[static_cast<size_t>(indexOne)] * fraction;
+    };
+
+    // 2. Stitch and Cross-Fade the bands into a single unified high-resolution array
+    const float unifiedBinResolution = static_cast<float>(currentSampleRate) / 65536.0f;
+
+    for (int i = 0; i < stitchedSize; ++i) {
+        const float freq = static_cast<float>(i) * unifiedBinResolution;
+        float magnitude = 0.0f;
+
+        if (freq < 200.0f) {
+            magnitude = getMagnitudeAtFreq(multiResolutionBands[0], freq, static_cast<float>(currentSampleRate));
+        } else if (freq <= 300.0f) {
+            const float fadeMid = (freq - 200.0f) / 100.0f;
+            const float fadeLow = 1.0f - fadeMid;
+            magnitude = fadeLow * getMagnitudeAtFreq(multiResolutionBands[0], freq, static_cast<float>(currentSampleRate)) +
+                        fadeMid * getMagnitudeAtFreq(multiResolutionBands[1], freq, static_cast<float>(currentSampleRate));
+        } else if (freq < 1500.0f) {
+            magnitude = getMagnitudeAtFreq(multiResolutionBands[1], freq, static_cast<float>(currentSampleRate));
+        } else if (freq <= 2500.0f) {
+            const float fadeHigh = (freq - 1500.0f) / 1000.0f;
+            const float fadeMid = 1.0f - fadeHigh;
+            magnitude = fadeMid * getMagnitudeAtFreq(multiResolutionBands[1], freq, static_cast<float>(currentSampleRate)) +
+                        fadeHigh * getMagnitudeAtFreq(multiResolutionBands[2], freq, static_cast<float>(currentSampleRate));
+        } else {
+            magnitude = getMagnitudeAtFreq(multiResolutionBands[2], freq, static_cast<float>(currentSampleRate));
+        }
+        stitchedMagnitudes[static_cast<size_t>(i)] = magnitude;
+    }
+
+    // 3. Apply Unified Progressive Temporal Smoothing
+    constexpr float minFrequencyHz = 20.0f;
+    constexpr float logMinFrequency = 1.301f;
+    constexpr float logFrequencyRangeInv = 1.0f / 3.0f;
+    constexpr float minSmoothWeight = 0.05f; // Extremely heavy smoothing for bass to cure jerkiness
+    constexpr float smoothWeightRange = 0.75f; // Sweeps up to 0.80 for treble to cure sluggishness
+
+    for (int i = 0; i < stitchedSize; ++i) {
+        const float freq = static_cast<float>(i) * unifiedBinResolution;
+        float dynamicSmoothWeight = 1.0f;
+
+        if (enableTemporalSmoothing) {
             // Logarithmic Progressive Smoother:
             // Calculates smooth weight continuously based on exact frequency. Eliminates all crossover tears.
-            const float exactFrequency = static_cast<float>(index) * binResolution;
-            const float logFrequency = std::log10(std::max(minFrequencyHz, exactFrequency));
-
+            const float logFrequency = std::log10(std::max(minFrequencyHz, freq));
             // Maps log10(20) to log10(20000) -> 0.0 to 1.0
             const float logFrequencyNorm = std::min(1.0f, std::max(0.0f, (logFrequency - logMinFrequency) * logFrequencyRangeInv));
-            const float dynamicSmoothWeight = minSmoothWeight + logFrequencyNorm * smoothWeightRange;
-            const float smoothDecay = 1.0f - dynamicSmoothWeight;
-
-            const float rawMagnitude = band.fftWorkspace[static_cast<size_t>(index)] * normalization;
-            if (enableTemporalSmoothing) {
-                band.smoothedMagnitudes[static_cast<size_t>(index)] = smoothDecay * band.smoothedMagnitudes[static_cast<size_t>(index)] + dynamicSmoothWeight * rawMagnitude;
-                band.magnitudes[static_cast<size_t>(index)] = band.smoothedMagnitudes[static_cast<size_t>(index)];
-            } else {
-                band.magnitudes[static_cast<size_t>(index)] = rawMagnitude;
-            }
+            dynamicSmoothWeight = minSmoothWeight + logFrequencyNorm * smoothWeightRange;
         }
+
+        const float smoothDecay = 1.0f - dynamicSmoothWeight;
+        smoothedMagnitudes[static_cast<size_t>(i)] = smoothDecay * smoothedMagnitudes[static_cast<size_t>(i)] + dynamicSmoothWeight * stitchedMagnitudes[static_cast<size_t>(i)];
     }
 }
 
 void Stft::extractPeaks() {
     finalPeaks.clear();
-    constexpr float crossoverLowHz = 250.0f;
-    constexpr float crossoverHighHz = 2000.0f;
+    const float binResolution = static_cast<float>(currentSampleRate) / 65536.0f;
 
-    for (size_t bandIndex = 0; bandIndex < multiResolutionBands.size(); ++bandIndex) {
-        const auto& band = multiResolutionBands[bandIndex];
-        const int halfSize = band.fftSize / 2;
-        const float binResolution = static_cast<float>(currentSampleRate) / static_cast<float>(band.fftSize);
+    // OUTDATED: Route the bin directly to the responsible time-window band
+    // (We now iterate entirely over the unified stitched array, eliminating the need to track individual bands).
 
-        for (int index = 1; index < halfSize - 1; ++index) {
-            const float exactFrequency = static_cast<float>(index) * binResolution;
+    for (int index = 1; index < stitchedSize - 1; ++index) {
+        const float magnitudeLeft = smoothedMagnitudes[static_cast<size_t>(index - 1)];
+        const float magnitudeCenter = smoothedMagnitudes[static_cast<size_t>(index)];
+        const float magnitudeRight = smoothedMagnitudes[static_cast<size_t>(index + 1)];
 
-            // Route the bin directly to the responsible time-window band
-            bool inActiveBand = false;
-            if (bandIndex == 0 && exactFrequency < crossoverLowHz) inActiveBand = true;
-            else if (bandIndex == 1 && exactFrequency >= crossoverLowHz && exactFrequency < crossoverHighHz) inActiveBand = true;
-            else if (bandIndex == 2 && exactFrequency >= crossoverHighHz) inActiveBand = true;
+        if (magnitudeCenter > magnitudeLeft && magnitudeCenter > magnitudeRight) {
+            const float denominator = magnitudeLeft - 2.0f * magnitudeCenter + magnitudeRight;
 
-            if (!inActiveBand) continue;
+            if (std::abs(denominator) > 1e-5f) {
+                const float fraction = 0.5f * (magnitudeLeft - magnitudeRight) / denominator;
+                const float interpolatedBin = static_cast<float>(index) + fraction;
+                const float interpolatedFrequency = interpolatedBin * binResolution;
 
-            const float magnitudeLeft = band.magnitudes[static_cast<size_t>(index - 1)];
-            const float magnitudeCenter = band.magnitudes[static_cast<size_t>(index)];
-            const float magnitudeRight = band.magnitudes[static_cast<size_t>(index + 1)];
+                const float exactMagnitude = magnitudeCenter - 0.25f * (magnitudeLeft - magnitudeRight) * fraction;
 
-            if (magnitudeCenter > magnitudeLeft && magnitudeCenter > magnitudeRight) {
-                const float denominator = magnitudeLeft - 2.0f * magnitudeCenter + magnitudeRight;
-
-                if (std::abs(denominator) > 1e-5f) {
-                    const float fraction = 0.5f * (magnitudeLeft - magnitudeRight) / denominator;
-                    const float interpolatedBin = static_cast<float>(index) + fraction;
-                    const float interpolatedFrequency = interpolatedBin * binResolution;
-
-                    const float exactMagnitude = magnitudeCenter - 0.25f * (magnitudeLeft - magnitudeRight) * fraction;
-
-                    if (exactMagnitude > 1e-4f) {
-                        // For interpolated peaks, bandwidth is technically zero, so we pass 0.0f to force a razor-thin visual stem
-                        finalPeaks.push_back({interpolatedFrequency, exactMagnitude, 0.0f});
-                    }
+                if (exactMagnitude > 1e-4f) {
+                    // For interpolated peaks, bandwidth is technically zero, so we pass 0.0f to force a razor-thin visual stem
+                    finalPeaks.push_back({interpolatedFrequency, exactMagnitude, 0.0f});
                 }
             }
         }
@@ -147,29 +176,14 @@ void Stft::extractPeaks() {
 
 void Stft::extractRawBins() {
     finalPeaks.clear();
-    constexpr float crossoverLowHz = 250.0f;
-    constexpr float crossoverHighHz = 2000.0f;
+    const float binResolution = static_cast<float>(currentSampleRate) / 65536.0f;
 
-    for (size_t bandIndex = 0; bandIndex < multiResolutionBands.size(); ++bandIndex) {
-        const auto& band = multiResolutionBands[bandIndex];
-        const int halfSize = band.fftSize / 2;
-        const float binResolution = static_cast<float>(currentSampleRate) / static_cast<float>(band.fftSize);
-
-        for (int index = 1; index < halfSize; ++index) {
+    for (int index = 1; index < stitchedSize; ++index) {
+        const float exactMagnitude = smoothedMagnitudes[static_cast<size_t>(index)];
+        if (exactMagnitude > 1e-6f) {
             const float exactFrequency = static_cast<float>(index) * binResolution;
-
-            bool inActiveBand = false;
-            if (bandIndex == 0 && exactFrequency < crossoverLowHz) inActiveBand = true;
-            else if (bandIndex == 1 && exactFrequency >= crossoverLowHz && exactFrequency < crossoverHighHz) inActiveBand = true;
-            else if (bandIndex == 2 && exactFrequency >= crossoverHighHz) inActiveBand = true;
-
-            if (inActiveBand) {
-                const float exactMagnitude = band.magnitudes[static_cast<size_t>(index)];
-                if (exactMagnitude > 1e-6f) {
-                    // For raw bins, pass the exact mathematical width so the UI can paint contiguous blocks
-                    finalPeaks.push_back({exactFrequency, exactMagnitude, binResolution});
-                }
-            }
+            // For raw bins, pass the exact mathematical width so the UI can paint contiguous blocks
+            finalPeaks.push_back({exactFrequency, exactMagnitude, binResolution});
         }
     }
 }

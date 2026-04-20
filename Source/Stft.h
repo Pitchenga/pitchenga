@@ -20,7 +20,6 @@ struct StftBand {
 
     std::vector<float> fftWorkspace;
     std::vector<float> magnitudes;
-    std::vector<float> smoothedMagnitudes;
 };
 
 class Stft {
@@ -49,6 +48,10 @@ private:
 
     std::vector<StftBand> multiResolutionBands;
     std::vector<SpectralPeak> finalPeaks;
+
+    std::vector<float> stitchedMagnitudes;
+    std::vector<float> smoothedMagnitudes;
+    static constexpr int stitchedSize = 32768;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Stft)
 };
