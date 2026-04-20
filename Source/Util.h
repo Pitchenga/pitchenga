@@ -7,5 +7,6 @@ public:
     static juce::File logFile;
 
     static void init();
+    static bool createFile();
     static void debug(const juce::String& message);
 };
