@@ -58,13 +58,13 @@ void Math::setupPitchDetection() {
 
     // --- Pitch Setup ---
     pitchDetector = std::make_unique<adamski::PitchMPM>(static_cast<int>(samplingFreq), 4096);
-    rawAudioHistoryBuffer.assign(16384, 0.0f);
+    rawAudioHistoryBuffer.assign(8192, 0.0f);
     pitchAnalysisBuffer.assign(4096, 0.0f);
 }
 
 void Math::setupStft() {
     const double samplingFreq = audioProcessor.getSampleRate() > 0 ? audioProcessor.getSampleRate() : 44100.0;
-    stft.initialize(samplingFreq, 16384, 15);
+    stft.initialize(samplingFreq, 8192, 15);
 }
 
 void Math::processStft() {
@@ -218,7 +218,7 @@ void Math::consumeAudioFromFifo() {
                 std::memmove(
                     rawAudioHistoryBuffer.data(),
                     rawAudioHistoryBuffer.data() + actualRead,
-                    static_cast<size_t>(16384 - actualRead) * sizeof(float)
+                    static_cast<size_t>(8192 - actualRead) * sizeof(float)
                 );
 
                 // Append the exact same raw audio we just pulled from the FIFO
@@ -226,7 +226,7 @@ void Math::consumeAudioFromFifo() {
                     std::copy(
                         buffer.begin() + start1,
                         buffer.begin() + (start1 + size1),
-                        rawAudioHistoryBuffer.begin() + (16384 - actualRead)
+                        rawAudioHistoryBuffer.begin() + (8192 - actualRead)
                     );
                 if (size2 > 0)
                     std::copy(

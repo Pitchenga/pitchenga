@@ -169,10 +169,11 @@ void TheRoll::paintPeaks(juce::Graphics& graphics) const {
             // Configurable razor-sharp stems for the Forrest
             float stemWidthPixels = 5.0f;
             if (enableDynamicStemWidth) {
-                // Mathematically calculate the exact pixel width of this linear FFT bin on the log scale
-                constexpr float binResolutionHz = 44100.0f / 32768.0f;
-                const float nextX = frequencyToX(peak.frequencyHz + binResolutionHz, static_cast<float>(width));
-                stemWidthPixels = std::max(1.0f, nextX - xPos);
+                const float sr = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
+                const float binResHz = sr / 32768.0f;
+                const float nextX = frequencyToX(peak.frequencyHz + binResHz, static_cast<float>(width));
+                // +1.0f forces deliberate sub-pixel overlap to completely kill rendering gaps
+                stemWidthPixels = std::max(1.0f, (nextX - xPos) + 1.0f);
             }
 
             const float normalizedMagnitude = std::min(1.0f, std::max(0.0f, peak.magnitude));
@@ -224,10 +225,11 @@ void TheRoll::pumpSteam() {
                 // Configurable razor-sharp stems for the Steam
                 float stemWidthPixels = 4.0f;
                 if (enableDynamicStemWidth) {
-                    // Mathematically calculate the exact pixel width of this linear FFT bin on the log scale
-                    constexpr float binResolutionHz = 44100.0f / 32768.0f;
-                    const float nextX = frequencyToX(peak.frequencyHz + binResolutionHz, static_cast<float>(width));
-                    stemWidthPixels = std::max(1.0f, nextX - xPos);
+                    const float sr = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
+                    const float binResHz = sr / 32768.0f;
+                    const float nextX = frequencyToX(peak.frequencyHz + binResHz, static_cast<float>(width));
+                    // +1.0f forces deliberate sub-pixel overlap to completely kill rendering gaps
+                    stemWidthPixels = std::max(1.0f, (nextX - xPos) + 1.0f);
                 }
 
                 float midi = freqToMidi(peak.frequencyHz);
