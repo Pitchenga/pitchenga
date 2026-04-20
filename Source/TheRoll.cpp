@@ -167,7 +167,13 @@ void TheRoll::paintPeaks(juce::Graphics& graphics) const {
 
         if (xPos >= 0.0f && xPos <= static_cast<float>(width)) {
             // Configurable razor-sharp stems for the Forrest
-            const float stemWidthPixels = enableDynamicStemWidth ? std::max(1.0f, 4.0f * (1.0f - (xPos / static_cast<float>(width)))) : 5.0f;
+            float stemWidthPixels = 5.0f;
+            if (enableDynamicStemWidth) {
+                // Mathematically calculate the exact pixel width of this linear FFT bin on the log scale
+                constexpr float binResolutionHz = 44100.0f / 32768.0f;
+                const float nextX = frequencyToX(peak.frequencyHz + binResolutionHz, static_cast<float>(width));
+                stemWidthPixels = std::max(1.0f, nextX - xPos);
+            }
 
             const float normalizedMagnitude = std::min(1.0f, std::max(0.0f, peak.magnitude));
             const auto barHeight = normalizedMagnitude * static_cast<float>(height);
@@ -216,7 +222,13 @@ void TheRoll::pumpSteam() {
 
             if (xPos >= 0.0f && xPos <= static_cast<float>(width)) {
                 // Configurable razor-sharp stems for the Steam
-                const float stemWidthPixels = enableDynamicStemWidth ? std::max(1.0f, 3.0f * (1.0f - (xPos / static_cast<float>(width)))) : 4.0f;
+                float stemWidthPixels = 4.0f;
+                if (enableDynamicStemWidth) {
+                    // Mathematically calculate the exact pixel width of this linear FFT bin on the log scale
+                    constexpr float binResolutionHz = 44100.0f / 32768.0f;
+                    const float nextX = frequencyToX(peak.frequencyHz + binResolutionHz, static_cast<float>(width));
+                    stemWidthPixels = std::max(1.0f, nextX - xPos);
+                }
 
                 float midi = freqToMidi(peak.frequencyHz);
                 float continuousChroma = std::fmod(midi, 12.0f);

@@ -18,8 +18,8 @@ public:
     void processFrame(const std::vector<float>& timeDomainSignal);
 
     bool enablePeakExtraction = false;
-    bool enablePsychoacousticTilt = true;
-    bool enableTailKiller = true;
+    bool enablePsychoacousticTilt = false;
+    bool enableTailKiller = false;
 
     const std::vector<SpectralPeak>& getPeaks() const { return finalPeaks; }
 
