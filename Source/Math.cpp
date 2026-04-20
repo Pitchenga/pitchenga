@@ -39,7 +39,6 @@ void Math::setupCqtBuffers() {
     const auto signalBlockSize = static_cast<size_t>(cqtEngine.getSignalBlockSize());
 
     workingBuffer.assign(signalBlockSize, 0.0f);
-    // Initialize sliding windows for each octave
     slidingWindows.assign(PitchengaAudioProcessor::numOctaves, std::vector(signalBlockSize, 0.0f));
 
     cqtSpectrum.resize(static_cast<size_t>(cqtEngine.getKernelBins()));
@@ -58,13 +57,13 @@ void Math::setupPitchDetection() {
 
     // --- Pitch Setup ---
     pitchDetector = std::make_unique<adamski::PitchMPM>(static_cast<int>(samplingFreq), 4096);
-    rawAudioHistoryBuffer.assign(8192, 0.0f);
+    rawAudioHistoryBuffer.assign(32768, 0.0f);
     pitchAnalysisBuffer.assign(4096, 0.0f);
 }
 
 void Math::setupStft() {
     const double samplingFreq = audioProcessor.getSampleRate() > 0 ? audioProcessor.getSampleRate() : 44100.0;
-    stft.initialize(samplingFreq, 8192, 15);
+    stft.initialize(samplingFreq);
 }
 
 void Math::processStft() {
@@ -115,8 +114,6 @@ void Math::run() {
 
         flushStaleAudioData(availableSamples);
 
-        flushStaleAudioData(availableSamples);
-
         if (availableSamples >= 1024) {
             consumeAudioFromFifo();
             processPitchDetection();
@@ -156,7 +153,6 @@ void Math::flushStaleAudioData(int& availableSamples) const {
 
     if (availableSamples > 16384) {
         Util::debug("!!! FLUSHING STALE AUDIO !!! Dropping from " + juce::String(availableSamples) + " samples.");
-        // --------------------------
         auto& octaves = audioProcessor.getOctaves();
 
         // Individually flush every octave to prevent Decimation Cascade Desync.
@@ -218,7 +214,7 @@ void Math::consumeAudioFromFifo() {
                 std::memmove(
                     rawAudioHistoryBuffer.data(),
                     rawAudioHistoryBuffer.data() + actualRead,
-                    static_cast<size_t>(8192 - actualRead) * sizeof(float)
+                    static_cast<size_t>(32768 - actualRead) * sizeof(float)
                 );
 
                 // Append the exact same raw audio we just pulled from the FIFO
@@ -226,13 +222,13 @@ void Math::consumeAudioFromFifo() {
                     std::copy(
                         buffer.begin() + start1,
                         buffer.begin() + (start1 + size1),
-                        rawAudioHistoryBuffer.begin() + (8192 - actualRead)
+                        rawAudioHistoryBuffer.begin() + (32768 - actualRead)
                     );
                 if (size2 > 0)
                     std::copy(
                         buffer.begin() + start2,
                         buffer.begin() + (start2 + size2),
-                        rawAudioHistoryBuffer.begin() + (8192 - actualRead) + size1
+                        rawAudioHistoryBuffer.begin() + (32768 - actualRead) + size1
                     );
             }
             fifo.finishedRead(actualRead);
@@ -269,9 +265,7 @@ void Math::processCqtAndEqualization() {
         }
     }
 
-    // Pre-analyze smoothing does not seem to improve anything for the circle, but it smears the steam
-    const auto& smoothedSpectrum = allBinSmoother->smooth(amplitudeSpectrumDb);
-    // const auto& smoothedSpectrum = amplitudeSpectrumDb;
+    const auto& smoothedSpectrum = amplitudeSpectrumDb;
     const auto& detectedPitchClasses = pitchClassDetector->detectPitchClasses(smoothedSpectrum);
     const auto& equalizedPitchClasses = spectralEqualizer->filter(detectedPitchClasses);
 

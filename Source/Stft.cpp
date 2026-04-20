@@ -2,48 +2,50 @@
 #include <cmath>
 
 Stft::Stft() {
-    initialize(44100.0, 8192, 15);
+    initialize(44100.0);
 }
 
-void Stft::initialize(const double sampleRateToUse, const int windowSizeToUse, const int fftOrderToUse) {
+void Stft::initialize(const double sampleRateToUse) {
     currentSampleRate = sampleRateToUse > 0.0 ? sampleRateToUse : 44100.0;
-    windowSize = windowSizeToUse;
-    fftOrder = fftOrderToUse;
-    fftSize = 1 << fftOrder;
+    multiResolutionBands.clear();
 
-    fft = std::make_unique<juce::dsp::FFT>(fftOrder);
+    auto addResolutionBand = [this](const int windowSize, const int order) {
+        StftBand band;
+        band.windowSize = windowSize;
+        band.fftOrder = order;
+        band.fftSize = 1 << order;
 
-    window = std::make_unique<juce::dsp::WindowingFunction<float>>(
-        static_cast<size_t>(windowSize),
-        juce::dsp::WindowingFunction<float>::blackmanHarris
-    );
+        band.fft = std::make_unique<juce::dsp::FFT>(order);
+        band.window = std::make_unique<juce::dsp::WindowingFunction<float>>(
+            static_cast<size_t>(windowSize),
+            juce::dsp::WindowingFunction<float>::blackmanHarris
+        );
 
-    fftWorkspace.assign(static_cast<size_t>(fftSize * 2), 0.0f);
-    magnitudes.assign(static_cast<size_t>(fftSize / 2), 0.0f);
-    smoothedMagnitudes.assign(static_cast<size_t>(fftSize / 2), 0.0f);
+        band.fftWorkspace.assign(static_cast<size_t>(band.fftSize * 2), 0.0f);
+        band.magnitudes.assign(static_cast<size_t>(band.fftSize / 2), 0.0f);
+        band.smoothedMagnitudes.assign(static_cast<size_t>(band.fftSize / 2), 0.0f);
+
+        multiResolutionBands.push_back(std::move(band));
+    };
+
+    addResolutionBand(32768, 15);
+    addResolutionBand(8192, 13);
+    addResolutionBand(2048, 11);
 
     finalPeaks.reserve(1024);
 }
 
 void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
-    if (timeDomainSignal.size() < static_cast<size_t>(windowSize)) return;
+    if (multiResolutionBands.empty() || timeDomainSignal.size() < static_cast<size_t>(multiResolutionBands.front().windowSize)) return;
 
     performSTFT(timeDomainSignal);
-    
-    if (enableTemporalSmoothing) {
-        for (size_t i = 0; i < magnitudes.size(); ++i) {
-            smoothedMagnitudes[i] = 0.6f * smoothedMagnitudes[i] + 0.4f * magnitudes[i];
-        }
-    } else {
-        std::copy(magnitudes.begin(), magnitudes.end(), smoothedMagnitudes.begin());
-    }
 
     if (enablePeakExtraction) {
         extractPeaks();
     } else {
         extractRawBins();
     }
-    
+
     if (enablePsychoacousticTilt) {
         applyPsychoacousticTilt();
     }
@@ -51,50 +53,65 @@ void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
 }
 
 void Stft::performSTFT(const std::vector<float>& timeDomainSignal) {
-    std::copy(timeDomainSignal.begin(), timeDomainSignal.begin() + windowSize, fftWorkspace.begin());
-    std::fill(fftWorkspace.begin() + windowSize, fftWorkspace.end(), 0.0f);
-
-    window->multiplyWithWindowingTable(fftWorkspace.data(), static_cast<size_t>(windowSize));
-
-    fft->performFrequencyOnlyForwardTransform(fftWorkspace.data());
-
-    const float normalization = 1.0f / static_cast<float>(fftSize);
     constexpr float smoothWeight = 0.4f;
     constexpr float smoothDecay = 1.0f - smoothWeight;
 
-    for (int index = 0; index < fftSize / 2; ++index) {
-        const float rawMag = fftWorkspace[static_cast<size_t>(index)] * normalization;
-        if (enableTemporalSmoothing) {
-            smoothedMagnitudes[static_cast<size_t>(index)] = smoothDecay * smoothedMagnitudes[static_cast<size_t>(index)] + smoothWeight * rawMag;
-            magnitudes[static_cast<size_t>(index)] = smoothedMagnitudes[static_cast<size_t>(index)];
-        } else {
-            magnitudes[static_cast<size_t>(index)] = rawMag;
+    for (auto& band : multiResolutionBands) {
+        const size_t offset = timeDomainSignal.size() - static_cast<size_t>(band.windowSize);
+        std::copy(timeDomainSignal.begin() + static_cast<ptrdiff_t>(offset), timeDomainSignal.end(), band.fftWorkspace.begin());
+        std::fill(band.fftWorkspace.begin() + band.windowSize, band.fftWorkspace.end(), 0.0f);
+
+        band.window->multiplyWithWindowingTable(band.fftWorkspace.data(), static_cast<size_t>(band.windowSize));
+        band.fft->performFrequencyOnlyForwardTransform(band.fftWorkspace.data());
+
+        const float normalization = 1.0f / static_cast<float>(band.fftSize);
+
+        for (int index = 0; index < band.fftSize / 2; ++index) {
+            const float rawMag = band.fftWorkspace[static_cast<size_t>(index)] * normalization;
+            if (enableTemporalSmoothing) {
+                band.smoothedMagnitudes[static_cast<size_t>(index)] = smoothDecay * band.smoothedMagnitudes[static_cast<size_t>(index)] + smoothWeight * rawMag;
+                band.magnitudes[static_cast<size_t>(index)] = band.smoothedMagnitudes[static_cast<size_t>(index)];
+            } else {
+                band.magnitudes[static_cast<size_t>(index)] = rawMag;
+            }
         }
     }
 }
 
 void Stft::extractPeaks() {
     finalPeaks.clear();
-    const int halfSize = fftSize / 2;
-    const float binResolution = static_cast<float>(currentSampleRate) / static_cast<float>(fftSize);
+    constexpr float crossoverLowHz = 250.0f;
+    constexpr float crossoverHighHz = 2000.0f;
 
-    for (int index = 1; index < halfSize - 1; ++index) {
-        const float magnitudeLeft = smoothedMagnitudes[static_cast<size_t>(index - 1)];
-        const float magnitudeCenter = smoothedMagnitudes[static_cast<size_t>(index)];
-        const float magnitudeRight = smoothedMagnitudes[static_cast<size_t>(index + 1)];
+    for (size_t bandIndex = 0; bandIndex < multiResolutionBands.size(); ++bandIndex) {
+        const auto& band = multiResolutionBands[bandIndex];
+        const int halfSize = band.fftSize / 2;
+        const float binResolution = static_cast<float>(currentSampleRate) / static_cast<float>(band.fftSize);
 
-        if (magnitudeCenter > magnitudeLeft && magnitudeCenter > magnitudeRight) {
-            const float denominator = magnitudeLeft - 2.0f * magnitudeCenter + magnitudeRight;
+        for (int index = 1; index < halfSize - 1; ++index) {
+            const float magnitudeLeft = band.magnitudes[static_cast<size_t>(index - 1)];
+            const float magnitudeCenter = band.magnitudes[static_cast<size_t>(index)];
+            const float magnitudeRight = band.magnitudes[static_cast<size_t>(index + 1)];
 
-            if (std::abs(denominator) > 1e-5f) {
-                const float fraction = 0.5f * (magnitudeLeft - magnitudeRight) / denominator;
-                const float interpolatedBin = static_cast<float>(index) + fraction;
-                const float exactFrequency = interpolatedBin * binResolution;
+            if (magnitudeCenter > magnitudeLeft && magnitudeCenter > magnitudeRight) {
+                const float denominator = magnitudeLeft - 2.0f * magnitudeCenter + magnitudeRight;
 
-                const float exactMagnitude = magnitudeCenter - 0.25f * (magnitudeLeft - magnitudeRight) * fraction;
+                if (std::abs(denominator) > 1e-5f) {
+                    const float fraction = 0.5f * (magnitudeLeft - magnitudeRight) / denominator;
+                    const float interpolatedBin = static_cast<float>(index) + fraction;
+                    const float exactFrequency = interpolatedBin * binResolution;
 
-                if (exactMagnitude > 1e-4f) {
-                    finalPeaks.push_back({exactFrequency, exactMagnitude});
+                    bool inActiveBand = false;
+                    if (bandIndex == 0 && exactFrequency < crossoverLowHz) inActiveBand = true;
+                    else if (bandIndex == 1 && exactFrequency >= crossoverLowHz && exactFrequency < crossoverHighHz) inActiveBand = true;
+                    else if (bandIndex == 2 && exactFrequency >= crossoverHighHz) inActiveBand = true;
+
+                    if (inActiveBand) {
+                        const float exactMagnitude = magnitudeCenter - 0.25f * (magnitudeLeft - magnitudeRight) * fraction;
+                        if (exactMagnitude > 1e-4f) {
+                            finalPeaks.push_back({exactFrequency, exactMagnitude});
+                        }
+                    }
                 }
             }
         }
@@ -103,22 +120,32 @@ void Stft::extractPeaks() {
 
 void Stft::extractRawBins() {
     finalPeaks.clear();
-    const int halfSize = fftSize / 2;
-    const float binResolution = static_cast<float>(currentSampleRate) / static_cast<float>(fftSize);
+    constexpr float crossoverLowHz = 250.0f;
+    constexpr float crossoverHighHz = 2000.0f;
 
-    for (int index = 1; index < halfSize; ++index) {
-        const float exactFrequency = static_cast<float>(index) * binResolution;
-        const float exactMagnitude = smoothedMagnitudes[static_cast<size_t>(index)];
+    for (size_t bandIndex = 0; bandIndex < multiResolutionBands.size(); ++bandIndex) {
+        const auto& band = multiResolutionBands[bandIndex];
+        const int halfSize = band.fftSize / 2;
+        const float binResolution = static_cast<float>(currentSampleRate) / static_cast<float>(band.fftSize);
 
-        if (exactMagnitude > 1e-6f) {
-            finalPeaks.push_back({exactFrequency, exactMagnitude});
+        for (int index = 1; index < halfSize; ++index) {
+            const float exactFrequency = static_cast<float>(index) * binResolution;
+            const float exactMagnitude = band.magnitudes[static_cast<size_t>(index)];
+
+            bool inActiveBand = false;
+            if (bandIndex == 0 && exactFrequency < crossoverLowHz) inActiveBand = true;
+            else if (bandIndex == 1 && exactFrequency >= crossoverLowHz && exactFrequency < crossoverHighHz) inActiveBand = true;
+            else if (bandIndex == 2 && exactFrequency >= crossoverHighHz) inActiveBand = true;
+
+            if (inActiveBand && exactMagnitude > 1e-6f) {
+                finalPeaks.push_back({exactFrequency, exactMagnitude});
+            }
         }
     }
 }
 
 void Stft::applyPsychoacousticTilt() {
     constexpr float anchorFrequency = 1000.0f;
-
     constexpr float tiltDbPerOctave = 3.0f;
 
     for (auto& peak : finalPeaks) {

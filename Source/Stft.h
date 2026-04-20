@@ -9,18 +9,29 @@ struct SpectralPeak {
     float magnitude = 0.0f;
 };
 
+struct StftBand {
+    int windowSize = 0;
+    int fftOrder = 0;
+    int fftSize = 0;
+    std::unique_ptr<juce::dsp::FFT> fft;
+    std::unique_ptr<juce::dsp::WindowingFunction<float>> window;
+    std::vector<float> fftWorkspace;
+    std::vector<float> magnitudes;
+    std::vector<float> smoothedMagnitudes;
+};
+
 class Stft {
 public:
     Stft();
     ~Stft() = default;
 
-    void initialize(double sampleRateToUse, int windowSizeToUse, int fftOrderToUse);
+    void initialize(double sampleRateToUse);
     void processFrame(const std::vector<float>& timeDomainSignal);
 
     bool enablePeakExtraction = false;
     bool enablePsychoacousticTilt = false;
     bool enableTailKiller = false;
-    bool enableTemporalSmoothing = true;
+    bool enableTemporalSmoothing = false;
 
     const std::vector<SpectralPeak>& getPeaks() const { return finalPeaks; }
 
@@ -32,16 +43,8 @@ private:
     void extractRawBins();
 
     double currentSampleRate = 44100.0;
-    int windowSize = 8192;
-    int fftOrder = 13;
-    int fftSize = 8192;
 
-    std::unique_ptr<juce::dsp::FFT> fft;
-    std::unique_ptr<juce::dsp::WindowingFunction<float>> window;
-
-    std::vector<float> fftWorkspace;
-    std::vector<float> magnitudes;
-    std::vector<float> smoothedMagnitudes;
+    std::vector<StftBand> multiResolutionBands;
     std::vector<SpectralPeak> finalPeaks;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Stft)
