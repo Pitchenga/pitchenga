@@ -16,6 +16,9 @@ void PitchengaAudioProcessor::prepareToPlay(const double sampleRate, const int s
     monoBuffer.assign(bufferSize, 0.0f);
     nextStageBuffer.assign(bufferSize, 0.0f);
 
+    agcLeft.reset();
+    agcRight.reset();
+
     // Reset decimation octaves for the visualizer
     for (size_t i = 0; i < numOctaves; ++i) {
         octaves[i].fifo.reset();
@@ -69,13 +72,18 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     // Mix down to mono into pre-allocated buffer
     float* monoData = monoBuffer.data();
     if (totalNumInputChannels == 1) {
-        juce::FloatVectorOperations::copy(monoData, buffer.getReadPointer(0), numSamples);
+        auto* input = buffer.getReadPointer(0);
+        for (int i = 0; i < numSamples; ++i) {
+            monoData[i] = agcLeft.process(input[i]);
+        }
     } else if (totalNumInputChannels >= 2) {
         auto* left = buffer.getReadPointer(0);
         auto* right = buffer.getReadPointer(1);
-        juce::FloatVectorOperations::copy(monoData, left, numSamples);
-        juce::FloatVectorOperations::add(monoData, right, numSamples);
-        juce::FloatVectorOperations::multiply(monoData, 0.5f, numSamples);
+        for (int i = 0; i < numSamples; ++i) {
+            float l = agcLeft.process(left[i]);
+            float r = agcRight.process(right[i]);
+            monoData[i] = (l + r) * 0.5f;
+        }
     }
 
     // Cascade multi-rate decimation using pointer swapping

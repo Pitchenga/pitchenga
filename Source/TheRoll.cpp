@@ -255,7 +255,7 @@ void TheRoll::pumpSteam() {
         if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > steamThreshold) {
             const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
             const juce::Colour baseColor = Palette::getContinuousColor(chroma);
-            constexpr float undimmingGain = 1.8f;
+            constexpr float undimmingGain = 1.0f;
             const juce::Colour color = juce::Colours::black.interpolatedWith(
                 baseColor,
                 static_cast<float>(magnitude * undimmingGain)

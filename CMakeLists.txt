@@ -67,6 +67,8 @@ set(PITCHENGA_SOURCES
         Source/Math.cpp
         Source/Control.h
         Source/Control.cpp
+        Source/Agc.h
+        Source/Agc.cpp
         Source/Splitter.h
         Source/Splitter.cpp
         Source/Util.h

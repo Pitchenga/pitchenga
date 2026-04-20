@@ -6,6 +6,7 @@
 #include <vector>
 #include <array>
 #include "Control.h"
+#include "AutomaticGainControl.h"
 
 class FastButterworth {
     std::array<float, 7> inputSamples{0.0f};
@@ -109,6 +110,9 @@ private:
     std::array<OctaveBuffer, numOctaves> octaves;
     std::vector<float> monoBuffer;
     std::vector<float> nextStageBuffer;
+
+    Agc agcLeft{0.0001f, 0.4f, 5.0f};
+    Agc agcRight{0.0001f, 0.4f, 5.0f};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PitchengaAudioProcessor)
 };
