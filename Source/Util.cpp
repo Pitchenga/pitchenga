@@ -1,11 +1,12 @@
 #include "Util.h"
 #include "build_timestamp.h"
 
+juce::String Util::startTimestamp = getTimestamp();
+
 juce::File Util::logFile = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
     .getChildFile("pitchenga")
-    .getChildFile("pitchenga.log");
+    .getChildFile("pitchenga-" + startTimestamp + ".log");
 
-juce::String Util::startTimestamp = getTimestamp();
 
 [[maybe_unused]] static struct UtilInitializer {
     UtilInitializer() {
@@ -15,19 +16,20 @@ juce::String Util::startTimestamp = getTimestamp();
 
 juce::String Util::getTimestamp() {
     const auto time = juce::Time::getCurrentTime();
-    return time.formatted("%H:%M:%S") + "." + juce::String(time.getMilliseconds()).paddedLeft('0', 3);
+    return time.formatted("%H.%M.%S") + "." + juce::String(time.getMilliseconds()).paddedLeft('0', 3);
 }
 
 void Util::init() {
     DBG("[" + startTimestamp + "] Starting Pitchenga");
 #if JUCE_DEBUG
-    // if (logFile.exists()) {
-    //     if (logFile.deleteFile()) {
-    //         debug("Deleted logFile=" + logFile.getFullPathName());
-    //     } else {
-    //         debug("Failed deleting logFile=" + logFile.getFullPathName());
-    //     }
-    // }
+    //fixme: Clean-up old log files
+    if (logFile.exists()) {
+        if (logFile.deleteFile()) {
+            debug("Deleted logFile=" + logFile.getFullPathName());
+        } else {
+            debug("Failed deleting logFile=" + logFile.getFullPathName());
+        }
+    }
     debug("Pitchenga started, logFile=" + logFile.getFullPathName() + ", build=" + juce::String(BUILD_TIMESTAMP));
 #endif
 }
