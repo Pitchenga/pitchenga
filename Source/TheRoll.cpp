@@ -162,14 +162,12 @@ void TheRoll::paintPeaks(juce::Graphics& graphics) const {
     const int width = getWidth();
     const int height = getHeight();
 
-    constexpr bool useDynamicStemWidth = true;
-
     for (const auto& peak : activePeaks) {
         const float xPos = frequencyToX(peak.frequencyHz, static_cast<float>(width));
 
         if (xPos >= 0.0f && xPos <= static_cast<float>(width)) {
             // Configurable razor-sharp stems for the Forrest
-            const float stemWidthPixels = useDynamicStemWidth ? std::max(1.0f, 4.0f * (1.0f - (xPos / static_cast<float>(width)))) : 5.0f;
+            const float stemWidthPixels = enableDynamicStemWidth ? std::max(1.0f, 4.0f * (1.0f - (xPos / static_cast<float>(width)))) : 5.0f;
 
             const float normalizedMagnitude = std::min(1.0f, std::max(0.0f, peak.magnitude));
             const auto barHeight = normalizedMagnitude * static_cast<float>(height);
@@ -212,15 +210,13 @@ void TheRoll::pumpSteam() {
 
     juce::Graphics graphics(steamImage);
 
-    constexpr bool useDynamicStemWidth = true;
-
     for (const auto& peak : activePeaks) {
         if (peak.magnitude > 0.05f) { // Prevents rendering absolute silence noise
             const float xPos = frequencyToX(peak.frequencyHz, static_cast<float>(width));
 
             if (xPos >= 0.0f && xPos <= static_cast<float>(width)) {
                 // Configurable razor-sharp stems for the Steam
-                const float stemWidthPixels = useDynamicStemWidth ? std::max(1.0f, 3.0f * (1.0f - (xPos / static_cast<float>(width)))) : 4.0f;
+                const float stemWidthPixels = enableDynamicStemWidth ? std::max(1.0f, 3.0f * (1.0f - (xPos / static_cast<float>(width)))) : 4.0f;
 
                 float midi = freqToMidi(peak.frequencyHz);
                 float continuousChroma = std::fmod(midi, 12.0f);

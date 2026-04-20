@@ -28,8 +28,16 @@ void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
     if (timeDomainSignal.size() < static_cast<size_t>(windowSize)) return;
 
     performSTFT(timeDomainSignal);
-    extractPeaks();
-    applyPsychoacousticTilt();
+    
+    if (enablePeakExtraction) {
+        extractPeaks();
+    } else {
+        extractRawBins();
+    }
+    
+    if (enablePsychoacousticTilt) {
+        applyPsychoacousticTilt();
+    }
     scaleForUi();
 }
 
@@ -75,12 +83,25 @@ void Stft::extractPeaks() {
     }
 }
 
+void Stft::extractRawBins() {
+    finalPeaks.clear();
+    const int halfSize = fftSize / 2;
+    const float binResolution = static_cast<float>(currentSampleRate) / static_cast<float>(fftSize);
+
+    for (int index = 1; index < halfSize; ++index) {
+        const float exactFrequency = static_cast<float>(index) * binResolution;
+        const float exactMagnitude = magnitudes[static_cast<size_t>(index)];
+
+        if (exactMagnitude > 1e-6f) {
+            finalPeaks.push_back({exactFrequency, exactMagnitude});
+        }
+    }
+}
+
 void Stft::applyPsychoacousticTilt() {
     constexpr float anchorFrequency = 1000.0f;
 
-    // A positive tilt violently boosts the highs. Setting this to 0.0f restores the natural acoustic
-    // roll-off, instantly curing the overexposed high end and relatively boosting the weak fundamentals.
-    constexpr float tiltDbPerOctave = 0.0f;
+    constexpr float tiltDbPerOctave = 3.0f;
 
     for (auto& peak : finalPeaks) {
         if (peak.frequencyHz > 0.0f) {
@@ -107,11 +128,13 @@ void Stft::scaleForUi() {
             const float decibels = 20.0f * std::log10(linearAmplitude);
             float normalized = std::max(0.0f, 1.0f - decibels * zeroAmplitudeDbInv);
 
-            // Per-Bin Noise Gate (Tail Killer)
-            constexpr float gateThreshold = 0.4f;
-            if (normalized < gateThreshold) {
-                const float ratio = normalized / gateThreshold;
-                normalized = normalized * ratio * ratio;
+            if (enableTailKiller) {
+                // Per-Bin Noise Gate (Tail Killer)
+                constexpr float gateThreshold = 0.4f;
+                if (normalized < gateThreshold) {
+                    const float ratio = normalized / gateThreshold;
+                    normalized = normalized * ratio * ratio;
+                }
             }
 
             peak.magnitude = normalized;

@@ -14,6 +14,8 @@ public:
     void paint(juce::Graphics& graphics) override;
     void resized() override;
 
+    bool enableDynamicStemWidth = true;
+
 private:
     PitchengaAudioProcessor& processor;
 

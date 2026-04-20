@@ -17,6 +17,10 @@ public:
     void initialize(double sampleRateToUse, int windowSizeToUse, int fftOrderToUse);
     void processFrame(const std::vector<float>& timeDomainSignal);
 
+    bool enablePeakExtraction = false;
+    bool enablePsychoacousticTilt = true;
+    bool enableTailKiller = true;
+
     const std::vector<SpectralPeak>& getPeaks() const { return finalPeaks; }
 
 private:
@@ -24,6 +28,7 @@ private:
     void extractPeaks();
     void applyPsychoacousticTilt();
     void scaleForUi();
+    void extractRawBins();
 
     double currentSampleRate = 44100.0;
     int windowSize = 8192;
