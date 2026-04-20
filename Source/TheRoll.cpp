@@ -162,7 +162,7 @@ void TheRoll::paintPeaks(juce::Graphics& graphics) const {
     const int width = getWidth();
     const int height = getHeight();
 
-    constexpr bool useDynamicStemWidth = false;
+    constexpr bool useDynamicStemWidth = true;
 
     for (const auto& peak : activePeaks) {
         const float xPos = frequencyToX(peak.frequencyHz, static_cast<float>(width));
@@ -212,7 +212,7 @@ void TheRoll::pumpSteam() {
 
     juce::Graphics graphics(steamImage);
 
-    constexpr bool useDynamicStemWidth = false;
+    constexpr bool useDynamicStemWidth = true;
 
     for (const auto& peak : activePeaks) {
         if (peak.magnitude > 0.05f) { // Prevents rendering absolute silence noise

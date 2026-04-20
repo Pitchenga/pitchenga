@@ -2,7 +2,7 @@
 #include <cmath>
 
 Stft::Stft() {
-    initialize(44100.0, 8192, 13);
+    initialize(44100.0, 16384, 15);
 }
 
 void Stft::initialize(const double sampleRateToUse, const int windowSizeToUse, const int fftOrderToUse) {
