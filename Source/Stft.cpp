@@ -29,6 +29,7 @@ void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
     performSTFT(timeDomainSignal);
     extractPeaks();
     applyPsychoacousticTilt();
+    scaleForUi();
 }
 
 void Stft::performSTFT(const std::vector<float>& timeDomainSignal) {
@@ -86,4 +87,33 @@ void Stft::applyPsychoacousticTilt() {
             peak.magnitude *= linearGain;
         }
     }
+}
+
+void Stft::scaleForUi() {
+    constexpr float inputGain = 6.0f; // Window compensation and standard volume match
+    constexpr float zeroAmplitudeDb = -90.0f;
+    constexpr float zeroAmplitudeDbInv = 1.0f / zeroAmplitudeDb;
+
+    for (auto& peak : finalPeaks) {
+        const float linearAmplitude = peak.magnitude * inputGain;
+
+        if (linearAmplitude <= 0.00003f) {
+            peak.magnitude = 0.0f;
+        } else {
+            const float decibels = 20.0f * std::log10(linearAmplitude);
+            float normalized = std::max(0.0f, 1.0f - decibels * zeroAmplitudeDbInv);
+
+            // Per-Bin Noise Gate (Tail Killer)
+            constexpr float gateThreshold = 0.4f;
+            if (normalized < gateThreshold) {
+                const float ratio = normalized / gateThreshold;
+                normalized = normalized * ratio * ratio;
+            }
+
+            peak.magnitude = normalized;
+        }
+    }
+
+    // Instantly wipe silent peaks so TheRoll doesn't waste UI processing power on 0.0f bars
+    std::erase_if(finalPeaks, [](const SpectralPeak& p) { return p.magnitude <= 0.0f; });
 }

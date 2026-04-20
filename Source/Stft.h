@@ -23,6 +23,7 @@ private:
     void performSTFT(const std::vector<float>& timeDomainSignal);
     void extractPeaks();
     void applyPsychoacousticTilt();
+    void scaleForUi();
 
     double currentSampleRate = 44100.0;
     int fftOrder = 13;

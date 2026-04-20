@@ -35,7 +35,7 @@ void TheRoll::resized() {
 
 juce::Font TheRoll::getLabelFont() {
     return {
-        juce::FontOptions(15.0f)
+        juce::FontOptions(13.0f)
         .withStyle("Bold")
         .withName(juce::Font::getDefaultMonospacedFontName())
     };
@@ -101,7 +101,7 @@ void TheRoll::paintLabel(
     const float startY,
     const juce::Colour baseColor
 ) const {
-    // OUTDATED: Not drawing a half label
+    // fixme: Do not draw a half label that does not fit
 
     const juce::Colour labelColor = juce::Colours::black.interpolatedWith(baseColor, 0.6f);
     const juce::String name = getNoteName(midiNote);
