@@ -35,7 +35,7 @@ void Util::init() {
 void Util::debug(const juce::String& message) {
 #if JUCE_DEBUG
     DBG(message);
-    const auto fullMessage = "[][" + getTimestamp() + "] " + message;
+    const auto fullMessage = "[" + startTimestamp + "][" + getTimestamp() + "] " + message;
 
     if (createFile()) logFile.appendText(fullMessage + "\n");
 #else
