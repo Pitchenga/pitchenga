@@ -73,6 +73,8 @@ set(PITCHENGA_SOURCES
         Source/Splitter.cpp
         Source/Util.h
         Source/Util.cpp
+        Source/Stft.h
+        Source/Stft.cpp
 )
 
 add_custom_command(

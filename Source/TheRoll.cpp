@@ -1,52 +1,22 @@
 #include "TheRoll.h"
 #include "Palette.h"
 #include <algorithm>
-
-#include "TheEye.h"
+#include <cmath>
 
 TheRoll::TheRoll(PitchengaAudioProcessor& proc) : processor(proc) {}
 
-bool TheRoll::expand() {
-    const int totalBins = static_cast<int>(displayMagnitudes.size());
-    if (totalBins <= 0) return true;
+void TheRoll::updateResults(const std::vector<SpectralPeak>& peaks) {
+    // OUTDATED: MAnalyzer achieves its clean look by simply dropping the visual floor.
+    // OUTDATED: Our raw data maps 0.0 to -90dB. A lot of low-level acoustic noise lives there.
+    // OUTDATED: By setting the visual floor to 0.35 (approx -58dB), the noise falls entirely off the screen,
+    // OUTDATED: leaving only the pure, distinct harmonic peaks.
+    // OUTDATED: Stretch the remaining peaks back to the 0.0 - 1.0 range for drawing
 
-    double* magnitudes = displayMagnitudes.data();
-
-    // MAnalyzer achieves its clean look by simply dropping the visual floor.
-    // Our raw data maps 0.0 to -90dB. A lot of low-level acoustic noise lives there.
-    // By setting the visual floor to 0.35 (approx -58dB), the noise falls entirely off the screen,
-    // leaving only the pure, distinct harmonic peaks.
-    constexpr double visualFloor = 0.2;
-    constexpr double rangeInv = 1.2 / (1.0 - visualFloor);
-
-    for (int i = 0; i < totalBins; ++i) {
-        if (const double magnitude = magnitudes[i]; magnitude <= visualFloor) {
-            magnitudes[i] = 0.0;
-        } else {
-            // Stretch the remaining peaks back to the 0.0 - 1.0 range for drawing
-            magnitudes[i] = (magnitude - visualFloor) * rangeInv;
-        }
-    }
-
-    return false;
-}
-
-void TheRoll::updateResults(const std::vector<double>& results) {
-    if (results.empty()) return;
-    displayMagnitudes = results;
-
-    if (smoother == nullptr || lastKnownSize != results.size()) {
-        smoother = std::make_unique<ExpSmoother>(results.size(), 0.5);
-        lastKnownSize = results.size();
-    }
-
-    if (expand()) return;
+    activePeaks = peaks;
 
     if (processor.uiSettings.showSteam) {
         pumpSteam();
     }
-
-    displayMagnitudes = smoother->smooth(displayMagnitudes);
 
     repaint();
 }
@@ -75,6 +45,16 @@ float TheRoll::getLabelAreaHeight() {
     return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8") + 4.0f;
 }
 
+float TheRoll::freqToMidi(float freq) {
+    if (freq <= 0.0f) return 0.0f;
+    return 69.0f + 12.0f * std::log2(freq / 440.0f);
+}
+
+float TheRoll::frequencyToX(float frequencyHz, float width) const {
+    const float midi = freqToMidi(frequencyHz);
+    return width * ((midi - minMidiNote) / (maxMidiNote - minMidiNote));
+}
+
 void TheRoll::paint(juce::Graphics& graphics) {
     if (!cachedFrame.isValid()) {
         paintFrame(); // Generates it if the engine wasn't ready during resized()
@@ -83,17 +63,14 @@ void TheRoll::paint(juce::Graphics& graphics) {
         graphics.drawImageAt(cachedFrame, 0, 0);
     }
 
-    currentTotalBins = static_cast<int>(displayMagnitudes.size());
-    currentBinsPerOctave = currentTotalBins / PitchengaAudioProcessor::numOctaves;
-
-    if (currentTotalBins <= 0 || currentBinsPerOctave <= 0 || displayMagnitudes.empty()) return;
+    if (activePeaks.empty()) return;
 
     if (processor.uiSettings.showSteam) {
         paintSteam(graphics);
     }
 
     if (processor.uiSettings.showForrest) {
-        paintBins(graphics);
+        paintPeaks(graphics);
     }
 }
 
@@ -101,8 +78,6 @@ void TheRoll::paintFrame() {
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
-
-    if (currentTotalBins <= 0 || currentBinsPerOctave <= 0) return;
 
     // Create a transparent image (the 'true' flag clears it to zero alpha)
     cachedFrame = juce::Image(juce::Image::ARGB, width, height, true);
@@ -121,20 +96,14 @@ void TheRoll::paintLabel(
     juce::Graphics& graphics,
     const float labelHeight,
     const float maxTextWidth,
-    const int i,
+    const int midiNote,
     const float targetCenter,
     const float startY,
     const juce::Colour baseColor
-) {
-    if (i == 0) {
-        // Not drawing a half label
-        return;
-    }
-    constexpr int startMidiNote = 12;
-    const int midiNote = i + startMidiNote;
+) const {
+    // OUTDATED: Not drawing a half label
 
     const juce::Colour labelColor = juce::Colours::black.interpolatedWith(baseColor, 0.6f);
-
     const juce::String name = getNoteName(midiNote);
 
     graphics.setColour(labelColor);
@@ -153,15 +122,6 @@ void TheRoll::paintLabel(
 }
 
 void TheRoll::paintFrame(juce::Graphics& graphics) const {
-    int totalOctaves = currentTotalBins / currentBinsPerOctave;
-    if (totalOctaves <= 0) totalOctaves = PitchengaAudioProcessor::numOctaves;
-    const int totalSemitones = totalOctaves * 12;
-
-    if (totalSemitones <= 0) return;
-
-    // The exact pixel width of one single CQT bin
-    const float barWidth = static_cast<float>(getWidth()) / static_cast<float>(currentTotalBins);
-
     const auto height = static_cast<float>(getHeight());
     const float halfHeight = height * 0.5f;
 
@@ -170,18 +130,20 @@ void TheRoll::paintFrame(juce::Graphics& graphics) const {
     const float labelHeight = labelFont.getHeight();
     const float maxTextWidth = juce::GlyphArrangement::getStringWidth(labelFont, "Ww8");
 
-    for (int i = 0; i < totalSemitones; ++i) {
+    const int startMidi = static_cast<int>(std::ceil(minMidiNote));
+    const int endMidi = static_cast<int>(std::floor(maxMidiNote));
+
+    for (int i = startMidi; i <= endMidi; ++i) {
         const int chroma = i % 12;
 
-        //fixme: move to Tone
+        // fixme: move to Tone
         // Identify standard "black" keys
         const bool isBlackKey = chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10;
 
-        // Find the exact pitch bin index for this semitone
-        const float binIndex = static_cast<float>(i) * (static_cast<float>(currentBinsPerOctave) / 12.0f);
-
-        // Find the visual center of that specific pitch bin
-        const float targetCenter = binIndex * barWidth + barWidth * 0.5f;
+        // OUTDATED: Find the exact pitch bin index for this semitone
+        // OUTDATED: Find the visual center of that specific pitch bin
+        const float hz = 440.0f * std::pow(2.0f, (static_cast<float>(i) - 69.0f) / 12.0f);
+        const float targetCenter = frequencyToX(hz, static_cast<float>(getWidth()));
 
         // Route the line to the top half (black keys) or bottom half (white keys)
         const float startY = getLabelAreaHeight();
@@ -195,40 +157,41 @@ void TheRoll::paintFrame(juce::Graphics& graphics) const {
         paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, startY, baseColor);
     }
 }
-void TheRoll::paintBins(juce::Graphics& graphics) const {
+
+void TheRoll::paintPeaks(juce::Graphics& graphics) const {
     const int width = getWidth();
     const int height = getHeight();
 
-    const float barWidth = static_cast<float>(width) / static_cast<float>(currentTotalBins);
+    // Configurable razor-sharp stems for the Forrest
+    constexpr float stemWidthPixels = 5.0f;
 
-    for (int i = 0; i < currentTotalBins; ++i) {
-        if (i >= static_cast<int>(displayMagnitudes.size())) break;
+    for (const auto& peak : activePeaks) {
+        const float xPos = frequencyToX(peak.frequencyHz, static_cast<float>(width));
 
-        std::vector<double>::value_type magnitude = displayMagnitudes[static_cast<size_t>(i)];
-        const double normalizedMagnitude = std::min(
-            1.0,
-            std::max(0.0, magnitude)
-        );
-        const auto barHeight = static_cast<float>(normalizedMagnitude * height);
+        if (xPos >= 0.0f && xPos <= static_cast<float>(width)) {
+            const float normalizedMagnitude = std::min(1.0f, std::max(0.0f, peak.magnitude));
+            const auto barHeight = normalizedMagnitude * static_cast<float>(height);
 
-        const float chroma =
-            static_cast<float>(i % currentBinsPerOctave) * 12.0f / static_cast<float>(currentBinsPerOctave);
+            float midi = freqToMidi(peak.frequencyHz);
+            float continuousChroma = std::fmod(midi, 12.0f);
+            if (continuousChroma < 0.0f) continuousChroma += 12.0f;
 
-        const juce::Colour color = Palette::getContinuousColor(chroma);
-        graphics.setColour(color);
+            const juce::Colour color = Palette::getContinuousColor(continuousChroma);
+            graphics.setColour(color);
 
-        graphics.fillRect(
-            static_cast<float>(i) * barWidth,
-            static_cast<float>(height) - barHeight,
-            barWidth + 0.5f,
-            barHeight
-        );
+            graphics.fillRoundedRectangle(
+                xPos - (stemWidthPixels * 0.5f),
+                static_cast<float>(height) - barHeight,
+                stemWidthPixels,
+                barHeight,
+                2.0f
+            );
+        }
     }
 }
 
-
 void TheRoll::pumpSteam() {
-    if (displayMagnitudes.empty() || !steamImage.isValid()) return;
+    if (activePeaks.empty() || !steamImage.isValid()) return;
 
     const int width = getWidth();
     const int height = getHeight();
@@ -247,27 +210,32 @@ void TheRoll::pumpSteam() {
 
     juce::Graphics graphics(steamImage);
 
-    const int totalBins = static_cast<int>(displayMagnitudes.size());
-    const int binsPerOctave = totalBins / PitchengaAudioProcessor::numOctaves;
-    const float barWidth = static_cast<float>(width) / static_cast<float>(totalBins);
+    // Configurable razor-sharp stems for the Steam
+    constexpr float stemWidthPixels = 4.0f;
 
-    for (int i = 0; i < totalBins; ++i) {
-        if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > steamThreshold) {
-            const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
-            const juce::Colour baseColor = Palette::getContinuousColor(chroma);
-            constexpr float undimmingGain = 1.0f;
-            const juce::Colour color = juce::Colours::black.interpolatedWith(
-                baseColor,
-                static_cast<float>(magnitude * undimmingGain)
-            );
+    for (const auto& peak : activePeaks) {
+        if (peak.magnitude > 0.05f) { // Prevents rendering absolute silence noise
+            const float xPos = frequencyToX(peak.frequencyHz, static_cast<float>(width));
 
-            graphics.setColour(color);
-            graphics.fillRect(
-                static_cast<float>(i) * barWidth,
-                static_cast<float>(drawY),
-                barWidth + 0.5f,
-                steamSpeedPxPerFrame
-            );
+            if (xPos >= 0.0f && xPos <= static_cast<float>(width)) {
+                float midi = freqToMidi(peak.frequencyHz);
+                float continuousChroma = std::fmod(midi, 12.0f);
+                if (continuousChroma < 0.0f) continuousChroma += 12.0f;
+
+                const juce::Colour baseColor = Palette::getContinuousColor(continuousChroma);
+                constexpr float undimmingGain = 1.6f;
+
+                const float clampedMag = std::min(1.0f, peak.magnitude * undimmingGain);
+                const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, clampedMag);
+
+                graphics.setColour(color);
+                graphics.fillRect(
+                    xPos - (stemWidthPixels * 0.5f),
+                    static_cast<float>(drawY),
+                    stemWidthPixels,
+                    static_cast<float>(speedPx)
+                );
+            }
         }
     }
 }

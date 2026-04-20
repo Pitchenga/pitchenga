@@ -2,63 +2,46 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "PluginProcessor.h"
-#include "Cqt.h"
-#include "Analyzers.h"
+#include "Stft.h"
 
-class TheRoll : public juce::Component
-{
+class TheRoll : public juce::Component {
 public:
-    TheRoll(PitchengaAudioProcessor&);
-    bool expand();
-    void paint(juce::Graphics&) override;
-    void resized() override;
-    void updateResults(const std::vector<double>& results);
-    void paintBins(juce::Graphics& graphics) const;
+    explicit TheRoll(PitchengaAudioProcessor& proc);
+    ~TheRoll() override = default;
 
-    void setEngine(const Cqt* e) { engine = e; }
-    static constexpr int getPreferredHeight() { return 619; }
+    void updateResults(const std::vector<SpectralPeak>& peaks);
+
+    void paint(juce::Graphics& graphics) override;
+    void resized() override;
+
+private:
+    PitchengaAudioProcessor& processor;
+
+    std::vector<SpectralPeak> activePeaks;
+
+    juce::Image steamImage;
+    int steamScrollOffset = 0;
+    static constexpr float steamSpeedPxPerFrame = 1.0f;
+
+    juce::Image cachedFrame;
+
+    // Standard piano range mapping
+    static constexpr float minMidiNote = 21.0f; // A0
+    static constexpr float maxMidiNote = 108.0f; // C8
+
+    static float freqToMidi(float freq);
+    float frequencyToX(float frequencyHz, float width) const;
+
+    void paintFrame();
+    void paintFrame(juce::Graphics& graphics) const;
+    void paintLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, int midiNote, float targetCenter, float startY, juce::Colour baseColor) const;
+    void pumpSteam();
+    void paintSteam(const juce::Graphics& graphics) const;
+    void paintPeaks(juce::Graphics& graphics) const;
 
     static juce::Font getLabelFont();
     static float getLabelAreaHeight();
-
-private:
-    void paintFrame();
-    void paintFrame(juce::Graphics& graphics) const;
-
     static juce::String getNoteName(int midiNote);
-    static void paintLabel(
-        juce::Graphics& graphics,
-        float labelHeight,
-        float maxTextWidth,
-        int i,
-        float targetCenter,
-        float startY,
-        juce::Colour baseColor
-    );
 
-    const float steamSpeedPxPerFrame = 1.0f;
-    const float steamThreshold = 0.0001f;
-    struct Steam {
-        float x;
-        float y;
-        float width;
-        juce::Colour color;
-    };
-    juce::Image steamImage;
-    int steamScrollOffset = 0;
-
-    void pumpSteam();
-    void paintSteam(const juce::Graphics& graphics) const;
-
-    PitchengaAudioProcessor& processor;
-    const Cqt* engine = nullptr;
-    std::vector<double> displayMagnitudes;
-
-    int currentTotalBins = 0;
-    int currentBinsPerOctave = 0;
-
-    std::unique_ptr<ExpSmoother> smoother;
-    size_t lastKnownSize = 0;
-
-    juce::Image cachedFrame;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TheRoll)
 };

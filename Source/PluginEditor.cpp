@@ -14,8 +14,6 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     addAndMakeVisible(splitter);
     splitter.onDragged = [this] { resized(); };
 
-    roll.setEngine(worker.getCqtEngine());
-
     circleBuffer.resize(TheEye::totalFoldedBins, 0.0);
 
     setResizable(true, true);
@@ -43,14 +41,14 @@ void PitchengaAudioProcessorEditor::timerCallback() {
     // Feed it to the tuna visualizer component
     tuna.setPitchFrequency(latestPitchHz);
 
-    // --- Update the Circular Visualizer ---
+    // --- Update the visualizers ---
     if (worker.hasNewData()) {
         worker.getCircleResults(circleBuffer);
-        worker.getLineResults(lineBuffer);
+        worker.getRollPeaks(rollPeaksBuffer);
         worker.clearNewDataFlag();
 
         if (audioProcessor.uiSettings.showEye) eye.updateResults(circleBuffer);
-        if (audioProcessor.uiSettings.showRoll) roll.updateResults(lineBuffer);
+        if (audioProcessor.uiSettings.showRoll) roll.updateResults(rollPeaksBuffer);
     }
 }
 

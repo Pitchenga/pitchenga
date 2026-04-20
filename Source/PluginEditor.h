@@ -36,7 +36,7 @@ private:
 
     // Shared results for rendering
     std::vector<double> circleBuffer;
-    std::vector<double> lineBuffer;
+    std::vector<SpectralPeak> rollPeaksBuffer;
 
     static constexpr int uiRefreshRateHz = 48;
 

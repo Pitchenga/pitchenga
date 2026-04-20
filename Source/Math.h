@@ -5,6 +5,7 @@
 #include "Cqt.h"
 #include "Analyzers.h"
 #include <pitch_detector/pitch_detector.h>
+#include "Stft.h"
 
 class Math : public juce::Thread {
 public:
@@ -21,6 +22,7 @@ public:
     void clearNewDataFlag() { newDataAvailable.store(false, std::memory_order_release); }
 
     const Cqt* getCqtEngine() const { return &cqtEngine; }
+    void getRollPeaks(std::vector<SpectralPeak>& destinationArray);
 
 private:
     static constexpr double inputGain = 6.0;
@@ -41,7 +43,7 @@ private:
 
     PitchengaAudioProcessor& audioProcessor;
 
-    // --- CQT Engine (For Eye) ---
+    // --- CQT Engine for the Eye ---
     Cqt cqtEngine;
     std::unique_ptr<HarmonicPatternPitchClassDetector> pitchClassDetector;
     std::unique_ptr<SpectralEqualizer> spectralEqualizer;
@@ -54,7 +56,7 @@ private:
     std::vector<double> amplitudeSpectrumDb;
     std::vector<double> octaveBins;
 
-    // --- Pitch Engine (For Tuna) ---
+    // --- Pitch Engine for the Tuna ---
     std::unique_ptr<adamski::PitchMPM> pitchDetector;
     std::vector<float> rawAudioHistoryBuffer;
     std::vector<float> pitchAnalysisBuffer;
@@ -67,4 +69,12 @@ private:
     std::vector<double> circleVisualizerResults;
     std::vector<double> lineVisualizerResults;
     std::atomic<bool> newDataAvailable{false};
+
+
+    // -- STFT Engine for the Roll
+    Stft stft;
+    std::vector<SpectralPeak> currentRollPeaks;
+    std::vector<SpectralPeak> uiRollPeaks;
+    void setupStft();
+    void processStft();
 };

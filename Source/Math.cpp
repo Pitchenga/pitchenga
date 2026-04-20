@@ -14,6 +14,7 @@ void Math::setupBuffers() {
     setupCqtEngine();
     setupCqtBuffers();
     setupPitchDetection();
+    setupStft();
 }
 
 void Math::setupCqtEngine() {
@@ -59,6 +60,16 @@ void Math::setupPitchDetection() {
     pitchDetector = std::make_unique<adamski::PitchMPM>(static_cast<int>(samplingFreq), 4096);
     rawAudioHistoryBuffer.assign(8192, 0.0f);
     pitchAnalysisBuffer.assign(4096, 0.0f);
+}
+
+void Math::setupStft() {
+    const double samplingFreq = audioProcessor.getSampleRate() > 0 ? audioProcessor.getSampleRate() : 44100.0;
+    stft.initialize(samplingFreq, 13);
+}
+
+void Math::processStft() {
+    stft.processFrame(rawAudioHistoryBuffer);
+    currentRollPeaks = stft.getPeaks();
 }
 
 void Math::updateSampleRate(const double newSampleRate) {
@@ -110,6 +121,7 @@ void Math::run() {
             consumeAudioFromFifo();
             processPitchDetection();
             processCqtAndEqualization();
+            processStft();
             publishResultsToUi();
 
             // Strict High-Res Pacing.
@@ -283,10 +295,20 @@ void Math::publishResultsToUi() {
     if (circleVisualizerResults.size() == currentEyeData.size()) {
         std::ranges::copy(currentEyeData, circleVisualizerResults.begin());
     }
+
+    // fixme remove Old line buffer logic for discrete CQT bins
     if (lineVisualizerResults.size() == currentRollData.size()) {
         std::ranges::copy(currentRollData, lineVisualizerResults.begin());
     }
+
+    uiRollPeaks = currentRollPeaks;
+
     newDataAvailable.store(true, std::memory_order_release);
+}
+
+void Math::getRollPeaks(std::vector<SpectralPeak>& destinationArray) {
+    const juce::CriticalSection::ScopedLockType lock(resultLock);
+    destinationArray = uiRollPeaks;
 }
 
 void Math::getCircleResults(std::vector<double>& destinationArray) {
