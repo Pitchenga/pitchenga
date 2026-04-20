@@ -13,8 +13,11 @@ struct StftBand {
     int windowSize = 0;
     int fftOrder = 0;
     int fftSize = 0;
+    float smoothWeight = 0.4f;
+
     std::unique_ptr<juce::dsp::FFT> fft;
     std::unique_ptr<juce::dsp::WindowingFunction<float>> window;
+
     std::vector<float> fftWorkspace;
     std::vector<float> magnitudes;
     std::vector<float> smoothedMagnitudes;
@@ -29,9 +32,9 @@ public:
     void processFrame(const std::vector<float>& timeDomainSignal);
 
     bool enablePeakExtraction = false;
-    bool enablePsychoacousticTilt = false;
+    bool enablePsychoacousticTilt = true;
     bool enableTailKiller = false;
-    bool enableTemporalSmoothing = false;
+    bool enableTemporalSmoothing = true;
 
     const std::vector<SpectralPeak>& getPeaks() const { return finalPeaks; }
 

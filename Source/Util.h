@@ -4,6 +4,7 @@
 
 class Util {
 public:
+    static bool debugLogEnabled;
     static juce::File logFile;
     static juce::String startTimestamp;
 

@@ -1,6 +1,8 @@
 #include "Util.h"
 #include "build_timestamp.h"
 
+static bool debugLogEnabled = false;
+
 juce::String Util::startTimestamp = getTimestamp();
 
 juce::File Util::logFile = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
@@ -23,7 +25,7 @@ void Util::init() {
     DBG("[" + startTimestamp + "] Starting Pitchenga");
 #if JUCE_DEBUG
     //fixme: Clean-up old log files
-    if (logFile.exists()) {
+    if (debugLogEnabled && logFile.exists()) {
         if (logFile.deleteFile()) {
             debug("Deleted logFile=" + logFile.getFullPathName());
         } else {
@@ -36,10 +38,12 @@ void Util::init() {
 
 void Util::debug(const juce::String& message) {
 #if JUCE_DEBUG
-    DBG(message);
-    const auto fullMessage = "[" + startTimestamp + "][" + getTimestamp() + "] " + message;
+    if (debugLogEnabled) {
+        DBG(message);
+        const auto fullMessage = "[" + startTimestamp + "][" + getTimestamp() + "] " + message;
 
-    if (createFile()) logFile.appendText(fullMessage + "\n");
+        if (createFile()) logFile.appendText(fullMessage + "\n");
+    }
 #else
     juce::ignoreUnused(message);
 #endif
@@ -48,11 +52,14 @@ void Util::debug(const juce::String& message) {
 bool Util::createFile() {
     if (!logFile.getParentDirectory().exists()) {
         if (!logFile.getParentDirectory().createDirectory()) {
+            DBG("Failed creating directory=" + logFile.getParentDirectory().getFullPathName());
             return false;
         }
     }
     if (!logFile.exists()) {
-        return logFile.create();
+        auto result = logFile.create();
+        if (!result) DBG("Failed creating logFile=" + logFile.getFullPathName());
+        return result;
     }
     return true;
 }
