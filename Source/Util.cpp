@@ -5,17 +5,41 @@ juce::File Util::logFile = juce::File::getSpecialLocation(juce::File::userApplic
     .getChildFile("pitchenga")
     .getChildFile("pitchenga.log");
 
-void Util::init() {
-    DBG("Starting Pitchenga");
-#if JUCE_DEBUG
-    if (logFile.exists()) {
-        if (logFile.deleteFile()) {
-            debug("Deleted logFile=" + logFile.getFullPathName());
-        } else {
-            debug("Failed deleting logFile=" + logFile.getFullPathName());
-        }
+juce::String Util::startTimestamp = getTimestamp();
+
+[[maybe_unused]] static struct UtilInitializer {
+    UtilInitializer() {
+        Util::init();
     }
-    debug("Pitchenga started, logFile=" + logFile.getFullPathName() + ", build=" + BUILD_TIMESTAMP);
+} utilInitializer;
+
+juce::String Util::getTimestamp() {
+    const auto time = juce::Time::getCurrentTime();
+    return time.formatted("%H:%M:%S") + "." + juce::String(time.getMilliseconds()).paddedLeft('0', 3);
+}
+
+void Util::init() {
+    DBG("[" + startTimestamp + "] Starting Pitchenga");
+#if JUCE_DEBUG
+    // if (logFile.exists()) {
+    //     if (logFile.deleteFile()) {
+    //         debug("Deleted logFile=" + logFile.getFullPathName());
+    //     } else {
+    //         debug("Failed deleting logFile=" + logFile.getFullPathName());
+    //     }
+    // }
+    debug("Pitchenga started, logFile=" + logFile.getFullPathName() + ", build=" + juce::String(BUILD_TIMESTAMP));
+#endif
+}
+
+void Util::debug(const juce::String& message) {
+#if JUCE_DEBUG
+    DBG(message);
+    const auto fullMessage = "[][" + getTimestamp() + "] " + message;
+
+    if (createFile()) logFile.appendText(fullMessage + "\n");
+#else
+    juce::ignoreUnused(message);
 #endif
 }
 
@@ -29,18 +53,4 @@ bool Util::createFile() {
         return logFile.create();
     }
     return true;
-}
-
-void Util::debug(const juce::String& message) {
-#if JUCE_DEBUG
-    DBG(message);
-    const auto time = juce::Time::getCurrentTime();
-    const auto timestamp = time.formatted("%H:%M:%S") + "." + juce::String(time.getMilliseconds()).paddedLeft('0', 3);
-    const auto fullMessage = "[" + timestamp + "] " + message;
-
-    // Ensure file exists and append
-    if (createFile()) logFile.appendText(fullMessage + "\n");
-#else
-    juce::ignoreUnused(message);
-#endif
 }

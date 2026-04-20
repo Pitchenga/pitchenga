@@ -5,8 +5,10 @@
 class Util {
 public:
     static juce::File logFile;
+    static juce::String startTimestamp;
 
     static void init();
+    static juce::String getTimestamp();
     static bool createFile();
     static void debug(const juce::String& message);
 };
