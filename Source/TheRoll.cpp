@@ -221,19 +221,16 @@ void TheRoll::pumpSteam() {
     juce::Graphics graphics(steamImage);
 
     for (const auto& peak : activePeaks) {
-        if (peak.magnitude > 0.05f) { // Prevents rendering absolute silence noise
+        if (peak.rawMagnitude > 0.05f) { // Prevents rendering absolute silence noise
             const float xPos = frequencyToX(peak.frequencyHz, static_cast<float>(width));
 
             if (xPos >= 0.0f && xPos <= static_cast<float>(width)) {
                 // Configurable razor-sharp stems for the Steam
                 float stemWidthPixels = 4.0f;
                 if (enableDynamicStemWidth) {
-                    // OUTDATED: Mathematically calculate the exact pixel width of this linear FFT bin on the log scale
-                    // OUTDATED: const float sr = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
-                    // OUTDATED: const float binResHz = sr / 32768.0f;
-                    // OUTDATED: const float nextX = frequencyToX(peak.frequencyHz + binResHz, static_cast<float>(width));
-
-                    const float nextX = frequencyToX(peak.frequencyHz + peak.bandwidthHz, static_cast<float>(width));
+                    const float sr = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
+                    const float binResHz = sr / 32768.0f;
+                    const float nextX = frequencyToX(peak.frequencyHz + binResHz, static_cast<float>(width));
                     // +1.0f forces deliberate sub-pixel overlap to completely kill rendering gaps
                     stemWidthPixels = std::max(1.0f, (nextX - xPos) + 1.0f);
                 }
@@ -245,7 +242,7 @@ void TheRoll::pumpSteam() {
                 const juce::Colour baseColor = Palette::getContinuousColor(continuousChroma);
                 constexpr float undimmingGain = 1.6f;
 
-                const float clampedMag = std::min(1.0f, peak.magnitude * undimmingGain);
+                const float clampedMag = std::min(1.0f, peak.rawMagnitude * undimmingGain);
                 const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, clampedMag);
 
                 graphics.setColour(color);

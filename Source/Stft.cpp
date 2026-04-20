@@ -167,9 +167,14 @@ void Stft::extractPeaks() {
 
                 const float exactMagnitude = magnitudeCenter - 0.25f * (magnitudeLeft - magnitudeRight) * fraction;
 
-                if (exactMagnitude > 1e-4f) {
+                const float rawMagnitudeLeft = stitchedMagnitudes[static_cast<size_t>(index - 1)];
+                const float rawMagnitudeCenter = stitchedMagnitudes[static_cast<size_t>(index)];
+                const float rawMagnitudeRight = stitchedMagnitudes[static_cast<size_t>(index + 1)];
+                const float exactRawMagnitude = rawMagnitudeCenter - 0.25f * (rawMagnitudeLeft - rawMagnitudeRight) * fraction;
+
+                if (exactMagnitude > 1e-4f || exactRawMagnitude > 1e-4f) {
                     // For interpolated peaks, bandwidth is technically zero, so we pass 0.0f to force a razor-thin visual stem
-                    finalPeaks.push_back({interpolatedFrequency, exactMagnitude, 0.0f});
+                    finalPeaks.push_back({interpolatedFrequency, exactMagnitude, 0.0f, exactRawMagnitude});
                 }
             }
         }
@@ -182,10 +187,12 @@ void Stft::extractRawBins() {
 
     for (int index = 1; index < stitchedSize; ++index) {
         const float exactMagnitude = smoothedMagnitudes[static_cast<size_t>(index)];
-        if (exactMagnitude > 1e-6f) {
+        const float exactRawMagnitude = stitchedMagnitudes[static_cast<size_t>(index)];
+
+        if (exactMagnitude > 1e-6f || exactRawMagnitude > 1e-6f) {
             const float exactFrequency = static_cast<float>(index) * binResolution;
             // For raw bins, pass the exact mathematical width so the UI can paint contiguous blocks
-            finalPeaks.push_back({exactFrequency, exactMagnitude, binResolution});
+            finalPeaks.push_back({exactFrequency, exactMagnitude, binResolution, exactRawMagnitude});
         }
     }
 }
@@ -201,6 +208,7 @@ void Stft::applyPsychoacousticTilt() {
             const float linearGain = std::pow(10.0f, gainDb / 20.0f);
 
             peak.magnitude *= linearGain;
+            peak.rawMagnitude *= linearGain;
         }
     }
 }
@@ -209,6 +217,7 @@ void Stft::scaleForUi() {
     constexpr float inputGain = 6.0f; // Window compensation and standard volume match
     constexpr float zeroAmplitudeDb = -90.0f;
     constexpr float zeroAmplitudeDbInv = 1.0f / zeroAmplitudeDb;
+    constexpr float gateThreshold = 0.4f;
 
     for (auto& peak : finalPeaks) {
         const float linearAmplitude = peak.magnitude * inputGain;
@@ -221,17 +230,32 @@ void Stft::scaleForUi() {
 
             if (enableTailKiller) {
                 // Per-Bin Noise Gate (Tail Killer)
-                constexpr float gateThreshold = 0.4f;
                 if (normalized < gateThreshold) {
                     const float ratio = normalized / gateThreshold;
                     normalized = normalized * ratio * ratio;
                 }
             }
-
             peak.magnitude = normalized;
+        }
+
+        const float rawLinearAmplitude = peak.rawMagnitude * inputGain;
+
+        if (rawLinearAmplitude <= 0.00003f) {
+            peak.rawMagnitude = 0.0f;
+        } else {
+            const float rawDecibels = 20.0f * std::log10(rawLinearAmplitude);
+            float rawNormalized = std::max(0.0f, 1.0f - rawDecibels * zeroAmplitudeDbInv);
+
+            if (enableTailKiller) {
+                if (rawNormalized < gateThreshold) {
+                    const float ratio = rawNormalized / gateThreshold;
+                    rawNormalized = rawNormalized * ratio * ratio;
+                }
+            }
+            peak.rawMagnitude = rawNormalized;
         }
     }
 
     // Instantly wipe silent peaks so TheRoll doesn't waste UI processing power on 0.0f bars
-    std::erase_if(finalPeaks, [](const SpectralPeak& p) { return p.magnitude <= 0.0f; });
+    std::erase_if(finalPeaks, [](const SpectralPeak& p) { return p.magnitude <= 0.0f && p.rawMagnitude <= 0.0f; });
 }

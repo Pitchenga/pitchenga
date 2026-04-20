@@ -8,6 +8,7 @@ struct SpectralPeak {
     float frequencyHz = 0.0f;
     float magnitude = 0.0f;
     float bandwidthHz = 1.0f;
+    float rawMagnitude = 0.0f;
 };
 
 struct StftBand {
