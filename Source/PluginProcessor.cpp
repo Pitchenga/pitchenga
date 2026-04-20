@@ -72,18 +72,22 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     // Mix down to mono into pre-allocated buffer
     float* monoData = monoBuffer.data();
     if (totalNumInputChannels == 1) {
-        auto* input = buffer.getReadPointer(0);
-        for (int i = 0; i < numSamples; ++i) {
-            monoData[i] = agcLeft.process(input[i]);
-        }
+        // auto* input = buffer.getReadPointer(0);
+        // for (int i = 0; i < numSamples; ++i) {
+            // monoData[i] = agcLeft.process(input[i]);
+        // }
+        juce::FloatVectorOperations::copy(monoData, buffer.getReadPointer(0), numSamples);
     } else if (totalNumInputChannels >= 2) {
         auto* left = buffer.getReadPointer(0);
         auto* right = buffer.getReadPointer(1);
-        for (int i = 0; i < numSamples; ++i) {
-            float l = agcLeft.process(left[i]);
-            float r = agcRight.process(right[i]);
-            monoData[i] = (l + r) * 0.5f;
-        }
+        // for (int i = 0; i < numSamples; ++i) {
+            // float l = agcLeft.process(left[i]);
+            // float r = agcRight.process(right[i]);
+            // monoData[i] = (l + r) * 0.5f;
+        // }
+        juce::FloatVectorOperations::copy(monoData, left, numSamples);
+        juce::FloatVectorOperations::add(monoData, right, numSamples);
+        juce::FloatVectorOperations::multiply(monoData, 0.5f, numSamples);
     }
 
     // Cascade multi-rate decimation using pointer swapping
