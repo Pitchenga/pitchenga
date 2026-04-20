@@ -9,7 +9,9 @@ void Util::init() {
     DBG("Starting Pitchenga");
 #if JUCE_DEBUG
     if (logFile.exists()) {
-        if (!logFile.deleteFile()) {
+        if (logFile.deleteFile()) {
+            debug("Deleted logFile=" + logFile.getFullPathName());
+        } else {
             debug("Failed deleting logFile=" + logFile.getFullPathName());
         }
     }
