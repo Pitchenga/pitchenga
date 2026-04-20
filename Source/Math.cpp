@@ -64,7 +64,7 @@ void Math::setupPitchDetection() {
 
 void Math::setupStft() {
     const double samplingFreq = audioProcessor.getSampleRate() > 0 ? audioProcessor.getSampleRate() : 44100.0;
-    stft.initialize(samplingFreq, 13);
+    stft.initialize(samplingFreq, 8192, 15);
 }
 
 void Math::processStft() {

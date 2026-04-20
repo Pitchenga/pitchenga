@@ -2,18 +2,19 @@
 #include <cmath>
 
 Stft::Stft() {
-    initialize(44100.0, 13);
+    initialize(44100.0, 8192, 13);
 }
 
-void Stft::initialize(const double sampleRateToUse, const int fftOrderToUse) {
+void Stft::initialize(const double sampleRateToUse, const int windowSizeToUse, const int fftOrderToUse) {
     currentSampleRate = sampleRateToUse > 0.0 ? sampleRateToUse : 44100.0;
+    windowSize = windowSizeToUse;
     fftOrder = fftOrderToUse;
     fftSize = 1 << fftOrder;
 
     fft = std::make_unique<juce::dsp::FFT>(fftOrder);
 
     window = std::make_unique<juce::dsp::WindowingFunction<float>>(
-        static_cast<size_t>(fftSize),
+        static_cast<size_t>(windowSize),
         juce::dsp::WindowingFunction<float>::blackmanHarris
     );
 
@@ -24,7 +25,7 @@ void Stft::initialize(const double sampleRateToUse, const int fftOrderToUse) {
 }
 
 void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
-    if (timeDomainSignal.size() < static_cast<size_t>(fftSize)) return;
+    if (timeDomainSignal.size() < static_cast<size_t>(windowSize)) return;
 
     performSTFT(timeDomainSignal);
     extractPeaks();
@@ -33,10 +34,10 @@ void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
 }
 
 void Stft::performSTFT(const std::vector<float>& timeDomainSignal) {
-    std::copy(timeDomainSignal.begin(), timeDomainSignal.begin() + fftSize, fftWorkspace.begin());
-    std::fill(fftWorkspace.begin() + fftSize, fftWorkspace.end(), 0.0f);
+    std::copy(timeDomainSignal.begin(), timeDomainSignal.begin() + windowSize, fftWorkspace.begin());
+    std::fill(fftWorkspace.begin() + windowSize, fftWorkspace.end(), 0.0f);
 
-    window->multiplyWithWindowingTable(fftWorkspace.data(), static_cast<size_t>(fftSize));
+    window->multiplyWithWindowingTable(fftWorkspace.data(), static_cast<size_t>(windowSize));
 
     fft->performFrequencyOnlyForwardTransform(fftWorkspace.data());
 
@@ -76,7 +77,10 @@ void Stft::extractPeaks() {
 
 void Stft::applyPsychoacousticTilt() {
     constexpr float anchorFrequency = 1000.0f;
-    constexpr float tiltDbPerOctave = 3.0f;
+
+    // A positive tilt violently boosts the highs. Setting this to 0.0f restores the natural acoustic
+    // roll-off, instantly curing the overexposed high end and relatively boosting the weak fundamentals.
+    constexpr float tiltDbPerOctave = 0.0f;
 
     for (auto& peak : finalPeaks) {
         if (peak.frequencyHz > 0.0f) {

@@ -14,7 +14,7 @@ public:
     Stft();
     ~Stft() = default;
 
-    void initialize(double sampleRateToUse, int fftOrderToUse);
+    void initialize(double sampleRateToUse, int windowSizeToUse, int fftOrderToUse);
     void processFrame(const std::vector<float>& timeDomainSignal);
 
     const std::vector<SpectralPeak>& getPeaks() const { return finalPeaks; }
@@ -26,6 +26,7 @@ private:
     void scaleForUi();
 
     double currentSampleRate = 44100.0;
+    int windowSize = 8192;
     int fftOrder = 13;
     int fftSize = 8192;
 
