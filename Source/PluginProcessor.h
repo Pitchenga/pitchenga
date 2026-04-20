@@ -6,7 +6,7 @@
 #include <vector>
 #include <array>
 #include "Control.h"
-#include "AutomaticGainControl.h"
+#include "Agc.h"
 
 class FastButterworth {
     std::array<float, 7> inputSamples{0.0f};
