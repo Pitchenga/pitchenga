@@ -33,7 +33,7 @@ private:
     void updateSampleRate(double newSampleRate);
     static double amplitudeToDbRescaled(double amplitude);
 
-    void flushStaleAudioData(int& availableSamples);
+    void flushStaleAudioData(int& availableSamples) const;
     void consumeAudioFromFifo();
     void processPitchDetection();
     void processCqtAndEqualization();

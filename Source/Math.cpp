@@ -137,7 +137,7 @@ void Math::run() {
     }
 }
 
-void Math::flushStaleAudioData(int& availableSamples) {
+void Math::flushStaleAudioData(int& availableSamples) const {
     // --- THE LATENCY KILLER (FRAME DROPPING) ---
     // If the DSP math falls behind real-time, the FIFO backs up and creates massive visual latency.
     // If we have more than a few blocks waiting, instantly flush the old ones to catch up to live audio.
