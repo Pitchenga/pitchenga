@@ -20,6 +20,7 @@ public:
     bool enablePeakExtraction = false;
     bool enablePsychoacousticTilt = false;
     bool enableTailKiller = false;
+    bool enableTemporalSmoothing = true;
 
     const std::vector<SpectralPeak>& getPeaks() const { return finalPeaks; }
 
@@ -40,6 +41,7 @@ private:
 
     std::vector<float> fftWorkspace;
     std::vector<float> magnitudes;
+    std::vector<float> smoothedMagnitudes;
     std::vector<SpectralPeak> finalPeaks;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Stft)

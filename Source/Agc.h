@@ -1,8 +1,5 @@
 #pragma once
 
-#include <cmath>
-#include <algorithm>
-
 class Agc {
 public:
     Agc(float alphaIn, float targetLevelIn, float maxGainIn);

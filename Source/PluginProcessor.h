@@ -111,8 +111,8 @@ private:
     std::vector<float> monoBuffer;
     std::vector<float> nextStageBuffer;
 
-    Agc agcLeft{0.0001f, 0.4f, 5.0f};
-    Agc agcRight{0.0001f, 0.4f, 5.0f};
+    Agc agcLeft{0.0001f, 0.4f, 2.0f};
+    Agc agcRight{0.0001f, 0.4f, 2.0f};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PitchengaAudioProcessor)
 };

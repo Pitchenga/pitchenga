@@ -20,6 +20,7 @@ void Stft::initialize(const double sampleRateToUse, const int windowSizeToUse, c
 
     fftWorkspace.assign(static_cast<size_t>(fftSize * 2), 0.0f);
     magnitudes.assign(static_cast<size_t>(fftSize / 2), 0.0f);
+    smoothedMagnitudes.assign(static_cast<size_t>(fftSize / 2), 0.0f);
 
     finalPeaks.reserve(1024);
 }
@@ -29,6 +30,14 @@ void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
 
     performSTFT(timeDomainSignal);
     
+    if (enableTemporalSmoothing) {
+        for (size_t i = 0; i < magnitudes.size(); ++i) {
+            smoothedMagnitudes[i] = 0.6f * smoothedMagnitudes[i] + 0.4f * magnitudes[i];
+        }
+    } else {
+        std::copy(magnitudes.begin(), magnitudes.end(), smoothedMagnitudes.begin());
+    }
+
     if (enablePeakExtraction) {
         extractPeaks();
     } else {
@@ -50,8 +59,17 @@ void Stft::performSTFT(const std::vector<float>& timeDomainSignal) {
     fft->performFrequencyOnlyForwardTransform(fftWorkspace.data());
 
     const float normalization = 1.0f / static_cast<float>(fftSize);
+    constexpr float smoothWeight = 0.4f;
+    constexpr float smoothDecay = 1.0f - smoothWeight;
+
     for (int index = 0; index < fftSize / 2; ++index) {
-        magnitudes[static_cast<size_t>(index)] = fftWorkspace[static_cast<size_t>(index)] * normalization;
+        const float rawMag = fftWorkspace[static_cast<size_t>(index)] * normalization;
+        if (enableTemporalSmoothing) {
+            smoothedMagnitudes[static_cast<size_t>(index)] = smoothDecay * smoothedMagnitudes[static_cast<size_t>(index)] + smoothWeight * rawMag;
+            magnitudes[static_cast<size_t>(index)] = smoothedMagnitudes[static_cast<size_t>(index)];
+        } else {
+            magnitudes[static_cast<size_t>(index)] = rawMag;
+        }
     }
 }
 
@@ -61,9 +79,9 @@ void Stft::extractPeaks() {
     const float binResolution = static_cast<float>(currentSampleRate) / static_cast<float>(fftSize);
 
     for (int index = 1; index < halfSize - 1; ++index) {
-        const float magnitudeLeft = magnitudes[static_cast<size_t>(index - 1)];
-        const float magnitudeCenter = magnitudes[static_cast<size_t>(index)];
-        const float magnitudeRight = magnitudes[static_cast<size_t>(index + 1)];
+        const float magnitudeLeft = smoothedMagnitudes[static_cast<size_t>(index - 1)];
+        const float magnitudeCenter = smoothedMagnitudes[static_cast<size_t>(index)];
+        const float magnitudeRight = smoothedMagnitudes[static_cast<size_t>(index + 1)];
 
         if (magnitudeCenter > magnitudeLeft && magnitudeCenter > magnitudeRight) {
             const float denominator = magnitudeLeft - 2.0f * magnitudeCenter + magnitudeRight;
@@ -90,7 +108,7 @@ void Stft::extractRawBins() {
 
     for (int index = 1; index < halfSize; ++index) {
         const float exactFrequency = static_cast<float>(index) * binResolution;
-        const float exactMagnitude = magnitudes[static_cast<size_t>(index)];
+        const float exactMagnitude = smoothedMagnitudes[static_cast<size_t>(index)];
 
         if (exactMagnitude > 1e-6f) {
             finalPeaks.push_back({exactFrequency, exactMagnitude});

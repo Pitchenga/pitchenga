@@ -1,4 +1,6 @@
 #include "Agc.h"
+#include <cmath>
+#include <algorithm>
 
 Agc::Agc(float alphaIn, float targetLevelIn, float maxGainIn)
     : alpha(alphaIn), targetLevel(targetLevelIn), maxGain(maxGainIn) {}
