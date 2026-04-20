@@ -33,7 +33,7 @@ public:
 
     bool enablePeakExtraction = false;
     bool enablePsychoacousticTilt = true;
-    bool enableTailKiller = false;
+    bool enableTailKiller = true;
     bool enableTemporalSmoothing = true;
 
     const std::vector<SpectralPeak>& getPeaks() const { return finalPeaks; }
