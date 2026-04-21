@@ -1,12 +1,29 @@
 #include "Tuna.h"
 #include <cmath>
 
-Tuna::Tuna()
-= default;
+Tuna::Tuna() {
+    // Pre-calculate the sine wave intensities once during construction
+    for (int i = 0; i < strobeCycleWidth; ++i) {
+        const float sineVal = std::sin(juce::MathConstants<float>::twoPi * static_cast<float>(i) / static_cast<float>(strobeCycleWidth));
+        const float wave = 0.5f * (1.0f + sineVal); // 0.0 to 1.0
+
+        // Intensity interpolates from 0.5 to 1.0
+        strobeIntensities[static_cast<size_t>(i)] = 0.5f + (0.5f * wave);
+    }
+}
 
 void Tuna::setPitchFrequency(const float frequencyHz) {
     if (frequencyHz > 0.0f) {
         currentMidi = freqToMidi(frequencyHz);
+
+        const float error = currentMidi - std::round(currentMidi);
+
+        // Speed lowered to avoid the "Wagon-Wheel Effect" optical illusion
+        constexpr float maxPixelsPerFrame = 15.0f;
+        strobePhase += error * maxPixelsPerFrame;
+
+        while (strobePhase >= static_cast<float>(strobeCycleWidth)) strobePhase -= static_cast<float>(strobeCycleWidth);
+        while (strobePhase < 0.0f) strobePhase += static_cast<float>(strobeCycleWidth);
     } else {
         currentMidi = -1.0f;
     }
@@ -16,7 +33,7 @@ void Tuna::setPitchFrequency(const float frequencyHz) {
 void Tuna::setRange(const float minMidiNote, const float maxMidiNote) {
     minMidi = minMidiNote;
     maxMidi = maxMidiNote;
-    updateCachedGradient();
+    updateCachedLabels();
     repaint();
 }
 
@@ -78,34 +95,16 @@ float Tuna::getPreferredHeight() {
     return stripHeight + tickHeight + getLabelHeight();
 }
 
-void Tuna::updateCachedGradient() {
+void Tuna::updateCachedLabels() {
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
 
-    // Create a 2D image so we can bake the text and ticks directly into it
-    cachedGradient = juce::Image(juce::Image::ARGB, width, height, true);
+    // Create a 2D image purely for the static text and ticks
+    cachedLabels = juce::Image(juce::Image::ARGB, width, height, true);
+    juce::Graphics graphics(cachedLabels);
 
     const float stripY = static_cast<float>(height) - stripHeight;
-
-    // Bake the continuous gradient
-    const juce::Image::BitmapData data(cachedGradient, juce::Image::BitmapData::writeOnly);
-    for (int x = 0; x < width; ++x) {
-        const float horizontalFraction = width > 1 ? static_cast<float>(x) / static_cast<float>(width - 1) : 0.0f;
-        const float midiAtX = minMidi + horizontalFraction * (maxMidi - minMidi);
-
-        float chroma = std::fmod(midiAtX, 12.0f);
-        if (chroma < 0.0f) chroma += 12.0f;
-
-        const juce::Colour fullColor = Tone::getContinuousColor(chroma);
-
-        for (int y = static_cast<int>(stripY); y < height; ++y) {
-            data.setPixelColour(x, y, fullColor);
-        }
-    }
-
-    // Bake the labels and ticks into the image
-    juce::Graphics graphics(cachedGradient);
     graphics.setFont(getLabelFont());
 
     const int startMidi = static_cast<int>(std::ceil(minMidi));
@@ -129,19 +128,42 @@ void Tuna::updateCachedGradient() {
 }
 
 void Tuna::resized() {
-    updateCachedGradient();
+    updateCachedLabels();
 }
 
 void Tuna::paint(juce::Graphics& graphics) {
     const auto bounds = getLocalBounds().toFloat();
     const auto height = static_cast<float>(getHeight());
+    const float stripY = height - stripHeight;
+    const int width = getWidth();
 
-    // Draw the fully baked static background (Opaque overwrite, zero alpha tax)
-    if (cachedGradient.isValid()) {
-        graphics.drawImageAt(cachedGradient, 0, 0);
+    // 1. Draw the live strobe gradient natively
+    for (int x = 0; x < width; ++x) {
+        const float horizontalFraction = width > 1 ? static_cast<float>(x) / static_cast<float>(width - 1) : 0.0f;
+        const float midiAtX = minMidi + horizontalFraction * (maxMidi - minMidi);
+
+        float chroma = std::fmod(midiAtX, 12.0f);
+        if (chroma < 0.0f) chroma += 12.0f;
+
+        juce::Colour color = Tone::getContinuousColor(chroma);
+
+        int phaseIndex = (x - static_cast<int>(strobePhase)) % strobeCycleWidth;
+        if (phaseIndex < 0) phaseIndex += strobeCycleWidth;
+
+        // Modulate color intensity with black to form the exact strobe effect
+        const float intensity = strobeIntensities[static_cast<size_t>(phaseIndex)];
+        color = color.interpolatedWith(juce::Colours::black, 1.0f - intensity);
+
+        graphics.setColour(color);
+        graphics.fillRect(static_cast<float>(x), stripY, 1.0f, stripHeight);
     }
 
-    // Dynamic Illumination Overlay
+    // 2. Overlay the pre-baked labels and ticks
+    if (cachedLabels.isValid()) {
+        graphics.drawImageAt(cachedLabels, 0, 0);
+    }
+
+    // 3. Dynamic Illumination Overlay
     if (currentMidi >= minMidi && currentMidi <= maxMidi) {
         graphics.setFont(getLabelFont());
 

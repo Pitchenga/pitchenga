@@ -1,11 +1,11 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <array>
 #include "../Tone.h"
 
 class Tuna : public juce::Component {
 public:
     Tuna();
-
 
     void setPitchFrequency(float frequencyHz);
     void setRange(float minMidiNote, float maxMidiNote);
@@ -25,7 +25,7 @@ public:
     static constexpr auto tunaFontStyle = "Bold";
 
 private:
-    void updateCachedGradient();
+    void updateCachedLabels();
     static float freqToMidi(float freq);
     static juce::String getNoteName(int midiNote);
     static void paintLabel(juce::Graphics& graphics, int midiNote, float x, float stripY);
@@ -37,8 +37,11 @@ private:
     float maxMidi = 87.0f;
     float currentMidi = -1.0f;
 
-    juce::Image cachedGradient;
+    juce::Image cachedLabels;
 
+    float strobePhase = 0.0f;
+    static constexpr int strobeCycleWidth = 60;
+    std::array<float, 60> strobeIntensities;
 
     static juce::Font getLabelFont();
 

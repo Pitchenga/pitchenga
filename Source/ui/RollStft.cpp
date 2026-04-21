@@ -6,6 +6,12 @@
 RollStft::RollStft(PitchengaAudioProcessor& proc) : processor(proc) {}
 
 void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
+    if (!isVisible()) {
+        if (steamImage.isValid()) {
+            steamImage.clear(juce::Rectangle(0, 0, steamImage.getWidth(), steamImage.getHeight()), juce::Colours::transparentBlack);
+        }
+        return;
+    }
 
     if (!processor.settings.freezeRoll) {
         activePeaks = peaks;
