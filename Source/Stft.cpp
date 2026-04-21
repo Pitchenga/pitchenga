@@ -149,6 +149,9 @@ void Stft::sculptSpectrum() {
 
     for (int i = 0; i < stitchedSize; ++i) {
         const float freq = static_cast<float>(i) * unifiedBinResolution;
+        const float centerMagnitude = stitchedMagnitudes[static_cast<size_t>(i)];
+
+        if (centerMagnitude < 1e-6f) continue;
 
         // The Blackman-Harris window has a main lobe width of ~8 bins natively.
         // We multiply the native half-width (4) by the zero-padding factor to find the exact shoulders.
@@ -156,35 +159,33 @@ void Stft::sculptSpectrum() {
         if (freq >= 2000.0f) lobeHalfWidthBins = 128;      // High band: 65536 / 2048 = 32 padding. 32 * 4 = 128 bins.
         else if (freq >= 250.0f) lobeHalfWidthBins = 64;   // Mid band: 65536 / 4096 = 16 padding. 16 * 4 = 64 bins.
 
-        const float centerMagnitude = stitchedMagnitudes[static_cast<size_t>(i)];
-
-        float shoulderAverage = centerMagnitude;
-        if (i >= lobeHalfWidthBins && i < stitchedSize - lobeHalfWidthBins) {
-            shoulderAverage = (stitchedMagnitudes[static_cast<size_t>(i - lobeHalfWidthBins)] + stitchedMagnitudes[static_cast<size_t>(i + lobeHalfWidthBins)]) * 0.5f;
+        // Find the absolute local summit within this lobe's neighborhood
+        float localMax = centerMagnitude;
+        int startJ = std::max(0, i - lobeHalfWidthBins);
+        int endJ = std::min(stitchedSize - 1, i + lobeHalfWidthBins);
+        for (int j = startJ; j <= endJ; ++j) {
+            if (stitchedMagnitudes[static_cast<size_t>(j)] > localMax) {
+                localMax = stitchedMagnitudes[static_cast<size_t>(j)];
+            }
         }
 
-        // 1D Unsharp Masking / Laplacian filter
-        const float prominence = centerMagnitude - shoulderAverage;
-        float sculpted = centerMagnitude;
+        // OUTDATED: 1D Unsharp Masking / Laplacian filter
+        // OUTDATED: We are near a peak's summit -> Expand vertically
+        // OUTDATED: We are on the sloping shoulders or in a valley -> Shrink horizontally
+        // OUTDATED: (prominence is negative here, so adding it mathematically subtracts from the magnitude)
 
-        if (prominence > 0.0f) {
-            // OUTDATED: Vertical Expander: multiply the isolated peak to recover gain and expand contrast
-            // We are near a peak's summit -> Expand vertically
-            sculpted += prominence * peakExpanderVertical;
-        } else {
-            // Logarithmic Progressive Shrinker:
-            // Dynamically calculate the horizontal carving intensity to equalize the log-scale visual thickness.
-            const float logFrequency = std::log10(std::max(minFrequencyHz, freq));
-            const float logFrequencyNorm = std::min(1.0f, std::max(0.0f, (logFrequency - logMinFrequency) * logFrequencyRangeInv));
-            const float dynamicShrinkerWeight = bassShrinkerHorizontal - logFrequencyNorm * (bassShrinkerHorizontal - trebleShrinkerHorizontal);
+        // Logarithmic Progressive Shrinker:
+        // Dynamically calculate the horizontal carving intensity to equalize the log-scale visual thickness.
+        const float logFrequency = std::log10(std::max(minFrequencyHz, freq));
+        const float logFrequencyNorm = std::min(1.0f, std::max(0.0f, (logFrequency - logMinFrequency) * logFrequencyRangeInv));
+        const float dynamicExponent = bassShrinkerExponent - logFrequencyNorm * (bassShrinkerExponent - trebleShrinkerExponent);
 
-            // OUTDATED: Horizontal Shrinker: subtract a fraction of surrounding energy
-            // We are on the sloping shoulders or in a valley -> Shrink horizontally
-            // (prominence is negative here, so adding it mathematically subtracts from the magnitude)
-            sculpted += prominence * dynamicShrinkerWeight;
-        }
+        // Relative Peak Expander Math:
+        // Calculate ratio compared to local summit (0.0 to 1.0)
+        const float isolationRatio = centerMagnitude / localMax;
 
-        sharpenedMagnitudes[static_cast<size_t>(i)] = std::max(0.0f, sculpted);
+        // Raise ratio to exponent to pinch the shoulders, multiply back by localMax to restore true amplitude, then apply vertical makeup
+        sharpenedMagnitudes[static_cast<size_t>(i)] = localMax * std::pow(isolationRatio, dynamicExponent) * peakExpanderVertical;
     }
 
     std::copy(sharpenedMagnitudes.begin(), sharpenedMagnitudes.end(), stitchedMagnitudes.begin());

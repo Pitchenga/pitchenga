@@ -37,10 +37,9 @@ public:
     bool enableTemporalSmoothing = true;
 
     // Gradiental Peak Extractor Factors
-    float bassShrinkerHorizontal = 3.0f;   // Heavy horizontal carving for wide bass blobs
-    float trebleShrinkerHorizontal = 0.5f; // Gentle horizontal carving for thin treble peaks
-
-    float peakExpanderVertical = 2.0f;   // Intensity of vertical summit expansion
+    float bassShrinkerExponent = 16.0f;    // High exponent to heavily pinch wide bass lobes
+    float trebleShrinkerExponent = 2.0f;   // Low exponent to gently pinch thin treble lobes
+    float peakExpanderVertical = 2.0f;     // Multiplicative makeup gain for the preserved summit
 
     const std::vector<SpectralPeak>& getPeaks() const { return finalPeaks; }
 
