@@ -178,32 +178,54 @@ void Tuna::paint(juce::Graphics& graphics) {
     }
 
     // Dynamic Illumination Overlay
-    graphics.setFont(getLabelFont());
-    const float labelStripY = height - stripHeight;
-    const int startMidi = static_cast<int>(std::ceil(minMidi));
-    const int endMidi = static_cast<int>(std::floor(maxMidi));
-
-    for (int note = startMidi; note <= endMidi; ++note) {
-        if (note > startMidi && note < endMidi) {
-            const float closestX = bounds.getWidth() * ((static_cast<float>(note) - minMidi) / (maxMidi - minMidi));
-
-            int nearestChroma = note % 12;
-            if (nearestChroma < 0) nearestChroma += 12;
-
-            juce::Colour toneColor = Tone::chromaticScale[static_cast<size_t>(nearestChroma)].color;
-
-            if (currentMidi >= minMidi && currentMidi <= maxMidi) {
-                float distance = std::abs(currentMidi - static_cast<float>(note));
-                float brightness = std::max(0.2f, 1.0f - (distance * 0.8f));
-                toneColor = toneColor.interpolatedWith(juce::Colours::black, 1.0f - brightness);
-            }
-
-            graphics.setColour(toneColor);
-            paintLabel(graphics, note, closestX, labelStripY);
-        }
-    }
-
     if (currentMidi >= minMidi && currentMidi <= maxMidi) {
+        graphics.setFont(getLabelFont());
+
+        const float labelStripY = height - stripHeight;
+
+        // Find the nearest perfect whole note to illuminate
+        const int nearestNote = static_cast<int>(std::round(currentMidi));
+        const int startMidi = static_cast<int>(std::ceil(minMidi));
+        const int endMidi = static_cast<int>(std::floor(maxMidi));
+
+        // Light up the label
+        if (nearestNote > startMidi && nearestNote < endMidi) {
+            const float closestX = bounds.getWidth() * ((static_cast<float>(nearestNote) - minMidi) / (maxMidi - minMidi));
+
+            int nearestChroma = nearestNote % 12;
+            if (nearestChroma < 0) nearestChroma += 12;
+            const juce::Colour toneColor = Tone::chromaticScale[static_cast<size_t>(nearestChroma)].color;
+            graphics.setColour(toneColor);
+            paintLabel(graphics, nearestNote, closestX, labelStripY);
+        }
+
+        // Identify adjacent note on the pitchy side and dim it proportionally
+        const float error = currentMidi - static_cast<float>(nearestNote);
+        int adjacentNote = -1;
+
+        if (error > 0.001f) {
+            adjacentNote = nearestNote + 1; // Sharp
+        } else if (error < -0.001f) {
+            adjacentNote = nearestNote - 1; // Flat
+        }
+
+        if (adjacentNote > startMidi && adjacentNote < endMidi) {
+            const float pitchiness = std::abs(error); // 0.0 to 0.5
+            // Map pitchiness linearly from 0.2 (at 0.0 error) to 1.0 (at 0.5 error)
+            const float brightness = 0.2f + (pitchiness / 0.5f) * 0.8f;
+
+            const float adjX = bounds.getWidth() * ((static_cast<float>(adjacentNote) - minMidi) / (maxMidi - minMidi));
+            int adjChroma = adjacentNote % 12;
+            if (adjChroma < 0) adjChroma += 12;
+            juce::Colour adjColor = Tone::chromaticScale[static_cast<size_t>(adjChroma)].color;
+
+            // Interpolate with black to dim the text, allowing it to overwrite the baked label natively
+            adjColor = adjColor.interpolatedWith(juce::Colours::black, 1.0f - brightness);
+
+            graphics.setColour(adjColor);
+            paintLabel(graphics, adjacentNote, adjX, labelStripY);
+        }
+
         // Draw the tuna needle
         const float pitchX = bounds.getWidth() * ((currentMidi - minMidi) / (maxMidi - minMidi));
         const float tunaStripY = height - stripHeight + tickHeight;
