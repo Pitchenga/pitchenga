@@ -21,12 +21,6 @@ void Tuna::setPitchFrequency(const float frequencyHz) {
         // Speed optimized to avoid the "Wagon-Wheel Effect" optical illusion while maintaining high visibility
         constexpr float maxPixelsPerFrame = 20.0f;
         targetVelocity = error * maxPixelsPerFrame;
-    } else {
-        currentMidi = -1.0f;
-
-        // Digital tuners use an "Infinite Hold" paradigm.
-        // We deliberately DO NOT reset targetVelocity here, so the strobe permanently
-        // spins at the exact speed of the last known tuning error until a new note is struck!
     }
 
     // Mechanical Inertia: A physical strobe disc cannot instantly stop or change direction.
@@ -142,6 +136,7 @@ void Tuna::updateCachedLabels() {
 void Tuna::resized() {
     updateCachedLabels();
 }
+
 void Tuna::paint(juce::Graphics& graphics) {
     const auto bounds = getLocalBounds().toFloat();
     const auto height = static_cast<float>(getHeight());
@@ -183,27 +178,32 @@ void Tuna::paint(juce::Graphics& graphics) {
     }
 
     // Dynamic Illumination Overlay
-    if (currentMidi >= minMidi && currentMidi <= maxMidi) {
-        graphics.setFont(getLabelFont());
+    graphics.setFont(getLabelFont());
+    const float labelStripY = height - stripHeight;
+    const int startMidi = static_cast<int>(std::ceil(minMidi));
+    const int endMidi = static_cast<int>(std::floor(maxMidi));
 
-        const float labelStripY = height - stripHeight;
+    for (int note = startMidi; note <= endMidi; ++note) {
+        if (note > startMidi && note < endMidi) {
+            const float closestX = bounds.getWidth() * ((static_cast<float>(note) - minMidi) / (maxMidi - minMidi));
 
-        // Find the nearest perfect whole note to illuminate
-        const int nearestNote = static_cast<int>(std::round(currentMidi));
-        const int startMidi = static_cast<int>(std::ceil(minMidi));
-        const int endMidi = static_cast<int>(std::floor(maxMidi));
-
-        // Light up the label
-        if (nearestNote > startMidi && nearestNote < endMidi) {
-            const float closestX = bounds.getWidth() * ((static_cast<float>(nearestNote) - minMidi) / (maxMidi - minMidi));
-
-            int nearestChroma = nearestNote % 12;
+            int nearestChroma = note % 12;
             if (nearestChroma < 0) nearestChroma += 12;
-            const juce::Colour toneColor = Tone::chromaticScale[static_cast<size_t>(nearestChroma)].color;
-            graphics.setColour(toneColor);
-            paintLabel(graphics, nearestNote, closestX, labelStripY);
-        }
 
+            juce::Colour toneColor = Tone::chromaticScale[static_cast<size_t>(nearestChroma)].color;
+
+            if (currentMidi >= minMidi && currentMidi <= maxMidi) {
+                float distance = std::abs(currentMidi - static_cast<float>(note));
+                float brightness = std::max(0.2f, 1.0f - (distance * 0.8f));
+                toneColor = toneColor.interpolatedWith(juce::Colours::black, 1.0f - brightness);
+            }
+
+            graphics.setColour(toneColor);
+            paintLabel(graphics, note, closestX, labelStripY);
+        }
+    }
+
+    if (currentMidi >= minMidi && currentMidi <= maxMidi) {
         // Draw the tuna needle
         const float pitchX = bounds.getWidth() * ((currentMidi - minMidi) / (maxMidi - minMidi));
         const float tunaStripY = height - stripHeight + tickHeight;
@@ -226,8 +226,7 @@ void Tuna::paint(juce::Graphics& graphics) {
         graphics.setColour(exactPitchColor);
         graphics.fillPath(triangle);
 
-        // Give it a bright white outline to guarantee separation from the strobe
-        graphics.setColour(juce::Colours::white);
+        graphics.setColour(juce::Colours::black);
         graphics.strokePath(triangle, juce::PathStrokeType(2.0f));
     }
 }
