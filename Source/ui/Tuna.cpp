@@ -151,6 +151,8 @@ void Tuna::paint(juce::Graphics& graphics) {
     const int width = getWidth();
 
     // Draw the live strobe gradient natively
+    constexpr float strobeSpreadMidi = 2.0f;
+
     for (int x = 0; x < width; ++x) {
         const float horizontalFraction = width > 1 ? static_cast<float>(x) / static_cast<float>(width - 1) : 0.0f;
         const float midiAtX = minMidi + horizontalFraction * (maxMidi - minMidi);
@@ -160,20 +162,29 @@ void Tuna::paint(juce::Graphics& graphics) {
 
         juce::Colour color = Tone::getContinuousColor(chroma);
 
-        // Sub-pixel continuous phase calculation prevents micro-stuttering and halting at slow speeds
-        const float exactPhase = static_cast<float>(x) - strobePhase;
-        float phaseF = std::fmod(exactPhase, static_cast<float>(strobeCycleWidth));
-        if (phaseF < 0.0f) phaseF += static_cast<float>(strobeCycleWidth);
+        if (currentMidi >= minMidi && currentMidi <= maxMidi) {
+            const float distanceMidi = std::abs(midiAtX - currentMidi);
 
-        const int index0 = static_cast<int>(phaseF);
-        const int index1 = (index0 + 1) % strobeCycleWidth;
-        const float frac = phaseF - static_cast<float>(index0);
+            if (distanceMidi < strobeSpreadMidi) {
+                // Sub-pixel continuous phase calculation prevents micro-stuttering and halting at slow speeds
+                const float exactPhase = static_cast<float>(x) - strobePhase;
+                float phaseF = std::fmod(exactPhase, static_cast<float>(strobeCycleWidth));
+                if (phaseF < 0.0f) phaseF += static_cast<float>(strobeCycleWidth);
 
-        // Modulate color intensity with black to form the exact strobe effect using linear interpolation
-        const float intensity = strobeIntensities[static_cast<size_t>(index0)] * (1.0f - frac) +
-                                strobeIntensities[static_cast<size_t>(index1)] * frac;
+                const int index0 = static_cast<int>(phaseF);
+                const int index1 = (index0 + 1) % strobeCycleWidth;
+                const float frac = phaseF - static_cast<float>(index0);
 
-        color = color.interpolatedWith(juce::Colours::black, 1.0f - intensity);
+                // Modulate color intensity locally, fading out the strobe effect towards the edges of the section
+                const float intensity = strobeIntensities[static_cast<size_t>(index0)] * (1.0f - frac) +
+                                        strobeIntensities[static_cast<size_t>(index1)] * frac;
+
+                const float fadeFactor = 1.0f - (distanceMidi / strobeSpreadMidi);
+                const float dimming = (1.0f - intensity) * fadeFactor;
+
+                color = color.interpolatedWith(juce::Colours::black, dimming);
+            }
+        }
 
         graphics.setColour(color);
         graphics.fillRect(static_cast<float>(x), stripY, 1.0f, stripHeight);
