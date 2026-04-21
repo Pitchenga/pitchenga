@@ -81,8 +81,8 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     // Default size is used if no state is loaded
-    int lastUIWidth = 700;
-    int lastUIHeight = 730;
+    int lastUIWidth = 601;
+    int lastUIHeight = 951;
 
     bool showRoll = true;
     bool showEye = true;

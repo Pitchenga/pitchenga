@@ -1,8 +1,6 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
-#include "Util.h"
-
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p), worker(p), tuna(), eye(), stftRoll(p), cqtRoll(p), splitter(p), control(p) {
 
@@ -107,6 +105,4 @@ void PitchengaAudioProcessorEditor::resized() {
     } else if (audioProcessor.settings.showEye) {
         eye.setBounds(bounds);
     }
-
-
 }

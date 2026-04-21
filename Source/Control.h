@@ -11,8 +11,8 @@ public:
     // Data model for UI settings.
     // Handles its own XML parsing, but lives in the Processor to survive window closures.
     struct Settings {
-        int lastUIWidth = 800;
-        int lastUIHeight = 600;
+        int lastUIWidth = 601;
+        int lastUIHeight = 951;
 
         bool showRoll = true;
         bool showEye = true;
@@ -23,7 +23,7 @@ public:
         bool showSteam = true;
         bool showForrest = false;
 
-        float splitRatio = 0.5f;
+        float splitRatio = 0.3130223751068115f;
 
         [[nodiscard]] juce::XmlElement createXml() const;
         bool loadFromXml(const juce::XmlElement& xml);
