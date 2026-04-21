@@ -7,7 +7,7 @@ TheRoll::TheRoll(PitchengaAudioProcessor& proc) : processor(proc) {}
 
 void TheRoll::updateResults(const std::vector<SpectralPeak>& peaks) {
 
-    if (!processor.uiSettings.pauseRoll) {
+    if (!processor.uiSettings.freezeRoll) {
         activePeaks = peaks;
 
         if (processor.uiSettings.showSteam) {

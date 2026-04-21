@@ -89,6 +89,7 @@ double Math::amplitudeToDbRescaled(const double amplitude) {
 }
 
 void Math::run() {
+    //fixme: targetTimeMs is not used
     double targetTimeMs = juce::Time::getMillisecondCounterHiRes();
 
     while (!threadShouldExit()) {

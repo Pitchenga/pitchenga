@@ -18,7 +18,7 @@ public:
         bool showEye = true;
         bool showTuna = true;
 
-        bool pauseRoll = false;
+        bool freezeRoll = false;
         bool showSteam = true;
         bool showForrest = true;
 
@@ -48,7 +48,7 @@ private:
     juce::TextButton toggleTuna{"Tuna"};
     juce::TextButton toggleEye{"Eye"};
     juce::TextButton toggleRoll{"Roll"};
-    juce::TextButton togglePauseRoll{"Freeze"};
+    juce::TextButton toggleFreezeRoll{"Freeze"};
     juce::TextButton toggleSteam{"Steam"};
     juce::TextButton toggleForrest{"Forest"};
     juce::Label buildTimestampLabel;
