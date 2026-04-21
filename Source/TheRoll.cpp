@@ -189,7 +189,7 @@ void TheRoll::paintPeaks(juce::Graphics& graphics) const {
     }
 }
 void TheRoll::pumpSteam() {
-    if (!steamImage.isValid()) return;
+    if (activePeaks.empty() || !steamImage.isValid()) return;
 
     const int width = getWidth();
     const int height = getHeight();
