@@ -21,6 +21,13 @@ void Tuna::setPitchFrequency(const float frequencyHz) {
         // Speed optimized to avoid the "Wagon-Wheel Effect" optical illusion while maintaining high visibility
         constexpr float maxPixelsPerFrame = 20.0f;
         targetVelocity = error * maxPixelsPerFrame;
+        framesSinceSignalLost = 0;
+    } else {
+        // We intentionally do NOT reset currentMidi here so the needle remains visible at the last known pitch.
+        framesSinceSignalLost++;
+        if (framesSinceSignalLost > spinHoldFrames) {
+            targetVelocity = 0.0f;
+        }
     }
 
     // Mechanical Inertia: A physical strobe disc cannot instantly stop or change direction.
@@ -197,33 +204,6 @@ void Tuna::paint(juce::Graphics& graphics) {
             const juce::Colour toneColor = Tone::chromaticScale[static_cast<size_t>(nearestChroma)].color;
             graphics.setColour(toneColor);
             paintLabel(graphics, nearestNote, closestX, labelStripY);
-        }
-
-        // Identify adjacent note on the pitchy side and dim it proportionally
-        const float error = currentMidi - static_cast<float>(nearestNote);
-        int adjacentNote = -1;
-
-        if (error > 0.001f) {
-            adjacentNote = nearestNote + 1; // Sharp
-        } else if (error < -0.001f) {
-            adjacentNote = nearestNote - 1; // Flat
-        }
-
-        if (adjacentNote > startMidi && adjacentNote < endMidi) {
-            const float pitchiness = std::abs(error); // 0.0 to 0.5
-            // Map pitchiness linearly from 0.2 (at 0.0 error) to 1.0 (at 0.5 error)
-            const float brightness = 0.2f + (pitchiness / 0.5f) * 0.8f;
-
-            const float adjX = bounds.getWidth() * ((static_cast<float>(adjacentNote) - minMidi) / (maxMidi - minMidi));
-            int adjChroma = adjacentNote % 12;
-            if (adjChroma < 0) adjChroma += 12;
-            juce::Colour adjColor = Tone::chromaticScale[static_cast<size_t>(adjChroma)].color;
-
-            // Interpolate with black to dim the text, allowing it to overwrite the baked label natively
-            adjColor = adjColor.interpolatedWith(juce::Colours::black, 1.0f - brightness);
-
-            graphics.setColour(adjColor);
-            paintLabel(graphics, adjacentNote, adjX, labelStripY);
         }
 
         // Draw the tuna needle

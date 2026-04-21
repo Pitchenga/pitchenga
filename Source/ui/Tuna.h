@@ -45,6 +45,9 @@ private:
     static constexpr int strobeCycleWidth = 60;
     std::array<float, 60> strobeIntensities;
 
+    int framesSinceSignalLost = 0;
+    static constexpr int spinHoldFrames = 96;
+
     static juce::Font getLabelFont();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Tuna)
