@@ -37,7 +37,8 @@ public:
     bool enableTemporalSmoothing = true;
 
     // Gradiental Peak Extractor Factors
-    float bassShrinkerExponent = 64.0f;    // High exponent to heavily pinch wide bass lobes
+    // float bassShrinkerExponent = 64.0f;    // High exponent to heavily pinch wide bass lobes
+    float bassShrinkerExponent = 1.0f;    // High exponent to heavily pinch wide bass lobes
     float trebleShrinkerExponent = 0.01f;   // Low exponent to gently pinch thin treble lobes
     float peakExpanderVertical = 10.0f;     // Multiplicative makeup gain for the preserved summit
 
@@ -50,7 +51,6 @@ private:
     void sculptSpectrum();
     void applyProgressiveSmoothing();
 
-    void extractPeaks();
     void applyPsychoacousticTilt();
     void scaleForUi();
     void extractRawBins();
@@ -62,7 +62,7 @@ private:
 
     std::vector<float> stitchedMagnitudes;
     std::vector<float> smoothedMagnitudes;
-    static constexpr int stitchedSize = 32768;
+    static constexpr int stitchedSize = 16384; // Reduced to 16k to halve CPU consumption
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Stft)
 };

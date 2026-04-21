@@ -6,11 +6,6 @@
 TheRoll::TheRoll(PitchengaAudioProcessor& proc) : processor(proc) {}
 
 void TheRoll::updateResults(const std::vector<SpectralPeak>& peaks) {
-    // OUTDATED: MAnalyzer achieves its clean look by simply dropping the visual floor.
-    // OUTDATED: Our raw data maps 0.0 to -90dB. A lot of low-level acoustic noise lives there.
-    // OUTDATED: By setting the visual floor to 0.35 (approx -58dB), the noise falls entirely off the screen,
-    // OUTDATED: leaving only the pure, distinct harmonic peaks.
-    // OUTDATED: Stretch the remaining peaks back to the 0.0 - 1.0 range for drawing
 
     activePeaks = peaks;
 
@@ -140,8 +135,6 @@ void TheRoll::paintFrame(juce::Graphics& graphics) const {
         // Identify standard "black" keys
         const bool isBlackKey = chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10;
 
-        // OUTDATED: Find the exact pitch bin index for this semitone
-        // OUTDATED: Find the visual center of that specific pitch bin
         const float hz = 440.0f * std::pow(2.0f, (static_cast<float>(i) - 69.0f) / 12.0f);
         const float targetCenter = frequencyToX(hz, static_cast<float>(getWidth()));
 
@@ -169,10 +162,6 @@ void TheRoll::paintPeaks(juce::Graphics& graphics) const {
             // Configurable razor-sharp stems for the Forrest
             float stemWidthPixels = 5.0f;
             if (enableDynamicStemWidth) {
-                // OUTDATED: Mathematically calculate the exact pixel width of this linear FFT bin on the log scale
-                // OUTDATED: const float sr = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
-                // OUTDATED: const float binResHz = sr / 32768.0f;
-                // OUTDATED: const float nextX = frequencyToX(peak.frequencyHz + binResHz, static_cast<float>(width));
 
                 const float nextX = frequencyToX(peak.frequencyHz + peak.bandwidthHz, static_cast<float>(width));
                 // +1.0f forces deliberate sub-pixel overlap to completely kill rendering gaps

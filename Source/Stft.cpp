@@ -28,14 +28,11 @@ void Stft::initialize(const double sampleRateToUse) {
     };
 
     // The window size shrinks for high frequencies to preserve transient timing via heavy zero-padding.
-    // OUTDATED: Low: 185ms window. Order 16 (65536) for ultra-dense 0.67Hz sub-bass precision. Fast response.
-    addResolutionBand(8192, 16);
+    addResolutionBand(8192, 15); // Low: 185ms window. Order 15 (32768) for 1.34Hz precision. CPU optimized.
 
-    // OUTDATED: Mid: 92ms window. Order 15 (32768) for 1.34Hz precision. Medium response.
-    addResolutionBand(4096, 15);
+    addResolutionBand(4096, 14); // Mid: 92ms window. Order 14 (16384) for 2.69Hz precision. CPU optimized.
 
-    // OUTDATED: High: 46ms window. Order 14 (16384) for 2.69Hz precision. Extreme smoothing to cure jitter.
-    addResolutionBand(2048, 14);
+    addResolutionBand(2048, 13); // High: 46ms window. Order 13 (8192) for 5.38Hz precision. CPU optimized.
 
     stitchedMagnitudes.assign(stitchedSize, 0.0f);
     smoothedMagnitudes.assign(stitchedSize, 0.0f);
@@ -48,15 +45,8 @@ void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
 
     performStft(timeDomainSignal);
 
-    // OUTDATED: The gradiental Soft Extractor now physically pre-sculpts the bins inside performStft.
-    // OUTDATED: We always use extractRawBins to pull the continuously sculpted data for the UI.
-
-    // OUTDATED: The Laplacian Unsharp Mask has now transformed the wide, unstable plateaus into perfectly sharp needles.
-    // OUTDATED: We let the quadratic peak picker isolate the exact summit of those needles to generate razor-thin visual stems.
-
     // The Gradiental Peak Extractor (Unsharp Mask) physically sculpts the continuous spectrum inside performStft.
     // We must use extractRawBins to preserve the progressively carved visual width of these lobes.
-    // The old quadratic summit-finder (extractPeaks) is bypassed entirely.
     extractRawBins();
 
     if (enablePsychoacousticTilt) {
@@ -141,7 +131,7 @@ void Stft::sculptSpectrum() {
     // --- GRADIENTAL PEAK EXTRACTOR ---
     // Sculpt the spectrum to shrink wide lobes horizontally and expand peaks vertically
     std::vector<float> sharpenedMagnitudes(stitchedSize, 0.0f);
-    const float unifiedBinResolution = static_cast<float>(currentSampleRate) / 65536.0f;
+    const float unifiedBinResolution = static_cast<float>(currentSampleRate) / 32768.0f;
 
     constexpr float minFrequencyHz = 20.0f;
     constexpr float logMinFrequency = 1.301f;
@@ -155,9 +145,11 @@ void Stft::sculptSpectrum() {
 
         // The Blackman-Harris window has a main lobe width of ~8 bins natively.
         // We multiply the native half-width (4) by the zero-padding factor to find the exact shoulders.
-        int lobeHalfWidthBins = 32; // Low band: 65536 / 8192 = 8 padding. 8 * 4 = 32 bins.
-        if (freq >= 2000.0f) lobeHalfWidthBins = 128;      // High band: 65536 / 2048 = 32 padding. 32 * 4 = 128 bins.
-        else if (freq >= 250.0f) lobeHalfWidthBins = 64;   // Mid band: 65536 / 4096 = 16 padding. 16 * 4 = 64 bins.
+        // All bands are now padded exactly 4x (e.g. 8192 window padded to 32768 FFT).
+
+        int lobeHalfWidthBins = 16; // Low band natively 16 in the stitched array.
+        if (freq >= 2000.0f) lobeHalfWidthBins = 64;      // High band mapped to unified array 4x larger relative res
+        else if (freq >= 250.0f) lobeHalfWidthBins = 32;   // Mid band mapped to unified array 2x larger relative res
 
         // Find the absolute local summit within this lobe's neighborhood
         float localMax = centerMagnitude;
@@ -168,11 +160,6 @@ void Stft::sculptSpectrum() {
                 localMax = stitchedMagnitudes[static_cast<size_t>(j)];
             }
         }
-
-        // OUTDATED: 1D Unsharp Masking / Laplacian filter
-        // OUTDATED: We are near a peak's summit -> Expand vertically
-        // OUTDATED: We are on the sloping shoulders or in a valley -> Shrink horizontally
-        // OUTDATED: (prominence is negative here, so adding it mathematically subtracts from the magnitude)
 
         // Logarithmic Progressive Shrinker:
         // Dynamically calculate the horizontal carving intensity to equalize the log-scale visual thickness.
@@ -223,45 +210,9 @@ void Stft::applyProgressiveSmoothing() {
     }
 }
 
-void Stft::extractPeaks() {
-    finalPeaks.clear();
-    const float binResolution = static_cast<float>(currentSampleRate) / 65536.0f;
-
-    // OUTDATED: Route the bin directly to the responsible time-window band
-    // (We now iterate entirely over the unified stitched array, eliminating the need to track individual bands).
-
-    for (int i = 1; i < stitchedSize - 1; ++i) {
-        const float magnitudeLeft = smoothedMagnitudes[static_cast<size_t>(i - 1)];
-        const float magnitudeCenter = smoothedMagnitudes[static_cast<size_t>(i)];
-        const float magnitudeRight = smoothedMagnitudes[static_cast<size_t>(i + 1)];
-
-        if (magnitudeCenter > magnitudeLeft && magnitudeCenter > magnitudeRight) {
-            const float denominator = magnitudeLeft - 2.0f * magnitudeCenter + magnitudeRight;
-
-            if (std::abs(denominator) > 1e-5f) {
-                const float fraction = 0.5f * (magnitudeLeft - magnitudeRight) / denominator;
-                const float interpolatedBin = static_cast<float>(i) + fraction;
-                const float interpolatedFrequency = interpolatedBin * binResolution;
-
-                const float exactMagnitude = magnitudeCenter - 0.25f * (magnitudeLeft - magnitudeRight) * fraction;
-
-                const float rawMagnitudeLeft = stitchedMagnitudes[static_cast<size_t>(i - 1)];
-                const float rawMagnitudeCenter = stitchedMagnitudes[static_cast<size_t>(i)];
-                const float rawMagnitudeRight = stitchedMagnitudes[static_cast<size_t>(i + 1)];
-                const float exactRawMagnitude = rawMagnitudeCenter - 0.25f * (rawMagnitudeLeft - rawMagnitudeRight) * fraction;
-
-                if (exactMagnitude > 1e-4f || exactRawMagnitude > 1e-4f) {
-                    // For interpolated peaks, bandwidth is technically zero, so we pass 0.0f to force a razor-thin visual stem
-                    finalPeaks.push_back({interpolatedFrequency, exactMagnitude, 0.0f, exactRawMagnitude});
-                }
-            }
-        }
-    }
-}
-
 void Stft::extractRawBins() {
     finalPeaks.clear();
-    const float binResolution = static_cast<float>(currentSampleRate) / 65536.0f;
+    const float binResolution = static_cast<float>(currentSampleRate) / 32768.0f;
 
     for (int i = 1; i < stitchedSize; ++i) {
         const float exactMagnitude = smoothedMagnitudes[static_cast<size_t>(i)];
