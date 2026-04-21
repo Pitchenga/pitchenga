@@ -59,6 +59,17 @@ void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
 }
 
 void Stft::performStft(const std::vector<float>& timeDomainSignal) {
+    calculateRawBands(timeDomainSignal);
+    stitchResolutionBands();
+
+    if (enablePeakExtraction) {
+        sculptSpectrum();
+    }
+
+    applyProgressiveSmoothing();
+}
+
+void Stft::calculateRawBands(const std::vector<float>& timeDomainSignal) {
     // Calculate raw FFT magnitudes for all distinct bands
     for (auto& band : multiResolutionBands) {
         // Zero-padding happens naturally because we only copy windowSize samples, leaving the rest of the workspace 0.0f
@@ -71,11 +82,13 @@ void Stft::performStft(const std::vector<float>& timeDomainSignal) {
 
         const float normalization = 1.0f / static_cast<float>(band.fftSize);
 
-        for (int index = 0; index < band.fftSize / 2; ++index) {
-            band.magnitudes[static_cast<size_t>(index)] = band.fftWorkspace[static_cast<size_t>(index)] * normalization;
+        for (int i = 0; i < band.fftSize / 2; ++i) {
+            band.magnitudes[static_cast<size_t>(i)] = band.fftWorkspace[static_cast<size_t>(i)] * normalization;
         }
     }
+}
 
+void Stft::stitchResolutionBands() {
     // Interpolation helper
     auto getMagnitudeAtFreq = [](const StftBand& band, const float freq, const float sampleRate) {
         const float binRes = sampleRate / static_cast<float>(band.fftSize);
@@ -115,32 +128,37 @@ void Stft::performStft(const std::vector<float>& timeDomainSignal) {
         }
         stitchedMagnitudes[static_cast<size_t>(i)] = magnitude;
     }
+}
 
+void Stft::sculptSpectrum() {
     // --- GRADIENTAL PEAK EXTRACTOR ---
     // Sculpt the spectrum to shrink wide lobes horizontally and expand peaks vertically
-    if (enablePeakExtraction) {
-        std::vector<float> sharpenedMagnitudes(stitchedSize, 0.0f);
-        for (int i = 1; i < stitchedSize - 1; ++i) {
-            const float centerMagnitude = stitchedMagnitudes[static_cast<size_t>(i)];
-            const float neighborAverage = (stitchedMagnitudes[static_cast<size_t>(i - 1)] + stitchedMagnitudes[static_cast<size_t>(i + 1)]) * 0.5f;
+    std::vector<float> sharpenedMagnitudes(stitchedSize, 0.0f);
+    for (int i = 1; i < stitchedSize - 1; ++i) {
+        const float centerMagnitude = stitchedMagnitudes[static_cast<size_t>(i)];
+        const float neighborAverage = (stitchedMagnitudes[static_cast<size_t>(i - 1)] + stitchedMagnitudes[static_cast<size_t>(i + 1)]) * 0.5f;
 
-            // Horizontal Shrinker: subtract a fraction of surrounding energy
-            const float isolatedPeak = std::max(0.0f, centerMagnitude - (neighborAverage * peakShrinkerHorizontal));
+        // Horizontal Shrinker: subtract a fraction of surrounding energy
+        const float isolatedPeak = std::max(0.0f, centerMagnitude - (neighborAverage * peakShrinkerHorizontal));
 
-            // Vertical Expander: calculate how isolated the peak is, and geometrically crush non-isolated noise
-            const float isolationRatio = isolatedPeak / (centerMagnitude + 1e-9f);
-            sharpenedMagnitudes[static_cast<size_t>(i)] = centerMagnitude * std::pow(isolationRatio, peakExpanderVertical);
-        }
-        std::copy(sharpenedMagnitudes.begin(), sharpenedMagnitudes.end(), stitchedMagnitudes.begin());
+        // Vertical Expander: multiply the isolated peak to recover gain and expand contrast
+        sharpenedMagnitudes[static_cast<size_t>(i)] = isolatedPeak * peakExpanderVertical;
     }
+    std::copy(sharpenedMagnitudes.begin(), sharpenedMagnitudes.end(), stitchedMagnitudes.begin());
+}
 
+void Stft::applyProgressiveSmoothing() {
     // Apply Unified Progressive Temporal Smoothing
     constexpr float minFrequencyHz = 20.0f;
     constexpr float logMinFrequency = 1.301f;
     constexpr float logFrequencyRangeInv = 1.0f / 3.0f;
 
-    constexpr float bassSmoothWeight = 0.40f;   // Medium math smoothing for bass to cure jerkiness while avoiding sluggishness
-    constexpr float trebleSmoothWeight = 0.04f; // Extreme math smoothing for treble to lock down jitter
+    // Medium math smoothing for bass to cure jerkiness while avoiding sluggishness
+    constexpr float bassSmoothWeight = 0.40f;
+    // Extreme math smoothing for treble to lock down jitter
+    constexpr float trebleSmoothWeight = 0.04f;
+
+    const float unifiedBinResolution = static_cast<float>(currentSampleRate) / 65536.0f;
 
     for (int i = 0; i < stitchedSize; ++i) {
         const float freq = static_cast<float>(i) * unifiedBinResolution;
@@ -168,24 +186,24 @@ void Stft::extractPeaks() {
     // OUTDATED: Route the bin directly to the responsible time-window band
     // (We now iterate entirely over the unified stitched array, eliminating the need to track individual bands).
 
-    for (int index = 1; index < stitchedSize - 1; ++index) {
-        const float magnitudeLeft = smoothedMagnitudes[static_cast<size_t>(index - 1)];
-        const float magnitudeCenter = smoothedMagnitudes[static_cast<size_t>(index)];
-        const float magnitudeRight = smoothedMagnitudes[static_cast<size_t>(index + 1)];
+    for (int i = 1; i < stitchedSize - 1; ++i) {
+        const float magnitudeLeft = smoothedMagnitudes[static_cast<size_t>(i - 1)];
+        const float magnitudeCenter = smoothedMagnitudes[static_cast<size_t>(i)];
+        const float magnitudeRight = smoothedMagnitudes[static_cast<size_t>(i + 1)];
 
         if (magnitudeCenter > magnitudeLeft && magnitudeCenter > magnitudeRight) {
             const float denominator = magnitudeLeft - 2.0f * magnitudeCenter + magnitudeRight;
 
             if (std::abs(denominator) > 1e-5f) {
                 const float fraction = 0.5f * (magnitudeLeft - magnitudeRight) / denominator;
-                const float interpolatedBin = static_cast<float>(index) + fraction;
+                const float interpolatedBin = static_cast<float>(i) + fraction;
                 const float interpolatedFrequency = interpolatedBin * binResolution;
 
                 const float exactMagnitude = magnitudeCenter - 0.25f * (magnitudeLeft - magnitudeRight) * fraction;
 
-                const float rawMagnitudeLeft = stitchedMagnitudes[static_cast<size_t>(index - 1)];
-                const float rawMagnitudeCenter = stitchedMagnitudes[static_cast<size_t>(index)];
-                const float rawMagnitudeRight = stitchedMagnitudes[static_cast<size_t>(index + 1)];
+                const float rawMagnitudeLeft = stitchedMagnitudes[static_cast<size_t>(i - 1)];
+                const float rawMagnitudeCenter = stitchedMagnitudes[static_cast<size_t>(i)];
+                const float rawMagnitudeRight = stitchedMagnitudes[static_cast<size_t>(i + 1)];
                 const float exactRawMagnitude = rawMagnitudeCenter - 0.25f * (rawMagnitudeLeft - rawMagnitudeRight) * fraction;
 
                 if (exactMagnitude > 1e-4f || exactRawMagnitude > 1e-4f) {
@@ -201,12 +219,12 @@ void Stft::extractRawBins() {
     finalPeaks.clear();
     const float binResolution = static_cast<float>(currentSampleRate) / 65536.0f;
 
-    for (int index = 1; index < stitchedSize; ++index) {
-        const float exactMagnitude = smoothedMagnitudes[static_cast<size_t>(index)];
-        const float exactRawMagnitude = stitchedMagnitudes[static_cast<size_t>(index)];
+    for (int i = 1; i < stitchedSize; ++i) {
+        const float exactMagnitude = smoothedMagnitudes[static_cast<size_t>(i)];
+        const float exactRawMagnitude = stitchedMagnitudes[static_cast<size_t>(i)];
 
         if (exactMagnitude > 1e-6f || exactRawMagnitude > 1e-6f) {
-            const float exactFrequency = static_cast<float>(index) * binResolution;
+            const float exactFrequency = static_cast<float>(i) * binResolution;
             // For raw bins, pass the exact mathematical width so the UI can paint contiguous blocks
             finalPeaks.push_back({exactFrequency, exactMagnitude, binResolution, exactRawMagnitude});
         }

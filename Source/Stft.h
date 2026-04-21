@@ -37,13 +37,18 @@ public:
     bool enableTemporalSmoothing = true;
 
     // Gradiental Peak Extractor Factors
-    float peakShrinkerHorizontal = 0.8f; // Fraction of neighboring bin energy to subtract
-    float peakExpanderVertical = 2.0f;   // Contrast ratio to suppress smeared lobes
+    float peakShrinkerHorizontal = 0.5f; // Fraction of neighboring bin energy to subtract
+    float peakExpanderVertical = 2.0f;   // Multiplicative makeup gain for the isolated peak
 
     const std::vector<SpectralPeak>& getPeaks() const { return finalPeaks; }
 
 private:
     void performStft(const std::vector<float>& timeDomainSignal);
+    void calculateRawBands(const std::vector<float>& timeDomainSignal);
+    void stitchResolutionBands();
+    void sculptSpectrum();
+    void applyProgressiveSmoothing();
+
     void extractPeaks();
     void applyPsychoacousticTilt();
     void scaleForUi();
