@@ -151,7 +151,7 @@ void Tuna::paint(juce::Graphics& graphics) {
     const int width = getWidth();
 
     // Draw the live strobe gradient natively
-    constexpr float strobeSpreadMidi = 2.0f;
+    constexpr float strobeSpreadMidi = 10.0f;
 
     for (int x = 0; x < width; ++x) {
         const float horizontalFraction = width > 1 ? static_cast<float>(x) / static_cast<float>(width - 1) : 0.0f;

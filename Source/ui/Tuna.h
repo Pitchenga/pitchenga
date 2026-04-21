@@ -46,7 +46,7 @@ private:
     std::array<float, 60> strobeIntensities;
 
     int framesSinceSignalLost = 0;
-    static constexpr int spinHoldFrames = 96;
+    static constexpr int spinHoldFrames = 64;
 
     static juce::Font getLabelFont();
 
