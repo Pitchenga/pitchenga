@@ -245,15 +245,74 @@ void Stft::extractRawBins() {
     finalPeaks.clear();
     const float binResolution = static_cast<float>(currentSampleRate) / 32768.0f;
 
-    for (int i = 1; i < stitchedSize; ++i) {
-        const float exactMagnitude = smoothedMagnitudes[static_cast<size_t>(i)];
-        const float exactRawMagnitude = stitchedMagnitudes[static_cast<size_t>(i)];
+    constexpr float minFrequencyHz = 20.0f;
+    constexpr float logMinFrequency = 1.301f;
+    constexpr float logFrequencyRangeInv = 1.0f / 3.0f;
+
+    // Catmull-Rom Spline Interpolator: Guarantees a perfectly smooth curve that physically passes through the original FFT points
+    auto catmullRom = [](const float p0, const float p1, const float p2, const float p3, const float t) {
+        const float t2 = t * t;
+        const float t3 = t2 * t;
+        return 0.5f * ((2.0f * p1) +
+                       (-p0 + p2) * t +
+                       (2.0f * p0 - 5.0f * p1 + 4.0f * p2 - p3) * t2 +
+                       (-p0 + 3.0f * p1 - 3.0f * p2 + p3) * t3);
+    };
+
+    float exactIndex = 1.0f;
+
+    while (exactIndex < static_cast<float>(stitchedSize - 2)) {
+        const int indexFloor = static_cast<int>(exactIndex);
+        const float fractionalT = exactIndex - static_cast<float>(indexFloor);
+
+        const float freq = exactIndex * binResolution;
+
+        // Logarithmic Progressive Oversampling:
+        // Bass gets dense sub-bins (e.g., step 0.125 = 8x oversampling) to cure log-scale blockiness.
+        // Treble stays at step 1.0 (no oversampling) to save CPU.
+        const float logFreq = std::log10(std::max(minFrequencyHz, freq));
+        const float logFreqNorm = std::min(1.0f, std::max(0.0f, (logFreq - logMinFrequency) * logFrequencyRangeInv));
+
+        // Sweep from 0.125f (8x density in bass) to 1.0f (1x density in treble)
+        const float stepSize = 0.125f + logFreqNorm * 0.875f;
+
+        float exactMagnitude = 0.0f;
+        float exactRawMagnitude = 0.0f;
+
+        if (fractionalT < 0.001f) {
+            // We are exactly on a real bin; pull the true value to avoid interpolation float drift
+            exactMagnitude = smoothedMagnitudes[static_cast<size_t>(indexFloor)];
+            exactRawMagnitude = stitchedMagnitudes[static_cast<size_t>(indexFloor)];
+        } else {
+            // We are between bins; dynamically calculate the high-resolution spline curve
+            const int p0Idx = std::max(0, indexFloor - 1);
+            const int p1Idx = indexFloor;
+            const int p2Idx = indexFloor + 1;
+            const int p3Idx = std::min(stitchedSize - 1, indexFloor + 2);
+
+            exactMagnitude = std::max(0.0f, catmullRom(
+                smoothedMagnitudes[static_cast<size_t>(p0Idx)],
+                smoothedMagnitudes[static_cast<size_t>(p1Idx)],
+                smoothedMagnitudes[static_cast<size_t>(p2Idx)],
+                smoothedMagnitudes[static_cast<size_t>(p3Idx)],
+                fractionalT
+            ));
+
+            exactRawMagnitude = std::max(0.0f, catmullRom(
+                stitchedMagnitudes[static_cast<size_t>(p0Idx)],
+                stitchedMagnitudes[static_cast<size_t>(p1Idx)],
+                stitchedMagnitudes[static_cast<size_t>(p2Idx)],
+                stitchedMagnitudes[static_cast<size_t>(p3Idx)],
+                fractionalT
+            ));
+        }
 
         if (exactMagnitude > 1e-6f || exactRawMagnitude > 1e-6f) {
-            const float exactFrequency = static_cast<float>(i) * binResolution;
             // For raw bins, pass the exact mathematical width so the UI can paint contiguous blocks
-            finalPeaks.push_back({exactFrequency, exactMagnitude, binResolution, exactRawMagnitude});
+            finalPeaks.push_back({freq, exactMagnitude, binResolution * stepSize, exactRawMagnitude});
         }
+
+        exactIndex += stepSize;
     }
 }
 
