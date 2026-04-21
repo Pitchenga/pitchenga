@@ -173,6 +173,22 @@ void Eye::paintFrame(juce::Graphics& graphics) const {
     constexpr float angleStep = juce::MathConstants<float>::twoPi / 12.0f;
     constexpr float startAngle = -juce::MathConstants<float>::halfPi;
 
+    constexpr int numSegments = 360;
+    constexpr float segmentAngleStep = juce::MathConstants<float>::twoPi / static_cast<float>(numSegments);
+
+    for (int i = 0; i < numSegments; ++i) {
+        const float arcStart = static_cast<float>(i) * segmentAngleStep;
+        // Overlap slightly to prevent anti-aliasing gaps
+        const float arcEnd = static_cast<float>(i + 1) * segmentAngleStep + 0.01f;
+        const float chroma = (static_cast<float>(i) / static_cast<float>(numSegments)) * 12.0f;
+
+        juce::Path arcPath;
+        arcPath.addCentredArc(center.x, center.y, outerRadius - 1.0f, outerRadius - 1.0f, 0.0f, arcStart, arcEnd, true);
+
+        graphics.setColour(Tone::getContinuousColor(chroma));
+        graphics.strokePath(arcPath, juce::PathStrokeType(2.0f));
+    }
+
     for (int i = 0; i < 12; ++i) {
         const float angle = startAngle + static_cast<float>(i) * angleStep;
         const float sin = std::sin(angle);
