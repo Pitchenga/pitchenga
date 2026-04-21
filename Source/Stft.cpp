@@ -134,19 +134,44 @@ void Stft::sculptSpectrum() {
     // --- GRADIENTAL PEAK EXTRACTOR ---
     // Sculpt the spectrum to shrink wide lobes horizontally and expand peaks vertically
     std::vector<float> sharpenedMagnitudes(stitchedSize, 0.0f);
-    for (int i = 1; i < stitchedSize - 1; ++i) {
+    const float unifiedBinResolution = static_cast<float>(currentSampleRate) / 65536.0f;
+
+    for (int i = 0; i < stitchedSize; ++i) {
+        const float freq = static_cast<float>(i) * unifiedBinResolution;
+
+        // The Blackman-Harris window has a main lobe width of ~8 bins natively.
+        // We multiply the native half-width (4) by the zero-padding factor to find the exact shoulders.
+        int lobeHalfWidthBins = 32; // Low band: 65536 / 8192 = 8 padding. 8 * 4 = 32 bins.
+        if (freq >= 2000.0f) lobeHalfWidthBins = 128;      // High band: 65536 / 2048 = 32 padding. 32 * 4 = 128 bins.
+        else if (freq >= 250.0f) lobeHalfWidthBins = 64;   // Mid band: 65536 / 4096 = 16 padding. 16 * 4 = 64 bins.
+
         const float centerMagnitude = stitchedMagnitudes[static_cast<size_t>(i)];
-        const float neighborAverage = (stitchedMagnitudes[static_cast<size_t>(i - 1)] + stitchedMagnitudes[static_cast<size_t>(i + 1)]) * 0.5f;
 
-        // Horizontal Shrinker: subtract a fraction of surrounding energy
-        const float isolatedPeak = std::max(0.0f, centerMagnitude - (neighborAverage * peakShrinkerHorizontal));
+        float shoulderAverage = centerMagnitude;
+        if (i >= lobeHalfWidthBins && i < stitchedSize - lobeHalfWidthBins) {
+            shoulderAverage = (stitchedMagnitudes[static_cast<size_t>(i - lobeHalfWidthBins)] + stitchedMagnitudes[static_cast<size_t>(i + lobeHalfWidthBins)]) * 0.5f;
+        }
 
-        // Vertical Expander: multiply the isolated peak to recover gain and expand contrast
-        sharpenedMagnitudes[static_cast<size_t>(i)] = isolatedPeak * peakExpanderVertical;
+        // 1D Unsharp Masking / Laplacian filter
+        const float prominence = centerMagnitude - shoulderAverage;
+        float sculpted = centerMagnitude;
+
+        if (prominence > 0.0f) {
+            // OUTDATED: Vertical Expander: multiply the isolated peak to recover gain and expand contrast
+            // We are near a peak's summit -> Expand vertically
+            sculpted += prominence * peakExpanderVertical;
+        } else {
+            // OUTDATED: Horizontal Shrinker: subtract a fraction of surrounding energy
+            // We are on the sloping shoulders or in a valley -> Shrink horizontally
+            // (prominence is negative here, so adding it mathematically subtracts from the magnitude)
+            sculpted += prominence * peakShrinkerHorizontal;
+        }
+
+        sharpenedMagnitudes[static_cast<size_t>(i)] = std::max(0.0f, sculpted);
     }
+
     std::copy(sharpenedMagnitudes.begin(), sharpenedMagnitudes.end(), stitchedMagnitudes.begin());
 }
-
 void Stft::applyProgressiveSmoothing() {
     // Apply Unified Progressive Temporal Smoothing
     constexpr float minFrequencyHz = 20.0f;

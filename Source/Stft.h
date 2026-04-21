@@ -37,9 +37,9 @@ public:
     bool enableTemporalSmoothing = true;
 
     // Gradiental Peak Extractor Factors
-    float peakShrinkerHorizontal = 0.5f; // Fraction of neighboring bin energy to subtract
-    float peakExpanderVertical = 2.0f;   // Multiplicative makeup gain for the isolated peak
-
+    float peakShrinkerHorizontal = 1.5f; // Intensity of horizontal shoulder carving
+    float peakExpanderVertical = 2.0f;   // Intensity of vertical summit expansion
+    
     const std::vector<SpectralPeak>& getPeaks() const { return finalPeaks; }
 
 private:
