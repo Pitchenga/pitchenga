@@ -35,12 +35,13 @@ void PitchengaAudioProcessorEditor::updateVisibilityFromState() {
 }
 
 void PitchengaAudioProcessorEditor::timerCallback() {
-    // --- Update the Tuna ---
+    // --- Update the tuners ---
     // Read the lock-free atomic variable
     const float latestPitchHz = audioProcessor.currentPitchHz.load(std::memory_order_relaxed);
 
-    // Feed it to the tuna visualizer component
+    // Feed it to the tuners component
     tuna.setPitchFrequency(latestPitchHz);
+    eye.setPitchFrequency(latestPitchHz);
 
     // --- Update the visualizers ---
     if (worker.hasNewData()) {
