@@ -2,7 +2,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../PluginProcessor.h"
-#include "Cqt.h"
+#include "../Math/Cqt.h"
 #include "../Analyzers.h"
 
 class CqtRoll : public juce::Component

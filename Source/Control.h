@@ -18,9 +18,10 @@ public:
         bool showEye = true;
         bool showTuna = true;
 
+        bool useStftRoll = true;
         bool freezeRoll = false;
         bool showSteam = true;
-        bool showForrest = true;
+        bool showForrest = false;
 
         float splitRatio = 0.5f;
 
@@ -48,6 +49,7 @@ private:
     juce::TextButton toggleTuna{"Tuna"};
     juce::TextButton toggleEye{"Eye"};
     juce::TextButton toggleRoll{"Roll"};
+    juce::TextButton toggleRollType{"STFT"};
     juce::TextButton toggleFreezeRoll{"Freeze"};
     juce::TextButton toggleSteam{"Steam"};
     juce::TextButton toggleForrest{"Forest"};

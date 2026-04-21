@@ -7,10 +7,10 @@ StftRoll::StftRoll(PitchengaAudioProcessor& proc) : processor(proc) {}
 
 void StftRoll::updateResults(const std::vector<SpectralPeak>& peaks) {
 
-    if (!processor.uiSettings.freezeRoll) {
+    if (!processor.settings.freezeRoll) {
         activePeaks = peaks;
 
-        if (processor.uiSettings.showSteam) {
+        if (processor.settings.showSteam) {
             pumpSteam();
         }
     }
@@ -70,12 +70,12 @@ void StftRoll::paint(juce::Graphics& graphics) {
     graphics.saveState();
     graphics.reduceClipRegion(0, 0, width, plotHeight);
 
-    if (processor.uiSettings.showSteam) {
+    if (processor.settings.showSteam) {
         paintSteam(graphics);
     }
 
     if (!activePeaks.empty()) {
-        if (processor.uiSettings.showForrest) {
+        if (processor.settings.showForrest) {
             paintPeaks(graphics);
         }
     }

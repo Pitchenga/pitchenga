@@ -1,8 +1,8 @@
-#include "../CqtRoll.h"
+#include "CqtRoll.h"
 #include "../Palette.h"
 #include <algorithm>
 
-#include "TheEye.h"
+#include "Eye.h"
 
 CqtRoll::CqtRoll(PitchengaAudioProcessor& proc) : processor(proc) {}
 
@@ -42,7 +42,7 @@ void CqtRoll::updateResults(const std::vector<double>& results) {
 
     if (expand()) return;
 
-    if (processor.uiSettings.showSteam) {
+    if (processor.settings.showSteam) {
         pumpSteam();
     }
 
@@ -88,11 +88,11 @@ void CqtRoll::paint(juce::Graphics& graphics) {
 
     if (currentTotalBins <= 0 || currentBinsPerOctave <= 0 || displayMagnitudes.empty()) return;
 
-    if (processor.uiSettings.showSteam) {
+    if (processor.settings.showSteam) {
         paintSteam(graphics);
     }
 
-    if (processor.uiSettings.showForrest) {
+    if (processor.settings.showForrest) {
         paintBins(graphics);
     }
 }
@@ -188,7 +188,7 @@ void CqtRoll::paintFrame(juce::Graphics& graphics) const {
         const float endY = isBlackKey ? halfHeight : height;
 
         const juce::Colour baseColor = Palette::chromaticScale[static_cast<size_t>(chroma)].color;
-        const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.1f);
+        const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.2f);
         graphics.setColour(gridColor);
         graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
 
@@ -255,7 +255,7 @@ void CqtRoll::pumpSteam() {
         if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > steamThreshold) {
             const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
             const juce::Colour baseColor = Palette::getContinuousColor(chroma);
-            constexpr float undimmingGain = 1.0f;
+            constexpr float undimmingGain = 2.0f;
             const juce::Colour color = juce::Colours::black.interpolatedWith(
                 baseColor,
                 static_cast<float>(magnitude * undimmingGain)

@@ -1,12 +1,15 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+#include "Util.h"
+
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProcessor& p)
-    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), roll(p), splitter(p), control(p) {
+    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), tuna(), eye(), stftRoll(p), cqtRoll(p), splitter(p), control(p) {
 
     addAndMakeVisible(tuna);
     addAndMakeVisible(eye);
-    addAndMakeVisible(roll);
+    addAndMakeVisible(stftRoll);
+    addAndMakeVisible(cqtRoll);
 
     addAndMakeVisible(control);
     control.onVisibilityChanged = [this] { resized(); };
@@ -17,7 +20,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     circleBuffer.resize(Eye::totalFoldedBins, 0.0);
 
     setResizable(true, true);
-    setSize(audioProcessor.uiSettings.lastUIWidth, audioProcessor.uiSettings.lastUIHeight);
+    setSize(audioProcessor.settings.lastUIWidth, audioProcessor.settings.lastUIHeight);
 
     worker.startThread(juce::Thread::Priority::high);
     startTimerHz(uiRefreshRateHz);
@@ -45,10 +48,17 @@ void PitchengaAudioProcessorEditor::timerCallback() {
     if (worker.hasNewData()) {
         worker.getCircleResults(circleBuffer);
         worker.getRollPeaks(rollPeaksBuffer);
+        worker.getLineResults(cqtRollBuffer);
         worker.clearNewDataFlag();
 
-        if (audioProcessor.uiSettings.showEye) eye.updateResults(circleBuffer);
-        if (audioProcessor.uiSettings.showRoll) roll.updateResults(rollPeaksBuffer);
+        if (audioProcessor.settings.showEye) eye.updateResults(circleBuffer);
+        if (audioProcessor.settings.showRoll) {
+            if (audioProcessor.settings.useStftRoll) {
+                stftRoll.updateResults(rollPeaksBuffer);
+            } else {
+                cqtRoll.updateResults(cqtRollBuffer);
+            }
+        }
     }
 }
 
@@ -57,35 +67,46 @@ void PitchengaAudioProcessorEditor::paint(juce::Graphics& g) {
 }
 
 void PitchengaAudioProcessorEditor::resized() {
-    audioProcessor.uiSettings.lastUIWidth = getWidth();
-    audioProcessor.uiSettings.lastUIHeight = getHeight();
+    audioProcessor.settings.lastUIWidth = getWidth();
+    audioProcessor.settings.lastUIHeight = getHeight();
 
     auto bounds = getLocalBounds();
 
     // Give the control bar its own dedicated, non-overlapping space at the top left
     control.setBounds(bounds.removeFromTop(static_cast<int>(Control::getPreferredHeight())));
 
-    roll.setVisible(audioProcessor.uiSettings.showRoll);
-    eye.setVisible(audioProcessor.uiSettings.showEye);
-    tuna.setVisible(audioProcessor.uiSettings.showTuna);
+    stftRoll.setVisible(audioProcessor.settings.showRoll && audioProcessor.settings.useStftRoll);
+    cqtRoll.setVisible(audioProcessor.settings.showRoll && !audioProcessor.settings.useStftRoll);
+    eye.setVisible(audioProcessor.settings.showEye);
+    tuna.setVisible(audioProcessor.settings.showTuna);
 
     // Only show splitter if both resizable elements are active
-    splitter.setVisible(audioProcessor.uiSettings.showRoll && audioProcessor.uiSettings.showEye);
+    splitter.setVisible(audioProcessor.settings.showRoll && audioProcessor.settings.showEye);
 
-    if (audioProcessor.uiSettings.showTuna) {
+    if (audioProcessor.settings.showTuna) {
         tuna.setBounds(bounds.removeFromBottom(static_cast<int>(Tuna::getPreferredHeight() + 1)));
     }
 
-    if (audioProcessor.uiSettings.showRoll && audioProcessor.uiSettings.showEye) {
+    if (audioProcessor.settings.showRoll && audioProcessor.settings.showEye) {
         const int availableHeight = bounds.getHeight();
-        const int rollHeight = static_cast<int>(static_cast<float>(availableHeight) * audioProcessor.uiSettings.splitRatio);
+        const int rollHeight = static_cast<int>(static_cast<float>(availableHeight) * audioProcessor.settings.splitRatio);
 
-        roll.setBounds(bounds.removeFromTop(rollHeight));
+        if (audioProcessor.settings.useStftRoll) {
+            stftRoll.setBounds(bounds.removeFromTop(rollHeight));
+        } else {
+            cqtRoll.setBounds(bounds.removeFromTop(rollHeight));
+        }
         splitter.setBounds(bounds.removeFromTop(4)); // Dedicated 4px hit-box for the resizer
         eye.setBounds(bounds);
-    } else if (audioProcessor.uiSettings.showRoll) {
-        roll.setBounds(bounds);
-    } else if (audioProcessor.uiSettings.showEye) {
+    } else if (audioProcessor.settings.showRoll) {
+        if (audioProcessor.settings.useStftRoll) {
+            stftRoll.setBounds(bounds);
+        } else {
+            cqtRoll.setBounds(bounds);
+        }
+    } else if (audioProcessor.settings.showEye) {
         eye.setBounds(bounds);
     }
+
+
 }

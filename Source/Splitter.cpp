@@ -29,7 +29,7 @@ void Splitter::mouseDrag(const juce::MouseEvent& e) {
 
         // Calculate dynamic bounds exactly matching resized() architecture
         const float topControlHeight = 24.0f;
-        const float bottomTunaHeight = audioProcessor.uiSettings.showTuna ? Tuna::getPreferredHeight() + 1.0f : 0.0f;
+        const float bottomTunaHeight = audioProcessor.settings.showTuna ? Tuna::getPreferredHeight() + 1.0f : 0.0f;
         const float availableHeight = static_cast<float>(parent->getHeight()) - topControlHeight - bottomTunaHeight;
 
         const float adjustedY = static_cast<float>(eventInParent.y) - topControlHeight;
@@ -39,8 +39,8 @@ void Splitter::mouseDrag(const juce::MouseEvent& e) {
             // Prevent dragging completely out of bounds (keep between 10% and 90%)
             const float clampedRatio = std::max(0.1f, std::min(0.9f, newRatio));
 
-            if (std::abs(audioProcessor.uiSettings.splitRatio - clampedRatio) > 0.001f) {
-                audioProcessor.uiSettings.splitRatio = clampedRatio;
+            if (std::abs(audioProcessor.settings.splitRatio - clampedRatio) > 0.001f) {
+                audioProcessor.settings.splitRatio = clampedRatio;
                 if (onDragged) onDragged();
             }
         }

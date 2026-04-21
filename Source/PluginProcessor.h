@@ -47,7 +47,7 @@ public:
     PitchengaAudioProcessor();
     ~PitchengaAudioProcessor() override;
 
-    Control::Settings uiSettings;
+    Control::Settings settings;
 
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;

@@ -6,6 +6,7 @@
 #include "ui/Tuna.h"
 #include "ui/Eye.h"
 #include "ui/StftRoll.h"
+#include "ui/CqtRoll.h"
 #include "Control.h"
 #include "Splitter.h"
 
@@ -29,7 +30,8 @@ private:
 
     Tuna tuna;
     Eye eye;
-    StftRoll roll;
+    StftRoll stftRoll;
+    CqtRoll cqtRoll;
     Splitter splitter;
 
     Control control;
@@ -37,6 +39,7 @@ private:
     // Shared results for rendering
     std::vector<double> circleBuffer;
     std::vector<SpectralPeak> rollPeaksBuffer;
+    std::vector<double> cqtRollBuffer;
 
     static constexpr int uiRefreshRateHz = 48;
 

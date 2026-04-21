@@ -63,6 +63,8 @@ set(PITCHENGA_SOURCES
         Source/ui/Eye.cpp
         Source/ui/StftRoll.h
         Source/ui/StftRoll.cpp
+        Source/ui/CqtRoll.h
+        Source/ui/CqtRoll.cpp
         Source/Math.h
         Source/Math.cpp
         Source/Control.h

@@ -143,7 +143,7 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 void PitchengaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
     // Convert XML to binary for the host to save
-    const juce::XmlElement xml = uiSettings.createXml();
+    const juce::XmlElement xml = settings.createXml();
     copyXmlToBinary(xml, destData);
 }
 
@@ -151,10 +151,10 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, const int si
     // Get the XML from the binary data provided by the host
     const std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
 
-    if (xmlState != nullptr && uiSettings.loadFromXml(*xmlState)) {
+    if (xmlState != nullptr && settings.loadFromXml(*xmlState)) {
         // If the UI is currently open, tell the Editor to resize
         if (auto* editor = getActiveEditor()) {
-            editor->setSize(uiSettings.lastUIWidth, uiSettings.lastUIHeight);
+            editor->setSize(settings.lastUIWidth, settings.lastUIHeight);
             if (auto* pitchengaEditor = dynamic_cast<PitchengaAudioProcessorEditor*>(editor)) {
                 pitchengaEditor->updateVisibilityFromState();
             }

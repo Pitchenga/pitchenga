@@ -4,40 +4,50 @@
 Control::Control(PitchengaAudioProcessor& processorToUse)
     : audioProcessor(processorToUse) {
 
-    setupToggleButton(toggleRoll, audioProcessor.uiSettings.showRoll);
+    setupToggleButton(toggleRoll, audioProcessor.settings.showRoll);
     toggleRoll.onClick = [this] {
-        audioProcessor.uiSettings.showRoll = toggleRoll.getToggleState();
+        audioProcessor.settings.showRoll = toggleRoll.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
         updateButtonStates();
     };
 
-    setupToggleButton(toggleEye, audioProcessor.uiSettings.showEye);
+    setupToggleButton(toggleEye, audioProcessor.settings.showEye);
     toggleEye.onClick = [this] {
-        audioProcessor.uiSettings.showEye = toggleEye.getToggleState();
+        audioProcessor.settings.showEye = toggleEye.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleTuna, audioProcessor.uiSettings.showTuna);
+    setupToggleButton(toggleTuna, audioProcessor.settings.showTuna);
     toggleTuna.onClick = [this] {
-        audioProcessor.uiSettings.showTuna = toggleTuna.getToggleState();
+        audioProcessor.settings.showTuna = toggleTuna.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleSteam, audioProcessor.uiSettings.showSteam);
+    setupToggleButton(toggleSteam, audioProcessor.settings.showSteam);
     toggleSteam.onClick = [this] {
-        audioProcessor.uiSettings.showSteam = toggleSteam.getToggleState();
+        audioProcessor.settings.showSteam = toggleSteam.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleFreezeRoll, audioProcessor.uiSettings.freezeRoll);
+    setupToggleButton(toggleFreezeRoll, audioProcessor.settings.freezeRoll);
     toggleFreezeRoll.onClick = [this] {
-        audioProcessor.uiSettings.freezeRoll = toggleFreezeRoll.getToggleState();
+        audioProcessor.settings.freezeRoll = toggleFreezeRoll.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleForrest, audioProcessor.uiSettings.showForrest);
+    setupToggleButton(toggleRollType, audioProcessor.settings.useStftRoll);
+    toggleRollType.setButtonText(audioProcessor.settings.useStftRoll ? "STFT" : "CQT");
+    toggleRollType.onClick = [this] {
+        audioProcessor.settings.useStftRoll = toggleRollType.getToggleState();
+        toggleRollType.setButtonText(audioProcessor.settings.useStftRoll ? "STFT" : "CQT");
+        if (onVisibilityChanged) onVisibilityChanged();
+        // Force resize to adjust button width based on text
+        resized();
+    };
+
+    setupToggleButton(toggleForrest, audioProcessor.settings.showForrest);
     toggleForrest.onClick = [this] {
-        audioProcessor.uiSettings.showForrest = toggleForrest.getToggleState();
+        audioProcessor.settings.showForrest = toggleForrest.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -46,6 +56,7 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
     addAndMakeVisible(toggleEye);
     addAndMakeVisible(toggleRoll);
     addAndMakeVisible(toggleFreezeRoll);
+    addAndMakeVisible(toggleRollType);
     addAndMakeVisible(toggleSteam);
     addAndMakeVisible(toggleForrest);
 
@@ -70,19 +81,22 @@ void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
 }
 
 void Control::updateVisibilityFromState() {
-    toggleRoll.setToggleState(audioProcessor.uiSettings.showRoll, juce::NotificationType::dontSendNotification);
-    toggleEye.setToggleState(audioProcessor.uiSettings.showEye, juce::NotificationType::dontSendNotification);
-    toggleTuna.setToggleState(audioProcessor.uiSettings.showTuna, juce::NotificationType::dontSendNotification);
-    toggleFreezeRoll.setToggleState(audioProcessor.uiSettings.freezeRoll, juce::NotificationType::dontSendNotification);
-    toggleSteam.setToggleState(audioProcessor.uiSettings.showSteam, juce::NotificationType::dontSendNotification);
-    toggleForrest.setToggleState(audioProcessor.uiSettings.showForrest, juce::NotificationType::dontSendNotification);
+    toggleRoll.setToggleState(audioProcessor.settings.showRoll, juce::NotificationType::dontSendNotification);
+    toggleEye.setToggleState(audioProcessor.settings.showEye, juce::NotificationType::dontSendNotification);
+    toggleTuna.setToggleState(audioProcessor.settings.showTuna, juce::NotificationType::dontSendNotification);
+    toggleFreezeRoll.setToggleState(audioProcessor.settings.freezeRoll, juce::NotificationType::dontSendNotification);
+    toggleRollType.setToggleState(audioProcessor.settings.useStftRoll, juce::NotificationType::dontSendNotification);
+    toggleRollType.setButtonText(audioProcessor.settings.useStftRoll ? "STFT" : "CQT");
+    toggleSteam.setToggleState(audioProcessor.settings.showSteam, juce::NotificationType::dontSendNotification);
+    toggleForrest.setToggleState(audioProcessor.settings.showForrest, juce::NotificationType::dontSendNotification);
 
     updateButtonStates();
 }
 
 void Control::updateButtonStates() {
-    const bool rollActive = audioProcessor.uiSettings.showRoll;
+    const bool rollActive = audioProcessor.settings.showRoll;
     toggleFreezeRoll.setVisible(rollActive);
+    toggleRollType.setVisible(rollActive);
     toggleSteam.setVisible(rollActive);
     toggleForrest.setVisible(rollActive);
     resized();
@@ -119,6 +133,7 @@ void Control::resized() {
     positionButtonRight(toggleForrest);
     positionButtonRight(toggleSteam);
     positionButtonRight(toggleFreezeRoll);
+    positionButtonRight(toggleRollType);
 
     bounds.removeFromRight(8);
     buildTimestampLabel.setBounds(bounds);
@@ -151,11 +166,12 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("showEye", showEye);
     xml.setAttribute("showTuna", showTuna);
 
+    xml.setAttribute("useStftRoll", useStftRoll);
     xml.setAttribute("freezeRoll", freezeRoll);
     xml.setAttribute("showForrest", showForrest);
     xml.setAttribute("showSteam", showSteam);
 
-    xml.setAttribute("splitRatio", static_cast<double>(splitRatio));
+    xml.setAttribute("splitRatio", splitRatio);
 
     return xml;
 }
@@ -173,6 +189,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     showEye = xml.getBoolAttribute("showEye", showEye);
     showTuna = xml.getBoolAttribute("showTuna", showTuna);
 
+    useStftRoll = xml.getBoolAttribute("useStftRoll", useStftRoll);
     freezeRoll = xml.getBoolAttribute("freezeRoll", freezeRoll);
     showForrest = xml.getBoolAttribute("showForrest", showForrest);
     showSteam = xml.getBoolAttribute("showSteam", showSteam);
