@@ -31,10 +31,14 @@ public:
     void initialize(double sampleRateToUse);
     void processFrame(const std::vector<float>& timeDomainSignal);
 
-    bool enablePeakExtraction = false;
+    bool enablePeakExtraction = true;
     bool enablePsychoacousticTilt = true;
     bool enableTailKiller = true;
     bool enableTemporalSmoothing = true;
+
+    // Gradiental Peak Extractor Factors
+    float peakShrinkerHorizontal = 0.8f; // Fraction of neighboring bin energy to subtract
+    float peakExpanderVertical = 2.0f;   // Contrast ratio to suppress smeared lobes
 
     const std::vector<SpectralPeak>& getPeaks() const { return finalPeaks; }
 

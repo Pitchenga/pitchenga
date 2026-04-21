@@ -48,11 +48,9 @@ void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
 
     performSTFT(timeDomainSignal);
 
-    if (enablePeakExtraction) {
-        extractPeaks();
-    } else {
-        extractRawBins();
-    }
+    // The gradiental Soft Extractor now physically pre-sculpts the bins inside performSTFT.
+    // We always use extractRawBins to pull the continuously sculpted data for the UI.
+    extractRawBins();
 
     if (enablePsychoacousticTilt) {
         applyPsychoacousticTilt();
@@ -61,7 +59,7 @@ void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
 }
 
 void Stft::performSTFT(const std::vector<float>& timeDomainSignal) {
-    // 1. Calculate raw FFT magnitudes for all distinct bands
+    // Calculate raw FFT magnitudes for all distinct bands
     for (auto& band : multiResolutionBands) {
         // Zero-padding happens naturally because we only copy windowSize samples, leaving the rest of the workspace 0.0f
         const size_t offset = timeDomainSignal.size() - static_cast<size_t>(band.windowSize);
@@ -116,6 +114,24 @@ void Stft::performSTFT(const std::vector<float>& timeDomainSignal) {
             magnitude = getMagnitudeAtFreq(multiResolutionBands[2], freq, static_cast<float>(currentSampleRate));
         }
         stitchedMagnitudes[static_cast<size_t>(i)] = magnitude;
+    }
+
+    // --- GRADIENTAL PEAK EXTRACTOR ---
+    // Sculpt the spectrum to shrink wide lobes horizontally and expand peaks vertically
+    if (enablePeakExtraction) {
+        std::vector<float> sharpenedMagnitudes(stitchedSize, 0.0f);
+        for (int i = 1; i < stitchedSize - 1; ++i) {
+            const float centerMagnitude = stitchedMagnitudes[static_cast<size_t>(i)];
+            const float neighborAverage = (stitchedMagnitudes[static_cast<size_t>(i - 1)] + stitchedMagnitudes[static_cast<size_t>(i + 1)]) * 0.5f;
+
+            // Horizontal Shrinker: subtract a fraction of surrounding energy
+            const float isolatedPeak = std::max(0.0f, centerMagnitude - (neighborAverage * peakShrinkerHorizontal));
+
+            // Vertical Expander: calculate how isolated the peak is, and geometrically crush non-isolated noise
+            const float isolationRatio = isolatedPeak / (centerMagnitude + 1e-9f);
+            sharpenedMagnitudes[static_cast<size_t>(i)] = centerMagnitude * std::pow(isolationRatio, peakExpanderVertical);
+        }
+        std::copy(sharpenedMagnitudes.begin(), sharpenedMagnitudes.end(), stitchedMagnitudes.begin());
     }
 
     // Apply Unified Progressive Temporal Smoothing
