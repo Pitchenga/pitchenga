@@ -1,5 +1,5 @@
 #include "Control.h"
-#include "PluginProcessor.h"
+#include "../PluginProcessor.h"
 
 Control::Control(PitchengaAudioProcessor& processorToUse)
     : audioProcessor(processorToUse) {

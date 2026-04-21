@@ -53,10 +53,10 @@ set(PITCHENGA_SOURCES
         Source/PluginEditor.h
         Source/math/Cqt.h
         Source/math/Cqt.cpp
-        Source/Analyzers.h
-        Source/Analyzers.cpp
-        Source/Palette.h
-        Source/Palette.cpp
+        Source/math/Analyzers.h
+        Source/math/Analyzers.cpp
+        Source/Tone.h
+        Source/Tone.cpp
         Source/ui/Tuna.h
         Source/ui/Tuna.cpp
         Source/ui/Eye.h
@@ -65,14 +65,14 @@ set(PITCHENGA_SOURCES
         Source/ui/StftRoll.cpp
         Source/ui/CqtRoll.h
         Source/ui/CqtRoll.cpp
-        Source/Math.h
-        Source/Math.cpp
-        Source/Control.h
-        Source/Control.cpp
+        Source/math/Math.h
+        Source/math/Math.cpp
+        Source/ui/Control.h
+        Source/ui/Control.cpp
         Source/math/Agc.h
         Source/math/Agc.cpp
-        Source/Splitter.h
-        Source/Splitter.cpp
+        Source/ui/Splitter.h
+        Source/ui/Splitter.cpp
         Source/Util.h
         Source/Util.cpp
         Source/math/Stft.h

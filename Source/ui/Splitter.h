@@ -2,7 +2,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <functional>
-#include "PluginProcessor.h"
+#include "../PluginProcessor.h"
 
 // Custom draggable 4px horizontal split bar
 class Splitter : public juce::Component {

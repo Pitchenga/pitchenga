@@ -2,13 +2,13 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "PluginProcessor.h"
-#include "Math.h"
+#include "math/Math.h"
 #include "ui/Tuna.h"
 #include "ui/Eye.h"
 #include "ui/StftRoll.h"
 #include "ui/CqtRoll.h"
-#include "Control.h"
-#include "Splitter.h"
+#include "ui/Control.h"
+#include "ui/Splitter.h"
 
 class PitchengaAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::Timer {
 public:

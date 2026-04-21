@@ -2,7 +2,7 @@
 #include <cmath>
 #include <algorithm>
 
-#include "../Palette.h"
+#include "../Tone.h"
 
 Eye::Eye() {
     smoothedOctaveBins.resize(totalFoldedBins, 0.0);
@@ -28,7 +28,7 @@ juce::Colour Eye::calculateColor(const float velocity, const float toneRatio) {
     // NO MODULO NEEDED.
     // wrappedRatio is strictly [0.0, 12.0), so toneNumber is strictly 0 to 11.
     const int currentIdx = toneNumber;
-    const juce::Colour toneColor = Palette::chromaticScale[static_cast<size_t>(currentIdx)].color;
+    const juce::Colour toneColor = Tone::chromaticScale[static_cast<size_t>(currentIdx)].color;
 
     // --- Port of getGuessAndPitchinessColor & transposePitch ---
     juce::Colour guessColor;
@@ -45,7 +45,7 @@ juce::Colour Eye::calculateColor(const float velocity, const float toneRatio) {
         if (pitchyIdx < 0) pitchyIdx = 11;
         else if (pitchyIdx > 11) pitchyIdx = 0;
 
-        const juce::Colour pitchyColor = Palette::chromaticScale[static_cast<size_t>(pitchyIdx)].color;
+        const juce::Colour pitchyColor = Tone::chromaticScale[static_cast<size_t>(pitchyIdx)].color;
 
         // Simple approximation of the ordinal pitchinessDiff logic
         const float pitchinessDiff = std::abs(diff);
@@ -132,7 +132,7 @@ void Eye::paintLabel(
     const float rLabel = baseRadius * startRadius;
     const float initialX = center.x + rLabel * cos;
     const float initialY = center.y + rLabel * sin;
-    const juce::String name = Palette::chromaticScale[static_cast<size_t>(i)].toneName;
+    const juce::String name = Tone::chromaticScale[static_cast<size_t>(i)].toneName;
 
     graphics.setFont(juce::FontOptions(baseRadius * 0.15f).withStyle("Bold"));
     const auto labelColor = calculateColor(0.1f, static_cast<float>(i));
@@ -178,7 +178,7 @@ void Eye::paintFrame(juce::Graphics& graphics) const {
         const float sin = std::sin(angle);
         const float cos = std::cos(angle);
 
-        const auto color = Palette::chromaticScale[static_cast<size_t>(i)].color;
+        const auto color = Tone::chromaticScale[static_cast<size_t>(i)].color;
         graphics.setColour(color);
 
         graphics.drawLine(

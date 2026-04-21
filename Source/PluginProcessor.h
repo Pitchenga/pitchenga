@@ -5,7 +5,7 @@
 #include <pitch_detector/pitch_detector.h>
 #include <vector>
 #include <array>
-#include "Control.h"
+#include "ui/Control.h"
 #include "math/Agc.h"
 
 class FastButterworth {

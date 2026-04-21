@@ -3,10 +3,10 @@
 #include <array>
 #include <cmath>
 
-enum class Tone { Do, Ra, Re, Me, Mi, Fa, Fi, So, Le, La, Te, Ti };
+enum class ToneName { Do, Ra, Re, Me, Mi, Fa, Fi, So, Le, La, Te, Ti };
 
 struct Pitch {
-    Tone tone;
+    ToneName tone;
     juce::String toneName;
     int index;
     float frequency;
@@ -14,7 +14,7 @@ struct Pitch {
     juce::String letterNotation;
 };
 
-class Palette {
+class Tone {
 public:
     // The single source of truth for the chromatic scale
     static const std::array<Pitch, 12> chromaticScale;

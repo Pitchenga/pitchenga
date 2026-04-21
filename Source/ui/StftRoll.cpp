@@ -1,5 +1,5 @@
 #include "StftRoll.h"
-#include "../Palette.h"
+#include "../Tone.h"
 #include <algorithm>
 #include <cmath>
 
@@ -98,7 +98,7 @@ juce::String StftRoll::getNoteName(const int midiNote) {
     int chroma = midiNote % 12;
     if (chroma < 0) chroma += 12;
     const int octave = midiNote / 12 - 1;
-    return Palette::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
+    return Tone::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
 
 void StftRoll::paintLabel(
@@ -150,7 +150,7 @@ void StftRoll::paintFrame(juce::Graphics& graphics) const {
     for (int i = startMidi; i <= endMidi; ++i) {
         const int chroma = i % 12;
 
-        // fixme: move to Tone
+        // fixme: move to ToneName
         // Identify standard "black" keys
         const bool isBlackKey = chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10;
 
@@ -161,7 +161,7 @@ void StftRoll::paintFrame(juce::Graphics& graphics) const {
         const float startY = 0.0f;
         const float endY = isBlackKey ? halfHeight : plotHeight;
 
-        const juce::Colour baseColor = Palette::chromaticScale[static_cast<size_t>(chroma)].color;
+        const juce::Colour baseColor = Tone::chromaticScale[static_cast<size_t>(chroma)].color;
         const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.2f);
         graphics.setColour(gridColor);
         graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
@@ -194,7 +194,7 @@ void StftRoll::paintPeaks(juce::Graphics& graphics) const {
             float continuousChroma = std::fmod(midi, 12.0f);
             if (continuousChroma < 0.0f) continuousChroma += 12.0f;
 
-            const juce::Colour color = Palette::getContinuousColor(continuousChroma);
+            const juce::Colour color = Tone::getContinuousColor(continuousChroma);
             graphics.setColour(color);
 
             graphics.fillRoundedRectangle(
@@ -250,7 +250,7 @@ void StftRoll::pumpSteam() {
                 float continuousChroma = std::fmod(midi, 12.0f);
                 if (continuousChroma < 0.0f) continuousChroma += 12.0f;
 
-                const juce::Colour baseColor = Palette::getContinuousColor(continuousChroma);
+                const juce::Colour baseColor = Tone::getContinuousColor(continuousChroma);
                 constexpr float undimmingGain = 1.6f;
 
                 const float clampedMag = std::min(1.0f, peak.rawMagnitude * undimmingGain);

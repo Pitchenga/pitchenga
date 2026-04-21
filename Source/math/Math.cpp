@@ -1,5 +1,5 @@
 #include "Math.h"
-#include "Util.h"
+#include "../Util.h"
 
 Math::Math(PitchengaAudioProcessor& processorToUse)
     : Thread("VisualizeWorker"), audioProcessor(processorToUse) {

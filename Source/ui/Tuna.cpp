@@ -29,7 +29,7 @@ juce::String Tuna::getNoteName(const int midiNote) {
     int chroma = midiNote % 12;
     if (chroma < 0) chroma += 12;
     const int octave = midiNote / 12 - 1;
-    return Palette::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
+    return Tone::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
 
 void Tuna::paintLabel(juce::Graphics& graphics, const int midiNote, const float x, const float stripY) {
@@ -97,7 +97,7 @@ void Tuna::updateCachedGradient() {
         float chroma = std::fmod(midiAtX, 12.0f);
         if (chroma < 0.0f) chroma += 12.0f;
 
-        const juce::Colour fullColor = Palette::getContinuousColor(chroma);
+        const juce::Colour fullColor = Tone::getContinuousColor(chroma);
 
         for (int y = static_cast<int>(stripY); y < height; ++y) {
             data.setPixelColour(x, y, fullColor);
@@ -117,7 +117,7 @@ void Tuna::updateCachedGradient() {
         int chroma = note % 12;
         if (chroma < 0) chroma += 12;
 
-        const juce::Colour fullColor = Palette::chromaticScale[static_cast<size_t>(chroma)].color;
+        const juce::Colour fullColor = Tone::chromaticScale[static_cast<size_t>(chroma)].color;
         graphics.setColour(fullColor);
 
         if (note > startMidi && note < endMidi) paintLabel(graphics, note, x, stripY);
@@ -158,7 +158,7 @@ void Tuna::paint(juce::Graphics& graphics) {
 
             int nearestChroma = nearestNote % 12;
             if (nearestChroma < 0) nearestChroma += 12;
-            const juce::Colour toneColor = Palette::chromaticScale[static_cast<size_t>(nearestChroma)].color;
+            const juce::Colour toneColor = Tone::chromaticScale[static_cast<size_t>(nearestChroma)].color;
             graphics.setColour(toneColor);
             paintLabel(graphics, nearestNote, closestX, labelStripY);
         }

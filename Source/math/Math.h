@@ -1,11 +1,11 @@
 #pragma once
 
 #include <juce_core/juce_core.h>
-#include "PluginProcessor.h"
-#include "math/Cqt.h"
+#include "../PluginProcessor.h"
+#include "Cqt.h"
 #include "Analyzers.h"
 #include <pitch_detector/pitch_detector.h>
-#include "math/Stft.h"
+#include "Stft.h"
 
 class Math : public juce::Thread {
 public:

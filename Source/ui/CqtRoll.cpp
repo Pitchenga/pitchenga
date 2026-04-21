@@ -1,5 +1,5 @@
 #include "CqtRoll.h"
-#include "../Palette.h"
+#include "../Tone.h"
 #include <algorithm>
 
 #include "Eye.h"
@@ -114,7 +114,7 @@ juce::String CqtRoll::getNoteName(const int midiNote) {
     int chroma = midiNote % 12;
     if (chroma < 0) chroma += 12;
     const int octave = midiNote / 12 - 1;
-    return Palette::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
+    return Tone::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
 
 void CqtRoll::paintLabel(
@@ -173,7 +173,7 @@ void CqtRoll::paintFrame(juce::Graphics& graphics) const {
     for (int i = 0; i < totalSemitones; ++i) {
         const int chroma = i % 12;
 
-        //fixme: move to Tone
+        //fixme: move to ToneName
         // Identify standard "black" keys
         const bool isBlackKey = chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10;
 
@@ -187,7 +187,7 @@ void CqtRoll::paintFrame(juce::Graphics& graphics) const {
         const float startY = getLabelAreaHeight();
         const float endY = isBlackKey ? halfHeight : height;
 
-        const juce::Colour baseColor = Palette::chromaticScale[static_cast<size_t>(chroma)].color;
+        const juce::Colour baseColor = Tone::chromaticScale[static_cast<size_t>(chroma)].color;
         const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.2f);
         graphics.setColour(gridColor);
         graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
@@ -214,7 +214,7 @@ void CqtRoll::paintBins(juce::Graphics& graphics) const {
         const float chroma =
             static_cast<float>(i % currentBinsPerOctave) * 12.0f / static_cast<float>(currentBinsPerOctave);
 
-        const juce::Colour color = Palette::getContinuousColor(chroma);
+        const juce::Colour color = Tone::getContinuousColor(chroma);
         graphics.setColour(color);
 
         graphics.fillRect(
@@ -254,7 +254,7 @@ void CqtRoll::pumpSteam() {
     for (int i = 0; i < totalBins; ++i) {
         if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > steamThreshold) {
             const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
-            const juce::Colour baseColor = Palette::getContinuousColor(chroma);
+            const juce::Colour baseColor = Tone::getContinuousColor(chroma);
             constexpr float undimmingGain = 2.0f;
             const juce::Colour color = juce::Colours::black.interpolatedWith(
                 baseColor,
