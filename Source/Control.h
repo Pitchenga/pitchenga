@@ -18,8 +18,9 @@ public:
         bool showEye = true;
         bool showTuna = true;
 
-        bool showForrest = true;
+        bool pauseSteam = false;
         bool showSteam = true;
+        bool showForrest = true;
 
         float splitRatio = 0.5f;
 
@@ -47,8 +48,9 @@ private:
     juce::TextButton toggleTuna{"Tuna"};
     juce::TextButton toggleEye{"Eye"};
     juce::TextButton toggleRoll{"Roll"};
-    juce::TextButton toggleForrest{"Forest"};
+    juce::TextButton togglePauseSteam{"Pause"};
     juce::TextButton toggleSteam{"Steam"};
+    juce::TextButton toggleForrest{"Forest"};
     juce::Label buildTimestampLabel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Control)

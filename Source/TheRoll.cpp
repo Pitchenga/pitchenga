@@ -9,7 +9,7 @@ void TheRoll::updateResults(const std::vector<SpectralPeak>& peaks) {
 
     activePeaks = peaks;
 
-    if (processor.uiSettings.showSteam) {
+    if (processor.uiSettings.showSteam && !processor.uiSettings.pauseSteam) {
         pumpSteam();
     }
 
