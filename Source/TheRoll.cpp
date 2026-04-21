@@ -45,7 +45,7 @@ float TheRoll::freqToMidi(float freq) {
     return 69.0f + 12.0f * std::log2(freq / 440.0f);
 }
 
-float TheRoll::frequencyToX(float frequencyHz, float width) const {
+float TheRoll::frequencyToX(float frequencyHz, float width) {
     const float midi = freqToMidi(frequencyHz);
     return width * ((midi - minMidiNote) / (maxMidiNote - minMidiNote));
 }
@@ -58,11 +58,11 @@ void TheRoll::paint(juce::Graphics& graphics) {
         graphics.drawImageAt(cachedFrame, 0, 0);
     }
 
-    if (activePeaks.empty()) return;
-
     if (processor.uiSettings.showSteam) {
         paintSteam(graphics);
     }
+
+    if (activePeaks.empty()) return;
 
     if (processor.uiSettings.showForrest) {
         paintPeaks(graphics);
@@ -95,7 +95,7 @@ void TheRoll::paintLabel(
     const float targetCenter,
     const float startY,
     const juce::Colour baseColor
-) const {
+) {
     // fixme: Do not draw a half label that does not fit
 
     const juce::Colour labelColor = juce::Colours::black.interpolatedWith(baseColor, 0.6f);
@@ -188,9 +188,8 @@ void TheRoll::paintPeaks(juce::Graphics& graphics) const {
         }
     }
 }
-
 void TheRoll::pumpSteam() {
-    if (activePeaks.empty() || !steamImage.isValid()) return;
+    if (!steamImage.isValid()) return;
 
     const int width = getWidth();
     const int height = getHeight();
@@ -206,6 +205,10 @@ void TheRoll::pumpSteam() {
 
     // Native JUCE memory wipe: clears the specific row to completely transparent
     steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
+
+    // If there is absolute silence, we still advanced the scroll and cleared the row above.
+    // Now we can safely abort before doing heavy graphics processing.
+    if (activePeaks.empty()) return;
 
     juce::Graphics graphics(steamImage);
 

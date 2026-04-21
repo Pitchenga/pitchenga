@@ -32,11 +32,11 @@ private:
     static constexpr float maxMidiNote = 108.0f; // C8
 
     static float freqToMidi(float freq);
-    float frequencyToX(float frequencyHz, float width) const;
+    static float frequencyToX(float frequencyHz, float width);
 
     void paintFrame();
     void paintFrame(juce::Graphics& graphics) const;
-    void paintLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, int midiNote, float targetCenter, float startY, juce::Colour baseColor) const;
+    static void paintLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, int midiNote, float targetCenter, float startY, juce::Colour baseColor);
     void pumpSteam();
     void paintSteam(const juce::Graphics& graphics) const;
     void paintPeaks(juce::Graphics& graphics) const;
