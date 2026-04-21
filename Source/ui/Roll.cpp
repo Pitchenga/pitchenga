@@ -33,7 +33,7 @@ void Roll::resized() {
 
 juce::Font Roll::getLabelFont() {
     return {
-        juce::FontOptions(13.0f)
+        juce::FontOptions(12.0f)
         .withStyle("Bold")
         .withName(juce::Font::getDefaultMonospacedFontName())
     };

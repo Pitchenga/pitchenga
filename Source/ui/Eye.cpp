@@ -212,7 +212,7 @@ void Eye::paintBins() {
         const float startAngle = static_cast<float>(i) * angleStep + rotation;
 
         // Overlap to kill the anti-aliased gap
-        const float endAngle = static_cast<float>(i + 1) * angleStep + rotation + 0.001f;
+        const float endAngle = static_cast<float>(i + 1) * angleStep + rotation + 0.01f;
 
         juce::Path path;
         path.addCentredArc(0.0f, 0.0f, 1.0f, 1.0f, 0.0f, startAngle, endAngle, true);
