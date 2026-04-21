@@ -40,8 +40,6 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
         audioProcessor.settings.useStftRoll = !audioProcessor.settings.useStftRoll;
         toggleRollType.setButtonText(audioProcessor.settings.useStftRoll ? "STFT" : "CQT");
         if (onVisibilityChanged) onVisibilityChanged();
-        // Force resize to adjust button width based on text
-        resized();
     };
 
     setupToggleButton(toggleForrest, audioProcessor.settings.showForrest);
@@ -120,7 +118,11 @@ void Control::resized() {
 
     auto positionButtonRight = [&](juce::TextButton& button) {
         if (!button.isVisible()) return;
-        const float textWidth = juce::GlyphArrangement::getStringWidth(font, button.getButtonText());
+        float textWidth = juce::GlyphArrangement::getStringWidth(font, button.getButtonText());
+        if (&button == &toggleRollType) {
+            textWidth = juce::jmax(juce::GlyphArrangement::getStringWidth(font, "STFT"),
+                                   juce::GlyphArrangement::getStringWidth(font, "CQT"));
+        }
         const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 16; // 16px horizontal padding
         button.setBounds(bounds.removeFromRight(buttonWidth).reduced(2));
     };
