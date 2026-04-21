@@ -136,6 +136,10 @@ void Stft::sculptSpectrum() {
     std::vector<float> sharpenedMagnitudes(stitchedSize, 0.0f);
     const float unifiedBinResolution = static_cast<float>(currentSampleRate) / 65536.0f;
 
+    constexpr float minFrequencyHz = 20.0f;
+    constexpr float logMinFrequency = 1.301f;
+    constexpr float logFrequencyRangeInv = 1.0f / 3.0f;
+
     for (int i = 0; i < stitchedSize; ++i) {
         const float freq = static_cast<float>(i) * unifiedBinResolution;
 
@@ -161,10 +165,16 @@ void Stft::sculptSpectrum() {
             // We are near a peak's summit -> Expand vertically
             sculpted += prominence * peakExpanderVertical;
         } else {
+            // Logarithmic Progressive Shrinker:
+            // Dynamically calculate the horizontal carving intensity to equalize the log-scale visual thickness.
+            const float logFrequency = std::log10(std::max(minFrequencyHz, freq));
+            const float logFrequencyNorm = std::min(1.0f, std::max(0.0f, (logFrequency - logMinFrequency) * logFrequencyRangeInv));
+            const float dynamicShrinkerWeight = bassShrinkerHorizontal - logFrequencyNorm * (bassShrinkerHorizontal - trebleShrinkerHorizontal);
+
             // OUTDATED: Horizontal Shrinker: subtract a fraction of surrounding energy
             // We are on the sloping shoulders or in a valley -> Shrink horizontally
             // (prominence is negative here, so adding it mathematically subtracts from the magnitude)
-            sculpted += prominence * peakShrinkerHorizontal;
+            sculpted += prominence * dynamicShrinkerWeight;
         }
 
         sharpenedMagnitudes[static_cast<size_t>(i)] = std::max(0.0f, sculpted);
@@ -172,6 +182,7 @@ void Stft::sculptSpectrum() {
 
     std::copy(sharpenedMagnitudes.begin(), sharpenedMagnitudes.end(), stitchedMagnitudes.begin());
 }
+
 void Stft::applyProgressiveSmoothing() {
     // Apply Unified Progressive Temporal Smoothing
     constexpr float minFrequencyHz = 20.0f;
