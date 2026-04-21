@@ -1,11 +1,11 @@
-#include "StftRoll.h"
+#include "RollStft.h"
 #include "../Tone.h"
 #include <algorithm>
 #include <cmath>
 
-StftRoll::StftRoll(PitchengaAudioProcessor& proc) : processor(proc) {}
+RollStft::RollStft(PitchengaAudioProcessor& proc) : processor(proc) {}
 
-void StftRoll::updateResults(const std::vector<SpectralPeak>& peaks) {
+void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
 
     if (!processor.settings.freezeRoll) {
         activePeaks = peaks;
@@ -18,7 +18,7 @@ void StftRoll::updateResults(const std::vector<SpectralPeak>& peaks) {
     repaint();
 }
 
-void StftRoll::resized() {
+void RollStft::resized() {
     const int width = getWidth();
     const int height = getHeight();
 
@@ -31,7 +31,7 @@ void StftRoll::resized() {
     }
 }
 
-juce::Font StftRoll::getLabelFont() {
+juce::Font RollStft::getLabelFont() {
     return {
         juce::FontOptions(12.0f)
         .withStyle("Bold")
@@ -39,21 +39,21 @@ juce::Font StftRoll::getLabelFont() {
     };
 }
 
-float StftRoll::getLabelAreaHeight() {
+float RollStft::getLabelAreaHeight() {
     return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8") + 4.0f;
 }
 
-float StftRoll::freqToMidi(float freq) {
+float RollStft::freqToMidi(float freq) {
     if (freq <= 0.0f) return 0.0f;
     return 69.0f + 12.0f * std::log2(freq / 440.0f);
 }
 
-float StftRoll::frequencyToX(float frequencyHz, float width) {
+float RollStft::frequencyToX(float frequencyHz, float width) {
     const float midi = freqToMidi(frequencyHz);
     return width * ((midi - minMidiNote) / (maxMidiNote - minMidiNote));
 }
 
-void StftRoll::paint(juce::Graphics& graphics) {
+void RollStft::paint(juce::Graphics& graphics) {
     if (!cachedFrame.isValid()) {
         paintFrame(); // Generates it if the engine wasn't ready during resized()
     }
@@ -83,7 +83,7 @@ void StftRoll::paint(juce::Graphics& graphics) {
     graphics.restoreState();
 }
 
-void StftRoll::paintFrame() {
+void RollStft::paintFrame() {
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
@@ -94,14 +94,14 @@ void StftRoll::paintFrame() {
     paintFrame(graphics);
 }
 
-juce::String StftRoll::getNoteName(const int midiNote) {
+juce::String RollStft::getNoteName(const int midiNote) {
     int chroma = midiNote % 12;
     if (chroma < 0) chroma += 12;
     const int octave = midiNote / 12 - 1;
     return Tone::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
 
-void StftRoll::paintLabel(
+void RollStft::paintLabel(
     juce::Graphics& graphics,
     const float labelHeight,
     const float maxTextWidth,
@@ -133,7 +133,7 @@ void StftRoll::paintLabel(
     graphics.restoreState();
 }
 
-void StftRoll::paintFrame(juce::Graphics& graphics) const {
+void RollStft::paintFrame(juce::Graphics& graphics) const {
     const auto totalHeight = static_cast<float>(getHeight());
     const float labelAreaHeight = getLabelAreaHeight();
     const float plotHeight = std::max(1.0f, totalHeight - labelAreaHeight);
@@ -170,7 +170,7 @@ void StftRoll::paintFrame(juce::Graphics& graphics) const {
     }
 }
 
-void StftRoll::paintPeaks(juce::Graphics& graphics) const {
+void RollStft::paintPeaks(juce::Graphics& graphics) const {
     const int width = getWidth();
     const float plotHeight = std::max(1.0f, static_cast<float>(getHeight()) - getLabelAreaHeight());
 
@@ -207,7 +207,7 @@ void StftRoll::paintPeaks(juce::Graphics& graphics) const {
         }
     }
 }
-void StftRoll::pumpSteam() {
+void RollStft::pumpSteam() {
     if (activePeaks.empty() || !steamImage.isValid()) return;
 
     const int width = getWidth();
@@ -268,7 +268,7 @@ void StftRoll::pumpSteam() {
     }
 }
 
-void StftRoll::paintSteam(const juce::Graphics& graphics) const {
+void RollStft::paintSteam(const juce::Graphics& graphics) const {
     if (!steamImage.isValid()) return;
 
     const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));

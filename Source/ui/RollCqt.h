@@ -5,10 +5,10 @@
 #include "../Math/Cqt.h"
 #include "../math/Analyzers.h"
 
-class CqtRoll : public juce::Component
+class RollCqt : public juce::Component
 {
 public:
-    CqtRoll(PitchengaAudioProcessor&);
+    RollCqt(PitchengaAudioProcessor&);
     bool expand();
     void paint(juce::Graphics&) override;
     void resized() override;

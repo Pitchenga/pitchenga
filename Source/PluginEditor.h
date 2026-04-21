@@ -5,8 +5,8 @@
 #include "math/Math.h"
 #include "ui/Tuna.h"
 #include "ui/Eye.h"
-#include "ui/StftRoll.h"
-#include "ui/CqtRoll.h"
+#include "ui/RollStft.h"
+#include "ui/RollCqt.h"
 #include "ui/Control.h"
 #include "ui/Splitter.h"
 
@@ -30,8 +30,8 @@ private:
 
     Tuna tuna;
     Eye eye;
-    StftRoll stftRoll;
-    CqtRoll cqtRoll;
+    RollStft stftRoll;
+    RollCqt cqtRoll;
     Splitter splitter;
 
     Control control;

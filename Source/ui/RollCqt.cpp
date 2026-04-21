@@ -1,12 +1,12 @@
-#include "CqtRoll.h"
+#include "RollCqt.h"
 #include "../Tone.h"
 #include <algorithm>
 
 #include "Eye.h"
 
-CqtRoll::CqtRoll(PitchengaAudioProcessor& proc) : processor(proc) {}
+RollCqt::RollCqt(PitchengaAudioProcessor& proc) : processor(proc) {}
 
-bool CqtRoll::expand() {
+bool RollCqt::expand() {
     const int totalBins = static_cast<int>(displayMagnitudes.size());
     if (totalBins <= 0) return true;
 
@@ -31,7 +31,7 @@ bool CqtRoll::expand() {
     return false;
 }
 
-void CqtRoll::updateResults(const std::vector<double>& results) {
+void RollCqt::updateResults(const std::vector<double>& results) {
     if (results.empty()) return;
     displayMagnitudes = results;
 
@@ -51,7 +51,7 @@ void CqtRoll::updateResults(const std::vector<double>& results) {
     repaint();
 }
 
-void CqtRoll::resized() {
+void RollCqt::resized() {
     const int width = getWidth();
     const int height = getHeight();
 
@@ -63,7 +63,7 @@ void CqtRoll::resized() {
     }
 }
 
-juce::Font CqtRoll::getLabelFont() {
+juce::Font RollCqt::getLabelFont() {
     return {
         juce::FontOptions(15.0f)
         .withStyle("Bold")
@@ -71,11 +71,11 @@ juce::Font CqtRoll::getLabelFont() {
     };
 }
 
-float CqtRoll::getLabelAreaHeight() {
+float RollCqt::getLabelAreaHeight() {
     return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8") + 4.0f;
 }
 
-void CqtRoll::paint(juce::Graphics& graphics) {
+void RollCqt::paint(juce::Graphics& graphics) {
     if (!cachedFrame.isValid()) {
         paintFrame(); // Generates it if the engine wasn't ready during resized()
     }
@@ -97,7 +97,7 @@ void CqtRoll::paint(juce::Graphics& graphics) {
     }
 }
 
-void CqtRoll::paintFrame() {
+void RollCqt::paintFrame() {
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
@@ -110,14 +110,14 @@ void CqtRoll::paintFrame() {
     paintFrame(graphics);
 }
 
-juce::String CqtRoll::getNoteName(const int midiNote) {
+juce::String RollCqt::getNoteName(const int midiNote) {
     int chroma = midiNote % 12;
     if (chroma < 0) chroma += 12;
     const int octave = midiNote / 12 - 1;
     return Tone::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
 
-void CqtRoll::paintLabel(
+void RollCqt::paintLabel(
     juce::Graphics& graphics,
     const float labelHeight,
     const float maxTextWidth,
@@ -152,7 +152,7 @@ void CqtRoll::paintLabel(
     graphics.restoreState();
 }
 
-void CqtRoll::paintFrame(juce::Graphics& graphics) const {
+void RollCqt::paintFrame(juce::Graphics& graphics) const {
     int totalOctaves = currentTotalBins / currentBinsPerOctave;
     if (totalOctaves <= 0) totalOctaves = PitchengaAudioProcessor::numOctaves;
     const int totalSemitones = totalOctaves * 12;
@@ -195,7 +195,8 @@ void CqtRoll::paintFrame(juce::Graphics& graphics) const {
         paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, startY, baseColor);
     }
 }
-void CqtRoll::paintBins(juce::Graphics& graphics) const {
+
+void RollCqt::paintBins(juce::Graphics& graphics) const {
     const int width = getWidth();
     const int height = getHeight();
 
@@ -226,8 +227,7 @@ void CqtRoll::paintBins(juce::Graphics& graphics) const {
     }
 }
 
-
-void CqtRoll::pumpSteam() {
+void RollCqt::pumpSteam() {
     if (displayMagnitudes.empty() || !steamImage.isValid()) return;
 
     const int width = getWidth();
@@ -272,7 +272,7 @@ void CqtRoll::pumpSteam() {
     }
 }
 
-void CqtRoll::paintSteam(const juce::Graphics& graphics) const {
+void RollCqt::paintSteam(const juce::Graphics& graphics) const {
     if (!steamImage.isValid()) return;
 
     const int height = getHeight();
