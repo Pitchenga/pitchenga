@@ -23,9 +23,9 @@ void RollStft::resized() {
     const int height = getHeight();
 
     if (width > 0 && height > 0) {
-        const int rollHeight = std::max(1, height - static_cast<int>(getLabelAreaHeight()));
+        const int plotHeight = std::max(1, height - static_cast<int>(getLabelAreaHeight()));
         // Initialize the rolling buffer whenever the window resizes
-        steamImage = juce::Image(juce::Image::ARGB, width, rollHeight, true);
+        steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
         steamScrollOffset = 0;
         paintFrame();
     }
@@ -33,7 +33,7 @@ void RollStft::resized() {
 
 juce::Font RollStft::getLabelFont() {
     return {
-        juce::FontOptions(12.0f)
+        juce::FontOptions(13.0f)
         .withStyle("Bold")
         .withName(juce::Font::getDefaultMonospacedFontName())
     };
@@ -111,7 +111,7 @@ void RollStft::paintLabel(
     const juce::Colour baseColor
 ) {
     //fixme: Un-hardcode
-    if (midiNote == 21 || midiNote == 108) {
+    if (midiNote == minMidiNote || midiNote == 108) {
         // Not drawing a half label
         return;
     }

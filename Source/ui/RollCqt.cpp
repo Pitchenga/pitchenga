@@ -56,8 +56,9 @@ void RollCqt::resized() {
     const int height = getHeight();
 
     if (width > 0 && height > 0) {
+        const int plotHeight = std::max(1, height - static_cast<int>(getLabelAreaHeight()));
         // Initialize the rolling buffer whenever the window resizes
-        steamImage = juce::Image(juce::Image::ARGB, width, height, true);
+        steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
         steamScrollOffset = 0;
         paintFrame();
     }
@@ -65,7 +66,7 @@ void RollCqt::resized() {
 
 juce::Font RollCqt::getLabelFont() {
     return {
-        juce::FontOptions(15.0f)
+        juce::FontOptions(13.0f)
         .withStyle("Bold")
         .withName(juce::Font::getDefaultMonospacedFontName())
     };
@@ -79,6 +80,12 @@ void RollCqt::paint(juce::Graphics& graphics) {
     if (!cachedFrame.isValid()) {
         paintFrame(); // Generates it if the engine wasn't ready during resized()
     }
+    
+    const int width = getWidth();
+    const int height = getHeight();
+    const float labelAreaHeight = getLabelAreaHeight();
+    const int plotHeight = std::max(1, height - static_cast<int>(labelAreaHeight));
+
     if (cachedFrame.isValid()) {
         graphics.drawImageAt(cachedFrame, 0, 0);
     }
@@ -88,6 +95,9 @@ void RollCqt::paint(juce::Graphics& graphics) {
 
     if (currentTotalBins <= 0 || currentBinsPerOctave <= 0 || displayMagnitudes.empty()) return;
 
+    graphics.saveState();
+    graphics.reduceClipRegion(0, 0, width, plotHeight);
+
     if (processor.settings.showSteam) {
         paintSteam(graphics);
     }
@@ -95,6 +105,8 @@ void RollCqt::paint(juce::Graphics& graphics) {
     if (processor.settings.showForrest) {
         paintBins(graphics);
     }
+
+    graphics.restoreState();
 }
 
 void RollCqt::paintFrame() {
@@ -133,11 +145,9 @@ void RollCqt::paintLabel(
     constexpr int startMidiNote = 12;
     const int midiNote = i + startMidiNote;
 
-    const juce::Colour labelColor = juce::Colours::black.interpolatedWith(baseColor, 0.6f);
-
     const juce::String name = getNoteName(midiNote);
 
-    graphics.setColour(labelColor);
+    graphics.setColour(baseColor);
     graphics.saveState();
     graphics.addTransform(
         juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, targetCenter, startY - 2.0f)
@@ -162,8 +172,10 @@ void RollCqt::paintFrame(juce::Graphics& graphics) const {
     // The exact pixel width of one single CQT bin
     const float barWidth = static_cast<float>(getWidth()) / static_cast<float>(currentTotalBins);
 
-    const auto height = static_cast<float>(getHeight());
-    const float halfHeight = height * 0.5f;
+    const auto totalHeight = static_cast<float>(getHeight());
+    const float labelAreaHeight = getLabelAreaHeight();
+    const float plotHeight = std::max(1.0f, totalHeight - labelAreaHeight);
+    const float halfHeight = plotHeight * 0.5f;
 
     const juce::Font labelFont = getLabelFont();
     graphics.setFont(labelFont);
@@ -184,21 +196,21 @@ void RollCqt::paintFrame(juce::Graphics& graphics) const {
         const float targetCenter = binIndex * barWidth + barWidth * 0.5f;
 
         // Route the line to the top half (black keys) or bottom half (white keys)
-        const float startY = getLabelAreaHeight();
-        const float endY = isBlackKey ? halfHeight : height;
+        const float startY = 0.0f;
+        const float endY = isBlackKey ? halfHeight : plotHeight;
 
         const juce::Colour baseColor = Tone::chromaticScale[static_cast<size_t>(chroma)].color;
         const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.2f);
         graphics.setColour(gridColor);
         graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
 
-        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, startY, baseColor);
+        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor);
     }
 }
 
 void RollCqt::paintBins(juce::Graphics& graphics) const {
     const int width = getWidth();
-    const int height = getHeight();
+    const float plotHeight = std::max(1.0f, static_cast<float>(getHeight()) - getLabelAreaHeight());
 
     const float barWidth = static_cast<float>(width) / static_cast<float>(currentTotalBins);
 
@@ -210,7 +222,7 @@ void RollCqt::paintBins(juce::Graphics& graphics) const {
             1.0,
             std::max(0.0, magnitude)
         );
-        const auto barHeight = static_cast<float>(normalizedMagnitude * height);
+        const auto barHeight = static_cast<float>(normalizedMagnitude) * plotHeight;
 
         const float chroma =
             static_cast<float>(i % currentBinsPerOctave) * 12.0f / static_cast<float>(currentBinsPerOctave);
@@ -220,7 +232,7 @@ void RollCqt::paintBins(juce::Graphics& graphics) const {
 
         graphics.fillRect(
             static_cast<float>(i) * barWidth,
-            static_cast<float>(height) - barHeight,
+            plotHeight - barHeight,
             barWidth + 0.5f,
             barHeight
         );
@@ -231,7 +243,7 @@ void RollCqt::pumpSteam() {
     if (displayMagnitudes.empty() || !steamImage.isValid()) return;
 
     const int width = getWidth();
-    const int height = getHeight();
+    const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
     if (width <= 0 || height <= 0) return;
 
     const int speedPx = static_cast<int>(steamSpeedPxPerFrame);
@@ -275,7 +287,7 @@ void RollCqt::pumpSteam() {
 void RollCqt::paintSteam(const juce::Graphics& graphics) const {
     if (!steamImage.isValid()) return;
 
-    const int height = getHeight();
+    const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
 
     // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
     graphics.drawImageAt(steamImage, 0, -steamScrollOffset);

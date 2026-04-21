@@ -27,9 +27,8 @@ private:
 
     juce::Image cachedFrame;
 
-    // Standard piano range mapping
-    static constexpr float minMidiNote = 21.0f; // A0
-    static constexpr float maxMidiNote = 108.0f; // C8
+    static constexpr int minMidiNote = 12.0;
+    static constexpr int maxMidiNote = 108.0;
 
     static float freqToMidi(float freq);
     static float frequencyToX(float frequencyHz, float width);
