@@ -100,23 +100,29 @@ void Stft::stitchResolutionBands() {
     };
 
     // Stitch and Cross-Fade the bands into a single unified high-resolution array
-    const float unifiedBinResolution = static_cast<float>(currentSampleRate) / 65536.0f;
+    const float unifiedBinResolution = static_cast<float>(currentSampleRate) / 32768.0f;
+
+    // Widened, logarithmic crossfades to completely mask Acoustic Group Delay tearing
+    constexpr float lowMidFadeStart = 150.0f;
+    constexpr float lowMidFadeEnd = 350.0f;
+    constexpr float midHighFadeStart = 1000.0f;
+    constexpr float midHighFadeEnd = 3000.0f;
 
     for (int i = 0; i < stitchedSize; ++i) {
         const float freq = static_cast<float>(i) * unifiedBinResolution;
         float magnitude = 0.0f;
 
-        if (freq < 200.0f) {
+        if (freq < lowMidFadeStart) {
             magnitude = getMagnitudeAtFreq(multiResolutionBands[0], freq, static_cast<float>(currentSampleRate));
-        } else if (freq <= 300.0f) {
-            const float fadeMid = (freq - 200.0f) / 100.0f;
+        } else if (freq <= lowMidFadeEnd) {
+            const float fadeMid = std::log10(freq / lowMidFadeStart) / std::log10(lowMidFadeEnd / lowMidFadeStart);
             const float fadeLow = 1.0f - fadeMid;
             magnitude = fadeLow * getMagnitudeAtFreq(multiResolutionBands[0], freq, static_cast<float>(currentSampleRate)) +
                         fadeMid * getMagnitudeAtFreq(multiResolutionBands[1], freq, static_cast<float>(currentSampleRate));
-        } else if (freq < 1500.0f) {
+        } else if (freq < midHighFadeStart) {
             magnitude = getMagnitudeAtFreq(multiResolutionBands[1], freq, static_cast<float>(currentSampleRate));
-        } else if (freq <= 2500.0f) {
-            const float fadeHigh = (freq - 1500.0f) / 1000.0f;
+        } else if (freq <= midHighFadeEnd) {
+            const float fadeHigh = std::log10(freq / midHighFadeStart) / std::log10(midHighFadeEnd / midHighFadeStart);
             const float fadeMid = 1.0f - fadeHigh;
             magnitude = fadeMid * getMagnitudeAtFreq(multiResolutionBands[1], freq, static_cast<float>(currentSampleRate)) +
                         fadeHigh * getMagnitudeAtFreq(multiResolutionBands[2], freq, static_cast<float>(currentSampleRate));
@@ -137,6 +143,12 @@ void Stft::sculptSpectrum() {
     constexpr float logMinFrequency = 1.301f;
     constexpr float logFrequencyRangeInv = 1.0f / 3.0f;
 
+    // Logarithmic crossfade bounds to perfectly match stitchResolutionBands
+    constexpr float lowMidFadeStart = 150.0f;
+    constexpr float lowMidFadeEnd = 350.0f;
+    constexpr float midHighFadeStart = 1000.0f;
+    constexpr float midHighFadeEnd = 3000.0f;
+
     for (int i = 0; i < stitchedSize; ++i) {
         const float freq = static_cast<float>(i) * unifiedBinResolution;
         const float centerMagnitude = stitchedMagnitudes[static_cast<size_t>(i)];
@@ -146,10 +158,29 @@ void Stft::sculptSpectrum() {
         // The Blackman-Harris window has a main lobe width of ~8 bins natively.
         // We multiply the native half-width (4) by the zero-padding factor to find the exact shoulders.
         // All bands are now padded exactly 4x (e.g. 8192 window padded to 32768 FFT).
+        // OUTDATED: Low band: 65536 / 8192 = 8 padding. 8 * 4 = 32 bins.
+        // OUTDATED: High band: 65536 / 2048 = 32 padding. 32 * 4 = 128 bins.
+        // OUTDATED: Mid band: 65536 / 4096 = 16 padding. 16 * 4 = 64 bins.
 
-        int lobeHalfWidthBins = 16; // Low band natively 16 in the stitched array.
-        if (freq >= 2000.0f) lobeHalfWidthBins = 64;      // High band mapped to unified array 4x larger relative res
-        else if (freq >= 250.0f) lobeHalfWidthBins = 32;   // Mid band mapped to unified array 2x larger relative res
+        // OUTDATED: int lobeHalfWidthBins = 16; // Low band natively 16 in the stitched array.
+        // OUTDATED: if (freq >= 2000.0f) lobeHalfWidthBins = 64;      // High band mapped to unified array 4x larger relative res
+        // OUTDATED: else if (freq >= 250.0f) lobeHalfWidthBins = 32;   // Mid band mapped to unified array 2x larger relative res
+
+        float exactLobeHalfWidth = 16.0f;
+        if (freq < lowMidFadeStart) {
+            exactLobeHalfWidth = 16.0f;
+        } else if (freq <= lowMidFadeEnd) {
+            const float fade = std::log10(freq / lowMidFadeStart) / std::log10(lowMidFadeEnd / lowMidFadeStart);
+            exactLobeHalfWidth = 16.0f * (1.0f - fade) + 32.0f * fade;
+        } else if (freq < midHighFadeStart) {
+            exactLobeHalfWidth = 32.0f;
+        } else if (freq <= midHighFadeEnd) {
+            const float fade = std::log10(freq / midHighFadeStart) / std::log10(midHighFadeEnd / midHighFadeStart);
+            exactLobeHalfWidth = 32.0f * (1.0f - fade) + 64.0f * fade;
+        } else {
+            exactLobeHalfWidth = 64.0f;
+        }
+        int lobeHalfWidthBins = static_cast<int>(std::round(exactLobeHalfWidth));
 
         // Find the absolute local summit within this lobe's neighborhood
         float localMax = centerMagnitude;
