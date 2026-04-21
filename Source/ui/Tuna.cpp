@@ -18,15 +18,27 @@ void Tuna::setPitchFrequency(const float frequencyHz) {
 
         const float error = currentMidi - std::round(currentMidi);
 
-        // Speed lowered to avoid the "Wagon-Wheel Effect" optical illusion
-        constexpr float maxPixelsPerFrame = 15.0f;
-        strobePhase += error * maxPixelsPerFrame;
-
-        while (strobePhase >= static_cast<float>(strobeCycleWidth)) strobePhase -= static_cast<float>(strobeCycleWidth);
-        while (strobePhase < 0.0f) strobePhase += static_cast<float>(strobeCycleWidth);
+        // Speed optimized to avoid the "Wagon-Wheel Effect" optical illusion while maintaining high visibility
+        constexpr float maxPixelsPerFrame = 20.0f;
+        targetVelocity = error * maxPixelsPerFrame;
     } else {
         currentMidi = -1.0f;
+
+        // Digital tuners use an "Infinite Hold" paradigm.
+        // We deliberately DO NOT reset targetVelocity here, so the strobe permanently
+        // spins at the exact speed of the last known tuning error until a new note is struck!
     }
+
+    // Mechanical Inertia: A physical strobe disc cannot instantly stop or change direction.
+    // This exponential smoother cures both MPM frame drops and natural acoustic jitter.
+    constexpr float inertiaFactor = 0.05f;
+    currentVelocity = currentVelocity * (1.0f - inertiaFactor) + targetVelocity * inertiaFactor;
+
+    strobePhase += currentVelocity;
+
+    while (strobePhase >= static_cast<float>(strobeCycleWidth)) strobePhase -= static_cast<float>(strobeCycleWidth);
+    while (strobePhase < 0.0f) strobePhase += static_cast<float>(strobeCycleWidth);
+
     repaint();
 }
 
@@ -130,14 +142,13 @@ void Tuna::updateCachedLabels() {
 void Tuna::resized() {
     updateCachedLabels();
 }
-
 void Tuna::paint(juce::Graphics& graphics) {
     const auto bounds = getLocalBounds().toFloat();
     const auto height = static_cast<float>(getHeight());
     const float stripY = height - stripHeight;
     const int width = getWidth();
 
-    // 1. Draw the live strobe gradient natively
+    // Draw the live strobe gradient natively
     for (int x = 0; x < width; ++x) {
         const float horizontalFraction = width > 1 ? static_cast<float>(x) / static_cast<float>(width - 1) : 0.0f;
         const float midiAtX = minMidi + horizontalFraction * (maxMidi - minMidi);
@@ -147,23 +158,31 @@ void Tuna::paint(juce::Graphics& graphics) {
 
         juce::Colour color = Tone::getContinuousColor(chroma);
 
-        int phaseIndex = (x - static_cast<int>(strobePhase)) % strobeCycleWidth;
-        if (phaseIndex < 0) phaseIndex += strobeCycleWidth;
+        // Sub-pixel continuous phase calculation prevents micro-stuttering and halting at slow speeds
+        const float exactPhase = static_cast<float>(x) - strobePhase;
+        float phaseF = std::fmod(exactPhase, static_cast<float>(strobeCycleWidth));
+        if (phaseF < 0.0f) phaseF += static_cast<float>(strobeCycleWidth);
 
-        // Modulate color intensity with black to form the exact strobe effect
-        const float intensity = strobeIntensities[static_cast<size_t>(phaseIndex)];
+        const int index0 = static_cast<int>(phaseF);
+        const int index1 = (index0 + 1) % strobeCycleWidth;
+        const float frac = phaseF - static_cast<float>(index0);
+
+        // Modulate color intensity with black to form the exact strobe effect using linear interpolation
+        const float intensity = strobeIntensities[static_cast<size_t>(index0)] * (1.0f - frac) +
+                                strobeIntensities[static_cast<size_t>(index1)] * frac;
+
         color = color.interpolatedWith(juce::Colours::black, 1.0f - intensity);
 
         graphics.setColour(color);
         graphics.fillRect(static_cast<float>(x), stripY, 1.0f, stripHeight);
     }
 
-    // 2. Overlay the pre-baked labels and ticks
+    // Overlay the pre-baked labels and ticks
     if (cachedLabels.isValid()) {
         graphics.drawImageAt(cachedLabels, 0, 0);
     }
 
-    // 3. Dynamic Illumination Overlay
+    // Dynamic Illumination Overlay
     if (currentMidi >= minMidi && currentMidi <= maxMidi) {
         graphics.setFont(getLabelFont());
 
@@ -199,7 +218,16 @@ void Tuna::paint(juce::Graphics& graphics) {
             height
         );
 
-        graphics.setColour(juce::Colours::black);
+        // Fill the needle with the exact continuous pitch color so it pops out of the darkness
+        float exactChroma = std::fmod(currentMidi, 12.0f);
+        if (exactChroma < 0.0f) exactChroma += 12.0f;
+        const juce::Colour exactPitchColor = Tone::getContinuousColor(exactChroma);
+
+        graphics.setColour(exactPitchColor);
+        graphics.fillPath(triangle);
+
+        // Give it a bright white outline to guarantee separation from the strobe
+        graphics.setColour(juce::Colours::white);
         graphics.strokePath(triangle, juce::PathStrokeType(2.0f));
     }
 }

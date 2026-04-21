@@ -40,6 +40,8 @@ private:
     juce::Image cachedLabels;
 
     float strobePhase = 0.0f;
+    float targetVelocity = 0.0f;
+    float currentVelocity = 0.0f;
     static constexpr int strobeCycleWidth = 60;
     std::array<float, 60> strobeIntensities;
 
