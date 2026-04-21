@@ -43,7 +43,7 @@ public:
     const std::vector<SpectralPeak>& getPeaks() const { return finalPeaks; }
 
 private:
-    void performSTFT(const std::vector<float>& timeDomainSignal);
+    void performStft(const std::vector<float>& timeDomainSignal);
     void extractPeaks();
     void applyPsychoacousticTilt();
     void scaleForUi();

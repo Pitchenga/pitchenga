@@ -46,9 +46,9 @@ void Stft::initialize(const double sampleRateToUse) {
 void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
     if (multiResolutionBands.empty() || timeDomainSignal.size() < static_cast<size_t>(multiResolutionBands.front().windowSize)) return;
 
-    performSTFT(timeDomainSignal);
+    performStft(timeDomainSignal);
 
-    // The gradiental Soft Extractor now physically pre-sculpts the bins inside performSTFT.
+    // The gradiental Soft Extractor now physically pre-sculpts the bins inside performStft.
     // We always use extractRawBins to pull the continuously sculpted data for the UI.
     extractRawBins();
 
@@ -58,7 +58,7 @@ void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
     scaleForUi();
 }
 
-void Stft::performSTFT(const std::vector<float>& timeDomainSignal) {
+void Stft::performStft(const std::vector<float>& timeDomainSignal) {
     // Calculate raw FFT magnitudes for all distinct bands
     for (auto& band : multiResolutionBands) {
         // Zero-padding happens naturally because we only copy windowSize samples, leaving the rest of the workspace 0.0f
