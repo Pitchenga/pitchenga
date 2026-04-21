@@ -15,15 +15,6 @@ void Eye::updateResults(const std::vector<double>& results) {
     }
 }
 
-void Eye::setPitchFrequency(const float frequencyHz) {
-    if (frequencyHz > 0.0f) {
-        currentMidi = 69.0f + 12.0f * std::log2(frequencyHz / 440.0f);
-    } else {
-        currentMidi = -1.0f;
-    }
-    repaint();
-}
-
 juce::Colour Eye::calculateColor(const float velocity, const float toneRatio) {
     //fixme: Simplify with getContinuousColor(), unify coloring logic
     // NO std::fmod() NEEDED.
@@ -127,45 +118,6 @@ void Eye::paint(juce::Graphics& g) {
         g.fillPath(originalPath, transform);
 
         g.strokePath(originalPath, strokeType, transform);
-    }
-
-    if (currentMidi > 0.0f) {
-        float exactChroma = std::fmod(currentMidi, 12.0f);
-        if (exactChroma < 0.0f) exactChroma += 12.0f;
-
-        const auto outerRadius = std::min(bounds.getWidth(), bounds.getHeight()) / 2.0f;
-
-        const float angle = (exactChroma / 12.0f) * juce::MathConstants<float>::twoPi;
-        // addCentredArc 0-radians starts at -pi/2 in standard trig. 
-        // So we need to shift the angle by -pi/2.
-        const float cos = std::cos(angle - juce::MathConstants<float>::halfPi);
-        const float sinShifted = std::sin(angle - juce::MathConstants<float>::halfPi);
-
-        const float triangleBaseRadius = outerRadius - 2.0f;
-        const float tipRadius = outerRadius - 16.0f;
-        const float halfBaseWidth = 7.0f;
-
-        const float tipX = center.x + tipRadius * cos;
-        const float tipY = center.y + tipRadius * sinShifted;
-
-        const float baseCenterX = center.x + triangleBaseRadius * cos;
-        const float baseCenterY = center.y + triangleBaseRadius * sinShifted;
-
-        const float perpX = -sinShifted;
-        const float perpY = cos;
-
-        juce::Path triangle;
-        triangle.addTriangle(
-            tipX, tipY,
-            baseCenterX + perpX * halfBaseWidth, baseCenterY + perpY * halfBaseWidth,
-            baseCenterX - perpX * halfBaseWidth, baseCenterY - perpY * halfBaseWidth
-        );
-
-        g.setColour(juce::Colours::white);
-        g.fillPath(triangle);
-
-        g.setColour(juce::Colours::black);
-        g.strokePath(triangle, juce::PathStrokeType(2.0f));
     }
 }
 

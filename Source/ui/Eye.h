@@ -13,7 +13,6 @@ public:
     Eye();
 
     void updateResults(const std::vector<double>& results);
-    void setPitchFrequency(float frequencyHz);
 
     void paint(juce::Graphics& g) override;
     static void paintLabel(
@@ -34,7 +33,6 @@ private:
     void paintBins();
 
     std::vector<double> smoothedOctaveBins;
-    float currentMidi = -1.0f;
     std::array<juce::Path, totalFoldedBins> segmentPaths;
     juce::PathStrokeType strokeType{0.5f};
 
