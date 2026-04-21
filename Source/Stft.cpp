@@ -48,9 +48,16 @@ void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
 
     performStft(timeDomainSignal);
 
-    // The gradiental Soft Extractor now physically pre-sculpts the bins inside performStft.
-    // We always use extractRawBins to pull the continuously sculpted data for the UI.
-    extractRawBins();
+    // OUTDATED: The gradiental Soft Extractor now physically pre-sculpts the bins inside performStft.
+    // OUTDATED: We always use extractRawBins to pull the continuously sculpted data for the UI.
+
+    // The Laplacian Unsharp Mask has now transformed the wide, unstable plateaus into perfectly sharp needles.
+    // We let the quadratic peak picker isolate the exact summit of those needles to generate razor-thin visual stems.
+    if (enablePeakExtraction) {
+        extractPeaks();
+    } else {
+        extractRawBins();
+    }
 
     if (enablePsychoacousticTilt) {
         applyPsychoacousticTilt();
