@@ -14,7 +14,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     addAndMakeVisible(splitter);
     splitter.onDragged = [this] { resized(); };
 
-    circleBuffer.resize(TheEye::totalFoldedBins, 0.0);
+    circleBuffer.resize(Eye::totalFoldedBins, 0.0);
 
     setResizable(true, true);
     setSize(audioProcessor.uiSettings.lastUIWidth, audioProcessor.uiSettings.lastUIHeight);

@@ -51,30 +51,30 @@ set(PITCHENGA_SOURCES
         Source/PluginProcessor.h
         Source/PluginEditor.cpp
         Source/PluginEditor.h
-        Source/Cqt.h
-        Source/Cqt.cpp
+        Source/math/Cqt.h
+        Source/math/Cqt.cpp
         Source/Analyzers.h
         Source/Analyzers.cpp
         Source/Palette.h
         Source/Palette.cpp
-        Source/TheTuna.h
-        Source/TheTuna.cpp
-        Source/TheEye.h
-        Source/TheEye.cpp
-        Source/TheRoll.h
-        Source/TheRoll.cpp
+        Source/ui/TheTuna.h
+        Source/ui/TheTuna.cpp
+        Source/ui/Eye.h
+        Source/ui/Eye.cpp
+        Source/ui/TheRoll.h
+        Source/ui/TheRoll.cpp
         Source/Math.h
         Source/Math.cpp
         Source/Control.h
         Source/Control.cpp
-        Source/Agc.h
-        Source/Agc.cpp
+        Source/math/Agc.h
+        Source/math/Agc.cpp
         Source/Splitter.h
         Source/Splitter.cpp
         Source/Util.h
         Source/Util.cpp
-        Source/Stft.h
-        Source/Stft.cpp
+        Source/math/Stft.h
+        Source/math/Stft.cpp
 )
 
 add_custom_command(

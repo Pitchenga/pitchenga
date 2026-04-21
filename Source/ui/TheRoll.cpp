@@ -1,5 +1,5 @@
 #include "TheRoll.h"
-#include "Palette.h"
+#include "../Palette.h"
 #include <algorithm>
 #include <cmath>
 

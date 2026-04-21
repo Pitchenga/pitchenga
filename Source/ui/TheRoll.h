@@ -1,8 +1,8 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
-#include "PluginProcessor.h"
-#include "Stft.h"
+#include "../PluginProcessor.h"
+#include "../math/Stft.h"
 
 class TheRoll : public juce::Component {
 public:

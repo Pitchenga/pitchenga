@@ -2,10 +2,10 @@
 
 #include <juce_core/juce_core.h>
 #include "PluginProcessor.h"
-#include "Cqt.h"
+#include "math/Cqt.h"
 #include "Analyzers.h"
 #include <pitch_detector/pitch_detector.h>
-#include "Stft.h"
+#include "math/Stft.h"
 
 class Math : public juce::Thread {
 public:

@@ -3,9 +3,9 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "PluginProcessor.h"
 #include "Math.h"
-#include "TheTuna.h"
-#include "TheEye.h"
-#include "TheRoll.h"
+#include "ui/TheTuna.h"
+#include "ui/Eye.h"
+#include "ui/TheRoll.h"
 #include "Control.h"
 #include "Splitter.h"
 
@@ -28,7 +28,7 @@ private:
     Math worker;
 
     TheTuna tuna;
-    TheEye eye;
+    Eye eye;
     TheRoll roll;
     Splitter splitter;
 

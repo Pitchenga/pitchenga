@@ -1,5 +1,5 @@
 #include "Splitter.h"
-#include "TheTuna.h"
+#include "ui/TheTuna.h"
 
 Splitter::Splitter(PitchengaAudioProcessor& processorToUse) : audioProcessor(processorToUse) {
     setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
