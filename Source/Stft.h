@@ -32,17 +32,17 @@ public:
     void processFrame(const std::vector<float>& timeDomainSignal);
 
     bool enablePeakExtraction = true;
+    // bool enablePeakExtraction = false;
     bool enablePsychoacousticTilt = true;
     bool enableTailKiller = true;
     bool enableTemporalSmoothing = true;
 
     // Gradiental Peak Extractor Factors
-    // float bassShrinkerExponent = 64.0f;    // High exponent to heavily pinch wide bass lobes
-    float bassShrinkerExponent = 1.0f;    // High exponent to heavily pinch wide bass lobes
+    float bassShrinkerExponent = 64.0f;    // High exponent to heavily pinch wide bass lobes
     float trebleShrinkerExponent = 0.01f;   // Low exponent to gently pinch thin treble lobes
     float peakExpanderVertical = 10.0f;     // Multiplicative makeup gain for the preserved summit
 
-    const std::vector<SpectralPeak>& getPeaks() const { return finalPeaks; }
+    [[nodiscard]] const std::vector<SpectralPeak>& getPeaks() const { return finalPeaks; }
 
 private:
     void performStft(const std::vector<float>& timeDomainSignal);
