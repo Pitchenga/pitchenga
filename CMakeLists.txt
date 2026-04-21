@@ -101,5 +101,7 @@ target_link_libraries(Pitchenga PRIVATE
 
 target_compile_features(Pitchenga PUBLIC cxx_std_20)
 
+target_compile_definitions(Pitchenga PRIVATE CMAKE_BUILD_PROFILE=$<CONFIG>)
+
 # Make generated timestamp header available to the build
 target_include_directories(Pitchenga PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

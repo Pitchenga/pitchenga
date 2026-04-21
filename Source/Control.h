@@ -48,7 +48,7 @@ private:
     juce::TextButton toggleTuna{"Tuna"};
     juce::TextButton toggleEye{"Eye"};
     juce::TextButton toggleRoll{"Roll"};
-    juce::TextButton togglePauseRoll{"Pause"};
+    juce::TextButton togglePauseRoll{"Freeze"};
     juce::TextButton toggleSteam{"Steam"};
     juce::TextButton toggleForrest{"Forest"};
     juce::Label buildTimestampLabel;

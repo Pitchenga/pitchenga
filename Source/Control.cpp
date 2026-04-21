@@ -30,6 +30,7 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
     };
 
     setupToggleButton(togglePauseRoll, audioProcessor.uiSettings.pauseRoll);
+    togglePauseRoll.setToggleState(audioProcessor.uiSettings.pauseRoll, juce::NotificationType::dontSendNotification);
     togglePauseRoll.onClick = [this] {
         audioProcessor.uiSettings.pauseRoll = togglePauseRoll.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
@@ -125,9 +126,23 @@ void Control::resized() {
 }
 
 // --- Settings Persistence ---
+#define PITCHENGA_MACRO_STRING2(x) #x
+#define PITCHENGA_MACRO_STRING(x) PITCHENGA_MACRO_STRING2(x)
+
+static juce::String getSettingsTagName() {
+#ifdef CMAKE_BUILD_PROFILE
+    juce::String profile = PITCHENGA_MACRO_STRING(CMAKE_BUILD_PROFILE);
+    profile = profile.removeCharacters("\"");
+    if (profile.isEmpty()) profile = "DEFAULT";
+    return "PITCHENGA_" + profile.toUpperCase();
+#else
+    return "PITCHENGA_DEFAULT";
+#endif
+}
+
 juce::XmlElement Control::Settings::createXml() const {
     // Create an XML element to store settings
-    juce::XmlElement xml("PITCHENGA_SETTINGS");
+    juce::XmlElement xml(getSettingsTagName());
 
     // Add width and height as attributes
     xml.setAttribute("uiWidth", lastUIWidth);
@@ -148,7 +163,7 @@ juce::XmlElement Control::Settings::createXml() const {
 
 bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     // Only if the tag matches our expected name
-    if (!xml.hasTagName("PITCHENGA_SETTINGS")) return false;
+    if (!xml.hasTagName(getSettingsTagName())) return false;
 
     // Update the processor variables.
     // If the attributes don't exist, it keeps the defaults initialized in .h

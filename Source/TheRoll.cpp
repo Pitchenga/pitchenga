@@ -23,8 +23,9 @@ void TheRoll::resized() {
     const int height = getHeight();
 
     if (width > 0 && height > 0) {
+        const int rollHeight = std::max(1, height - static_cast<int>(getLabelAreaHeight()));
         // Initialize the rolling buffer whenever the window resizes
-        steamImage = juce::Image(juce::Image::ARGB, width, height, true);
+        steamImage = juce::Image(juce::Image::ARGB, width, rollHeight, true);
         steamScrollOffset = 0;
         paintFrame();
     }
@@ -56,19 +57,30 @@ void TheRoll::paint(juce::Graphics& graphics) {
     if (!cachedFrame.isValid()) {
         paintFrame(); // Generates it if the engine wasn't ready during resized()
     }
+    
+    const int width = getWidth();
+    const int height = getHeight();
+    const float labelAreaHeight = getLabelAreaHeight();
+    const int plotHeight = std::max(1, height - static_cast<int>(labelAreaHeight));
+
     if (cachedFrame.isValid()) {
         graphics.drawImageAt(cachedFrame, 0, 0);
     }
+
+    graphics.saveState();
+    graphics.reduceClipRegion(0, 0, width, plotHeight);
 
     if (processor.uiSettings.showSteam) {
         paintSteam(graphics);
     }
 
-    if (activePeaks.empty()) return;
-
-    if (processor.uiSettings.showForrest) {
-        paintPeaks(graphics);
+    if (!activePeaks.empty()) {
+        if (processor.uiSettings.showForrest) {
+            paintPeaks(graphics);
+        }
     }
+
+    graphics.restoreState();
 }
 
 void TheRoll::paintFrame() {
@@ -98,12 +110,15 @@ void TheRoll::paintLabel(
     const float startY,
     const juce::Colour baseColor
 ) {
-    // fixme: Do not draw a half label that does not fit
+    //fixme: Un-hardcode
+    if (midiNote == 21 || midiNote == 108) {
+        // Not drawing a half label
+        return;
+    }
 
-    const juce::Colour labelColor = juce::Colours::black.interpolatedWith(baseColor, 0.6f);
     const juce::String name = getNoteName(midiNote);
 
-    graphics.setColour(labelColor);
+    graphics.setColour(baseColor);
     graphics.saveState();
     graphics.addTransform(
         juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, targetCenter, startY - 2.0f)
@@ -119,8 +134,10 @@ void TheRoll::paintLabel(
 }
 
 void TheRoll::paintFrame(juce::Graphics& graphics) const {
-    const auto height = static_cast<float>(getHeight());
-    const float halfHeight = height * 0.5f;
+    const auto totalHeight = static_cast<float>(getHeight());
+    const float labelAreaHeight = getLabelAreaHeight();
+    const float plotHeight = std::max(1.0f, totalHeight - labelAreaHeight);
+    const float halfHeight = plotHeight * 0.5f;
 
     const juce::Font labelFont = getLabelFont();
     graphics.setFont(labelFont);
@@ -141,21 +158,21 @@ void TheRoll::paintFrame(juce::Graphics& graphics) const {
         const float targetCenter = frequencyToX(hz, static_cast<float>(getWidth()));
 
         // Route the line to the top half (black keys) or bottom half (white keys)
-        const float startY = getLabelAreaHeight();
-        const float endY = isBlackKey ? halfHeight : height;
+        const float startY = 0.0f;
+        const float endY = isBlackKey ? halfHeight : plotHeight;
 
         const juce::Colour baseColor = Palette::chromaticScale[static_cast<size_t>(chroma)].color;
-        const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.1f);
+        const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.2f);
         graphics.setColour(gridColor);
         graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
 
-        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, startY, baseColor);
+        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor);
     }
 }
 
 void TheRoll::paintPeaks(juce::Graphics& graphics) const {
     const int width = getWidth();
-    const int height = getHeight();
+    const float plotHeight = std::max(1.0f, static_cast<float>(getHeight()) - getLabelAreaHeight());
 
     for (const auto& peak : activePeaks) {
         const float xPos = frequencyToX(peak.frequencyHz, static_cast<float>(width));
@@ -171,7 +188,7 @@ void TheRoll::paintPeaks(juce::Graphics& graphics) const {
             }
 
             const float normalizedMagnitude = std::min(1.0f, std::max(0.0f, peak.magnitude));
-            const auto barHeight = normalizedMagnitude * static_cast<float>(height);
+            const auto barHeight = normalizedMagnitude * plotHeight;
 
             float midi = freqToMidi(peak.frequencyHz);
             float continuousChroma = std::fmod(midi, 12.0f);
@@ -182,7 +199,7 @@ void TheRoll::paintPeaks(juce::Graphics& graphics) const {
 
             graphics.fillRoundedRectangle(
                 xPos - (stemWidthPixels * 0.5f),
-                static_cast<float>(height) - barHeight,
+                plotHeight - barHeight,
                 stemWidthPixels,
                 barHeight,
                 2.0f
@@ -194,7 +211,7 @@ void TheRoll::pumpSteam() {
     if (activePeaks.empty() || !steamImage.isValid()) return;
 
     const int width = getWidth();
-    const int height = getHeight();
+    const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
     if (width <= 0 || height <= 0) return;
 
     const int speedPx = static_cast<int>(steamSpeedPxPerFrame);
@@ -254,7 +271,7 @@ void TheRoll::pumpSteam() {
 void TheRoll::paintSteam(const juce::Graphics& graphics) const {
     if (!steamImage.isValid()) return;
 
-    const int height = getHeight();
+    const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
 
     // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
     graphics.drawImageAt(steamImage, 0, -steamScrollOffset);
