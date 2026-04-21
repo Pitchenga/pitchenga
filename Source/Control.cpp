@@ -29,9 +29,9 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(togglepauseRoll, audioProcessor.uiSettings.pauseRoll);
-    togglepauseRoll.onClick = [this] {
-        audioProcessor.uiSettings.pauseRoll = togglepauseRoll.getToggleState();
+    setupToggleButton(togglePauseRoll, audioProcessor.uiSettings.pauseRoll);
+    togglePauseRoll.onClick = [this] {
+        audioProcessor.uiSettings.pauseRoll = togglePauseRoll.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -45,7 +45,7 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
     addAndMakeVisible(toggleTuna);
     addAndMakeVisible(toggleEye);
     addAndMakeVisible(toggleRoll);
-    addAndMakeVisible(togglepauseRoll);
+    addAndMakeVisible(togglePauseRoll);
     addAndMakeVisible(toggleSteam);
     addAndMakeVisible(toggleForrest);
 
@@ -73,7 +73,7 @@ void Control::updateVisibilityFromState() {
     toggleRoll.setToggleState(audioProcessor.uiSettings.showRoll, juce::NotificationType::dontSendNotification);
     toggleEye.setToggleState(audioProcessor.uiSettings.showEye, juce::NotificationType::dontSendNotification);
     toggleTuna.setToggleState(audioProcessor.uiSettings.showTuna, juce::NotificationType::dontSendNotification);
-    togglepauseRoll.setToggleState(audioProcessor.uiSettings.pauseRoll, juce::NotificationType::dontSendNotification);
+    togglePauseRoll.setToggleState(audioProcessor.uiSettings.pauseRoll, juce::NotificationType::dontSendNotification);
     toggleSteam.setToggleState(audioProcessor.uiSettings.showSteam, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(audioProcessor.uiSettings.showForrest, juce::NotificationType::dontSendNotification);
 
@@ -82,7 +82,7 @@ void Control::updateVisibilityFromState() {
 
 void Control::updateButtonStates() {
     const bool rollActive = audioProcessor.uiSettings.showRoll;
-    togglepauseRoll.setVisible(rollActive);
+    togglePauseRoll.setVisible(rollActive);
     toggleSteam.setVisible(rollActive);
     toggleForrest.setVisible(rollActive);
     resized();
@@ -118,7 +118,7 @@ void Control::resized() {
 
     positionButtonRight(toggleForrest);
     positionButtonRight(toggleSteam);
-    positionButtonRight(togglepauseRoll);
+    positionButtonRight(togglePauseRoll);
 
     bounds.removeFromRight(8);
     buildTimestampLabel.setBounds(bounds);
