@@ -158,13 +158,6 @@ void Stft::sculptSpectrum() {
         // The Blackman-Harris window has a main lobe width of ~8 bins natively.
         // We multiply the native half-width (4) by the zero-padding factor to find the exact shoulders.
         // All bands are now padded exactly 4x (e.g. 8192 window padded to 32768 FFT).
-        // OUTDATED: Low band: 65536 / 8192 = 8 padding. 8 * 4 = 32 bins.
-        // OUTDATED: High band: 65536 / 2048 = 32 padding. 32 * 4 = 128 bins.
-        // OUTDATED: Mid band: 65536 / 4096 = 16 padding. 16 * 4 = 64 bins.
-
-        // OUTDATED: int lobeHalfWidthBins = 16; // Low band natively 16 in the stitched array.
-        // OUTDATED: if (freq >= 2000.0f) lobeHalfWidthBins = 64;      // High band mapped to unified array 4x larger relative res
-        // OUTDATED: else if (freq >= 250.0f) lobeHalfWidthBins = 32;   // Mid band mapped to unified array 2x larger relative res
 
         float exactLobeHalfWidth = 16.0f;
         if (freq < lowMidFadeStart) {
