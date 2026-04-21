@@ -29,9 +29,9 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(togglePauseSteam, audioProcessor.uiSettings.pauseSteam);
-    togglePauseSteam.onClick = [this] {
-        audioProcessor.uiSettings.pauseSteam = togglePauseSteam.getToggleState();
+    setupToggleButton(togglepauseRoll, audioProcessor.uiSettings.pauseRoll);
+    togglepauseRoll.onClick = [this] {
+        audioProcessor.uiSettings.pauseRoll = togglepauseRoll.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -45,7 +45,7 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
     addAndMakeVisible(toggleTuna);
     addAndMakeVisible(toggleEye);
     addAndMakeVisible(toggleRoll);
-    addAndMakeVisible(togglePauseSteam);
+    addAndMakeVisible(togglepauseRoll);
     addAndMakeVisible(toggleSteam);
     addAndMakeVisible(toggleForrest);
 
@@ -73,7 +73,7 @@ void Control::updateVisibilityFromState() {
     toggleRoll.setToggleState(audioProcessor.uiSettings.showRoll, juce::NotificationType::dontSendNotification);
     toggleEye.setToggleState(audioProcessor.uiSettings.showEye, juce::NotificationType::dontSendNotification);
     toggleTuna.setToggleState(audioProcessor.uiSettings.showTuna, juce::NotificationType::dontSendNotification);
-    togglePauseSteam.setToggleState(audioProcessor.uiSettings.pauseSteam, juce::NotificationType::dontSendNotification);
+    togglepauseRoll.setToggleState(audioProcessor.uiSettings.pauseRoll, juce::NotificationType::dontSendNotification);
     toggleSteam.setToggleState(audioProcessor.uiSettings.showSteam, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(audioProcessor.uiSettings.showForrest, juce::NotificationType::dontSendNotification);
 
@@ -82,7 +82,7 @@ void Control::updateVisibilityFromState() {
 
 void Control::updateButtonStates() {
     const bool rollActive = audioProcessor.uiSettings.showRoll;
-    togglePauseSteam.setVisible(rollActive);
+    togglepauseRoll.setVisible(rollActive);
     toggleSteam.setVisible(rollActive);
     toggleForrest.setVisible(rollActive);
     resized();
@@ -118,7 +118,7 @@ void Control::resized() {
 
     positionButtonRight(toggleForrest);
     positionButtonRight(toggleSteam);
-    positionButtonRight(togglePauseSteam);
+    positionButtonRight(togglepauseRoll);
 
     bounds.removeFromRight(8);
     buildTimestampLabel.setBounds(bounds);
@@ -137,7 +137,7 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("showEye", showEye);
     xml.setAttribute("showTuna", showTuna);
 
-    xml.setAttribute("pauseSteam", pauseSteam);
+    xml.setAttribute("pauseRoll", pauseRoll);
     xml.setAttribute("showForrest", showForrest);
     xml.setAttribute("showSteam", showSteam);
 
@@ -159,7 +159,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     showEye = xml.getBoolAttribute("showEye", showEye);
     showTuna = xml.getBoolAttribute("showTuna", showTuna);
 
-    pauseSteam = xml.getBoolAttribute("pauseSteam", pauseSteam);
+    pauseRoll = xml.getBoolAttribute("pauseRoll", pauseRoll);
     showForrest = xml.getBoolAttribute("showForrest", showForrest);
     showSteam = xml.getBoolAttribute("showSteam", showSteam);
 
