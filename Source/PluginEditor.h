@@ -5,7 +5,7 @@
 #include "Math.h"
 #include "ui/Tuna.h"
 #include "ui/Eye.h"
-#include "ui/Roll.h"
+#include "ui/StftRoll.h"
 #include "Control.h"
 #include "Splitter.h"
 
@@ -29,7 +29,7 @@ private:
 
     Tuna tuna;
     Eye eye;
-    Roll roll;
+    StftRoll roll;
     Splitter splitter;
 
     Control control;

@@ -71,7 +71,7 @@ private:
     std::atomic<bool> newDataAvailable{false};
 
 
-    // -- STFT Engine for the Roll
+    // -- STFT Engine for StftRoll
     Stft stft;
     std::vector<SpectralPeak> currentRollPeaks;
     std::vector<SpectralPeak> uiRollPeaks;
