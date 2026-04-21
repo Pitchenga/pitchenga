@@ -35,10 +35,9 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleRollType, audioProcessor.settings.useStftRoll);
     toggleRollType.setButtonText(audioProcessor.settings.useStftRoll ? "STFT" : "CQT");
     toggleRollType.onClick = [this] {
-        audioProcessor.settings.useStftRoll = toggleRollType.getToggleState();
+        audioProcessor.settings.useStftRoll = !audioProcessor.settings.useStftRoll;
         toggleRollType.setButtonText(audioProcessor.settings.useStftRoll ? "STFT" : "CQT");
         if (onVisibilityChanged) onVisibilityChanged();
         // Force resize to adjust button width based on text
@@ -85,7 +84,7 @@ void Control::updateVisibilityFromState() {
     toggleEye.setToggleState(audioProcessor.settings.showEye, juce::NotificationType::dontSendNotification);
     toggleTuna.setToggleState(audioProcessor.settings.showTuna, juce::NotificationType::dontSendNotification);
     toggleFreezeRoll.setToggleState(audioProcessor.settings.freezeRoll, juce::NotificationType::dontSendNotification);
-    toggleRollType.setToggleState(audioProcessor.settings.useStftRoll, juce::NotificationType::dontSendNotification);
+    
     toggleRollType.setButtonText(audioProcessor.settings.useStftRoll ? "STFT" : "CQT");
     toggleSteam.setToggleState(audioProcessor.settings.showSteam, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(audioProcessor.settings.showForrest, juce::NotificationType::dontSendNotification);
