@@ -68,7 +68,8 @@ void Eye::paint(juce::Graphics& g) {
 
     const auto bounds = getLocalBounds().toFloat();
     const auto center = bounds.getCentre();
-    const auto baseRadius = std::min(bounds.getWidth(), bounds.getHeight()) * 0.45f;
+    const auto outerRadius = std::min(bounds.getWidth(), bounds.getHeight()) / 2.0f;
+    const auto baseRadius = outerRadius / 1.15f;
 
     // Sort to get bin ranks (Matching Java indexToVelocityPairs)
     struct BinData {
