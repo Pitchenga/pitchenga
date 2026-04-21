@@ -1,10 +1,10 @@
-#include "TheTuna.h"
+#include "Tuna.h"
 #include <cmath>
 
-TheTuna::TheTuna()
+Tuna::Tuna()
 = default;
 
-void TheTuna::setPitchFrequency(const float frequencyHz) {
+void Tuna::setPitchFrequency(const float frequencyHz) {
     if (frequencyHz > 0.0f) {
         currentMidi = freqToMidi(frequencyHz);
     } else {
@@ -13,26 +13,26 @@ void TheTuna::setPitchFrequency(const float frequencyHz) {
     repaint();
 }
 
-void TheTuna::setRange(const float minMidiNote, const float maxMidiNote) {
+void Tuna::setRange(const float minMidiNote, const float maxMidiNote) {
     minMidi = minMidiNote;
     maxMidi = maxMidiNote;
     updateCachedGradient();
     repaint();
 }
 
-float TheTuna::freqToMidi(const float freq) {
+float Tuna::freqToMidi(const float freq) {
     if (freq <= 0.0f) return -1.0f;
     return 69.0f + 12.0f * std::log2(freq / 440.0f);
 }
 
-juce::String TheTuna::getNoteName(const int midiNote) {
+juce::String Tuna::getNoteName(const int midiNote) {
     int chroma = midiNote % 12;
     if (chroma < 0) chroma += 12;
     const int octave = midiNote / 12 - 1;
     return Palette::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
 
-void TheTuna::paintLabel(juce::Graphics& graphics, const int midiNote, const float x, const float stripY) {
+void Tuna::paintLabel(juce::Graphics& graphics, const int midiNote, const float x, const float stripY) {
     const juce::String name = getNoteName(midiNote);
     graphics.saveState();
 
@@ -58,7 +58,7 @@ void TheTuna::paintLabel(juce::Graphics& graphics, const int midiNote, const flo
     graphics.restoreState();
 }
 
-juce::Font TheTuna::getLabelFont() {
+juce::Font Tuna::getLabelFont() {
     return {
         juce::FontOptions(tunaFontSize)
         .withStyle(tunaFontStyle)
@@ -66,19 +66,19 @@ juce::Font TheTuna::getLabelFont() {
     };
 }
 
-float TheTuna::getLabelHeight() {
+float Tuna::getLabelHeight() {
     return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8");
 }
 
-float TheTuna::getLabelWidth() {
+float Tuna::getLabelWidth() {
     return getLabelFont().getHeight();
 }
 
-float TheTuna::getPreferredHeight() {
+float Tuna::getPreferredHeight() {
     return stripHeight + tickHeight + getLabelHeight();
 }
 
-void TheTuna::updateCachedGradient() {
+void Tuna::updateCachedGradient() {
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
@@ -128,11 +128,11 @@ void TheTuna::updateCachedGradient() {
     }
 }
 
-void TheTuna::resized() {
+void Tuna::resized() {
     updateCachedGradient();
 }
 
-void TheTuna::paint(juce::Graphics& graphics) {
+void Tuna::paint(juce::Graphics& graphics) {
     const auto bounds = getLocalBounds().toFloat();
     const auto height = static_cast<float>(getHeight());
 

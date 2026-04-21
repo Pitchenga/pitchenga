@@ -2,9 +2,9 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "../Palette.h"
 
-class TheTuna : public juce::Component {
+class Tuna : public juce::Component {
 public:
-    TheTuna();
+    Tuna();
 
 
     void setPitchFrequency(float frequencyHz);
@@ -42,5 +42,5 @@ private:
 
     static juce::Font getLabelFont();
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TheTuna)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Tuna)
 };

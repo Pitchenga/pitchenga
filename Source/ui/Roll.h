@@ -4,10 +4,10 @@
 #include "../PluginProcessor.h"
 #include "../math/Stft.h"
 
-class TheRoll : public juce::Component {
+class Roll : public juce::Component {
 public:
-    explicit TheRoll(PitchengaAudioProcessor& proc);
-    ~TheRoll() override = default;
+    explicit Roll(PitchengaAudioProcessor& proc);
+    ~Roll() override = default;
 
     void updateResults(const std::vector<SpectralPeak>& peaks);
 
@@ -45,5 +45,5 @@ private:
     static float getLabelAreaHeight();
     static juce::String getNoteName(int midiNote);
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TheRoll)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Roll)
 };

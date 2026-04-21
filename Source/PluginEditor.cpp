@@ -73,7 +73,7 @@ void PitchengaAudioProcessorEditor::resized() {
     splitter.setVisible(audioProcessor.uiSettings.showRoll && audioProcessor.uiSettings.showEye);
 
     if (audioProcessor.uiSettings.showTuna) {
-        tuna.setBounds(bounds.removeFromBottom(static_cast<int>(TheTuna::getPreferredHeight() + 1)));
+        tuna.setBounds(bounds.removeFromBottom(static_cast<int>(Tuna::getPreferredHeight() + 1)));
     }
 
     if (audioProcessor.uiSettings.showRoll && audioProcessor.uiSettings.showEye) {
