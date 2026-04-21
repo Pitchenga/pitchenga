@@ -30,7 +30,6 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
     };
 
     setupToggleButton(toggleFreezeRoll, audioProcessor.uiSettings.freezeRoll);
-    toggleFreezeRoll.setToggleState(audioProcessor.uiSettings.freezeRoll, juce::NotificationType::dontSendNotification);
     toggleFreezeRoll.onClick = [this] {
         audioProcessor.uiSettings.freezeRoll = toggleFreezeRoll.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
