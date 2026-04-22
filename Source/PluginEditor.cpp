@@ -2,9 +2,9 @@
 #include "PluginEditor.h"
 
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProcessor& p)
-    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), tuna(), eye(), stftRoll(p), cqtRoll(p), splitter(p), control(p) {
+    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), needle(), eye(), stftRoll(p), cqtRoll(p), splitter(p), control(p) {
 
-    addAndMakeVisible(tuna);
+    addAndMakeVisible(needle);
     addAndMakeVisible(eye);
     addAndMakeVisible(stftRoll);
     addAndMakeVisible(cqtRoll);
@@ -39,8 +39,8 @@ void PitchengaAudioProcessorEditor::timerCallback() {
     // Read the lock-free atomic variable
     const float latestPitchHz = audioProcessor.currentPitchHz.load(std::memory_order_relaxed);
 
-    // Feed it to the tuna visualizer component
-    tuna.setPitchFrequency(latestPitchHz);
+    // Feed it to the needle visualizer component
+    needle.setPitchFrequency(latestPitchHz);
 
     // --- Update the visualizers ---
     if (worker.hasNewData()) {
@@ -76,13 +76,13 @@ void PitchengaAudioProcessorEditor::resized() {
     stftRoll.setVisible(audioProcessor.settings.showRoll && audioProcessor.settings.useStftRoll);
     cqtRoll.setVisible(audioProcessor.settings.showRoll && !audioProcessor.settings.useStftRoll);
     eye.setVisible(audioProcessor.settings.showEye);
-    tuna.setVisible(audioProcessor.settings.showTuna);
+    needle.setVisible(audioProcessor.settings.showNeedle);
 
     // Only show splitter if both resizable elements are active
     splitter.setVisible(audioProcessor.settings.showRoll && audioProcessor.settings.showEye);
 
-    if (audioProcessor.settings.showTuna) {
-        tuna.setBounds(bounds.removeFromBottom(static_cast<int>(Needle::getPreferredHeight() + 1)));
+    if (audioProcessor.settings.showNeedle) {
+        needle.setBounds(bounds.removeFromBottom(static_cast<int>(Needle::getPreferredHeight() + 1)));
     }
 
     if (audioProcessor.settings.showRoll && audioProcessor.settings.showEye) {

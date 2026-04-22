@@ -16,7 +16,7 @@ public:
 
         bool showRoll = true;
         bool showEye = true;
-        bool showTuna = true;
+        bool showNeedle = true;
 
         bool useStftRoll = true;
         bool freezeRoll = false;
@@ -46,7 +46,7 @@ private:
 
     PitchengaAudioProcessor& audioProcessor;
 
-    juce::TextButton toggleTuna{"Tuna"};
+    juce::TextButton toggleNeedle{"Needle"};
     juce::TextButton toggleEye{"Eye"};
     juce::TextButton toggleRoll{"Roll"};
     juce::TextButton toggleRollType{"STFT"};

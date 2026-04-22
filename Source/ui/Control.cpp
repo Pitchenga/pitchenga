@@ -17,9 +17,9 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleTuna, audioProcessor.settings.showTuna);
-    toggleTuna.onClick = [this] {
-        audioProcessor.settings.showTuna = toggleTuna.getToggleState();
+    setupToggleButton(toggleNeedle, audioProcessor.settings.showNeedle);
+    toggleNeedle.onClick = [this] {
+        audioProcessor.settings.showNeedle = toggleNeedle.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -49,7 +49,7 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
     };
 
 
-    addAndMakeVisible(toggleTuna);
+    addAndMakeVisible(toggleNeedle);
     addAndMakeVisible(toggleEye);
     addAndMakeVisible(toggleRoll);
     addAndMakeVisible(toggleFreezeRoll);
@@ -80,7 +80,7 @@ void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
 void Control::updateVisibilityFromState() {
     toggleRoll.setToggleState(audioProcessor.settings.showRoll, juce::NotificationType::dontSendNotification);
     toggleEye.setToggleState(audioProcessor.settings.showEye, juce::NotificationType::dontSendNotification);
-    toggleTuna.setToggleState(audioProcessor.settings.showTuna, juce::NotificationType::dontSendNotification);
+    toggleNeedle.setToggleState(audioProcessor.settings.showNeedle, juce::NotificationType::dontSendNotification);
     toggleFreezeRoll.setToggleState(audioProcessor.settings.freezeRoll, juce::NotificationType::dontSendNotification);
     
     toggleRollType.setButtonText(audioProcessor.settings.useStftRoll ? "STFT" : "CQT");
@@ -127,7 +127,7 @@ void Control::resized() {
         button.setBounds(bounds.removeFromRight(buttonWidth).reduced(2));
     };
 
-    positionButton(toggleTuna);
+    positionButton(toggleNeedle);
     positionButton(toggleEye);
     positionButton(toggleRoll);
 
@@ -165,7 +165,7 @@ juce::XmlElement Control::Settings::createXml() const {
 
     xml.setAttribute("showRoll", showRoll);
     xml.setAttribute("showEye", showEye);
-    xml.setAttribute("showTuna", showTuna);
+    xml.setAttribute("showNeedle", showNeedle);
 
     xml.setAttribute("useStftRoll", useStftRoll);
     xml.setAttribute("freezeRoll", freezeRoll);
@@ -188,7 +188,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
 
     showRoll = xml.getBoolAttribute("showRoll", showRoll);
     showEye = xml.getBoolAttribute("showEye", showEye);
-    showTuna = xml.getBoolAttribute("showTuna", showTuna);
+    showNeedle = xml.getBoolAttribute("showNeedle", showNeedle);
 
     useStftRoll = xml.getBoolAttribute("useStftRoll", useStftRoll);
     freezeRoll = xml.getBoolAttribute("freezeRoll", freezeRoll);

@@ -3,7 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "PluginProcessor.h"
 #include "math/Math.h"
-#include "ui/Tuna.h"
+#include "ui/Needle.h"
 #include "ui/Eye.h"
 #include "ui/RollStft.h"
 #include "ui/RollCqt.h"
@@ -28,7 +28,7 @@ private:
     // Background worker for heavy DSP
     Math worker;
 
-    Needle tuna;
+    Needle needle;
     Eye eye;
     RollStft stftRoll;
     RollCqt cqtRoll;
