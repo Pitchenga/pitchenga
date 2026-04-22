@@ -41,7 +41,7 @@ private:
     std::vector<SpectralPeak> rollPeaksBuffer;
     std::vector<double> cqtRollBuffer;
 
-    static constexpr int uiRefreshRateHz = 144;
+    static constexpr int uiRefreshRateHz = 48;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PitchengaAudioProcessorEditor)
 };
