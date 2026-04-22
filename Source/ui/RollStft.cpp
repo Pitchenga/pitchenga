@@ -6,19 +6,12 @@
 RollStft::RollStft(PitchengaAudioProcessor& proc) : processor(proc) {}
 
 void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
-    if (!isVisible()) {
-        if (steamImage.isValid()) {
-            steamImage.clear(juce::Rectangle(0, 0, steamImage.getWidth(), steamImage.getHeight()), juce::Colours::transparentBlack);
-        }
-        return;
-    }
+    if (processor.settings.freezeRoll || !isVisible()) return;
 
-    if (!processor.settings.freezeRoll) {
-        activePeaks = peaks;
+    activePeaks = peaks;
 
-        if (processor.settings.showSteam) {
-            pumpSteam();
-        }
+    if (processor.settings.showSteam) {
+        pumpSteam();
     }
 
     repaint();
@@ -31,7 +24,7 @@ void RollStft::resized() {
     if (width > 0 && height > 0) {
         const int plotHeight = std::max(1, height - static_cast<int>(getLabelAreaHeight()));
         // Initialize the rolling buffer whenever the window resizes
-        steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
+        steamImage = juce::Image(juce::Image::RGB, width, plotHeight, true);
         steamScrollOffset = 0;
         paintFrame();
     }
@@ -63,7 +56,7 @@ void RollStft::paint(juce::Graphics& graphics) {
     if (!cachedFrame.isValid()) {
         paintFrame(); // Generates it if the engine wasn't ready during resized()
     }
-    
+
     const int width = getWidth();
     const int height = getHeight();
     const float labelAreaHeight = getLabelAreaHeight();
@@ -95,7 +88,7 @@ void RollStft::paintFrame() {
     if (width <= 0 || height <= 0) return;
 
     // Create a transparent image (the 'true' flag clears it to zero alpha)
-    cachedFrame = juce::Image(juce::Image::ARGB, width, height, true);
+    cachedFrame = juce::Image(juce::Image::RGB, width, height, true);
     juce::Graphics graphics(cachedFrame);
     paintFrame(graphics);
 }
@@ -187,7 +180,6 @@ void RollStft::paintPeaks(juce::Graphics& graphics) const {
             // Configurable razor-sharp stems for the Forrest
             float stemWidthPixels = 5.0f;
             if (enableDynamicStemWidth) {
-
                 const float nextX = frequencyToX(peak.frequencyHz + peak.bandwidthHz, static_cast<float>(width));
                 // +1.0f forces deliberate sub-pixel overlap to completely kill rendering gaps
                 stemWidthPixels = std::max(1.0f, (nextX - xPos) + 1.0f);
@@ -213,6 +205,7 @@ void RollStft::paintPeaks(juce::Graphics& graphics) const {
         }
     }
 }
+
 void RollStft::pumpSteam() {
     if (activePeaks.empty() || !steamImage.isValid()) return;
 
@@ -228,33 +221,45 @@ void RollStft::pumpSteam() {
     // Calculate where in the image memory the new row should be drawn
     const int drawY = (height - speedPx + steamScrollOffset) % height;
 
-    // Native JUCE memory wipe: clears the specific row to completely transparent
-    steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
-
     // If there is absolute silence, we still advanced the scroll and cleared the row above.
     // Now we can safely abort before doing heavy graphics processing.
     if (activePeaks.empty()) return;
 
     juce::Graphics graphics(steamImage);
 
-    for (const auto& peak : activePeaks) {
-        if (peak.rawMagnitude > 0.05f) { // Prevents rendering absolute silence noise
-            const float xPos = frequencyToX(peak.frequencyHz, static_cast<float>(width));
+    const float sr = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
+    const float binResHz = sr / 32768.0f;
+    const float fWidth = static_cast<float>(width);
+    const float midiRangeInv = 1.0f / (maxMidiNote - minMidiNote);
+    const bool doDynamicStem = enableDynamicStemWidth;
 
-            if (xPos >= 0.0f && xPos <= static_cast<float>(width)) {
+    // Extreme Math Optimization: Pre-calculate the derivative of the MIDI scale
+    // to bypass calling std::log2 multiple times per peak.
+    const float derivativeFactor = fWidth * midiRangeInv * 17.3123405f * binResHz;
+
+    for (const auto& peak : activePeaks) {
+        if (peak.rawMagnitude > 0.05f) {
+            // Prevents rendering absolute silence noise
+
+            // Inline the math for the primary position calculation
+            const float midi = 69.0f + 12.0f * std::log2(peak.frequencyHz / 440.0f);
+            const float xPos = fWidth * ((midi - minMidiNote) * midiRangeInv);
+
+            // Fast bounds culling
+            if (xPos >= -10.0f && xPos <= fWidth + 10.0f) {
                 // Configurable razor-sharp stems for the Steam
                 float stemWidthPixels = 4.0f;
-                if (enableDynamicStemWidth) {
-                    const float sr = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
-                    const float binResHz = sr / 32768.0f;
-                    const float nextX = frequencyToX(peak.frequencyHz + binResHz, static_cast<float>(width));
+                if (doDynamicStem) {
+                    // Use the fast derivative approximation instead of another heavy log2
+                    const float nextX = xPos + (derivativeFactor / peak.frequencyHz);
                     // +1.0f forces deliberate sub-pixel overlap to completely kill rendering gaps
                     stemWidthPixels = std::max(1.0f, (nextX - xPos) + 1.0f);
                 }
 
-                float midi = freqToMidi(peak.frequencyHz);
-                float continuousChroma = std::fmod(midi, 12.0f);
-                if (continuousChroma < 0.0f) continuousChroma += 12.0f;
+                // Fast continuous modulus (replaces heavy std::fmod)
+                float continuousChroma = midi;
+                while (continuousChroma >= 12.0f) continuousChroma -= 12.0f;
+                while (continuousChroma < 0.0f) continuousChroma += 12.0f;
 
                 const juce::Colour baseColor = Tone::getContinuousColor(continuousChroma);
                 constexpr float undimmingGain = 1.6f;
