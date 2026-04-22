@@ -227,7 +227,7 @@ void RollStft::pumpSteam() {
 
     juce::Graphics graphics(steamImage);
 
-    const float sr = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
+    const float sr = static_cast<float>(sampleRate);
     const float binResHz = sr / 32768.0f;
     const float fWidth = static_cast<float>(width);
     const float midiRangeInv = 1.0f / (maxMidiNote - minMidiNote);

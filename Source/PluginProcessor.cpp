@@ -19,6 +19,8 @@ void PitchengaAudioProcessor::prepareToPlay(const double sampleRate, const int s
     agcLeft.reset();
     agcRight.reset();
 
+    totalSamplesProcessed.store(0, std::memory_order_relaxed);
+
     // Reset decimation octaves for the visualizer
     for (size_t i = 0; i < numOctaves; ++i) {
         octaves[i].fifo.reset();
@@ -90,12 +92,14 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
         juce::FloatVectorOperations::multiply(monoData, 0.5f, numSamples);
     }
 
+    totalSamplesProcessed.fetch_add(numSamples, std::memory_order_relaxed);
+
     // Cascade multi-rate decimation using pointer swapping
     float* currentStageData = monoData;
     float* nextStageData = nextStageBuffer.data();
     int currentStageSize = numSamples;
 
-    // NEW: Enforce Temporal Integrity across the decimation cascade.
+    // Enforce Temporal Integrity across the decimation cascade.
     // If the UI thread falls behind and Octave 0 fills up, we MUST drop the audio for ALL octaves.
     // Otherwise, lower octaves secretly record seconds of audio into the past, permanently desyncing the spectrum.
     const bool fifoOverflow = (octaves[0].fifo.getFreeSpace() < currentStageSize);

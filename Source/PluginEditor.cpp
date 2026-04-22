@@ -71,7 +71,7 @@ void PitchengaAudioProcessorEditor::resized() {
     auto bounds = getLocalBounds();
 
     // Give the control bar its own dedicated, non-overlapping space at the top left
-    control.setBounds(bounds.removeFromTop(static_cast<int>(Control::getPreferredHeight())));
+    control.setBounds(bounds.removeFromTop(static_cast<int>(control.getPreferredHeight())));
 
     stftRoll.setVisible(audioProcessor.settings.showRoll && audioProcessor.settings.useStftRoll);
     cqtRoll.setVisible(audioProcessor.settings.showRoll && !audioProcessor.settings.useStftRoll);

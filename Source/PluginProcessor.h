@@ -80,6 +80,8 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
+    int64_t getTotalNumSamplesProcessed() const { return totalSamplesProcessed.load(std::memory_order_relaxed); }
+
     // Default size is used if no state is loaded
     int lastUIWidth = 601;
     int lastUIHeight = 951;
@@ -113,6 +115,8 @@ private:
 
     Agc agcLeft{0.0001f, 0.4f, 2.0f};
     Agc agcRight{0.0001f, 0.4f, 2.0f};
+
+    std::atomic<int64_t> totalSamplesProcessed{0};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PitchengaAudioProcessor)
 };

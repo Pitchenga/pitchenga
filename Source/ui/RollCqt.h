@@ -15,6 +15,9 @@ public:
     void updateResults(const std::vector<double>& results);
     void paintBins(juce::Graphics& graphics) const;
 
+    // Unconditionally called by hardware VSync in Editor
+    void pumpSteam();
+
     void setEngine(const Cqt* e) { engine = e; }
     static constexpr int getPreferredHeight() { return 619; }
 
@@ -36,8 +39,11 @@ private:
         juce::Colour baseColor
     );
 
-    const float steamSpeedPxPerFrame = 1.0f;
     const float steamThreshold = 0.0001f;
+    int64_t lastPumpSamples = 0;
+    float subPixelAccumulator = 0.0f;
+    static constexpr float targetPixelsPerSecond = 48.0f;
+
     struct Steam {
         float x;
         float y;
@@ -47,7 +53,6 @@ private:
     juce::Image steamImage;
     int steamScrollOffset = 0;
 
-    void pumpSteam();
     void paintSteam(const juce::Graphics& graphics) const;
 
     PitchengaAudioProcessor& processor;

@@ -56,7 +56,7 @@ void RollCqt::resized() {
         // Initialize the rolling buffer whenever the window resizes
         steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
         steamScrollOffset = 0;
-        lastPumpTime = 0;
+        lastPumpSamples = 0;
         subPixelAccumulator = 0.0f;
         paintFrame();
     }
@@ -244,14 +244,20 @@ void RollCqt::pumpSteam() {
     const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
     if (width <= 0 || height <= 0) return;
 
-    const uint32_t now = juce::Time::getMillisecondCounter();
-    if (lastPumpTime == 0) {
-        lastPumpTime = now;
+    // Use absolute audio samples processed as the master timeline clock.
+    const int64_t currentSamples = processor.getTotalNumSamplesProcessed();
+
+    // Reset if it's the first run or if the audio engine resets the sample counter
+    if (lastPumpSamples == 0 || currentSamples < lastPumpSamples) {
+        lastPumpSamples = currentSamples;
         return;
     }
 
-    const float deltaSec = static_cast<float>(now - lastPumpTime) * 0.001f;
-    lastPumpTime = now;
+    const int64_t deltaSamples = currentSamples - lastPumpSamples;
+    lastPumpSamples = currentSamples;
+
+    const double sampleRate = processor.getSampleRate() > 0.0 ? processor.getSampleRate() : 44100.0;
+    const float deltaSec = static_cast<float>(deltaSamples) / static_cast<float>(sampleRate);
 
     subPixelAccumulator += targetPixelsPerSecond * deltaSec;
     const int speedPx = static_cast<int>(subPixelAccumulator);

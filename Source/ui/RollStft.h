@@ -10,6 +10,7 @@ public:
     ~RollStft() override = default;
 
     void updateResults(const std::vector<SpectralPeak>& peaks);
+    void pumpSteam();
 
     void paint(juce::Graphics& graphics) override;
     void resized() override;

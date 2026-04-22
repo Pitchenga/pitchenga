@@ -10,7 +10,7 @@
 #include "ui/Control.h"
 #include "ui/Splitter.h"
 
-class PitchengaAudioProcessorEditor : public juce::AudioProcessorEditor, private juce::Timer {
+class PitchengaAudioProcessorEditor : public juce::AudioProcessorEditor {
 public:
     explicit PitchengaAudioProcessorEditor(PitchengaAudioProcessor&);
     ~PitchengaAudioProcessorEditor() override;
@@ -21,7 +21,7 @@ public:
     void updateVisibilityFromState();
 
 private:
-    void timerCallback() override;
+    void renderFrame();
 
     PitchengaAudioProcessor& audioProcessor;
 
@@ -41,7 +41,7 @@ private:
     std::vector<SpectralPeak> rollPeaksBuffer;
     std::vector<double> cqtRollBuffer;
 
-    static constexpr int uiRefreshRateHz = 48;
+    std::unique_ptr<juce::VBlankAttachment> vblankAttachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PitchengaAudioProcessorEditor)
 };
