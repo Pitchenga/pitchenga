@@ -1,6 +1,21 @@
 #include "Control.h"
 #include "../PluginProcessor.h"
 
+// --- Settings Persistence Helpers ---
+#define PITCHENGA_MACRO_STRING2(x) #x
+#define PITCHENGA_MACRO_STRING(x) PITCHENGA_MACRO_STRING2(x)
+
+static juce::String getSettingsTagName() {
+#ifdef CMAKE_BUILD_PROFILE
+    juce::String profile = PITCHENGA_MACRO_STRING(CMAKE_BUILD_PROFILE);
+    profile = profile.removeCharacters("\"");
+    if (profile.isEmpty()) profile = "DEFAULT";
+    return "PITCHENGA_" + profile.toUpperCase();
+#else
+    return "PITCHENGA_DEFAULT";
+#endif
+}
+
 Control::Control(PitchengaAudioProcessor& processorToUse)
     : audioProcessor(processorToUse) {
 
@@ -60,12 +75,19 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
                 .withButton("No")
                 .withAssociatedComponent(this),
             [this](int result) {
-                if (result == 1) {
-                    juce::File defaultSettingsFile(juce::File(__FILE__).getSiblingFile("..").getChildFile("settings-default.xml"));
+                if (result == 1) { // 1 is the index of the first button ("Yes")
+                    juce::File defaultSettingsFile(juce::File(__FILE__).getParentDirectory().getParentDirectory().getChildFile("settings-default.xml"));
                     if (auto xml = juce::XmlDocument::parse(defaultSettingsFile)) {
-                        audioProcessor.settings.loadFromXml(*xml);
-                        updateVisibilityFromState();
-                        if (onVisibilityChanged) onVisibilityChanged();
+                        xml->setTagName(getSettingsTagName()); // Ensure the tag matches what loadFromXml expects
+                        bool loaded = audioProcessor.settings.loadFromXml(*xml);
+                        if (loaded) {
+                            updateVisibilityFromState();
+                            if (onVisibilityChanged) onVisibilityChanged();
+                        } else {
+                            juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, "Error", "Failed to apply settings from XML.");
+                        }
+                    } else {
+                        juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, "Error", "Could not find or parse: " + defaultSettingsFile.getFullPathName());
                     }
                 }
             }
@@ -164,21 +186,6 @@ void Control::resized() {
 
     bounds.removeFromRight(8);
     buildTimestampLabel.setBounds(bounds);
-}
-
-// --- Settings Persistence ---
-#define PITCHENGA_MACRO_STRING2(x) #x
-#define PITCHENGA_MACRO_STRING(x) PITCHENGA_MACRO_STRING2(x)
-
-static juce::String getSettingsTagName() {
-#ifdef CMAKE_BUILD_PROFILE
-    juce::String profile = PITCHENGA_MACRO_STRING(CMAKE_BUILD_PROFILE);
-    profile = profile.removeCharacters("\"");
-    if (profile.isEmpty()) profile = "DEFAULT";
-    return "PITCHENGA_" + profile.toUpperCase();
-#else
-    return "PITCHENGA_DEFAULT";
-#endif
 }
 
 juce::XmlElement Control::Settings::createXml() const {
