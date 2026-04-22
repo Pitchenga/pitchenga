@@ -53,6 +53,7 @@ private:
     juce::TextButton toggleFreezeRoll{"Freeze"};
     juce::TextButton toggleSteam{"Steam"};
     juce::TextButton toggleForrest{"Forest"};
+    juce::TextButton buttonNuke{"Nuke"};
     juce::Label buildTimestampLabel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Control)

@@ -48,6 +48,30 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
+    buttonNuke.setColour(juce::TextButton::buttonColourId, juce::Colours::darkred.withAlpha(0.6f));
+    buttonNuke.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    buttonNuke.onClick = [this] {
+        juce::AlertWindow::showAsync(
+            juce::MessageBoxOptions()
+                .withIconType(juce::MessageBoxIconType::WarningIcon)
+                .withTitle("Reset Settings")
+                .withMessage("Are you sure you want to reset to factory settings?")
+                .withButton("Yes")
+                .withButton("No")
+                .withAssociatedComponent(this),
+            [this](int result) {
+                if (result == 1) {
+                    juce::File defaultSettingsFile(juce::File(__FILE__).getSiblingFile("..").getChildFile("settings-default.xml"));
+                    if (auto xml = juce::XmlDocument::parse(defaultSettingsFile)) {
+                        audioProcessor.settings.loadFromXml(*xml);
+                        updateVisibilityFromState();
+                        if (onVisibilityChanged) onVisibilityChanged();
+                    }
+                }
+            }
+        );
+    };
+
 
     addAndMakeVisible(toggleNeedle);
     addAndMakeVisible(toggleEye);
@@ -56,6 +80,7 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
     addAndMakeVisible(toggleRollType);
     addAndMakeVisible(toggleSteam);
     addAndMakeVisible(toggleForrest);
+    addAndMakeVisible(buttonNuke);
 
 #include "build_timestamp.h"
 
@@ -131,6 +156,7 @@ void Control::resized() {
     positionButton(toggleEye);
     positionButton(toggleRoll);
 
+    positionButtonRight(buttonNuke);
     positionButtonRight(toggleForrest);
     positionButtonRight(toggleSteam);
     positionButtonRight(toggleFreezeRoll);
