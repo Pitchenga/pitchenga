@@ -56,7 +56,7 @@ private:
     std::vector<double> amplitudeSpectrumDb;
     std::vector<double> octaveBins;
 
-    // --- Pitch Engine for the Tuna ---
+    // --- Pitch Engine for the Needle ---
     std::unique_ptr<adamski::PitchMPM> pitchDetector;
     std::vector<float> rawAudioHistoryBuffer;
     std::vector<float> pitchAnalysisBuffer;

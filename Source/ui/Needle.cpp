@@ -1,7 +1,7 @@
-#include "Tuna.h"
+#include "Needle.h"
 #include <cmath>
 
-Tuna::Tuna() {
+Needle::Needle() {
     // Pre-calculate the sine wave intensities once during construction
     for (int i = 0; i < strobeCycleWidth; ++i) {
         const float sineVal = std::sin(juce::MathConstants<float>::twoPi * static_cast<float>(i) / static_cast<float>(strobeCycleWidth));
@@ -12,7 +12,7 @@ Tuna::Tuna() {
     }
 }
 
-void Tuna::setPitchFrequency(const float frequencyHz) {
+void Needle::setPitchFrequency(const float frequencyHz) {
     if (frequencyHz > 0.0f) {
         currentMidi = freqToMidi(frequencyHz);
 
@@ -43,26 +43,26 @@ void Tuna::setPitchFrequency(const float frequencyHz) {
     repaint();
 }
 
-void Tuna::setRange(const float minMidiNote, const float maxMidiNote) {
+void Needle::setRange(const float minMidiNote, const float maxMidiNote) {
     minMidi = minMidiNote;
     maxMidi = maxMidiNote;
     updateCachedLabels();
     repaint();
 }
 
-float Tuna::freqToMidi(const float freq) {
+float Needle::freqToMidi(const float freq) {
     if (freq <= 0.0f) return -1.0f;
     return 69.0f + 12.0f * std::log2(freq / 440.0f);
 }
 
-juce::String Tuna::getNoteName(const int midiNote) {
+juce::String Needle::getNoteName(const int midiNote) {
     int chroma = midiNote % 12;
     if (chroma < 0) chroma += 12;
     const int octave = midiNote / 12 - 1;
     return Tone::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
 
-void Tuna::paintLabel(juce::Graphics& graphics, const int midiNote, const float x, const float stripY) {
+void Needle::paintLabel(juce::Graphics& graphics, const int midiNote, const float x, const float stripY) {
     const juce::String name = getNoteName(midiNote);
     graphics.saveState();
 
@@ -88,27 +88,27 @@ void Tuna::paintLabel(juce::Graphics& graphics, const int midiNote, const float 
     graphics.restoreState();
 }
 
-juce::Font Tuna::getLabelFont() {
+juce::Font Needle::getLabelFont() {
     return {
-        juce::FontOptions(tunaFontSize)
-        .withStyle(tunaFontStyle)
+        juce::FontOptions(needleFontSize)
+        .withStyle(needleFontStyle)
         .withName(juce::Font::getDefaultMonospacedFontName())
     };
 }
 
-float Tuna::getLabelHeight() {
+float Needle::getLabelHeight() {
     return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8");
 }
 
-float Tuna::getLabelWidth() {
+float Needle::getLabelWidth() {
     return getLabelFont().getHeight();
 }
 
-float Tuna::getPreferredHeight() {
+float Needle::getPreferredHeight() {
     return stripHeight + tickHeight + getLabelHeight();
 }
 
-void Tuna::updateCachedLabels() {
+void Needle::updateCachedLabels() {
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
@@ -140,11 +140,11 @@ void Tuna::updateCachedLabels() {
     }
 }
 
-void Tuna::resized() {
+void Needle::resized() {
     updateCachedLabels();
 }
 
-void Tuna::paint(juce::Graphics& graphics) {
+void Needle::paint(juce::Graphics& graphics) {
     const auto bounds = getLocalBounds().toFloat();
     const auto height = static_cast<float>(getHeight());
     const float stripY = height - stripHeight;
@@ -217,14 +217,14 @@ void Tuna::paint(juce::Graphics& graphics) {
             paintLabel(graphics, nearestNote, closestX, labelStripY);
         }
 
-        // Draw the tuna needle
+        // Draw the needle needle
         const float pitchX = bounds.getWidth() * ((currentMidi - minMidi) / (maxMidi - minMidi));
-        const float tunaStripY = height - stripHeight + tickHeight;
+        const float needleStripY = height - stripHeight + tickHeight;
 
         juce::Path triangle;
         triangle.addTriangle(
             pitchX,
-            tunaStripY,
+            needleStripY,
             pitchX - needleTriangleWidth * 0.5f,
             height,
             pitchX + needleTriangleWidth * 0.5f,

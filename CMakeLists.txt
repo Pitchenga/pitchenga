@@ -57,8 +57,8 @@ set(PITCHENGA_SOURCES
         Source/math/Analyzers.cpp
         Source/Tone.h
         Source/Tone.cpp
-        Source/ui/Tuna.h
-        Source/ui/Tuna.cpp
+        Source/ui/Needle.h
+        Source/ui/Needle.cpp
         Source/ui/Eye.h
         Source/ui/Eye.cpp
         Source/ui/RollStft.h

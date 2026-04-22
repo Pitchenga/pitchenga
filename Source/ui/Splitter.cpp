@@ -1,5 +1,5 @@
 #include "Splitter.h"
-#include "Tuna.h"
+#include "Needle.h"
 
 Splitter::Splitter(PitchengaAudioProcessor& processorToUse) : audioProcessor(processorToUse) {
     setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
@@ -29,8 +29,8 @@ void Splitter::mouseDrag(const juce::MouseEvent& e) {
 
         // Calculate dynamic bounds exactly matching resized() architecture
         const float topControlHeight = 24.0f;
-        const float bottomTunaHeight = audioProcessor.settings.showTuna ? Tuna::getPreferredHeight() + 1.0f : 0.0f;
-        const float availableHeight = static_cast<float>(parent->getHeight()) - topControlHeight - bottomTunaHeight;
+        const float bottomNeedleHeight = audioProcessor.settings.showNeedle ? Needle::getPreferredHeight() + 1.0f : 0.0f;
+        const float availableHeight = static_cast<float>(parent->getHeight()) - topControlHeight - bottomNeedleHeight;
 
         const float adjustedY = static_cast<float>(eventInParent.y) - topControlHeight;
 

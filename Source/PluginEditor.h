@@ -28,7 +28,7 @@ private:
     // Background worker for heavy DSP
     Math worker;
 
-    Tuna tuna;
+    Needle tuna;
     Eye eye;
     RollStft stftRoll;
     RollCqt cqtRoll;
@@ -41,7 +41,7 @@ private:
     std::vector<SpectralPeak> rollPeaksBuffer;
     std::vector<double> cqtRollBuffer;
 
-    static constexpr int uiRefreshRateHz = 48;
+    static constexpr int uiRefreshRateHz = 144;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PitchengaAudioProcessorEditor)
 };

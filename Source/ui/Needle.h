@@ -3,9 +3,9 @@
 #include <array>
 #include "../Tone.h"
 
-class Tuna : public juce::Component {
+class Needle : public juce::Component {
 public:
-    Tuna();
+    Needle();
 
     void setPitchFrequency(float frequencyHz);
     void setRange(float minMidiNote, float maxMidiNote);
@@ -21,8 +21,8 @@ public:
     static float getPreferredHeight();
 
     static constexpr float needleTriangleWidth = 12.0f;
-    static constexpr float tunaFontSize = 15.0f;
-    static constexpr auto tunaFontStyle = "Bold";
+    static constexpr float needleFontSize = 15.0f;
+    static constexpr auto needleFontStyle = "Bold";
 
 private:
     void updateCachedLabels();
@@ -50,5 +50,5 @@ private:
 
     static juce::Font getLabelFont();
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Tuna)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Needle)
 };

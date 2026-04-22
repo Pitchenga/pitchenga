@@ -35,7 +35,7 @@ void PitchengaAudioProcessorEditor::updateVisibilityFromState() {
 }
 
 void PitchengaAudioProcessorEditor::timerCallback() {
-    // --- Update the Tuna ---
+    // --- Update the Needle ---
     // Read the lock-free atomic variable
     const float latestPitchHz = audioProcessor.currentPitchHz.load(std::memory_order_relaxed);
 
@@ -82,7 +82,7 @@ void PitchengaAudioProcessorEditor::resized() {
     splitter.setVisible(audioProcessor.settings.showRoll && audioProcessor.settings.showEye);
 
     if (audioProcessor.settings.showTuna) {
-        tuna.setBounds(bounds.removeFromBottom(static_cast<int>(Tuna::getPreferredHeight() + 1)));
+        tuna.setBounds(bounds.removeFromBottom(static_cast<int>(Needle::getPreferredHeight() + 1)));
     }
 
     if (audioProcessor.settings.showRoll && audioProcessor.settings.showEye) {
