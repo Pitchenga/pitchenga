@@ -63,6 +63,21 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
+    setupToggleButton(toggleTweak, showTweakPanel);
+    toggleTweak.onClick = [this] {
+        showTweakPanel = toggleTweak.getToggleState();
+        updateButtonStates();
+    };
+
+    buttonCopy.setButtonText("Copy");
+    buttonCopy.setColour(juce::TextButton::buttonColourId, juce::Colours::black.withAlpha(0.4f));
+    buttonCopy.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    buttonCopy.onClick = [this] {
+        juce::XmlElement xml = audioProcessor.settings.createXml();
+        juce::SystemClipboard::copyTextToClipboard(xml.toString());
+        juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::InfoIcon, "Copied", "Settings copied to clipboard.");
+    };
+
     buttonNuke.setColour(juce::TextButton::buttonColourId, juce::Colours::darkred.withAlpha(0.6f));
     buttonNuke.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
     buttonNuke.onClick = [this] {
@@ -102,7 +117,11 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
     addAndMakeVisible(toggleRollType);
     addAndMakeVisible(toggleSteam);
     addAndMakeVisible(toggleForrest);
-    addAndMakeVisible(buttonNuke);
+
+    addAndMakeVisible(toggleTweak);
+    addAndMakeVisible(tweakPanel);
+    tweakPanel.addAndMakeVisible(buttonCopy);
+    tweakPanel.addAndMakeVisible(buttonNuke);
 
 #include "build_timestamp.h"
 
@@ -143,6 +162,7 @@ void Control::updateButtonStates() {
     toggleRollType.setVisible(rollActive);
     toggleSteam.setVisible(rollActive);
     toggleForrest.setVisible(rollActive);
+    tweakPanel.setVisible(showTweakPanel);
     resized();
 }
 
@@ -163,7 +183,7 @@ void Control::resized() {
         btn.setBounds(bounds.removeFromLeft(buttonWidth).reduced(2));
     };
 
-    auto positionButtonRight = [&](juce::TextButton& button) {
+    auto positionButtonRight = [&](juce::TextButton& button, juce::Rectangle<int>& container) {
         if (!button.isVisible()) return;
         float textWidth = juce::GlyphArrangement::getStringWidth(font, button.getButtonText());
         if (&button == &toggleRollType) {
@@ -171,18 +191,33 @@ void Control::resized() {
                                    juce::GlyphArrangement::getStringWidth(font, "CQT"));
         }
         const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 16; // 16px horizontal padding
-        button.setBounds(bounds.removeFromRight(buttonWidth).reduced(2));
+        button.setBounds(container.removeFromRight(buttonWidth).reduced(2));
     };
 
     positionButton(toggleNeedle);
     positionButton(toggleEye);
     positionButton(toggleRoll);
 
-    positionButtonRight(buttonNuke);
-    positionButtonRight(toggleForrest);
-    positionButtonRight(toggleSteam);
-    positionButtonRight(toggleFreezeRoll);
-    positionButtonRight(toggleRollType);
+    // Push the Tweak button to the far right, just before the timestamp
+    positionButtonRight(toggleTweak, bounds);
+
+    if (showTweakPanel) {
+        // Calculate needed width for tweak panel buttons
+        int tweakWidth = 0;
+        tweakWidth += static_cast<int>(std::ceil(juce::GlyphArrangement::getStringWidth(font, buttonNuke.getButtonText()))) + 16;
+        tweakWidth += static_cast<int>(std::ceil(juce::GlyphArrangement::getStringWidth(font, buttonCopy.getButtonText()))) + 16;
+
+        tweakPanel.setBounds(bounds.removeFromRight(tweakWidth));
+        
+        auto panelBounds = tweakPanel.getLocalBounds();
+        positionButtonRight(buttonNuke, panelBounds);
+        positionButtonRight(buttonCopy, panelBounds);
+    }
+
+    positionButtonRight(toggleForrest, bounds);
+    positionButtonRight(toggleSteam, bounds);
+    positionButtonRight(toggleFreezeRoll, bounds);
+    positionButtonRight(toggleRollType, bounds);
 
     bounds.removeFromRight(8);
     buildTimestampLabel.setBounds(bounds);
