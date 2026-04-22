@@ -35,7 +35,7 @@ public:
     void resized() override;
     void updateVisibilityFromState();
 
-    static float getPreferredHeight();
+    [[nodiscard]] float getPreferredHeight() const;
 
     // Callback so the Editor knows when the user clicked a toggle
     std::function<void()> onVisibilityChanged;

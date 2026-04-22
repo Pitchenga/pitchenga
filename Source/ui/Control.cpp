@@ -66,6 +66,7 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
     setupToggleButton(toggleTweak, showTweakPanel);
     toggleTweak.onClick = [this] {
         showTweakPanel = toggleTweak.getToggleState();
+        if (onVisibilityChanged) onVisibilityChanged();
         updateButtonStates();
     };
 
@@ -166,9 +167,13 @@ void Control::updateButtonStates() {
     resized();
 }
 
-float Control::getPreferredHeight() {
+float Control::getPreferredHeight() const {
     const juce::Font font = juce::FontOptions(15.0f).withStyle("Bold");
-    return font.getHeight() + 8.0f;
+    float h = font.getHeight() + 8.0f;
+    if (showTweakPanel) {
+        h *= 2.0f;
+    }
+    return h;
 }
 
 void Control::resized() {
@@ -176,11 +181,17 @@ void Control::resized() {
 
     const juce::Font font = juce::FontOptions(15.0f).withStyle("Bold");
 
+    // Calculate row height
+    int rowHeight = static_cast<int>(font.getHeight() + 8.0f);
+    
+    // Create the top row
+    auto topRow = bounds.removeFromTop(rowHeight);
+
     // Pack the buttons to the left with minimal offsets dynamically sizing to their text
     auto positionButton = [&](juce::TextButton& btn) {
         const float textWidth = juce::GlyphArrangement::getStringWidth(font, btn.getButtonText());
         const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 16; // 16px horizontal padding
-        btn.setBounds(bounds.removeFromLeft(buttonWidth).reduced(2));
+        btn.setBounds(topRow.removeFromLeft(buttonWidth).reduced(2));
     };
 
     auto positionButtonRight = [&](juce::TextButton& button, juce::Rectangle<int>& container) {
@@ -199,28 +210,23 @@ void Control::resized() {
     positionButton(toggleRoll);
 
     // Push the Tweak button to the far right, just before the timestamp
-    positionButtonRight(toggleTweak, bounds);
+    positionButtonRight(toggleTweak, topRow);
+
+    positionButtonRight(toggleForrest, topRow);
+    positionButtonRight(toggleSteam, topRow);
+    positionButtonRight(toggleFreezeRoll, topRow);
+    positionButtonRight(toggleRollType, topRow);
+
+    topRow.removeFromRight(8);
+    buildTimestampLabel.setBounds(topRow);
 
     if (showTweakPanel) {
-        // Calculate needed width for tweak panel buttons
-        int tweakWidth = 0;
-        tweakWidth += static_cast<int>(std::ceil(juce::GlyphArrangement::getStringWidth(font, buttonNuke.getButtonText()))) + 16;
-        tweakWidth += static_cast<int>(std::ceil(juce::GlyphArrangement::getStringWidth(font, buttonCopy.getButtonText()))) + 16;
-
-        tweakPanel.setBounds(bounds.removeFromRight(tweakWidth));
+        tweakPanel.setBounds(bounds); // Use the entire remaining bounds (the bottom row)
         
         auto panelBounds = tweakPanel.getLocalBounds();
         positionButtonRight(buttonNuke, panelBounds);
         positionButtonRight(buttonCopy, panelBounds);
     }
-
-    positionButtonRight(toggleForrest, bounds);
-    positionButtonRight(toggleSteam, bounds);
-    positionButtonRight(toggleFreezeRoll, bounds);
-    positionButtonRight(toggleRollType, bounds);
-
-    bounds.removeFromRight(8);
-    buildTimestampLabel.setBounds(bounds);
 }
 
 juce::XmlElement Control::Settings::createXml() const {
