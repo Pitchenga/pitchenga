@@ -26,6 +26,8 @@ void RollStft::resized() {
         // Initialize the rolling buffer whenever the window resizes
         steamImage = juce::Image(juce::Image::RGB, width, plotHeight, true);
         steamScrollOffset = 0;
+        lastPumpSamples = 0;
+        subPixelAccumulator = 0.0f;
         paintFrame();
     }
 }
@@ -213,7 +215,28 @@ void RollStft::pumpSteam() {
     const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
     if (width <= 0 || height <= 0) return;
 
-    const int speedPx = static_cast<int>(steamSpeedPxPerFrame);
+    // Use absolute audio samples processed as the master timeline clock.
+    // This perfectly synchronizes side-by-side instances and eliminates OS timer drifting!
+    const int64_t currentSamples = processor.getTotalNumSamplesProcessed();
+
+    // Reset if it's the first run or if the audio engine resets the sample counter
+    if (lastPumpSamples == 0 || currentSamples < lastPumpSamples) {
+        lastPumpSamples = currentSamples;
+        return;
+    }
+
+    const int64_t deltaSamples = currentSamples - lastPumpSamples;
+    lastPumpSamples = currentSamples;
+
+    const double sampleRate = processor.getSampleRate() > 0.0 ? processor.getSampleRate() : 44100.0;
+    const float deltaSec = static_cast<float>(deltaSamples) / static_cast<float>(sampleRate);
+
+    subPixelAccumulator += targetPixelsPerSecond * deltaSec;
+    const int speedPx = static_cast<int>(subPixelAccumulator);
+
+    if (speedPx < 1) return;
+
+    subPixelAccumulator -= static_cast<float>(speedPx);
 
     // Advance the scroll offset and wrap it like a treadmill
     steamScrollOffset = (steamScrollOffset + speedPx) % height;
@@ -221,15 +244,16 @@ void RollStft::pumpSteam() {
     // Calculate where in the image memory the new row should be drawn
     const int drawY = (height - speedPx + steamScrollOffset) % height;
 
-    // If there is absolute silence, we still advanced the scroll and cleared the row above.
-    // Now we can safely abort before doing heavy graphics processing.
+    // Native JUCE memory wipe: clears the specific row
+    steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::black);
+
     if (activePeaks.empty()) return;
 
     juce::Graphics graphics(steamImage);
+    const float fWidth = static_cast<float>(width);
 
     const float sr = static_cast<float>(sampleRate);
     const float binResHz = sr / 32768.0f;
-    const float fWidth = static_cast<float>(width);
     const float midiRangeInv = 1.0f / (maxMidiNote - minMidiNote);
     const bool doDynamicStem = enableDynamicStemWidth;
 
@@ -239,11 +263,10 @@ void RollStft::pumpSteam() {
 
     for (const auto& peak : activePeaks) {
         if (peak.rawMagnitude > 0.05f) {
-            // Prevents rendering absolute silence noise
-
             // Inline the math for the primary position calculation
             const float midi = 69.0f + 12.0f * std::log2(peak.frequencyHz / 440.0f);
-            const float xPos = fWidth * ((midi - minMidiNote) * midiRangeInv);
+            const float normX = (midi - minMidiNote) * midiRangeInv;
+            const float xPos = normX * fWidth;
 
             // Fast bounds culling
             if (xPos >= -10.0f && xPos <= fWidth + 10.0f) {

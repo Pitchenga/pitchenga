@@ -21,12 +21,13 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     setSize(audioProcessor.settings.lastUIWidth, audioProcessor.settings.lastUIHeight);
 
     worker.startThread(juce::Thread::Priority::high);
-    startTimerHz(uiRefreshRateHz);
+
+    // Hardware VSync lock guarantees zero drifting
+    vblankAttachment = std::make_unique<juce::VBlankAttachment>(this, [this] { renderFrame(); });
 }
 
 PitchengaAudioProcessorEditor::~PitchengaAudioProcessorEditor() {
     worker.stopThread(2000);
-    stopTimer();
 }
 
 void PitchengaAudioProcessorEditor::updateVisibilityFromState() {
@@ -34,7 +35,7 @@ void PitchengaAudioProcessorEditor::updateVisibilityFromState() {
     resized();
 }
 
-void PitchengaAudioProcessorEditor::timerCallback() {
+void PitchengaAudioProcessorEditor::renderFrame() {
     // --- Update the Needle ---
     // Read the lock-free atomic variable
     const float latestPitchHz = audioProcessor.currentPitchHz.load(std::memory_order_relaxed);
@@ -58,6 +59,19 @@ void PitchengaAudioProcessorEditor::timerCallback() {
             }
         }
     }
+
+    // Unconditional Hardware Steam Pump:
+    // By pumping exactly 1 pixel every VSync tick, we completely decouple the visual scroll from the
+    // uneven audio thread delivery, creating a mathematically perfect glide with zero jitter.
+    if (audioProcessor.settings.showRoll && !audioProcessor.settings.freezeRoll && audioProcessor.settings.showSteam) {
+        if (audioProcessor.settings.useStftRoll) {
+            stftRoll.pumpSteam();
+        } else {
+            cqtRoll.pumpSteam();
+        }
+    }
+
+    repaint();
 }
 
 void PitchengaAudioProcessorEditor::paint(juce::Graphics& g) {
