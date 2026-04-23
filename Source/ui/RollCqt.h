@@ -15,13 +15,13 @@ public:
     void updateResults(const std::vector<double>& results);
     void paintBins(juce::Graphics& graphics) const;
 
-    void pumpSteam();
-
     void setEngine(const Cqt* e) { engine = e; }
     static constexpr int getPreferredHeight() { return 619; }
 
     static juce::Font getLabelFont();
     static float getLabelAreaHeight();
+
+    void pumpSteam();
 
 private:
     void paintFrame();
@@ -51,6 +51,9 @@ private:
     };
     juce::Image steamImage;
     int steamScrollOffset = 0;
+
+    std::vector<double> accumulatedMagnitudes;
+    std::vector<double> lastMagnitudes;
 
     void paintSteam(const juce::Graphics& graphics) const;
 

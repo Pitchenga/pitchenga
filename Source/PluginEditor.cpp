@@ -61,7 +61,7 @@ void PitchengaAudioProcessorEditor::renderFrame() {
     }
 
     // Unconditional Hardware Steam Pump:
-    // By pumping exactly 1 pixel every VSync tick, we completely decouple the visual scroll from the
+    // By tracking sub-pixel accumulation every VSync tick, we completely decouple the visual scroll from the
     // uneven audio thread delivery, creating a mathematically perfect glide with zero jitter.
     if (audioProcessor.settings.showRoll && !audioProcessor.settings.freezeRoll && audioProcessor.settings.showSteam) {
         if (audioProcessor.settings.useStftRoll) {
@@ -70,8 +70,6 @@ void PitchengaAudioProcessorEditor::renderFrame() {
             cqtRoll.pumpSteam();
         }
     }
-
-    repaint();
 }
 
 void PitchengaAudioProcessorEditor::paint(juce::Graphics& g) {

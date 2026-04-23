@@ -23,6 +23,7 @@ private:
 
     std::vector<SpectralPeak> activePeaks;
     std::vector<SpectralPeak> accumulatedPeaks;
+    std::vector<SpectralPeak> lastPeaks;
 
     juce::Image steamImage;
     int steamScrollOffset = 0;

@@ -40,11 +40,21 @@ void RollCqt::updateResults(const std::vector<double>& results) {
     if (smoother == nullptr || lastKnownSize != results.size()) {
         smoother = std::make_unique<ExpSmoother>(results.size(), 0.5);
         lastKnownSize = results.size();
+        accumulatedMagnitudes.assign(results.size(), 0.0);
     }
 
     if (expand()) return;
 
     displayMagnitudes = smoother->smooth(displayMagnitudes);
+
+    // Accumulate maximum magnitudes over multiple audio frames to prevent transient dropping (flicker)
+    if (accumulatedMagnitudes.size() == displayMagnitudes.size()) {
+        for (size_t i = 0; i < displayMagnitudes.size(); ++i) {
+            accumulatedMagnitudes[i] = std::max(accumulatedMagnitudes[i], displayMagnitudes[i]);
+        }
+    }
+
+    repaint();
 }
 
 void RollCqt::resized() {
@@ -238,7 +248,7 @@ void RollCqt::paintBins(juce::Graphics& graphics) const {
 }
 
 void RollCqt::pumpSteam() {
-    if (displayMagnitudes.empty() || !steamImage.isValid()) return;
+    if (!steamImage.isValid()) return;
 
     const int width = getWidth();
     const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
@@ -275,6 +285,32 @@ void RollCqt::pumpSteam() {
     // Advance the scroll offset and wrap it like a treadmill
     steamScrollOffset = (steamScrollOffset + speedPx) % height;
 
+    bool hasNewData = false;
+    for (const double mag : accumulatedMagnitudes) {
+        if (mag > 0.0) {
+            hasNewData = true;
+            break;
+        }
+    }
+
+    if (hasNewData) {
+        lastMagnitudes = accumulatedMagnitudes;
+        std::ranges::fill(accumulatedMagnitudes, 0.0);
+    }
+
+    if (lastMagnitudes.empty()) {
+        if (drawY + speedPx > height) {
+            const int firstPart = height - drawY;
+            const int secondPart = speedPx - firstPart;
+            steamImage.clear(juce::Rectangle(0, drawY, width, firstPart), juce::Colours::transparentBlack);
+            steamImage.clear(juce::Rectangle(0, 0, width, secondPart), juce::Colours::transparentBlack);
+        } else {
+            steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
+        }
+        repaint();
+        return;
+    }
+
     if (drawY + speedPx > height) {
         const int firstPart = height - drawY;
         const int secondPart = speedPx - firstPart;
@@ -284,16 +320,14 @@ void RollCqt::pumpSteam() {
         steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
     }
 
-    if (displayMagnitudes.empty()) return;
-
     juce::Graphics graphics(steamImage);
 
-    const int totalBins = static_cast<int>(displayMagnitudes.size());
+    const int totalBins = static_cast<int>(lastMagnitudes.size());
     const int binsPerOctave = totalBins / PitchengaAudioProcessor::numOctaves;
     const float barWidth = static_cast<float>(width) / static_cast<float>(totalBins);
 
     for (int i = 0; i < totalBins; ++i) {
-        if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > steamThreshold) {
+        if (const double magnitude = lastMagnitudes[static_cast<size_t>(i)]; magnitude > steamThreshold) {
             const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
             const juce::Colour baseColor = Tone::getContinuousColor(chroma);
             constexpr float undimmingGain = 1.1f;
@@ -328,6 +362,8 @@ void RollCqt::pumpSteam() {
             }
         }
     }
+
+    repaint();
 }
 
 void RollCqt::paintSteam(const juce::Graphics& graphics) const {

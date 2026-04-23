@@ -250,7 +250,12 @@ void RollStft::pumpSteam() {
     // Advance the scroll offset and wrap it like a treadmill
     steamScrollOffset = (steamScrollOffset + speedPx) % height;
 
-    if (accumulatedPeaks.empty()) {
+    if (!accumulatedPeaks.empty()) {
+        lastPeaks = accumulatedPeaks;
+        accumulatedPeaks.clear();
+    }
+
+    if (lastPeaks.empty()) {
         juce::Image::BitmapData bitmapData(steamImage, juce::Image::BitmapData::writeOnly);
         for (int yOffset = 0; yOffset < speedPx; ++yOffset) {
             const int targetY = (drawY + yOffset) % height;
@@ -258,6 +263,7 @@ void RollStft::pumpSteam() {
                 bitmapData.setPixelColour(x, targetY, juce::Colours::transparentBlack);
             }
         }
+        repaint();
         return;
     }
 
@@ -273,7 +279,7 @@ void RollStft::pumpSteam() {
 
     std::vector<juce::Colour> pixelRow(static_cast<size_t>(width), juce::Colours::transparentBlack);
 
-    for (const auto& peak : accumulatedPeaks) {
+    for (const auto& peak : lastPeaks) {
         if (peak.rawMagnitude > 0.05f) {
             // Inline the math for the primary position calculation
             const float midi = 69.0f + 12.0f * std::log2(peak.frequencyHz / 440.0f);
@@ -320,7 +326,7 @@ void RollStft::pumpSteam() {
         }
     }
 
-    accumulatedPeaks.clear();
+    repaint();
 }
 
 void RollStft::paintSteam(const juce::Graphics& graphics) const {
