@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_core/juce_core.h>
+#include <juce_graphics/juce_graphics.h>
 #include "../PluginProcessor.h"
 #include "Cqt.h"
 #include "Analyzers.h"
@@ -24,6 +25,10 @@ public:
     const Cqt* getCqtEngine() const { return &cqtEngine; }
     void getRollPeaks(std::vector<SpectralPeak>& destinationArray);
 
+    // --- Steam Visualization for RollStft ---
+    void setSteamSize(int width, int height);
+    void getSteamImage(juce::Image& destinationImage, int& scrollOffset);
+
 private:
     static constexpr double inputGain = 6.0;
     
@@ -40,6 +45,7 @@ private:
     void processPitchDetection();
     void processCqtAndEqualization();
     void publishResultsToUi();
+    void pumpSteam();
 
     PitchengaAudioProcessor& audioProcessor;
 
@@ -77,4 +83,14 @@ private:
     std::vector<SpectralPeak> uiRollPeaks;
     void setupStft();
     void processStft();
+
+    // --- Steam State ---
+    juce::Image steamImage;
+    int steamScrollOffset = 0;
+    int steamWidth = 0;
+    int steamHeight = 0;
+    bool enableDynamicStemWidth = true;
+    static constexpr float steamSpeedPxPerFrame = 1.0f;
+    static constexpr float minMidiNote = 12.0f;
+    static constexpr float maxMidiNote = 108.0f;
 };

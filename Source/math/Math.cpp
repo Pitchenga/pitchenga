@@ -1,5 +1,6 @@
 #include "Math.h"
 #include "../Util.h"
+#include "../Tone.h"
 
 Math::Math(PitchengaAudioProcessor& processorToUse)
     : Thread("VisualizeWorker"), audioProcessor(processorToUse) {
@@ -298,6 +299,8 @@ void Math::publishResultsToUi() {
 
     uiRollPeaks = currentRollPeaks;
 
+    pumpSteam();
+
     newDataAvailable.store(true, std::memory_order_release);
 }
 
@@ -318,4 +321,99 @@ void Math::getLineResults(std::vector<double>& destinationArray) {
     const juce::CriticalSection::ScopedLockType lock(resultLock);
     if (destinationArray.size() != rollResults.size()) destinationArray.resize(rollResults.size());
     std::copy(rollResults.begin(), rollResults.end(), destinationArray.begin());
+}
+
+void Math::setSteamSize(int width, int height) {
+    const juce::CriticalSection::ScopedLockType lock(resultLock);
+    if (width != steamWidth || height != steamHeight) {
+        steamWidth = width;
+        steamHeight = height;
+        if (steamWidth > 0 && steamHeight > 0) {
+            steamImage = juce::Image(juce::Image::ARGB, steamWidth, steamHeight, true);
+            steamScrollOffset = 0;
+        } else {
+            steamImage = juce::Image();
+        }
+    }
+}
+
+void Math::getSteamImage(juce::Image& destinationImage, int& scrollOffset) {
+    const juce::CriticalSection::ScopedLockType lock(resultLock);
+    destinationImage = steamImage;
+    scrollOffset = steamScrollOffset;
+}
+
+void Math::pumpSteam() {
+    if (!audioProcessor.settings.showSteam || !steamImage.isValid()) return;
+
+    const int width = steamWidth;
+    const int height = steamHeight;
+    if (width <= 0 || height <= 0) return;
+
+    const int speedPx = static_cast<int>(steamSpeedPxPerFrame);
+
+    // Advance the scroll offset and wrap it like a treadmill
+    steamScrollOffset = (steamScrollOffset + speedPx) % height;
+
+    // Calculate where in the image memory the new row should be drawn
+    const int drawY = (height - speedPx + steamScrollOffset) % height;
+
+    juce::Graphics graphics(steamImage);
+
+    // Clear the new row first to prevent ghosting from previous treadmill cycles
+    graphics.setColour(juce::Colours::black);
+    graphics.fillRect(0, drawY, width, speedPx);
+
+    if (currentRollPeaks.empty()) return;
+
+    const float sr = audioProcessor.getSampleRate() > 0.0 ? static_cast<float>(audioProcessor.getSampleRate()) : 44100.0f;
+    const float binResHz = sr / 32768.0f;
+    const float fWidth = static_cast<float>(width);
+    const float midiRangeInv = 1.0f / (maxMidiNote - minMidiNote);
+    const bool doDynamicStem = enableDynamicStemWidth;
+
+    // Extreme Math Optimization: Pre-calculate the derivative of the MIDI scale
+    // to bypass calling std::log2 multiple times per peak.
+    const float derivativeFactor = fWidth * midiRangeInv * 17.3123405f * binResHz;
+
+    for (const auto& peak : currentRollPeaks) {
+        if (peak.rawMagnitude > 0.05f) {
+            // Prevents rendering absolute silence noise
+
+            // Inline the math for the primary position calculation
+            const float midi = 69.0f + 12.0f * std::log2(peak.frequencyHz / 440.0f);
+            const float xPos = fWidth * ((midi - minMidiNote) * midiRangeInv);
+
+            // Fast bounds culling
+            if (xPos >= -10.0f && xPos <= fWidth + 10.0f) {
+                // Configurable razor-sharp stems for the Steam
+                float stemWidthPixels = 4.0f;
+                if (doDynamicStem) {
+                    // Use the fast derivative approximation instead of another heavy log2
+                    const float nextX = xPos + (derivativeFactor / peak.frequencyHz);
+                    // +1.0f forces deliberate sub-pixel overlap to completely kill rendering gaps
+                    stemWidthPixels = std::max(1.0f, (nextX - xPos) + 1.0f);
+                }
+
+                // Fast continuous modulus (replaces heavy std::fmod)
+                float continuousChroma = midi;
+                while (continuousChroma >= 12.0f) continuousChroma -= 12.0f;
+                while (continuousChroma < 0.0f) continuousChroma += 12.0f;
+
+                const juce::Colour baseColor = Tone::getContinuousColor(continuousChroma);
+                constexpr float undimmingGain = 1.6f;
+
+                const float clampedMag = std::min(1.0f, peak.rawMagnitude * undimmingGain);
+                const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, clampedMag);
+
+                graphics.setColour(color);
+                graphics.fillRect(
+                    xPos - (stemWidthPixels * 0.5f),
+                    static_cast<float>(drawY),
+                    stemWidthPixels,
+                    static_cast<float>(speedPx)
+                );
+            }
+        }
+    }
 }
