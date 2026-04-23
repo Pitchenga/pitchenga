@@ -66,8 +66,8 @@ private:
 
     // --- Thread-Safe Output Buffers ---
     juce::CriticalSection resultLock;
-    std::vector<double> circleVisualizerResults;
-    std::vector<double> lineVisualizerResults;
+    std::vector<double> eyeResults;
+    std::vector<double> rollResults;
     std::atomic<bool> newDataAvailable{false};
 
 

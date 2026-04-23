@@ -95,7 +95,7 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     float* nextStageData = nextStageBuffer.data();
     int currentStageSize = numSamples;
 
-    // NEW: Enforce Temporal Integrity across the decimation cascade.
+    // Enforce Temporal Integrity across the decimation cascade.
     // If the UI thread falls behind and Octave 0 fills up, we MUST drop the audio for ALL octaves.
     // Otherwise, lower octaves secretly record seconds of audio into the past, permanently desyncing the spectrum.
     const bool fifoOverflow = (octaves[0].fifo.getFreeSpace() < currentStageSize);

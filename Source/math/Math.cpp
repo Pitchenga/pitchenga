@@ -47,8 +47,8 @@ void Math::setupCqtBuffers() {
 
     {
         const juce::CriticalSection::ScopedLockType lock(resultLock);
-        circleVisualizerResults.assign(static_cast<size_t>(binsPerOctave), 0.0);
-        lineVisualizerResults.assign(static_cast<size_t>(totalBins), 0.0);
+        eyeResults.assign(static_cast<size_t>(binsPerOctave), 0.0);
+        rollResults.assign(static_cast<size_t>(totalBins), 0.0);
     }
 }
 
@@ -287,13 +287,13 @@ void Math::processCqtAndEqualization() {
 void Math::publishResultsToUi() {
     // --- Push Results to UI ---
     const juce::CriticalSection::ScopedLockType lock(resultLock);
-    if (circleVisualizerResults.size() == currentEyeData.size()) {
-        std::ranges::copy(currentEyeData, circleVisualizerResults.begin());
+    if (eyeResults.size() == currentEyeData.size()) {
+        std::ranges::copy(currentEyeData, eyeResults.begin());
     }
 
     // fixme remove Old line buffer logic for discrete CQT bins
-    if (lineVisualizerResults.size() == currentRollData.size()) {
-        std::ranges::copy(currentRollData, lineVisualizerResults.begin());
+    if (rollResults.size() == currentRollData.size()) {
+        std::ranges::copy(currentRollData, rollResults.begin());
     }
 
     uiRollPeaks = currentRollPeaks;
@@ -308,14 +308,14 @@ void Math::getRollPeaks(std::vector<SpectralPeak>& destinationArray) {
 
 void Math::getCircleResults(std::vector<double>& destinationArray) {
     const juce::CriticalSection::ScopedLockType lock(resultLock);
-    if (destinationArray.size() != circleVisualizerResults.size()) destinationArray.resize(
-        circleVisualizerResults.size()
+    if (destinationArray.size() != eyeResults.size()) destinationArray.resize(
+        eyeResults.size()
     );
-    std::copy(circleVisualizerResults.begin(), circleVisualizerResults.end(), destinationArray.begin());
+    std::copy(eyeResults.begin(), eyeResults.end(), destinationArray.begin());
 }
 
 void Math::getLineResults(std::vector<double>& destinationArray) {
     const juce::CriticalSection::ScopedLockType lock(resultLock);
-    if (destinationArray.size() != lineVisualizerResults.size()) destinationArray.resize(lineVisualizerResults.size());
-    std::copy(lineVisualizerResults.begin(), lineVisualizerResults.end(), destinationArray.begin());
+    if (destinationArray.size() != rollResults.size()) destinationArray.resize(rollResults.size());
+    std::copy(rollResults.begin(), rollResults.end(), destinationArray.begin());
 }
