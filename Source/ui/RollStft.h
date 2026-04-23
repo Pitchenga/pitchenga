@@ -28,9 +28,9 @@ private:
     juce::Image steamImage;
     int steamScrollOffset = 0;
 
-    int64_t lastPumpSamples = 0;
     float subPixelAccumulator = 0.0f;
     static constexpr float targetPixelsPerSecond = 48.0f;
+    static constexpr float samplesPerMathBlock = 1024.0f;
 
     juce::Image cachedFrame;
 

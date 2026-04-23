@@ -61,8 +61,8 @@ void PitchengaAudioProcessorEditor::renderFrame() {
     }
 
     // Unconditional Hardware Steam Pump:
-    // By tracking sub-pixel accumulation every VSync tick, we completely decouple the visual scroll from the
-    // uneven audio thread delivery, creating a mathematically perfect glide with zero jitter.
+    // By relying on the component's internal repaint logic only when the steam moves,
+    // we eliminate the global 144Hz UI redraw spam, saving massive CPU overhead.
     if (audioProcessor.settings.showRoll && !audioProcessor.settings.freezeRoll && audioProcessor.settings.showSteam) {
         if (audioProcessor.settings.useStftRoll) {
             stftRoll.pumpSteam();

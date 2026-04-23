@@ -16,7 +16,9 @@ void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
         accumulatedPeaks.insert(accumulatedPeaks.end(), peaks.begin(), peaks.end());
     }
 
-    repaint();
+    const double sr = processor.getSampleRate() > 0.0 ? processor.getSampleRate() : 44100.0;
+    const float deltaSec = samplesPerMathBlock / static_cast<float>(sr);
+    subPixelAccumulator += targetPixelsPerSecond * deltaSec;
 }
 
 void RollStft::resized() {
@@ -29,7 +31,6 @@ void RollStft::resized() {
         // Restored to ARGB so transparentBlack clears correctly without obscuring the background grid
         steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
         steamScrollOffset = 0;
-        lastPumpSamples = 0;
         subPixelAccumulator = 0.0f;
         paintFrame();
     }
@@ -218,23 +219,6 @@ void RollStft::pumpSteam() {
     const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
     if (width <= 0 || height <= 0) return;
 
-    // Use absolute audio samples processed as the master timeline clock.
-    // This perfectly synchronizes side-by-side instances and eliminates OS timer drifting!
-    const int64_t currentSamples = processor.getTotalNumSamplesProcessed();
-
-    // Reset if it's the first run or if the audio engine resets the sample counter
-    if (lastPumpSamples == 0 || currentSamples < lastPumpSamples) {
-        lastPumpSamples = currentSamples;
-        return;
-    }
-
-    const int64_t deltaSamples = currentSamples - lastPumpSamples;
-    lastPumpSamples = currentSamples;
-
-    const double sampleRate = processor.getSampleRate() > 0.0 ? processor.getSampleRate() : 44100.0;
-    const float deltaSec = static_cast<float>(deltaSamples) / static_cast<float>(sampleRate);
-
-    subPixelAccumulator += targetPixelsPerSecond * deltaSec;
     int speedPx = static_cast<int>(subPixelAccumulator);
 
     if (speedPx < 1) return;
@@ -268,8 +252,8 @@ void RollStft::pumpSteam() {
     }
 
     const float fWidth = static_cast<float>(width);
-    const float sr = static_cast<float>(sampleRate);
-    const float binResHz = sr / 32768.0f;
+    const double sr = processor.getSampleRate() > 0.0 ? processor.getSampleRate() : 44100.0;
+    const float binResHz = static_cast<float>(sr) / 32768.0f;
     const float midiRangeInv = 1.0f / (maxMidiNote - minMidiNote);
     const bool doDynamicStem = enableDynamicStemWidth;
 
