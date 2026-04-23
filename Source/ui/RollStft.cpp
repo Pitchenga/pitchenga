@@ -24,7 +24,7 @@ void RollStft::resized() {
     if (width > 0 && height > 0) {
         const int plotHeight = std::max(1, height - static_cast<int>(getLabelAreaHeight()));
         // Initialize the rolling buffer whenever the window resizes
-        steamImage = juce::Image(juce::Image::RGB, width, plotHeight, true);
+        steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
         steamScrollOffset = 0;
         lastPumpSamples = 0;
         subPixelAccumulator = 0.0f;
@@ -90,7 +90,7 @@ void RollStft::paintFrame() {
     if (width <= 0 || height <= 0) return;
 
     // Create a transparent image (the 'true' flag clears it to zero alpha)
-    cachedFrame = juce::Image(juce::Image::RGB, width, height, true);
+    cachedFrame = juce::Image(juce::Image::ARGB, width, height, true);
     juce::Graphics graphics(cachedFrame);
     paintFrame(graphics);
 }
@@ -244,14 +244,18 @@ void RollStft::pumpSteam() {
     // Calculate where in the image memory the new row should be drawn
     const int drawY = (height - speedPx + steamScrollOffset) % height;
 
-    // Native JUCE memory wipe: clears the specific row
-    steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
+    if (activePeaks.empty()) {
+        juce::Image::BitmapData bitmapData(steamImage, juce::Image::BitmapData::writeOnly);
+        for (int yOffset = 0; yOffset < speedPx; ++yOffset) {
+            const int targetY = drawY + yOffset;
+            for (int x = 0; x < width; ++x) {
+                bitmapData.setPixelColour(x, targetY, juce::Colours::black);
+            }
+        }
+        return;
+    }
 
-    if (activePeaks.empty()) return;
-
-    juce::Graphics graphics(steamImage);
     const float fWidth = static_cast<float>(width);
-
     const float sr = static_cast<float>(sampleRate);
     const float binResHz = sr / 32768.0f;
     const float midiRangeInv = 1.0f / (maxMidiNote - minMidiNote);
@@ -260,6 +264,8 @@ void RollStft::pumpSteam() {
     // Extreme Math Optimization: Pre-calculate the derivative of the MIDI scale
     // to bypass calling std::log2 multiple times per peak.
     const float derivativeFactor = fWidth * midiRangeInv * 17.3123405f * binResHz;
+
+    std::vector<juce::Colour> pixelRow(static_cast<size_t>(width), juce::Colours::black);
 
     for (const auto& peak : activePeaks) {
         if (peak.rawMagnitude > 0.05f) {
@@ -286,18 +292,25 @@ void RollStft::pumpSteam() {
 
                 const juce::Colour baseColor = Tone::getContinuousColor(continuousChroma);
                 constexpr float undimmingGain = 1.6f;
-
                 const float clampedMag = std::min(1.0f, peak.rawMagnitude * undimmingGain);
                 const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, clampedMag);
 
-                graphics.setColour(color);
-                graphics.fillRect(
-                    xPos - (stemWidthPixels * 0.5f),
-                    static_cast<float>(drawY),
-                    stemWidthPixels,
-                    static_cast<float>(speedPx)
-                );
+                const int startX = std::max(0, static_cast<int>(xPos - stemWidthPixels * 0.5f));
+                const int endX = std::min(width - 1, static_cast<int>(xPos + stemWidthPixels * 0.5f));
+
+                for (int x = startX; x <= endX; ++x) {
+                    pixelRow[static_cast<size_t>(x)] = color;
+                }
             }
+        }
+    }
+
+    // Directly wipe and paint the specific row in memory via pixel pointer
+    juce::Image::BitmapData bitmapData(steamImage, juce::Image::BitmapData::writeOnly);
+    for (int yOffset = 0; yOffset < speedPx; ++yOffset) {
+        const int targetY = drawY + yOffset;
+        for (int x = 0; x < width; ++x) {
+            bitmapData.setPixelColour(x, targetY, pixelRow[static_cast<size_t>(x)]);
         }
     }
 }

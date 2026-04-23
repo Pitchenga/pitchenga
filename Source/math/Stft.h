@@ -34,6 +34,7 @@ public:
     bool enablePeakExtraction = true;
     // bool enablePeakExtraction = false;
     bool enablePsychoacousticTilt = true;
+    // bool enablePsychoacousticTilt = false;
     bool enableTailKiller = true;
     bool enableTemporalSmoothing = true;
 
