@@ -44,7 +44,13 @@ void RollCqt::updateResults(const std::vector<double>& results) {
 
     if (expand()) return;
 
+    if (processor.settings.showSteam) {
+        pumpSteam();
+    }
+
     displayMagnitudes = smoother->smooth(displayMagnitudes);
+
+    repaint();
 }
 
 void RollCqt::resized() {
@@ -56,8 +62,6 @@ void RollCqt::resized() {
         // Initialize the rolling buffer whenever the window resizes
         steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
         steamScrollOffset = 0;
-        lastPumpTime = 0;
-        subPixelAccumulator = 0.0f;
         paintFrame();
     }
 }
@@ -248,21 +252,7 @@ void RollCqt::pumpSteam() {
     const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
     if (width <= 0 || height <= 0) return;
 
-    const uint32_t now = juce::Time::getMillisecondCounter();
-    if (lastPumpTime == 0) {
-        lastPumpTime = now;
-        return;
-    }
-
-    const float deltaSec = static_cast<float>(now - lastPumpTime) * 0.001f;
-    lastPumpTime = now;
-
-    subPixelAccumulator += targetPixelsPerSecond * deltaSec;
-    const int speedPx = static_cast<int>(subPixelAccumulator);
-
-    if (speedPx < 1) return;
-
-    subPixelAccumulator -= static_cast<float>(speedPx);
+    const int speedPx = static_cast<int>(steamSpeedPxPerFrame);
 
     // Advance the scroll offset and wrap it like a treadmill
     steamScrollOffset = (steamScrollOffset + speedPx) % height;
@@ -272,8 +262,6 @@ void RollCqt::pumpSteam() {
 
     // Native JUCE memory wipe: clears the specific row to completely transparent
     steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
-
-    if (displayMagnitudes.empty()) return;
 
     juce::Graphics graphics(steamImage);
 
@@ -296,7 +284,7 @@ void RollCqt::pumpSteam() {
                 static_cast<float>(i) * barWidth,
                 static_cast<float>(drawY),
                 barWidth + 0.5f,
-                static_cast<float>(speedPx)
+                steamSpeedPxPerFrame
             );
         }
     }

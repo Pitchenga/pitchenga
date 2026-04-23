@@ -209,7 +209,6 @@ void Control::resized() {
     positionButton(toggleEye);
     positionButton(toggleRoll);
 
-    // Push the Tweak button to the far right, just before the timestamp
     positionButtonRight(toggleTweak, topRow);
 
     positionButtonRight(toggleForrest, topRow);

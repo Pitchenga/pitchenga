@@ -54,7 +54,7 @@ float RollStft::frequencyToX(float frequencyHz, float width) {
 
 void RollStft::paint(juce::Graphics& graphics) {
     if (!cachedFrame.isValid()) {
-        paintFrame(); // Generates it if the engine wasn't ready during resized()
+        paintFrame();
     }
 
     const int width = getWidth();

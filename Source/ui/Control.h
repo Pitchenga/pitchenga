@@ -54,14 +54,14 @@ private:
     juce::TextButton toggleSteam{"Steam"};
     juce::TextButton toggleForrest{"Forest"};
 
-    // Tweak Panel
+    juce::Label buildTimestampLabel;
+
     juce::TextButton toggleTweak{"Tweak"};
     bool showTweakPanel = false;
     juce::Component tweakPanel;
     juce::TextButton buttonCopy{"Copy"};
     juce::TextButton buttonNuke{"Nuke"};
 
-    juce::Label buildTimestampLabel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Control)
 };

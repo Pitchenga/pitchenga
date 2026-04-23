@@ -43,7 +43,7 @@ private:
 
     PitchengaAudioProcessor& audioProcessor;
 
-    // --- CQT Engine for the Eye ---
+    // --- CQT Engine for Eye and RollCqt ---
     Cqt cqtEngine;
     std::unique_ptr<HarmonicPatternPitchClassDetector> pitchClassDetector;
     std::unique_ptr<SpectralEqualizer> spectralEqualizer;
@@ -56,7 +56,7 @@ private:
     std::vector<double> amplitudeSpectrumDb;
     std::vector<double> octaveBins;
 
-    // --- Pitch Engine for the Needle ---
+    // --- Pitch Engine for Needle ---
     std::unique_ptr<adamski::PitchMPM> pitchDetector;
     std::vector<float> rawAudioHistoryBuffer;
     std::vector<float> pitchAnalysisBuffer;
