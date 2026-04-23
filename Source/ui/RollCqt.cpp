@@ -260,20 +260,29 @@ void RollCqt::pumpSteam() {
     const float deltaSec = static_cast<float>(deltaSamples) / static_cast<float>(sampleRate);
 
     subPixelAccumulator += targetPixelsPerSecond * deltaSec;
-    const int speedPx = static_cast<int>(subPixelAccumulator);
+    int speedPx = static_cast<int>(subPixelAccumulator);
 
     if (speedPx < 1) return;
 
-    subPixelAccumulator -= static_cast<float>(speedPx);
+    if (speedPx > height) {
+        speedPx = height;
+        subPixelAccumulator = 0.0f;
+    } else {
+        subPixelAccumulator -= static_cast<float>(speedPx);
+    }
 
+    const int drawY = steamScrollOffset;
     // Advance the scroll offset and wrap it like a treadmill
     steamScrollOffset = (steamScrollOffset + speedPx) % height;
 
-    // Calculate where in the image memory the new row should be drawn
-    const int drawY = (height - speedPx + steamScrollOffset) % height;
-
-    // Native JUCE memory wipe: clears the specific row to completely transparent
-    steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
+    if (drawY + speedPx > height) {
+        const int firstPart = height - drawY;
+        const int secondPart = speedPx - firstPart;
+        steamImage.clear(juce::Rectangle(0, drawY, width, firstPart), juce::Colours::transparentBlack);
+        steamImage.clear(juce::Rectangle(0, 0, width, secondPart), juce::Colours::transparentBlack);
+    } else {
+        steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
+    }
 
     if (displayMagnitudes.empty()) return;
 
@@ -294,12 +303,29 @@ void RollCqt::pumpSteam() {
             );
 
             graphics.setColour(color);
-            graphics.fillRect(
-                static_cast<float>(i) * barWidth,
-                static_cast<float>(drawY),
-                barWidth + 0.5f,
-                static_cast<float>(speedPx)
-            );
+            if (drawY + speedPx > height) {
+                const int firstPart = height - drawY;
+                const int secondPart = speedPx - firstPart;
+                graphics.fillRect(
+                    static_cast<float>(i) * barWidth,
+                    static_cast<float>(drawY),
+                    barWidth + 0.5f,
+                    static_cast<float>(firstPart)
+                );
+                graphics.fillRect(
+                    static_cast<float>(i) * barWidth,
+                    0.0f,
+                    barWidth + 0.5f,
+                    static_cast<float>(secondPart)
+                );
+            } else {
+                graphics.fillRect(
+                    static_cast<float>(i) * barWidth,
+                    static_cast<float>(drawY),
+                    barWidth + 0.5f,
+                    static_cast<float>(speedPx)
+                );
+            }
         }
     }
 }

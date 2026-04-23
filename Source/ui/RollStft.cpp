@@ -232,22 +232,25 @@ void RollStft::pumpSteam() {
     const float deltaSec = static_cast<float>(deltaSamples) / static_cast<float>(sampleRate);
 
     subPixelAccumulator += targetPixelsPerSecond * deltaSec;
-    const int speedPx = static_cast<int>(subPixelAccumulator);
+    int speedPx = static_cast<int>(subPixelAccumulator);
 
     if (speedPx < 1) return;
 
-    subPixelAccumulator -= static_cast<float>(speedPx);
+    if (speedPx > height) {
+        speedPx = height;
+        subPixelAccumulator = 0.0f;
+    } else {
+        subPixelAccumulator -= static_cast<float>(speedPx);
+    }
 
+    const int drawY = steamScrollOffset;
     // Advance the scroll offset and wrap it like a treadmill
     steamScrollOffset = (steamScrollOffset + speedPx) % height;
-
-    // Calculate where in the image memory the new row should be drawn
-    const int drawY = (height - speedPx + steamScrollOffset) % height;
 
     if (activePeaks.empty()) {
         juce::Image::BitmapData bitmapData(steamImage, juce::Image::BitmapData::writeOnly);
         for (int yOffset = 0; yOffset < speedPx; ++yOffset) {
-            const int targetY = drawY + yOffset;
+            const int targetY = (drawY + yOffset) % height;
             for (int x = 0; x < width; ++x) {
                 bitmapData.setPixelColour(x, targetY, juce::Colours::black);
             }
@@ -308,7 +311,7 @@ void RollStft::pumpSteam() {
     // Directly wipe and paint the specific row in memory via pixel pointer
     juce::Image::BitmapData bitmapData(steamImage, juce::Image::BitmapData::writeOnly);
     for (int yOffset = 0; yOffset < speedPx; ++yOffset) {
-        const int targetY = drawY + yOffset;
+        const int targetY = (drawY + yOffset) % height;
         for (int x = 0; x < width; ++x) {
             bitmapData.setPixelColour(x, targetY, pixelRow[static_cast<size_t>(x)]);
         }
