@@ -245,7 +245,7 @@ void RollStft::pumpSteam() {
     const int drawY = (height - speedPx + steamScrollOffset) % height;
 
     // Native JUCE memory wipe: clears the specific row
-    steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::black);
+    steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
 
     if (activePeaks.empty()) return;
 

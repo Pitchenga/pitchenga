@@ -15,7 +15,6 @@ public:
     void updateResults(const std::vector<double>& results);
     void paintBins(juce::Graphics& graphics) const;
 
-    // Unconditionally called by hardware VSync in Editor
     void pumpSteam();
 
     void setEngine(const Cqt* e) { engine = e; }
