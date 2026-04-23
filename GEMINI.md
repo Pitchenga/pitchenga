@@ -47,9 +47,9 @@ killall Pitchenga; ./cmake-build-debug/Pitchenga_artefacts/Debug/Standalone/Pitc
 
 - CRITICAL: Do NOT blindly remove existing comments or commented-out code. Before making any changes or using write_file, explicitly list all existing comments in the code you are about to change. After the change double-check and ensure that all pre-existing comments still exist. If any pre-existing comments became outdated then explicitly notify the user that an outdated comment is being removed.
 - CRITICAL: Do NOT revert user's changes. Before making any changes - re-read all the files you are about to change. For any discrepancies between your context state and the actual state of a file, assume that the changes were made deliberately by the user and do NOT blindly revert them - recalibrate your planned changes accordingly. This is a hard rule and cannot be violated.
-- CRITICAL: Always use descriptive names, except for "i", "x", "y".
+- CRITICAL: Always use descriptive names, except for "i", "x", "y". This is a hard rule and cannot be violated.
 - CRITICAL: Do not use numbers for steps in comments, as they quickly become outdated and hard to manage.
-- Do not add "NEW" or to comments.
-- Prefer named constants in header file rather than hard-coded values.
-- Prefer separate functions to long code blocks with a comment.
-- Use strict camel-case for acronyms, e.g. "SqlRdbmsDao" rather than "SQLRDBMSDAO".
+- CRITICAL: Do not add "NEW" or to comments.
+- CRITICAL: Prefer named constants in header file rather than hard-coded values.
+- CRITICAL: Prefer separate functions to long code blocks with a comment.
+- CRITICAL: Use strict camel-case for acronyms, e.g. "SqlRdbmsDao" rather than "SQLRDBMSDAO".

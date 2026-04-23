@@ -40,8 +40,8 @@ private:
 
     const float steamThreshold = 0.0001f;
     double lastPumpTimeMs = 0.0;
-    float currentScrollY = 0.0f;
-    int lastWrittenRow = 0;
+    float subPixelAccumulator = 0.0f;
+    int steamScrollOffset = 0;
     static constexpr float targetPixelsPerSecond = 48.0f;
 
     juce::Image steamImage;

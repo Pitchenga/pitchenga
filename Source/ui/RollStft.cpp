@@ -22,8 +22,8 @@ void RollStft::resized() {
         // Restored to ARGB so transparentBlack clears correctly without obscuring the background grid
         steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
         lastPumpTimeMs = 0.0;
-        currentScrollY = 0.0f;
-        lastWrittenRow = 0;
+        subPixelAccumulator = 0.0f;
+        steamScrollOffset = 0;
         paintFrame();
     }
 }
@@ -223,43 +223,47 @@ void RollStft::pumpSteam(const std::vector<juce::Colour>& pixelRow, bool hasNewD
     if (deltaSec > 0.1f) deltaSec = 0.0f;
 
     if (deltaSec > 0.0f) {
-        currentScrollY += targetPixelsPerSecond * deltaSec;
+        subPixelAccumulator += targetPixelsPerSecond * deltaSec;
     }
 
-    const int currentIntY = static_cast<int>(currentScrollY);
-    const int rowsToWrite = currentIntY - lastWrittenRow;
+    int speedPx = static_cast<int>(subPixelAccumulator);
 
-    if (rowsToWrite < 1) {
+    if (speedPx < 1) {
         repaint();
         return;
     }
 
-    if (hasNewData) {
-        lastSteamRow = pixelRow;
+    if (speedPx > height) {
+        speedPx = height;
+        subPixelAccumulator = 0.0f;
+    } else {
+        subPixelAccumulator -= static_cast<float>(speedPx);
     }
+
+    const int drawY = steamScrollOffset;
+    steamScrollOffset = (steamScrollOffset + speedPx) % height;
 
     juce::Graphics g(steamImage);
     
-    if (lastWrittenRow + rowsToWrite > height) {
-        const int firstPart = height - lastWrittenRow;
-        const int secondPart = rowsToWrite - firstPart;
-        steamImage.clear(juce::Rectangle<int>(0, lastWrittenRow, width, firstPart), juce::Colours::transparentBlack);
+    if (drawY + speedPx > height) {
+        const int firstPart = height - drawY;
+        const int secondPart = speedPx - firstPart;
+        steamImage.clear(juce::Rectangle<int>(0, drawY, width, firstPart), juce::Colours::transparentBlack);
         steamImage.clear(juce::Rectangle<int>(0, 0, width, secondPart), juce::Colours::transparentBlack);
     } else {
-        steamImage.clear(juce::Rectangle<int>(0, lastWrittenRow, width, rowsToWrite), juce::Colours::transparentBlack);
+        steamImage.clear(juce::Rectangle<int>(0, drawY, width, speedPx), juce::Colours::transparentBlack);
     }
 
-    if (!lastSteamRow.empty() && lastSteamRow.size() == static_cast<size_t>(width)) {
+    if (hasNewData && !pixelRow.empty() && pixelRow.size() == static_cast<size_t>(width)) {
         juce::Image::BitmapData bitmapData(steamImage, juce::Image::BitmapData::writeOnly);
-        for (int i = 0; i < rowsToWrite; ++i) {
-            const int targetY = (lastWrittenRow + i) % height;
+        for (int i = 0; i < speedPx; ++i) {
+            const int targetY = (drawY + i) % height;
             for (int x = 0; x < width; ++x) {
-                bitmapData.setPixelColour(x, targetY, lastSteamRow[static_cast<size_t>(x)]);
+                bitmapData.setPixelColour(x, targetY, pixelRow[static_cast<size_t>(x)]);
             }
         }
     }
 
-    lastWrittenRow = currentIntY;
     repaint();
 }
 
@@ -268,7 +272,7 @@ void RollStft::paintSteam(const juce::Graphics& graphics) const {
 
     const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
 
-    const float exactScrollOffset = std::fmod(currentScrollY, static_cast<float>(height));
+    const float exactScrollOffset = static_cast<float>(steamScrollOffset) + subPixelAccumulator;
 
     juce::Graphics& g = const_cast<juce::Graphics&>(graphics);
     
