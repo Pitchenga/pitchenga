@@ -24,9 +24,10 @@ private:
     std::vector<SpectralPeak> activePeaks;
 
     juce::Image steamImage;
-    int steamScrollOffset = 0;
 
-    float subPixelAccumulator = 0.0f;
+    double lastPumpTimeMs = 0.0;
+    float currentScrollY = 0.0f;
+    int lastWrittenRow = 0;
     static constexpr float targetPixelsPerSecond = 48.0f;
     static constexpr float samplesPerMathBlock = 1024.0f;
 

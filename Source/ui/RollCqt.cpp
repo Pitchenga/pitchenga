@@ -65,9 +65,9 @@ void RollCqt::resized() {
         const int plotHeight = std::max(1, height - static_cast<int>(getLabelAreaHeight()));
         // Initialize the rolling buffer whenever the window resizes
         steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
-        steamScrollOffset = 0;
-        lastPumpSamples = 0;
-        subPixelAccumulator = 0.0f;
+        lastPumpTimeMs = 0.0;
+        currentScrollY = 0.0f;
+        lastWrittenRow = 0;
         paintFrame();
     }
 }
@@ -254,36 +254,28 @@ void RollCqt::pumpSteam() {
     const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
     if (width <= 0 || height <= 0) return;
 
-    // Use absolute audio samples processed as the master timeline clock.
-    const int64_t currentSamples = processor.getTotalNumSamplesProcessed();
-
-    // Reset if it's the first run or if the audio engine resets the sample counter
-    if (lastPumpSamples == 0 || currentSamples < lastPumpSamples) {
-        lastPumpSamples = currentSamples;
+    const double now = juce::Time::getMillisecondCounterHiRes();
+    if (lastPumpTimeMs == 0.0) {
+        lastPumpTimeMs = now;
         return;
     }
 
-    const int64_t deltaSamples = currentSamples - lastPumpSamples;
-    lastPumpSamples = currentSamples;
+    float deltaSec = static_cast<float>(now - lastPumpTimeMs) / 1000.0f;
+    lastPumpTimeMs = now;
 
-    const double sampleRate = processor.getSampleRate() > 0.0 ? processor.getSampleRate() : 44100.0;
-    const float deltaSec = static_cast<float>(deltaSamples) / static_cast<float>(sampleRate);
+    if (deltaSec > 0.1f) deltaSec = 0.0f;
 
-    subPixelAccumulator += targetPixelsPerSecond * deltaSec;
-    int speedPx = static_cast<int>(subPixelAccumulator);
-
-    if (speedPx < 1) return;
-
-    if (speedPx > height) {
-        speedPx = height;
-        subPixelAccumulator = 0.0f;
-    } else {
-        subPixelAccumulator -= static_cast<float>(speedPx);
+    if (deltaSec > 0.0f) {
+        currentScrollY += targetPixelsPerSecond * deltaSec;
     }
 
-    const int drawY = steamScrollOffset;
-    // Advance the scroll offset and wrap it like a treadmill
-    steamScrollOffset = (steamScrollOffset + speedPx) % height;
+    const int currentIntY = static_cast<int>(currentScrollY);
+    const int rowsToWrite = currentIntY - lastWrittenRow;
+
+    if (rowsToWrite < 1) {
+        repaint();
+        return;
+    }
 
     bool hasNewData = false;
     for (const double mag : accumulatedMagnitudes) {
@@ -298,71 +290,47 @@ void RollCqt::pumpSteam() {
         std::ranges::fill(accumulatedMagnitudes, 0.0);
     }
 
-    if (lastMagnitudes.empty()) {
-        if (drawY + speedPx > height) {
-            const int firstPart = height - drawY;
-            const int secondPart = speedPx - firstPart;
-            steamImage.clear(juce::Rectangle(0, drawY, width, firstPart), juce::Colours::transparentBlack);
-            steamImage.clear(juce::Rectangle(0, 0, width, secondPart), juce::Colours::transparentBlack);
-        } else {
-            steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
-        }
-        repaint();
-        return;
-    }
-
-    if (drawY + speedPx > height) {
-        const int firstPart = height - drawY;
-        const int secondPart = speedPx - firstPart;
-        steamImage.clear(juce::Rectangle(0, drawY, width, firstPart), juce::Colours::transparentBlack);
-        steamImage.clear(juce::Rectangle(0, 0, width, secondPart), juce::Colours::transparentBlack);
-    } else {
-        steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
-    }
-
-    juce::Graphics graphics(steamImage);
-
     const int totalBins = static_cast<int>(lastMagnitudes.size());
-    const int binsPerOctave = totalBins / PitchengaAudioProcessor::numOctaves;
-    const float barWidth = static_cast<float>(width) / static_cast<float>(totalBins);
+    const int binsPerOctave = totalBins > 0 ? totalBins / PitchengaAudioProcessor::numOctaves : 1;
+    const float barWidth = totalBins > 0 ? static_cast<float>(width) / static_cast<float>(totalBins) : 0.0f;
 
-    for (int i = 0; i < totalBins; ++i) {
-        if (const double magnitude = lastMagnitudes[static_cast<size_t>(i)]; magnitude > steamThreshold) {
-            const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
-            const juce::Colour baseColor = Tone::getContinuousColor(chroma);
-            constexpr float undimmingGain = 1.1f;
-            const juce::Colour color = juce::Colours::black.interpolatedWith(
-                baseColor,
-                static_cast<float>(magnitude * undimmingGain)
-            );
+    if (lastWrittenRow + rowsToWrite > height) {
+        const int firstPart = height - lastWrittenRow;
+        const int secondPart = rowsToWrite - firstPart;
+        steamImage.clear(juce::Rectangle<int>(0, lastWrittenRow, width, firstPart), juce::Colours::transparentBlack);
+        steamImage.clear(juce::Rectangle<int>(0, 0, width, secondPart), juce::Colours::transparentBlack);
+    } else {
+        steamImage.clear(juce::Rectangle<int>(0, lastWrittenRow, width, rowsToWrite), juce::Colours::transparentBlack);
+    }
 
-            graphics.setColour(color);
-            if (drawY + speedPx > height) {
-                const int firstPart = height - drawY;
-                const int secondPart = speedPx - firstPart;
-                graphics.fillRect(
-                    static_cast<float>(i) * barWidth,
-                    static_cast<float>(drawY),
-                    barWidth + 0.5f,
-                    static_cast<float>(firstPart)
-                );
-                graphics.fillRect(
-                    static_cast<float>(i) * barWidth,
-                    0.0f,
-                    barWidth + 0.5f,
-                    static_cast<float>(secondPart)
-                );
-            } else {
-                graphics.fillRect(
-                    static_cast<float>(i) * barWidth,
-                    static_cast<float>(drawY),
-                    barWidth + 0.5f,
-                    static_cast<float>(speedPx)
-                );
+    juce::Graphics g(steamImage);
+
+    if (!lastMagnitudes.empty()) {
+        for (int i = 0; i < rowsToWrite; ++i) {
+            const int targetY = (lastWrittenRow + i) % height;
+            for (int b = 0; b < totalBins; ++b) {
+                if (const double magnitude = lastMagnitudes[static_cast<size_t>(b)]; magnitude > steamThreshold) {
+                    const float chroma = static_cast<float>(b % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
+                    const juce::Colour baseColor = Tone::getContinuousColor(chroma);
+                    constexpr float undimmingGain = 1.1f;
+                    const juce::Colour color = juce::Colours::black.interpolatedWith(
+                        baseColor,
+                        static_cast<float>(magnitude * undimmingGain)
+                    );
+
+                    g.setColour(color);
+                    g.fillRect(
+                        static_cast<float>(b) * barWidth,
+                        static_cast<float>(targetY),
+                        barWidth + 0.5f,
+                        1.0f
+                    );
+                }
             }
         }
     }
 
+    lastWrittenRow = currentIntY;
     repaint();
 }
 
@@ -371,7 +339,10 @@ void RollCqt::paintSteam(const juce::Graphics& graphics) const {
 
     const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
 
-    // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
-    graphics.drawImageAt(steamImage, 0, -steamScrollOffset);
-    graphics.drawImageAt(steamImage, 0, height - steamScrollOffset);
+    const float exactScrollOffset = std::fmod(currentScrollY, static_cast<float>(height));
+
+    juce::Graphics& g = const_cast<juce::Graphics&>(graphics);
+    
+    g.drawImageTransformed(steamImage, juce::AffineTransform::translation(0.0f, -exactScrollOffset));
+    g.drawImageTransformed(steamImage, juce::AffineTransform::translation(0.0f, static_cast<float>(height) - exactScrollOffset));
 }

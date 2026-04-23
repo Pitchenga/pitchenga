@@ -10,10 +10,6 @@ void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
 
     // activePeaks is still tracked natively for the foreground paintPeaks layer
     activePeaks = peaks;
-
-    const double sr = processor.getSampleRate() > 0.0 ? processor.getSampleRate() : 44100.0;
-    const float deltaSec = samplesPerMathBlock / static_cast<float>(sr);
-    subPixelAccumulator += targetPixelsPerSecond * deltaSec;
 }
 
 void RollStft::resized() {
@@ -25,8 +21,9 @@ void RollStft::resized() {
         // Initialize the rolling buffer whenever the window resizes
         // Restored to ARGB so transparentBlack clears correctly without obscuring the background grid
         steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
-        steamScrollOffset = 0;
-        subPixelAccumulator = 0.0f;
+        lastPumpTimeMs = 0.0;
+        currentScrollY = 0.0f;
+        lastWrittenRow = 0;
         paintFrame();
     }
 }
@@ -214,42 +211,44 @@ void RollStft::pumpSteam(const std::vector<juce::Colour>& pixelRow) {
     const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
     if (width <= 0 || height <= 0) return;
 
-    int speedPx = static_cast<int>(subPixelAccumulator);
-
-    if (speedPx < 1) return;
-
-    if (speedPx > height) {
-        speedPx = height;
-        subPixelAccumulator = 0.0f;
-    } else {
-        subPixelAccumulator -= static_cast<float>(speedPx);
+    const double now = juce::Time::getMillisecondCounterHiRes();
+    if (lastPumpTimeMs == 0.0) {
+        lastPumpTimeMs = now;
+        return;
     }
 
-    const int drawY = steamScrollOffset;
-    // Advance the scroll offset and wrap it like a treadmill
-    steamScrollOffset = (steamScrollOffset + speedPx) % height;
+    float deltaSec = static_cast<float>(now - lastPumpTimeMs) / 1000.0f;
+    lastPumpTimeMs = now;
 
-    if (pixelRow.empty() || pixelRow.size() != static_cast<size_t>(width)) {
-        juce::Image::BitmapData bitmapData(steamImage, juce::Image::BitmapData::writeOnly);
-        for (int yOffset = 0; yOffset < speedPx; ++yOffset) {
-            const int targetY = (drawY + yOffset) % height;
-            for (int x = 0; x < width; ++x) {
-                bitmapData.setPixelColour(x, targetY, juce::Colours::transparentBlack);
-            }
-        }
+    if (deltaSec > 0.1f) deltaSec = 0.0f;
+
+    if (deltaSec > 0.0f) {
+        currentScrollY += targetPixelsPerSecond * deltaSec;
+    }
+
+    const int currentIntY = static_cast<int>(currentScrollY);
+    const int rowsToWrite = currentIntY - lastWrittenRow;
+
+    if (rowsToWrite < 1) {
         repaint();
         return;
     }
 
-    // Directly wipe and paint the specific row in memory via pixel pointer
     juce::Image::BitmapData bitmapData(steamImage, juce::Image::BitmapData::writeOnly);
-    for (int yOffset = 0; yOffset < speedPx; ++yOffset) {
-        const int targetY = (drawY + yOffset) % height;
-        for (int x = 0; x < width; ++x) {
-            bitmapData.setPixelColour(x, targetY, pixelRow[static_cast<size_t>(x)]);
+    for (int i = 0; i < rowsToWrite; ++i) {
+        const int targetY = (lastWrittenRow + i) % height;
+        if (pixelRow.empty() || pixelRow.size() != static_cast<size_t>(width)) {
+            for (int x = 0; x < width; ++x) {
+                bitmapData.setPixelColour(x, targetY, juce::Colours::transparentBlack);
+            }
+        } else {
+            for (int x = 0; x < width; ++x) {
+                bitmapData.setPixelColour(x, targetY, pixelRow[static_cast<size_t>(x)]);
+            }
         }
     }
 
+    lastWrittenRow = currentIntY;
     repaint();
 }
 
@@ -258,7 +257,10 @@ void RollStft::paintSteam(const juce::Graphics& graphics) const {
 
     const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
 
-    // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
-    graphics.drawImageAt(steamImage, 0, -steamScrollOffset);
-    graphics.drawImageAt(steamImage, 0, height - steamScrollOffset);
+    const float exactScrollOffset = std::fmod(currentScrollY, static_cast<float>(height));
+
+    juce::Graphics& g = const_cast<juce::Graphics&>(graphics);
+    
+    g.drawImageTransformed(steamImage, juce::AffineTransform::translation(0.0f, -exactScrollOffset));
+    g.drawImageTransformed(steamImage, juce::AffineTransform::translation(0.0f, static_cast<float>(height) - exactScrollOffset));
 }

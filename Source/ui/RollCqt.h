@@ -39,18 +39,12 @@ private:
     );
 
     const float steamThreshold = 0.0001f;
-    int64_t lastPumpSamples = 0;
-    float subPixelAccumulator = 0.0f;
+    double lastPumpTimeMs = 0.0;
+    float currentScrollY = 0.0f;
+    int lastWrittenRow = 0;
     static constexpr float targetPixelsPerSecond = 48.0f;
 
-    struct Steam {
-        float x;
-        float y;
-        float width;
-        juce::Colour color;
-    };
     juce::Image steamImage;
-    int steamScrollOffset = 0;
 
     std::vector<double> accumulatedMagnitudes;
     std::vector<double> lastMagnitudes;
