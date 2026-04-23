@@ -22,6 +22,7 @@ private:
     PitchengaAudioProcessor& processor;
 
     std::vector<SpectralPeak> activePeaks;
+    std::vector<SpectralPeak> accumulatedPeaks;
 
     juce::Image steamImage;
     int steamScrollOffset = 0;

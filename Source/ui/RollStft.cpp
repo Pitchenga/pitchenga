@@ -8,10 +8,12 @@ RollStft::RollStft(PitchengaAudioProcessor& proc) : processor(proc) {}
 void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
     if (processor.settings.freezeRoll || !isVisible()) return;
 
+    // activePeaks is still tracked natively for the foreground paintPeaks layer
     activePeaks = peaks;
 
-    if (processor.settings.showSteam) {
-        pumpSteam();
+    // Accumulate peaks over multiple audio frames to prevent transient dropping (flicker)
+    if (accumulatedPeaks.size() < 10000) {
+        accumulatedPeaks.insert(accumulatedPeaks.end(), peaks.begin(), peaks.end());
     }
 
     repaint();
@@ -24,6 +26,7 @@ void RollStft::resized() {
     if (width > 0 && height > 0) {
         const int plotHeight = std::max(1, height - static_cast<int>(getLabelAreaHeight()));
         // Initialize the rolling buffer whenever the window resizes
+        // Restored to ARGB so transparentBlack clears correctly without obscuring the background grid
         steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
         steamScrollOffset = 0;
         lastPumpSamples = 0;
@@ -56,7 +59,7 @@ float RollStft::frequencyToX(float frequencyHz, float width) {
 
 void RollStft::paint(juce::Graphics& graphics) {
     if (!cachedFrame.isValid()) {
-        paintFrame(); // Generates it if the engine wasn't ready during resized()
+        paintFrame();
     }
 
     const int width = getWidth();
@@ -209,7 +212,7 @@ void RollStft::paintPeaks(juce::Graphics& graphics) const {
 }
 
 void RollStft::pumpSteam() {
-    if (activePeaks.empty() || !steamImage.isValid()) return;
+    if (!steamImage.isValid()) return;
 
     const int width = getWidth();
     const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
@@ -247,12 +250,12 @@ void RollStft::pumpSteam() {
     // Advance the scroll offset and wrap it like a treadmill
     steamScrollOffset = (steamScrollOffset + speedPx) % height;
 
-    if (activePeaks.empty()) {
+    if (accumulatedPeaks.empty()) {
         juce::Image::BitmapData bitmapData(steamImage, juce::Image::BitmapData::writeOnly);
         for (int yOffset = 0; yOffset < speedPx; ++yOffset) {
             const int targetY = (drawY + yOffset) % height;
             for (int x = 0; x < width; ++x) {
-                bitmapData.setPixelColour(x, targetY, juce::Colours::black);
+                bitmapData.setPixelColour(x, targetY, juce::Colours::transparentBlack);
             }
         }
         return;
@@ -268,9 +271,9 @@ void RollStft::pumpSteam() {
     // to bypass calling std::log2 multiple times per peak.
     const float derivativeFactor = fWidth * midiRangeInv * 17.3123405f * binResHz;
 
-    std::vector<juce::Colour> pixelRow(static_cast<size_t>(width), juce::Colours::black);
+    std::vector<juce::Colour> pixelRow(static_cast<size_t>(width), juce::Colours::transparentBlack);
 
-    for (const auto& peak : activePeaks) {
+    for (const auto& peak : accumulatedPeaks) {
         if (peak.rawMagnitude > 0.05f) {
             // Inline the math for the primary position calculation
             const float midi = 69.0f + 12.0f * std::log2(peak.frequencyHz / 440.0f);
@@ -316,6 +319,8 @@ void RollStft::pumpSteam() {
             bitmapData.setPixelColour(x, targetY, pixelRow[static_cast<size_t>(x)]);
         }
     }
+
+    accumulatedPeaks.clear();
 }
 
 void RollStft::paintSteam(const juce::Graphics& graphics) const {
