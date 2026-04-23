@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_core/juce_core.h>
+#include <juce_graphics/juce_graphics.h>
 #include "../PluginProcessor.h"
 #include "Cqt.h"
 #include "Analyzers.h"
@@ -13,20 +14,23 @@ public:
     ~Math() override;
 
     void run() override;
-    
+
     // Thread-safe data getters for the UI
     void getCircleResults(std::vector<double>& destinationArray);
     void getLineResults(std::vector<double>& destinationArray);
-    
+
     bool hasNewData() const { return newDataAvailable.load(std::memory_order_acquire); }
     void clearNewDataFlag() { newDataAvailable.store(false, std::memory_order_release); }
 
     const Cqt* getCqtEngine() const { return &cqtEngine; }
     void getRollPeaks(std::vector<SpectralPeak>& destinationArray);
 
+    void setSteamParameters(int width, int minMidi, int maxMidi, bool dynamicStem);
+    void getSteamRow(std::vector<juce::Colour>& destinationRow);
+
 private:
     static constexpr double inputGain = 6.0;
-    
+
     void setupBuffers();
     void setupCqtEngine();
     void setupCqtBuffers();
@@ -43,7 +47,7 @@ private:
 
     PitchengaAudioProcessor& audioProcessor;
 
-    // --- CQT Engine for the Eye ---
+    // --- CQT Engine for Eye ---
     Cqt cqtEngine;
     std::unique_ptr<HarmonicPatternPitchClassDetector> pitchClassDetector;
     std::unique_ptr<SpectralEqualizer> spectralEqualizer;
@@ -56,7 +60,7 @@ private:
     std::vector<double> amplitudeSpectrumDb;
     std::vector<double> octaveBins;
 
-    // --- Pitch Engine for the Needle ---
+    // --- Pitch Engine for Needle ---
     std::unique_ptr<adamski::PitchMPM> pitchDetector;
     std::vector<float> rawAudioHistoryBuffer;
     std::vector<float> pitchAnalysisBuffer;
@@ -66,8 +70,8 @@ private:
 
     // --- Thread-Safe Output Buffers ---
     juce::CriticalSection resultLock;
-    std::vector<double> circleVisualizerResults;
-    std::vector<double> lineVisualizerResults;
+    std::vector<double> eyeResults;
+    std::vector<double> rollResults;
     std::atomic<bool> newDataAvailable{false};
 
 
@@ -77,4 +81,13 @@ private:
     std::vector<SpectralPeak> uiRollPeaks;
     void setupStft();
     void processStft();
+
+    // --- Steam for the RollStft ---
+    std::atomic<int> steamWidth{0};
+    std::atomic<int> steamMinMidi{12};
+    std::atomic<int> steamMaxMidi{108};
+    std::atomic<bool> steamDynamicStem{true};
+    std::vector<juce::Colour> currentSteamRow;
+    std::vector<juce::Colour> uiSteamRow;
+    void calculateSteamRow();
 };

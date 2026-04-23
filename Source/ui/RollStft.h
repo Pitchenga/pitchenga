@@ -11,7 +11,7 @@ public:
     ~RollStft() override = default;
 
     void updateResults(const std::vector<SpectralPeak>& peaks);
-    void pumpSteam();
+    void pumpSteam(const std::vector<juce::Colour>& pixelRow);
 
     void paint(juce::Graphics& graphics) override;
     void resized() override;
@@ -22,8 +22,6 @@ private:
     PitchengaAudioProcessor& processor;
 
     std::vector<SpectralPeak> activePeaks;
-    std::vector<SpectralPeak> accumulatedPeaks;
-    std::vector<SpectralPeak> lastPeaks;
 
     juce::Image steamImage;
     int steamScrollOffset = 0;

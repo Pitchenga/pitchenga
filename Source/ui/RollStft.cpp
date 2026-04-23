@@ -11,11 +11,6 @@ void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
     // activePeaks is still tracked natively for the foreground paintPeaks layer
     activePeaks = peaks;
 
-    // Accumulate peaks over multiple audio frames to prevent transient dropping (flicker)
-    if (accumulatedPeaks.size() < 10000) {
-        accumulatedPeaks.insert(accumulatedPeaks.end(), peaks.begin(), peaks.end());
-    }
-
     const double sr = processor.getSampleRate() > 0.0 ? processor.getSampleRate() : 44100.0;
     const float deltaSec = samplesPerMathBlock / static_cast<float>(sr);
     subPixelAccumulator += targetPixelsPerSecond * deltaSec;
@@ -212,7 +207,7 @@ void RollStft::paintPeaks(juce::Graphics& graphics) const {
     }
 }
 
-void RollStft::pumpSteam() {
+void RollStft::pumpSteam(const std::vector<juce::Colour>& pixelRow) {
     if (!steamImage.isValid()) return;
 
     const int width = getWidth();
@@ -234,12 +229,7 @@ void RollStft::pumpSteam() {
     // Advance the scroll offset and wrap it like a treadmill
     steamScrollOffset = (steamScrollOffset + speedPx) % height;
 
-    if (!accumulatedPeaks.empty()) {
-        lastPeaks = accumulatedPeaks;
-        accumulatedPeaks.clear();
-    }
-
-    if (lastPeaks.empty()) {
+    if (pixelRow.empty() || pixelRow.size() != static_cast<size_t>(width)) {
         juce::Image::BitmapData bitmapData(steamImage, juce::Image::BitmapData::writeOnly);
         for (int yOffset = 0; yOffset < speedPx; ++yOffset) {
             const int targetY = (drawY + yOffset) % height;
@@ -249,56 +239,6 @@ void RollStft::pumpSteam() {
         }
         repaint();
         return;
-    }
-
-    const float fWidth = static_cast<float>(width);
-    const double sr = processor.getSampleRate() > 0.0 ? processor.getSampleRate() : 44100.0;
-    const float binResHz = static_cast<float>(sr) / 32768.0f;
-    const float midiRangeInv = 1.0f / (maxMidiNote - minMidiNote);
-    const bool doDynamicStem = enableDynamicStemWidth;
-
-    // Extreme Math Optimization: Pre-calculate the derivative of the MIDI scale
-    // to bypass calling std::log2 multiple times per peak.
-    const float derivativeFactor = fWidth * midiRangeInv * 17.3123405f * binResHz;
-
-    std::vector<juce::Colour> pixelRow(static_cast<size_t>(width), juce::Colours::transparentBlack);
-
-    for (const auto& peak : lastPeaks) {
-        if (peak.rawMagnitude > 0.05f) {
-            // Inline the math for the primary position calculation
-            const float midi = 69.0f + 12.0f * std::log2(peak.frequencyHz / 440.0f);
-            const float normX = (midi - minMidiNote) * midiRangeInv;
-            const float xPos = normX * fWidth;
-
-            // Fast bounds culling
-            if (xPos >= -10.0f && xPos <= fWidth + 10.0f) {
-                // Configurable razor-sharp stems for the Steam
-                float stemWidthPixels = 4.0f;
-                if (doDynamicStem) {
-                    // Use the fast derivative approximation instead of another heavy log2
-                    const float nextX = xPos + (derivativeFactor / peak.frequencyHz);
-                    // +1.0f forces deliberate sub-pixel overlap to completely kill rendering gaps
-                    stemWidthPixels = std::max(1.0f, (nextX - xPos) + 1.0f);
-                }
-
-                // Fast continuous modulus (replaces heavy std::fmod)
-                float continuousChroma = midi;
-                while (continuousChroma >= 12.0f) continuousChroma -= 12.0f;
-                while (continuousChroma < 0.0f) continuousChroma += 12.0f;
-
-                const juce::Colour baseColor = Tone::getContinuousColor(continuousChroma);
-                constexpr float undimmingGain = 1.6f;
-                const float clampedMag = std::min(1.0f, peak.rawMagnitude * undimmingGain);
-                const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, clampedMag);
-
-                const int startX = std::max(0, static_cast<int>(xPos - stemWidthPixels * 0.5f));
-                const int endX = std::min(width - 1, static_cast<int>(xPos + stemWidthPixels * 0.5f));
-
-                for (int x = startX; x <= endX; ++x) {
-                    pixelRow[static_cast<size_t>(x)] = color;
-                }
-            }
-        }
     }
 
     // Directly wipe and paint the specific row in memory via pixel pointer

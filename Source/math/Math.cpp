@@ -1,5 +1,6 @@
 #include "Math.h"
 #include "../Util.h"
+#include "../Tone.h"
 
 Math::Math(PitchengaAudioProcessor& processorToUse)
     : Thread("VisualizeWorker"), audioProcessor(processorToUse) {
@@ -47,8 +48,8 @@ void Math::setupCqtBuffers() {
 
     {
         const juce::CriticalSection::ScopedLockType lock(resultLock);
-        circleVisualizerResults.assign(static_cast<size_t>(binsPerOctave), 0.0);
-        lineVisualizerResults.assign(static_cast<size_t>(totalBins), 0.0);
+        eyeResults.assign(static_cast<size_t>(binsPerOctave), 0.0);
+        rollResults.assign(static_cast<size_t>(totalBins), 0.0);
     }
 }
 
@@ -69,6 +70,7 @@ void Math::setupStft() {
 void Math::processStft() {
     stft.processFrame(rawAudioHistoryBuffer);
     currentRollPeaks = stft.getPeaks();
+    calculateSteamRow();
 }
 
 void Math::updateSampleRate(const double newSampleRate) {
@@ -287,13 +289,13 @@ void Math::processCqtAndEqualization() {
 void Math::publishResultsToUi() {
     // --- Push Results to UI ---
     const juce::CriticalSection::ScopedLockType lock(resultLock);
-    if (circleVisualizerResults.size() == currentEyeData.size()) {
-        std::ranges::copy(currentEyeData, circleVisualizerResults.begin());
+    if (eyeResults.size() == currentEyeData.size()) {
+        std::ranges::copy(currentEyeData, eyeResults.begin());
     }
 
     // fixme remove Old line buffer logic for discrete CQT bins
-    if (lineVisualizerResults.size() == currentRollData.size()) {
-        std::ranges::copy(currentRollData, lineVisualizerResults.begin());
+    if (rollResults.size() == currentRollData.size()) {
+        std::ranges::copy(currentRollData, rollResults.begin());
     }
 
     uiRollPeaks = currentRollPeaks;
@@ -308,14 +310,82 @@ void Math::getRollPeaks(std::vector<SpectralPeak>& destinationArray) {
 
 void Math::getCircleResults(std::vector<double>& destinationArray) {
     const juce::CriticalSection::ScopedLockType lock(resultLock);
-    if (destinationArray.size() != circleVisualizerResults.size()) destinationArray.resize(
-        circleVisualizerResults.size()
+    if (destinationArray.size() != eyeResults.size()) destinationArray.resize(
+        eyeResults.size()
     );
-    std::copy(circleVisualizerResults.begin(), circleVisualizerResults.end(), destinationArray.begin());
+    std::copy(eyeResults.begin(), eyeResults.end(), destinationArray.begin());
 }
 
 void Math::getLineResults(std::vector<double>& destinationArray) {
     const juce::CriticalSection::ScopedLockType lock(resultLock);
-    if (destinationArray.size() != lineVisualizerResults.size()) destinationArray.resize(lineVisualizerResults.size());
-    std::copy(lineVisualizerResults.begin(), lineVisualizerResults.end(), destinationArray.begin());
+    if (destinationArray.size() != rollResults.size()) destinationArray.resize(rollResults.size());
+    std::copy(rollResults.begin(), rollResults.end(), destinationArray.begin());
+}
+
+void Math::setSteamParameters(int width, int minMidi, int maxMidi, bool dynamicStem) {
+    steamWidth.store(width, std::memory_order_relaxed);
+    steamMinMidi.store(minMidi, std::memory_order_relaxed);
+    steamMaxMidi.store(maxMidi, std::memory_order_relaxed);
+    steamDynamicStem.store(dynamicStem, std::memory_order_relaxed);
+}
+
+void Math::getSteamRow(std::vector<juce::Colour>& destinationRow) {
+    const juce::CriticalSection::ScopedLockType lock(resultLock);
+    if (destinationRow.size() != uiSteamRow.size()) {
+        destinationRow.resize(uiSteamRow.size(), juce::Colours::transparentBlack);
+    }
+    std::copy(uiSteamRow.begin(), uiSteamRow.end(), destinationRow.begin());
+    std::ranges::fill(uiSteamRow, juce::Colours::transparentBlack);
+}
+
+void Math::calculateSteamRow() {
+    const int width = steamWidth.load(std::memory_order_relaxed);
+    if (width <= 0) return;
+
+    const float fWidth = static_cast<float>(width);
+    const double sr = audioProcessor.getSampleRate() > 0.0 ? audioProcessor.getSampleRate() : 44100.0;
+    const float binResHz = static_cast<float>(sr) / 32768.0f;
+    const int minMidi = steamMinMidi.load(std::memory_order_relaxed);
+    const int maxMidi = steamMaxMidi.load(std::memory_order_relaxed);
+    const float midiRangeInv = 1.0f / static_cast<float>(maxMidi - minMidi);
+    const bool doDynamicStem = steamDynamicStem.load(std::memory_order_relaxed);
+
+    const float derivativeFactor = fWidth * midiRangeInv * 17.3123405f * binResHz;
+
+    const juce::CriticalSection::ScopedLockType lock(resultLock);
+    if (uiSteamRow.size() != static_cast<size_t>(width)) {
+        uiSteamRow.assign(static_cast<size_t>(width), juce::Colours::transparentBlack);
+    }
+
+    for (const auto& peak : currentRollPeaks) {
+        if (peak.rawMagnitude > 0.05f) {
+            const float midi = 69.0f + 12.0f * std::log2(peak.frequencyHz / 440.0f);
+            const float normX = (midi - static_cast<float>(minMidi)) * midiRangeInv;
+            const float xPos = normX * fWidth;
+
+            if (xPos >= -10.0f && xPos <= fWidth + 10.0f) {
+                float stemWidthPixels = 4.0f;
+                if (doDynamicStem) {
+                    const float nextX = xPos + (derivativeFactor / peak.frequencyHz);
+                    stemWidthPixels = std::max(1.0f, (nextX - xPos) + 1.0f);
+                }
+
+                float continuousChroma = midi;
+                while (continuousChroma >= 12.0f) continuousChroma -= 12.0f;
+                while (continuousChroma < 0.0f) continuousChroma += 12.0f;
+
+                const juce::Colour baseColor = Tone::getContinuousColor(continuousChroma);
+                constexpr float undimmingGain = 1.6f;
+                const float clampedMag = std::min(1.0f, peak.rawMagnitude * undimmingGain);
+                const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, clampedMag);
+
+                const int startX = std::max(0, static_cast<int>(xPos - stemWidthPixels * 0.5f));
+                const int endX = std::min(width - 1, static_cast<int>(xPos + stemWidthPixels * 0.5f));
+
+                for (int x = startX; x <= endX; ++x) {
+                    uiSteamRow[static_cast<size_t>(x)] = color;
+                }
+            }
+        }
+    }
 }

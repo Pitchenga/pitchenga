@@ -40,6 +40,7 @@ private:
     std::vector<double> circleBuffer;
     std::vector<SpectralPeak> rollPeaksBuffer;
     std::vector<double> cqtRollBuffer;
+    std::vector<juce::Colour> stftSteamRowBuffer;
 
     std::unique_ptr<juce::VBlankAttachment> vblankAttachment;
 

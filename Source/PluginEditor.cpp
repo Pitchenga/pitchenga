@@ -65,7 +65,8 @@ void PitchengaAudioProcessorEditor::renderFrame() {
     // we eliminate the global 144Hz UI redraw spam, saving massive CPU overhead.
     if (audioProcessor.settings.showRoll && !audioProcessor.settings.freezeRoll && audioProcessor.settings.showSteam) {
         if (audioProcessor.settings.useStftRoll) {
-            stftRoll.pumpSteam();
+            worker.getSteamRow(stftSteamRowBuffer);
+            stftRoll.pumpSteam(stftSteamRowBuffer);
         } else {
             cqtRoll.pumpSteam();
         }
@@ -117,4 +118,6 @@ void PitchengaAudioProcessorEditor::resized() {
     } else if (audioProcessor.settings.showEye) {
         eye.setBounds(bounds);
     }
+
+    worker.setSteamParameters(stftRoll.getWidth(), 12, 108, stftRoll.enableDynamicStemWidth);
 }
