@@ -134,7 +134,6 @@ void RollStft::paintFrame(juce::Graphics& graphics) const {
     const auto totalHeight = static_cast<float>(getHeight());
     const float labelAreaHeight = getLabelAreaHeight();
     const float plotHeight = std::max(1.0f, totalHeight - labelAreaHeight);
-    const float halfHeight = plotHeight * 0.5f;
 
     const juce::Font labelFont = getLabelFont();
     graphics.setFont(labelFont);
@@ -154,14 +153,19 @@ void RollStft::paintFrame(juce::Graphics& graphics) const {
         const float hz = 440.0f * std::pow(2.0f, (static_cast<float>(i) - 69.0f) / 12.0f);
         const float targetCenter = frequencyToX(hz, static_cast<float>(getWidth()));
 
-        // Route the line to the top half (black keys) or bottom half (white keys)
         const float startY = 0.0f;
-        const float endY = isBlackKey ? halfHeight : plotHeight;
+        const float endY = plotHeight;
 
         const juce::Colour baseColor = Tone::chromaticScale[static_cast<size_t>(chroma)].color;
         const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.2f);
         graphics.setColour(gridColor);
-        graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
+
+        if (isBlackKey) {
+            const float dashLengths[] = { 4.0f, 4.0f };
+            graphics.drawDashedLine(juce::Line<float>(targetCenter, startY, targetCenter, endY), dashLengths, 2, 1.0f);
+        } else {
+            graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
+        }
 
         paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor);
     }
