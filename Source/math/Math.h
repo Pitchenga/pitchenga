@@ -26,7 +26,7 @@ public:
     void getRollPeaks(std::vector<SpectralPeak>& destinationArray);
 
     void setSteamParameters(int width, int minMidi, int maxMidi, bool dynamicStem);
-    void getSteamRow(std::vector<juce::Colour>& destinationRow);
+    bool getSteamRow(std::vector<juce::Colour>& destinationRow);
 
 private:
     static constexpr double inputGain = 6.0;
@@ -87,6 +87,7 @@ private:
     std::atomic<int> steamMinMidi{12};
     std::atomic<int> steamMaxMidi{108};
     std::atomic<bool> steamDynamicStem{true};
+    std::atomic<bool> hasNewSteamData{false};
     std::vector<juce::Colour> currentSteamRow;
     std::vector<juce::Colour> uiSteamRow;
     void calculateSteamRow();

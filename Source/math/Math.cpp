@@ -329,13 +329,17 @@ void Math::setSteamParameters(int width, int minMidi, int maxMidi, bool dynamicS
     steamDynamicStem.store(dynamicStem, std::memory_order_relaxed);
 }
 
-void Math::getSteamRow(std::vector<juce::Colour>& destinationRow) {
+bool Math::getSteamRow(std::vector<juce::Colour>& destinationRow) {
+    if (!hasNewSteamData.load(std::memory_order_acquire)) return false;
+
     const juce::CriticalSection::ScopedLockType lock(resultLock);
     if (destinationRow.size() != uiSteamRow.size()) {
         destinationRow.resize(uiSteamRow.size(), juce::Colours::transparentBlack);
     }
     std::copy(uiSteamRow.begin(), uiSteamRow.end(), destinationRow.begin());
     std::ranges::fill(uiSteamRow, juce::Colours::transparentBlack);
+    hasNewSteamData.store(false, std::memory_order_release);
+    return true;
 }
 
 void Math::calculateSteamRow() {
@@ -388,4 +392,6 @@ void Math::calculateSteamRow() {
             }
         }
     }
+    
+    hasNewSteamData.store(true, std::memory_order_release);
 }

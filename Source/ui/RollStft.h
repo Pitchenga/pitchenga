@@ -11,7 +11,7 @@ public:
     ~RollStft() override = default;
 
     void updateResults(const std::vector<SpectralPeak>& peaks);
-    void pumpSteam(const std::vector<juce::Colour>& pixelRow);
+    void pumpSteam(const std::vector<juce::Colour>& pixelRow, bool hasNewData);
 
     void paint(juce::Graphics& graphics) override;
     void resized() override;
@@ -24,6 +24,7 @@ private:
     std::vector<SpectralPeak> activePeaks;
 
     juce::Image steamImage;
+    std::vector<juce::Colour> lastSteamRow;
 
     double lastPumpTimeMs = 0.0;
     float currentScrollY = 0.0f;

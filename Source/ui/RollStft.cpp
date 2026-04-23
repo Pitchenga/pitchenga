@@ -204,7 +204,7 @@ void RollStft::paintPeaks(juce::Graphics& graphics) const {
     }
 }
 
-void RollStft::pumpSteam(const std::vector<juce::Colour>& pixelRow) {
+void RollStft::pumpSteam(const std::vector<juce::Colour>& pixelRow, bool hasNewData) {
     if (!steamImage.isValid()) return;
 
     const int width = getWidth();
@@ -234,16 +234,27 @@ void RollStft::pumpSteam(const std::vector<juce::Colour>& pixelRow) {
         return;
     }
 
-    juce::Image::BitmapData bitmapData(steamImage, juce::Image::BitmapData::writeOnly);
-    for (int i = 0; i < rowsToWrite; ++i) {
-        const int targetY = (lastWrittenRow + i) % height;
-        if (pixelRow.empty() || pixelRow.size() != static_cast<size_t>(width)) {
+    if (hasNewData) {
+        lastSteamRow = pixelRow;
+    }
+
+    juce::Graphics g(steamImage);
+    
+    if (lastWrittenRow + rowsToWrite > height) {
+        const int firstPart = height - lastWrittenRow;
+        const int secondPart = rowsToWrite - firstPart;
+        steamImage.clear(juce::Rectangle<int>(0, lastWrittenRow, width, firstPart), juce::Colours::transparentBlack);
+        steamImage.clear(juce::Rectangle<int>(0, 0, width, secondPart), juce::Colours::transparentBlack);
+    } else {
+        steamImage.clear(juce::Rectangle<int>(0, lastWrittenRow, width, rowsToWrite), juce::Colours::transparentBlack);
+    }
+
+    if (!lastSteamRow.empty() && lastSteamRow.size() == static_cast<size_t>(width)) {
+        juce::Image::BitmapData bitmapData(steamImage, juce::Image::BitmapData::writeOnly);
+        for (int i = 0; i < rowsToWrite; ++i) {
+            const int targetY = (lastWrittenRow + i) % height;
             for (int x = 0; x < width; ++x) {
-                bitmapData.setPixelColour(x, targetY, juce::Colours::transparentBlack);
-            }
-        } else {
-            for (int x = 0; x < width; ++x) {
-                bitmapData.setPixelColour(x, targetY, pixelRow[static_cast<size_t>(x)]);
+                bitmapData.setPixelColour(x, targetY, lastSteamRow[static_cast<size_t>(x)]);
             }
         }
     }
