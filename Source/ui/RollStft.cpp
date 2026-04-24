@@ -214,35 +214,6 @@ void RollStft::paintPeaks(juce::Graphics& graphics) const {
     }
 }
 
-void RollStft::paintSteam(const juce::Graphics& graphics) const {
-    if (!steamImage.isValid()) return;
-
-    const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
-
-    // Target is steamScrollOffset
-    const float target = static_cast<float>(steamScrollOffset);
-    
-    // Mutable interpolation logic
-    auto* nonConstThis = const_cast<RollStft*>(this);
-    
-    // Handle wrap-around for the interpolator
-    const float halfHeight = static_cast<float>(height) * 0.5f;
-    if (target < nonConstThis->visualScrollOffset - halfHeight) {
-        nonConstThis->visualScrollOffset -= static_cast<float>(height);
-    } else if (target > nonConstThis->visualScrollOffset + halfHeight) {
-        nonConstThis->visualScrollOffset += static_cast<float>(height);
-    }
-
-    // Chase the target smoothly to decouple the UI from the math thread's bursty frame processing.
-    // 0.3f provides a snappy but buttery smooth lock-on.
-    nonConstThis->visualScrollOffset += (target - nonConstThis->visualScrollOffset) * 0.3f;
-
-    // Use AffineTransform for sub-pixel smooth scrolling to cure the 43Hz vs 60Hz mismatch (CRT flicker).
-    // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
-    graphics.drawImageTransformed(steamImage, juce::AffineTransform::translation(0.0f, -nonConstThis->visualScrollOffset));
-    graphics.drawImageTransformed(steamImage, juce::AffineTransform::translation(0.0f, static_cast<float>(height) - nonConstThis->visualScrollOffset));
-}
-
 void RollStft::pumpSteam() {
     if (!processor.settings.showSteam || !steamImage.isValid()) return;
 
@@ -315,4 +286,33 @@ void RollStft::pumpSteam() {
             }
         }
     }
+}
+
+void RollStft::paintSteam(const juce::Graphics& graphics) const {
+    if (!steamImage.isValid()) return;
+
+    const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
+
+    // Target is steamScrollOffset
+    const float target = static_cast<float>(steamScrollOffset);
+
+    // Mutable interpolation logic
+    auto* nonConstThis = const_cast<RollStft*>(this);
+
+    // Handle wrap-around for the interpolator
+    const float halfHeight = static_cast<float>(height) * 0.5f;
+    if (target < nonConstThis->visualScrollOffset - halfHeight) {
+        nonConstThis->visualScrollOffset -= static_cast<float>(height);
+    } else if (target > nonConstThis->visualScrollOffset + halfHeight) {
+        nonConstThis->visualScrollOffset += static_cast<float>(height);
+    }
+
+    // Chase the target smoothly to decouple the UI from the math thread's bursty frame processing.
+    // 0.3f provides a snappy but buttery smooth lock-on.
+    nonConstThis->visualScrollOffset += (target - nonConstThis->visualScrollOffset) * 0.3f;
+
+    // Use AffineTransform for sub-pixel smooth scrolling to cure the 43Hz vs 60Hz mismatch (CRT flicker).
+    // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
+    graphics.drawImageTransformed(steamImage, juce::AffineTransform::translation(0.0f, -nonConstThis->visualScrollOffset));
+    graphics.drawImageTransformed(steamImage, juce::AffineTransform::translation(0.0f, static_cast<float>(height) - nonConstThis->visualScrollOffset));
 }
