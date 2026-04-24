@@ -1,34 +1,20 @@
 cmake_minimum_required(VERSION 3.22)
 project(Pitchenga VERSION 1.0.0)
 
-include(FetchContent)
-FetchContent_Declare(
-  eigen
-  GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-  GIT_TAG        3.4.0
-)
-FetchContent_MakeAvailable(eigen)
-FetchContent_Declare(
-        pitch_detector
-        GIT_REPOSITORY https://github.com/adamski/pitch_detector.git
-        GIT_TAG        d3b6097
-        SOURCE_DIR     ${CMAKE_BINARY_DIR}/_deps/pitch_detector
-)
-FetchContent_Declare(
-        audio_fft
-        GIT_REPOSITORY https://github.com/adamski/audio_fft.git
-        GIT_TAG        922b30a
-        SOURCE_DIR     ${CMAKE_BINARY_DIR}/_deps/audio_fft
-)
-FetchContent_MakeAvailable(pitch_detector audio_fft)
+# Framework and Dependencies (submoduled in /libs, see .gitmodules)
 
-# 1. Tell CMake where to find the JUCE framework
-add_subdirectory(JUCE)
+# JUCE
+add_subdirectory(libs/JUCE)
 
-juce_add_module(${CMAKE_BINARY_DIR}/_deps/pitch_detector)
-juce_add_module(${CMAKE_BINARY_DIR}/_deps/audio_fft)
+# Eigen (Math library)
+add_subdirectory(libs/eigen)
 
-# 2. Define the exact plugin we are building
+# Pitch Detection and FFT helpers
+# These require being added as JUCE modules to integrate correctly with the plugin
+juce_add_module(libs/pitch_detector)
+juce_add_module(libs/audio_fft)
+
+# Define the exact plugin we are building
 juce_add_plugin(Pitchenga
         # Plugin metadata
         PLUGIN_MANUFACTURER_CODE "Ptng"  # Exactly 4 chars
@@ -45,7 +31,7 @@ juce_add_plugin(Pitchenga
         COPY_PLUGIN_AFTER_BUILD TRUE      # Automatically drops the AU into your Mac's plugin folder
         MICROPHONE_PERMISSION_ENABLED TRUE)    # This ensures the Info.plist has the usage description for macOS TCC
 
-# 3. Tell CMake which C++ files to compile
+# Tell CMake which C++ files to compile
 set(PITCHENGA_SOURCES
         Source/PluginProcessor.cpp
         Source/PluginProcessor.h
@@ -79,6 +65,7 @@ set(PITCHENGA_SOURCES
         Source/math/Stft.cpp
 )
 
+# Generate a build timestamp
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/build_timestamp.h
         COMMAND ${CMAKE_COMMAND} -DOUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/build_timestamp.h -P ${CMAKE_CURRENT_SOURCE_DIR}/generate_timestamp.cmake
@@ -90,7 +77,7 @@ target_sources(Pitchenga PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}/build_timestamp.h
 )
 
-# 4. Link the heavy-lifting JUCE modules (Audio, GUI, and Hardware-Accelerated Math)
+# Link the libraries
 target_link_libraries(Pitchenga PRIVATE
         juce::juce_audio_utils
         juce::juce_dsp                 # Contains the fast FFT class
