@@ -118,7 +118,9 @@ void Math::run() {
             if (audioProcessor.settings.showNeedle) {
                 processPitchDetection();
             }
-            if (audioProcessor.settings.showEye || (audioProcessor.settings.showRoll && !audioProcessor.settings.useStftRoll)) {
+            if (audioProcessor.settings.showEye
+                || (audioProcessor.settings.showRoll && !audioProcessor.settings.useStftRoll)
+            ) {
                 processCqtAndEqualization();
             }
             if (audioProcessor.settings.showRoll && audioProcessor.settings.useStftRoll) {
@@ -294,9 +296,9 @@ void Math::getRollPeaks(std::vector<SpectralPeak>& destinationArray) {
 
 void Math::getCircleResults(std::vector<double>& destinationArray) {
     const juce::CriticalSection::ScopedLockType lock(resultLock);
-    if (destinationArray.size() != eyeResults.size()) destinationArray.resize(
-        eyeResults.size()
-    );
+    if (destinationArray.size() != eyeResults.size()) {
+        destinationArray.resize(eyeResults.size());
+    }
     std::copy(eyeResults.begin(), eyeResults.end(), destinationArray.begin());
 }
 
@@ -327,7 +329,13 @@ void Math::getSteamImage(juce::Image& destinationImage, int& scrollOffset) {
 }
 
 void Math::pumpSteam() {
-    if (!audioProcessor.settings.showSteam || !steamImage.isValid()) return;
+    if (!audioProcessor.settings.showSteam
+        || !audioProcessor.settings.useStftRoll
+        || audioProcessor.settings.freezeRoll
+        || !steamImage.isValid()
+    ) {
+        return;
+    }
 
     const int width = steamWidth;
     const int height = steamHeight;
@@ -341,15 +349,17 @@ void Math::pumpSteam() {
     // Calculate where in the image memory the new row should be drawn
     const int drawY = (height - speedPx + steamScrollOffset) % height;
 
-    juce::Graphics graphics(steamImage);
-
     // Clear the new row first to prevent ghosting from previous treadmill cycles
-    graphics.setColour(juce::Colours::black);
-    graphics.fillRect(0, drawY, width, speedPx);
+    // fixme: this did not seem to do anything?
+    // steamImage.clear(juce::Rectangle<int>(0, drawY, width, speedPx), juce::Colours::transparentBlack);
+
+    juce::Graphics graphics(steamImage);
 
     if (currentRollPeaks.empty()) return;
 
-    const float sr = audioProcessor.getSampleRate() > 0.0 ? static_cast<float>(audioProcessor.getSampleRate()) : 44100.0f;
+    const float sr = audioProcessor.getSampleRate() > 0.0
+                         ? static_cast<float>(audioProcessor.getSampleRate())
+                         : 44100.0f;
     const float binResHz = sr / 32768.0f;
     const float fWidth = static_cast<float>(width);
     const float midiRangeInv = 1.0f / (maxMidiNote - minMidiNote);

@@ -4,17 +4,20 @@
 #include <algorithm>
 #include <cmath>
 
-RollStft::RollStft(PitchengaAudioProcessor& proc, Math& workerToUse) 
+RollStft::RollStft(PitchengaAudioProcessor& proc, Math& workerToUse)
     : processor(proc), worker(workerToUse) {}
 
 void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
-    if (processor.settings.freezeRoll || !isVisible()) return;
+    if (!processor.settings.showSteam
+        || !processor.settings.useStftRoll
+        || processor.settings.freezeRoll
+        || !isVisible()
+    ) {
+        return;
+    }
 
     activePeaks = peaks;
-
-    if (processor.settings.showSteam) {
-        worker.getSteamImage(steamImage, steamScrollOffset);
-    }
+    worker.getSteamImage(steamImage, steamScrollOffset);
 
     repaint();
 }
@@ -163,7 +166,7 @@ void RollStft::paintFrame(juce::Graphics& graphics) const {
         graphics.setColour(gridColor);
 
         if (isBlackKey) {
-            const float dashLengths[] = { 4.0f, 4.0f };
+            const float dashLengths[] = {4.0f, 4.0f};
             graphics.drawDashedLine(juce::Line<float>(targetCenter, startY, targetCenter, endY), dashLengths, 2, 1.0f);
         } else {
             graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
