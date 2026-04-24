@@ -39,6 +39,7 @@ private:
     void paintFrame();
     void paintFrame(juce::Graphics& graphics) const;
     static void paintLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, int midiNote, float targetCenter, float startY, juce::Colour baseColor);
+    void pumpSteam();
     void paintSteam(const juce::Graphics& graphics) const;
     void paintPeaks(juce::Graphics& graphics) const;
 
