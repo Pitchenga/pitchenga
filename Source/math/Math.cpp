@@ -90,9 +90,6 @@ double Math::amplitudeToDbRescaled(const double amplitude) {
 }
 
 void Math::run() {
-    //fixme: targetTimeMs is not used
-    double targetTimeMs = juce::Time::getMillisecondCounterHiRes();
-
     while (!threadShouldExit()) {
         updateSampleRate(audioProcessor.getSampleRate());
 
@@ -122,29 +119,9 @@ void Math::run() {
             processCqtAndEqualization();
             processStft();
             publishResultsToUi();
-
-            // Strict High-Res Pacing.
-            // Batch-processing overwrites the UI buffer faster than 48Hz, causing massive skipped frames (steam gaps).
-            // By mathematically pacing the thread to exact real-time playback, we guarantee the UI catches EVERY frame.
-            double sr = audioProcessor.getSampleRate() > 0 ? audioProcessor.getSampleRate() : 44100.0;
-            double frameDurationMs = (1024.0 / sr) * 1000.0;
-
-            targetTimeMs += frameDurationMs;
-            double now = juce::Time::getMillisecondCounterHiRes();
-
-            if (targetTimeMs > now) {
-                int sleepTime = static_cast<int>(targetTimeMs - now);
-                if (sleepTime > 0) wait(sleepTime);
-            } else {
-                // If we fall behind or the DAW is paused, snap the timeline back to reality.
-                targetTimeMs = now;
-            }
         } else {
             wait(2);
-            // Keep the target time anchored to reality while waiting for the DAW to play
-            targetTimeMs = juce::Time::getMillisecondCounterHiRes();
         }
-        wait(1);
     }
 }
 
@@ -339,7 +316,7 @@ void Math::setSteamSize(int width, int height) {
 
 void Math::getSteamImage(juce::Image& destinationImage, int& scrollOffset) {
     const juce::CriticalSection::ScopedLockType lock(resultLock);
-    destinationImage = steamImage;
+    destinationImage = steamImage.createCopy();
     scrollOffset = steamScrollOffset;
 }
 
