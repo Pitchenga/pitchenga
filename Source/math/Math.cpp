@@ -115,9 +115,15 @@ void Math::run() {
 
         if (availableSamples >= 1024) {
             consumeAudioFromFifo();
-            processPitchDetection();
-            processCqtAndEqualization();
-            processStft();
+            if (audioProcessor.settings.showNeedle) {
+                processPitchDetection();
+            }
+            if (audioProcessor.settings.showEye || (audioProcessor.settings.showRoll && !audioProcessor.settings.useStftRoll)) {
+                processCqtAndEqualization();
+            }
+            if (audioProcessor.settings.showRoll && audioProcessor.settings.useStftRoll) {
+                processStft();
+            }
             publishResultsToUi();
         } else {
             wait(2);
