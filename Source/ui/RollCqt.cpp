@@ -200,7 +200,7 @@ void RollCqt::paintFrame(juce::Graphics& graphics) const {
         const float endY = plotHeight;
 
         const juce::Colour baseColor = Tone::chromaticScale[static_cast<size_t>(chroma)].color;
-        const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.2f);
+        const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.1f);
         graphics.setColour(gridColor);
 
         if (isBlackKey) {
