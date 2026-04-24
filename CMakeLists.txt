@@ -1,6 +1,20 @@
 cmake_minimum_required(VERSION 3.22)
 project(Pitchenga VERSION 1.0.0)
 
+# Auto-initialize Git submodules if they are missing
+find_package(Git QUIET)
+if (GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/libs/JUCE/CMakeLists.txt")
+        message(STATUS "Submodules not found! Automatically running: git submodule update --init --recursive")
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                RESULT_VARIABLE GIT_SUBMOD_RESULT)
+        if (NOT GIT_SUBMOD_RESULT EQUAL "0")
+            message(FATAL_ERROR "git submodule update --init --recursive failed. Please checkout submodules manually.")
+        endif ()
+    endif ()
+endif ()
+
 # Framework and Dependencies (submoduled in /libs, see .gitmodules)
 
 # JUCE
