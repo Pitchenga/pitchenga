@@ -21,7 +21,7 @@ public:
     static float getPreferredHeight();
 
     static constexpr float needleTriangleWidth = 12.0f;
-    static constexpr float needleFontSize = 15.0f;
+    static constexpr float needleFontSize = 12.0f;
     static constexpr auto needleFontStyle = "Bold";
 
 private:
@@ -33,8 +33,8 @@ private:
     // fixme: restore the Pitch enum and use Pitch references instead of hard-coded mini
     // fixme: Does not work below Mi2
     // Range: Ra2 to Mi6
-    float minMidi = 39.0f;
-    float maxMidi = 87.0f;
+    float minMidi = 12.0f;
+    float maxMidi = 108.0f;
     float currentMidi = -1.0f;
 
     juce::Image cachedLabels;

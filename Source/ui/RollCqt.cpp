@@ -8,7 +8,7 @@ RollCqt::RollCqt(PitchengaAudioProcessor& proc) : processor(proc) {}
 
 bool RollCqt::expand() {
     const int totalBins = static_cast<int>(displayMagnitudes.size());
-    if (totalBins <= 0) return true;
+    if (totalBins <= 0) return false;
 
     double* magnitudes = displayMagnitudes.data();
 
@@ -28,7 +28,7 @@ bool RollCqt::expand() {
         }
     }
 
-    return false;
+    return true;
 }
 
 void RollCqt::updateResults(const std::vector<double>& results) {
@@ -42,13 +42,13 @@ void RollCqt::updateResults(const std::vector<double>& results) {
         lastKnownSize = results.size();
     }
 
-    if (expand()) return;
+    if (!expand()) return;
+
+    displayMagnitudes = smoother->smooth(displayMagnitudes);
 
     if (processor.settings.showSteam) {
         pumpSteam();
     }
-
-    displayMagnitudes = smoother->smooth(displayMagnitudes);
 
     repaint();
 }

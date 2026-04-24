@@ -2,7 +2,7 @@
 #include "PluginEditor.h"
 
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProcessor& p)
-    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), needle(), eye(), stftRoll(p, worker), cqtRoll(p), splitter(p), control(p) {
+    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), needle(), eye(), stftRoll(p), cqtRoll(p), splitter(p), control(p) {
 
     addAndMakeVisible(needle);
     addAndMakeVisible(eye);

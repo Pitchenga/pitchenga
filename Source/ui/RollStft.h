@@ -4,11 +4,9 @@
 #include "../PluginProcessor.h"
 #include "../math/Stft.h"
 
-class Math;
-
 class RollStft : public juce::Component {
 public:
-    explicit RollStft(PitchengaAudioProcessor& proc, Math& workerToUse);
+    explicit RollStft(PitchengaAudioProcessor& proc);
     ~RollStft() override = default;
 
     void updateResults(const std::vector<SpectralPeak>& peaks);
@@ -20,12 +18,13 @@ public:
 
 private:
     PitchengaAudioProcessor& processor;
-    Math& worker;
 
     std::vector<SpectralPeak> activePeaks;
 
     juce::Image steamImage;
     int steamScrollOffset = 0;
+    static constexpr float steamSpeedPxPerFrame = 1.0f;
+    // float visualScrollOffset = 0.0f;
     float visualScrollOffset = 0.0f;
 
     juce::Image cachedFrame;

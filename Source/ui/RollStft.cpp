@@ -4,8 +4,7 @@
 #include <algorithm>
 #include <cmath>
 
-RollStft::RollStft(PitchengaAudioProcessor& proc, Math& workerToUse)
-    : processor(proc), worker(workerToUse) {}
+RollStft::RollStft(PitchengaAudioProcessor& proc) : processor(proc) {}
 
 void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
     if (!processor.settings.showSteam
@@ -28,6 +27,7 @@ void RollStft::resized() {
 
     if (width > 0 && height > 0) {
         const int plotHeight = std::max(1, height - static_cast<int>(getLabelAreaHeight()));
+        // Initialize the rolling buffer whenever the window resizes
         steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
         steamScrollOffset = 0;
         paintFrame();
@@ -36,7 +36,7 @@ void RollStft::resized() {
 
 juce::Font RollStft::getLabelFont() {
     return {
-        juce::FontOptions(13.0f)
+        juce::FontOptions(12.0f)
         .withStyle("Bold")
         .withName(juce::Font::getDefaultMonospacedFontName())
     };
@@ -215,13 +215,20 @@ void RollStft::paintPeaks(juce::Graphics& graphics) const {
 }
 
 void RollStft::pumpSteam() {
-    if (!processor.settings.showSteam || !steamImage.isValid()) return;
+    if (activePeaks.empty()
+        || !processor.settings.useStftRoll
+        || !processor.settings.showSteam
+        || processor.settings.freezeRoll
+        || !steamImage.isValid()
+    ) {
+        return;
+    };
 
     const int width = getWidth();
     const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
     if (width <= 0 || height <= 0) return;
 
-    const int speedPx = 1;
+    constexpr int speedPx = static_cast<int>(steamSpeedPxPerFrame);
 
     // Advance the scroll offset and wrap it like a treadmill
     steamScrollOffset = (steamScrollOffset + speedPx) % height;
@@ -232,9 +239,9 @@ void RollStft::pumpSteam() {
     // Clear the new row first to prevent ghosting from previous treadmill cycles
     steamImage.clear(juce::Rectangle<int>(0, drawY, width, speedPx), juce::Colours::transparentBlack);
 
-    juce::Graphics graphics(steamImage);
-
     if (activePeaks.empty()) return;
+
+    juce::Graphics graphics(steamImage);
 
     const float sr = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
     const float binResHz = sr / 32768.0f;
@@ -271,7 +278,7 @@ void RollStft::pumpSteam() {
                 while (continuousChroma < 0.0f) continuousChroma += 12.0f;
 
                 const juce::Colour baseColor = Tone::getContinuousColor(continuousChroma);
-                constexpr float undimmingGain = 1.6f;
+                constexpr float undimmingGain = 1.3f;
 
                 const float clampedMag = std::min(1.0f, peak.magnitude * undimmingGain);
                 const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, clampedMag);
@@ -313,6 +320,12 @@ void RollStft::paintSteam(const juce::Graphics& graphics) const {
 
     // Use AffineTransform for sub-pixel smooth scrolling to cure the 43Hz vs 60Hz mismatch (CRT flicker).
     // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
-    graphics.drawImageTransformed(steamImage, juce::AffineTransform::translation(0.0f, -nonConstThis->visualScrollOffset));
-    graphics.drawImageTransformed(steamImage, juce::AffineTransform::translation(0.0f, static_cast<float>(height) - nonConstThis->visualScrollOffset));
+    graphics.drawImageTransformed(
+        steamImage,
+        juce::AffineTransform::translation(0.0f, -nonConstThis->visualScrollOffset)
+    );
+    graphics.drawImageTransformed(
+        steamImage,
+        juce::AffineTransform::translation(0.0f, static_cast<float>(height) - nonConstThis->visualScrollOffset)
+    );
 }
