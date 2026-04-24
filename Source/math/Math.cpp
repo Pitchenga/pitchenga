@@ -350,8 +350,7 @@ void Math::pumpSteam() {
     const int drawY = (height - speedPx + steamScrollOffset) % height;
 
     // Clear the new row first to prevent ghosting from previous treadmill cycles
-    // fixme: this did not seem to do anything?
-    // steamImage.clear(juce::Rectangle<int>(0, drawY, width, speedPx), juce::Colours::transparentBlack);
+    steamImage.clear(juce::Rectangle<int>(0, drawY, width, speedPx), juce::Colours::transparentBlack);
 
     juce::Graphics graphics(steamImage);
 
@@ -370,7 +369,7 @@ void Math::pumpSteam() {
     const float derivativeFactor = fWidth * midiRangeInv * 17.3123405f * binResHz;
 
     for (const auto& peak : currentRollPeaks) {
-        if (peak.rawMagnitude > 0.05f) {
+        if (peak.magnitude > 0.05f) {
             // Prevents rendering absolute silence noise
 
             // Inline the math for the primary position calculation
@@ -396,7 +395,7 @@ void Math::pumpSteam() {
                 const juce::Colour baseColor = Tone::getContinuousColor(continuousChroma);
                 constexpr float undimmingGain = 1.6f;
 
-                const float clampedMag = std::min(1.0f, peak.rawMagnitude * undimmingGain);
+                const float clampedMag = std::min(1.0f, peak.magnitude * undimmingGain);
                 const juce::Colour color = juce::Colours::black.interpolatedWith(baseColor, clampedMag);
 
                 graphics.setColour(color);

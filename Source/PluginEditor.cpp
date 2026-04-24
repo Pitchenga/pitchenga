@@ -58,6 +58,16 @@ void PitchengaAudioProcessorEditor::timerCallback() {
             }
         }
     }
+
+    //fixme: Is it needed?
+    // Force continuous UI repaints to allow smooth sub-pixel interpolation of the scrolling visual
+    // if (audioProcessor.settings.showRoll) {
+    //     if (audioProcessor.settings.useStftRoll) {
+    //         stftRoll.repaint();
+    //     } else {
+    //         cqtRoll.repaint();
+    //     }
+    // }
 }
 
 void PitchengaAudioProcessorEditor::paint(juce::Graphics& g) {

@@ -46,6 +46,7 @@ private:
     };
     juce::Image steamImage;
     int steamScrollOffset = 0;
+    float visualScrollOffset = 0.0f;
 
     void pumpSteam();
     void paintSteam(const juce::Graphics& graphics) const;

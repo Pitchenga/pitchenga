@@ -26,6 +26,7 @@ private:
 
     juce::Image steamImage;
     int steamScrollOffset = 0;
+    float visualScrollOffset = 0.0f;
 
     juce::Image cachedFrame;
 
