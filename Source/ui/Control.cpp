@@ -229,29 +229,19 @@ Control::Control(PitchengaAudioProcessor& proc)
             return;
         }
 
-        // Sync current plugin state into settings first
-        juce::MemoryBlock dummy;
-        processor.getStateInformation(dummy);
-
-        const juce::XmlElement xml = processor.settings.createXml();
-        if (currentPresetFile.getParentDirectory().createDirectory() && xml.writeTo(currentPresetFile)) {
-            refreshPresets();
-            // Explicitly force text update for transitions like Factory -> User Default
-            if (currentPresetFile.getFileName() == "user-default.xml") {
-                comboPresets.setText("User Default", juce::NotificationType::dontSendNotification);
-            } else {
-                comboPresets.setText(
-                    currentPresetFile.getFileNameWithoutExtension(),
-                    juce::NotificationType::dontSendNotification
-                );
-            }
-        } else {
-            juce::AlertWindow::showMessageBoxAsync(
-                juce::MessageBoxIconType::WarningIcon,
-                "Error",
-                "Failed to overwrite setup file."
-            );
-        }
+        juce::AlertWindow::showOkCancelBox(
+            juce::MessageBoxIconType::QuestionIcon,
+            saveConfirmTitle,
+            saveConfirmMessage,
+            "Save",
+            "Cancel",
+            nullptr,
+            juce::ModalCallbackFunction::create([this](int result) {
+                if (result != 0) {
+                    saveCurrentPreset();
+                }
+            })
+        );
     };
 
     buttonSaveAs.setButtonText("Save As");
@@ -312,24 +302,19 @@ Control::Control(PitchengaAudioProcessor& proc)
             return;
         }
 
-        const int selectedId = comboPresets.getSelectedId();
-        if (selectedId == 2) {
-            // Delete User Default and flip to Factory Default
-            if (currentPresetFile.deleteFile()) {
-                currentPresetFile = juce::File();
-                processor.settings.currentPresetName = "";
-                comboPresets.setSelectedId(1, juce::NotificationType::sendNotification);
-                refreshPresets();
-            }
-        } else if (selectedId > 3) {
-            // Delete general preset
-            if (currentPresetFile.deleteFile()) {
-                currentPresetFile = juce::File();
-                processor.settings.currentPresetName = "";
-                comboPresets.setSelectedId(1, juce::NotificationType::sendNotification);
-                refreshPresets();
-            }
-        }
+        juce::AlertWindow::showOkCancelBox(
+            juce::MessageBoxIconType::QuestionIcon,
+            deleteConfirmTitle,
+            deleteConfirmMessage,
+            "Delete",
+            "Cancel",
+            nullptr,
+            juce::ModalCallbackFunction::create([this](int result) {
+                if (result != 0) {
+                    deleteCurrentPreset();
+                }
+            })
+        );
     };
 
     addAndMakeVisible(toggleNeedle);
@@ -412,6 +397,53 @@ void Control::timerCallback() {
     stopTimer();
     isRescanning = false;
     showPlugsMenu();
+}
+
+void Control::saveCurrentPreset() {
+    // Sync current plugin state into settings first
+    juce::MemoryBlock dummy;
+    processor.getStateInformation(dummy);
+
+    const juce::XmlElement xml = processor.settings.createXml();
+    if (currentPresetFile.getParentDirectory().createDirectory() && xml.writeTo(currentPresetFile)) {
+        refreshPresets();
+        // Explicitly force text update for transitions like Factory -> User Default
+        if (currentPresetFile.getFileName() == "user-default.xml") {
+            comboPresets.setText("User Default", juce::NotificationType::dontSendNotification);
+        } else {
+            comboPresets.setText(
+                currentPresetFile.getFileNameWithoutExtension(),
+                juce::NotificationType::dontSendNotification
+            );
+        }
+    } else {
+        juce::AlertWindow::showMessageBoxAsync(
+            juce::MessageBoxIconType::WarningIcon,
+            "Error",
+            "Failed to overwrite setup file."
+        );
+    }
+}
+
+void Control::deleteCurrentPreset() {
+    const int selectedId = comboPresets.getSelectedId();
+    if (selectedId == 2) {
+        // Delete User Default and flip to Factory Default
+        if (currentPresetFile.deleteFile()) {
+            currentPresetFile = juce::File();
+            processor.settings.currentPresetName = "";
+            comboPresets.setSelectedId(1, juce::NotificationType::sendNotification);
+            refreshPresets();
+        }
+    } else if (selectedId > 3) {
+        // Delete general preset
+        if (currentPresetFile.deleteFile()) {
+            currentPresetFile = juce::File();
+            processor.settings.currentPresetName = "";
+            comboPresets.setSelectedId(1, juce::NotificationType::sendNotification);
+            refreshPresets();
+        }
+    }
 }
 
 void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
