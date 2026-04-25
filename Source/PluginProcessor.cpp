@@ -216,23 +216,29 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& description, bool forceOpenWindow) {
     if (wrapperType != wrapperType_Standalone) return;
 
-    juce::String errorMessage;
     const double sampleRate = getSampleRate();
     const int blockSize = getBlockSize();
-    
-    // Create the plugin instance with host's current settings or defaults if not yet prepared
+
+    // Gracefully shutdown and unload the current plugin
+    suspendProcessing(true);
+
+    if (onPluginAboutToBeDeleted) {
+        onPluginAboutToBeDeleted();
+    }
+
+    {
+        const juce::ScopedLock lock(pluginLock);
+        if (externalPlugin != nullptr) {
+            externalPlugin->releaseResources();
+            externalPlugin = nullptr; // Explicitly destroy before creating the new one
+        }
+    }
+
+    // Load the new plugin instance
+    juce::String errorMessage;
     auto instance = formatManager.createPluginInstance(description, sampleRate > 0 ? sampleRate : 44100.0, blockSize > 0 ? blockSize : 512, errorMessage);
     
     if (instance != nullptr) {
-        // Suspend processing during replacement for absolute safety
-        suspendProcessing(true);
-
-        // Safe UI cleanup: notify the editor to destroy any open plugin window/editor 
-        // while the plugin is still alive but suspended.
-        if (onPluginAboutToBeDeleted) {
-            onPluginAboutToBeDeleted();
-        }
-        
         if (forceOpenWindow) {
             settings.isExternalPluginWindowOpen = true;
         }
@@ -240,12 +246,6 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
         {
             const juce::ScopedLock lock(pluginLock);
             
-            // Explicitly release resources of the old plugin before we move the new one in.
-            // This is critical for some plugins to stop background tasks safely.
-            if (externalPlugin != nullptr) {
-                externalPlugin->releaseResources();
-            }
-
             // Ensure the new instance is prepared if we have valid host settings
             if (sampleRate > 0 && blockSize > 0) {
                 instance->prepareToPlay(sampleRate, blockSize);
@@ -260,6 +260,7 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
             juce::MessageManager::callAsync([this] { if (onPluginLoaded) onPluginLoaded(); });
         }
     } else {
+        suspendProcessing(false);
         Util::debug("Failed to load plugin: " + errorMessage);
     }
 }
