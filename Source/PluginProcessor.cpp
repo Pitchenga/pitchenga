@@ -225,23 +225,28 @@ juce::AudioProcessorEditor* PitchengaAudioProcessor::createExternalPluginEditor(
 }
 
 void PitchengaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
-    juce::XmlElement xml = settings.createXml();
+    const juce::ScopedLock lock(pluginLock);
     
+    settings.externalPluginDescriptionXml = {};
+    settings.externalPluginStateBase64 = {};
+
     if (externalPlugin != nullptr) {
         juce::MemoryBlock pluginState;
         externalPlugin->getStateInformation(pluginState);
-        xml.createNewChildElement("ExternalPluginState")->setAttribute("base64", pluginState.toBase64Encoding());
+        settings.externalPluginStateBase64 = pluginState.toBase64Encoding();
         
-        auto desc = externalPlugin->getPluginDescription();
-        auto descXml = desc.createXml();
-        xml.createNewChildElement("ExternalPluginDescription")->addChildElement(descXml.release());
+        auto pluginDescription = externalPlugin->getPluginDescription();
+        if (auto pluginDescriptionXml = pluginDescription.createXml()) {
+            settings.externalPluginDescriptionXml = pluginDescriptionXml->toString();
+        }
     }
 
+    juce::XmlElement xml = settings.createXml();
     copyXmlToBinary(xml, destData);
 }
 
 void PitchengaAudioProcessor::setStateInformation(const void* data, const int sizeInBytes) {
-    const std::unique_ptr xmlState(getXmlFromBinary(data, sizeInBytes));
+    const std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
 
     if (xmlState != nullptr && settings.loadFromXml(*xmlState)) {
         if (auto* editor = getActiveEditor()) {
@@ -251,18 +256,17 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, const int si
             }
         }
 
-        if (auto* pluginXml = xmlState->getChildByName("ExternalPluginDescription")) {
-            if (auto* descXml = pluginXml->getFirstChildElement()) {
-                juce::PluginDescription desc;
-                if (desc.loadFromXml(*descXml)) {
-                    loadExternalPlugin(desc);
+        // Restore the external plugin from the merged settings
+        if (settings.externalPluginDescriptionXml.isNotEmpty()) {
+            if (auto pluginDescriptionXml = juce::XmlDocument::parse(settings.externalPluginDescriptionXml)) {
+                juce::PluginDescription pluginDescription;
+                if (pluginDescription.loadFromXml(*pluginDescriptionXml)) {
+                    loadExternalPlugin(pluginDescription);
                     
-                    if (externalPlugin != nullptr) {
-                        if (auto* stateXml = xmlState->getChildByName("ExternalPluginState")) {
-                            juce::MemoryBlock pluginState;
-                            if (pluginState.fromBase64Encoding(stateXml->getStringAttribute("base64"))) {
-                                externalPlugin->setStateInformation(pluginState.getData(), static_cast<int>(pluginState.getSize()));
-                            }
+                    if (externalPlugin != nullptr && settings.externalPluginStateBase64.isNotEmpty()) {
+                        juce::MemoryBlock pluginState;
+                        if (pluginState.fromBase64Encoding(settings.externalPluginStateBase64)) {
+                            externalPlugin->setStateInformation(pluginState.getData(), static_cast<int>(pluginState.getSize()));
                         }
                     }
                 }

@@ -315,6 +315,14 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isEarEnabled", isEarEnabled);
     xml.setAttribute("isShowTweakPanel", isShowTweakPanel);
 
+    if (externalPluginDescriptionXml.isNotEmpty()) {
+        xml.createNewChildElement("ExternalPluginDescription")->addTextElement(externalPluginDescriptionXml);
+    }
+
+    if (externalPluginStateBase64.isNotEmpty()) {
+        xml.createNewChildElement("ExternalPluginState")->setAttribute("base64", externalPluginStateBase64);
+    }
+
     xml.setAttribute("splitRatio", splitRatio);
 
     return xml;
@@ -340,6 +348,16 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
 
     isEarEnabled = xml.getBoolAttribute("isEarEnabled", isEarEnabled);
     isShowTweakPanel = xml.getBoolAttribute("isShowTweakPanel", isShowTweakPanel);
+
+    externalPluginDescriptionXml = {};
+    if (auto* descriptionXmlElement = xml.getChildByName("ExternalPluginDescription")) {
+        externalPluginDescriptionXml = descriptionXmlElement->getAllSubText();
+    }
+
+    externalPluginStateBase64 = {};
+    if (auto* stateXmlElement = xml.getChildByName("ExternalPluginState")) {
+        externalPluginStateBase64 = stateXmlElement->getStringAttribute("base64");
+    }
 
     splitRatio = static_cast<float>(xml.getDoubleAttribute("splitRatio", splitRatio));
 

@@ -26,6 +26,9 @@ public:
         bool isEarEnabled = false;
         bool isShowTweakPanel = false;
 
+        juce::String externalPluginDescriptionXml;
+        juce::String externalPluginStateBase64;
+
         float splitRatio = 0.3130223751068115f;
 
         [[nodiscard]] bool isisShowRollLabels() const {
