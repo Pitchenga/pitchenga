@@ -1,6 +1,5 @@
 #include "Math.h"
 #include "../Util.h"
-#include "../Tone.h"
 
 Math::Math(PitchengaAudioProcessor& processorToUse)
     : Thread("VisualizeWorker"), audioProcessor(processorToUse) {
@@ -313,4 +312,3 @@ void Math::getLineResults(std::vector<double>& destinationArray) {
     if (destinationArray.size() != rollResults.size()) destinationArray.resize(rollResults.size());
     std::copy(rollResults.begin(), rollResults.end(), destinationArray.begin());
 }
-

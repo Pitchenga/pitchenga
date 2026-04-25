@@ -103,8 +103,7 @@ void RollCqt::paint(juce::Graphics& graphics) {
     if (currentTotalBins <= 0 || currentBinsPerOctave <= 0 || displayMagnitudes.empty()) return;
 
     graphics.saveState();
-    // Clip the top 1 pixel to hide the "blinking lights" artifact caused by the treadmill write-head/interpolation lag
-    graphics.reduceClipRegion(0, 1, width, plotHeight - 1);
+    graphics.reduceClipRegion(0, 0, width, plotHeight);
 
     if (processor.settings.showSteam) {
         paintSteam(graphics);
