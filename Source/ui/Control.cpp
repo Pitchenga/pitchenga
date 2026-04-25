@@ -284,6 +284,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                         currentPresetFile = result;
                         processor.settings.currentPresetName = result.getFileNameWithoutExtension();
                         refreshPresets();
+                        updateButtonStates();
                     } else {
                         juce::AlertWindow::showMessageBoxAsync(
                             juce::MessageBoxIconType::WarningIcon,
@@ -321,18 +322,19 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(toggleEye);
     addAndMakeVisible(toggleRoll);
     addAndMakeVisible(toggleisFreezeRoll);
-    addAndMakeVisible(toggleRollType);
-    addAndMakeVisible(toggleSteam);
-    addAndMakeVisible(toggleForrest);
 
     addAndMakeVisible(toggleEar);
 
     addAndMakeVisible(toggleTweak);
+    addAndMakeVisible(comboPresets);
+    addAndMakeVisible(buttonSave);
+
     addAndMakeVisible(tweakPanel);
     tweakPanel.addAndMakeVisible(buttonPlugs);
     tweakPanel.addAndMakeVisible(buttonPlug);
-    tweakPanel.addAndMakeVisible(comboPresets);
-    tweakPanel.addAndMakeVisible(buttonSave);
+    tweakPanel.addAndMakeVisible(toggleRollType);
+    tweakPanel.addAndMakeVisible(toggleSteam);
+    tweakPanel.addAndMakeVisible(toggleForrest);
     tweakPanel.addAndMakeVisible(buttonSaveAs);
     tweakPanel.addAndMakeVisible(buttonDelete);
 
@@ -542,11 +544,13 @@ void Control::resized() {
 
     positionButton(toggleEar, topRow);
 
+    // Position save, presets and tweak from the right
+    // buttonSave first from right makes it the rightmost
+    positionButtonRight(buttonSave, topRow);
+    const int comboWidth = 140;
+    comboPresets.setBounds(topRow.removeFromRight(comboWidth).reduced(2));
     positionButtonRight(toggleTweak, topRow);
 
-    positionButtonRight(toggleForrest, topRow);
-    positionButtonRight(toggleSteam, topRow);
-    positionButtonRight(toggleRollType, topRow);
     positionButtonRight(toggleisFreezeRoll, topRow);
 
     topRow.removeFromRight(8);
@@ -559,13 +563,15 @@ void Control::resized() {
         positionButton(buttonPlugs, panelBounds);
         positionButton(buttonPlug, panelBounds);
 
-        positionButtonRight(buttonDelete, panelBounds);
         positionButtonRight(buttonSaveAs, panelBounds);
-        positionButtonRight(buttonSave, panelBounds);
+        positionButtonRight(buttonDelete, panelBounds);
 
-        // Position the dropdown to the left of the Save buttons
-        const int comboWidth = 140;
-        comboPresets.setBounds(panelBounds.removeFromRight(comboWidth).reduced(2));
+        // Gap between save buttons and the moved roll control buttons
+        panelBounds.removeFromRight(16);
+
+        positionButtonRight(toggleForrest, panelBounds);
+        positionButtonRight(toggleSteam, panelBounds);
+        positionButtonRight(toggleRollType, panelBounds);
     }
 }
 
@@ -607,10 +613,9 @@ void Control::refreshPresets() {
             // Find by filename
             const auto activeNameNoExt = currentPresetFile.getFileNameWithoutExtension();
             bool found = false;
-            for (int i = 0; i < comboPresets.getNumItems(); ++i) {
-                if (comboPresets.getItemText(i) == activeNameNoExt) {
-                    comboPresets.setSelectedItemIndex(i, juce::NotificationType::dontSendNotification);
-                    comboPresets.setText(activeNameNoExt, juce::NotificationType::dontSendNotification);
+            for (size_t i = 0; i < presets.size(); ++i) {
+                if (presets[i].getFileNameWithoutExtension() == activeNameNoExt) {
+                    comboPresets.setSelectedId(static_cast<int>(i) + 4, juce::NotificationType::dontSendNotification);
                     found = true;
                     break;
                 }
