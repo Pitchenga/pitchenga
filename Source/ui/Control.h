@@ -18,7 +18,7 @@ public:
         bool isShowEye = true;
         bool isShowNeedle = true;
 
-        bool isUseStftRoll = true;
+        bool isUseRollStft = true;
         bool isFreezeRoll = false;
         bool isShowSteam = true;
         bool isShowForrest = false;

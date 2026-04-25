@@ -13,16 +13,14 @@ public:
     ~Math() override;
 
     void run() override;
-    
+
     // Thread-safe data getters for the UI
-    void getCircleResults(std::vector<double>& destinationArray);
-    void getLineResults(std::vector<double>& destinationArray);
-    
+    void getEyeResults(std::vector<double>& destinationArray);
+    void getRollCqtResults(std::vector<double>& destinationArray);
+    void getRollStftResults(std::vector<SpectralPeak>& destinationArray);
+
     bool hasNewData() const { return newDataAvailable.load(std::memory_order_acquire); }
     void clearNewDataFlag() { newDataAvailable.store(false, std::memory_order_release); }
-
-    const Cqt* getCqtEngine() const { return &cqtEngine; }
-    void getRollPeaks(std::vector<SpectralPeak>& destinationArray);
 
 private:
     static constexpr double inputGain = 6.0;
@@ -31,6 +29,7 @@ private:
     void setupCqtEngine();
     void setupCqtBuffers();
     void setupPitchDetection();
+    void setupStft();
 
     void updateSampleRate(double newSampleRate);
     static double amplitudeToDbRescaled(double amplitude);
@@ -38,6 +37,7 @@ private:
     void flushStaleAudioData(int& availableSamples);
     void consumeAudioFromFifo();
     void processPitchDetection();
+    void processStft();
     void processCqtAndEqualization();
     void publishResultsToUi();
 
@@ -75,6 +75,4 @@ private:
     Stft stft;
     std::vector<SpectralPeak> currentRollPeaks;
     std::vector<SpectralPeak> uiRollPeaks;
-    void setupStft();
-    void processStft();
 };

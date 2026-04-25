@@ -32,7 +32,7 @@ bool RollCqt::expand() {
 }
 
 void RollCqt::updateResults(const std::vector<double>& results) {
-    if (processor.settings.isUseStftRoll
+    if (processor.settings.isUseRollStft
         || processor.settings.isFreezeRoll
         || results.empty()
         || !isVisible()

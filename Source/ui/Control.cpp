@@ -50,10 +50,10 @@ Control::Control(PitchengaAudioProcessor& proc)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    toggleRollType.setButtonText(processor.settings.isUseStftRoll ? "STFT" : "CQT");
+    toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
     toggleRollType.onClick = [this] {
-        processor.settings.isUseStftRoll = !processor.settings.isUseStftRoll;
-        toggleRollType.setButtonText(processor.settings.isUseStftRoll ? "STFT" : "CQT");
+        processor.settings.isUseRollStft = !processor.settings.isUseRollStft;
+        toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -150,7 +150,7 @@ void Control::updateVisibilityFromState() {
     toggleNeedle.setToggleState(processor.settings.isShowNeedle, juce::NotificationType::dontSendNotification);
     toggleisFreezeRoll.setToggleState(processor.settings.isFreezeRoll, juce::NotificationType::dontSendNotification);
     
-    toggleRollType.setButtonText(processor.settings.isUseStftRoll ? "STFT" : "CQT");
+    toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
     toggleSteam.setToggleState(processor.settings.isShowSteam, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
@@ -240,7 +240,7 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isShowEye", isShowEye);
     xml.setAttribute("isShowNeedle", isShowNeedle);
 
-    xml.setAttribute("isUseStftRoll", isUseStftRoll);
+    xml.setAttribute("isUseRollStft", isUseRollStft);
     xml.setAttribute("isFreezeRoll", isFreezeRoll);
     xml.setAttribute("isShowForrest", isShowForrest);
     xml.setAttribute("isShowSteam", isShowSteam);
@@ -263,7 +263,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isShowEye = xml.getBoolAttribute("isShowEye", isShowEye);
     isShowNeedle = xml.getBoolAttribute("isShowNeedle", isShowNeedle);
 
-    isUseStftRoll = xml.getBoolAttribute("isUseStftRoll", isUseStftRoll);
+    isUseRollStft = xml.getBoolAttribute("isUseRollStft", isUseRollStft);
     isFreezeRoll = xml.getBoolAttribute("isFreezeRoll", isFreezeRoll);
     isShowForrest = xml.getBoolAttribute("isShowForrest", isShowForrest);
     isShowSteam = xml.getBoolAttribute("isShowSteam", isShowSteam);

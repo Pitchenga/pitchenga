@@ -53,7 +53,7 @@ void Math::setupCqtBuffers() {
 }
 
 void Math::setupPitchDetection() {
-    // --- Pitch Setup ---
+    // Pitch Setup
     pitchDetector = std::make_unique<sevagh::PitchDetector<float>>(4096);
     rawAudioHistoryBuffer.assign(32768, 0.0f);
     pitchAnalysisBuffer.assign(4096, 0.0f);
@@ -100,14 +100,6 @@ void Math::run() {
 
         int availableSamples = octaves[0].fifo.getNumReady();
 
-        // --- DIAGNOSTIC LOGGING ---
-        static uint32_t lastMathLog = 0;
-        uint32_t nowMath = juce::Time::getMillisecondCounter();
-        if (nowMath - lastMathLog > 1000) {
-            lastMathLog = nowMath;
-        }
-        // --------------------------
-
         flushStaleAudioData(availableSamples);
 
         if (availableSamples >= 1024) {
@@ -116,11 +108,11 @@ void Math::run() {
                 processPitchDetection();
             }
             if (processor.settings.isShowEye
-                || (processor.settings.isShowRoll && !processor.settings.isUseStftRoll)
+                || (processor.settings.isShowRoll && !processor.settings.isUseRollStft)
             ) {
                 processCqtAndEqualization();
             }
-            if (processor.settings.isShowRoll && processor.settings.isUseStftRoll) {
+            if (processor.settings.isShowRoll && processor.settings.isUseRollStft) {
                 processStft();
             }
             publishResultsToUi();
@@ -131,8 +123,8 @@ void Math::run() {
 }
 
 void Math::flushStaleAudioData(int& availableSamples) {
-    // --- THE LATENCY KILLER (FRAME DROPPING) ---
-    // If the DSP math falls behind real-time, the FIFO backs up and creates massive visual latency.
+    // The latency killer (frame dropping)
+    // If the Dsp math falls behind real-time, the Fifo backs up and creates massive visual latency.
     // If we have more than a few blocks waiting, instantly flush the old ones to catch up to live audio.
 
     if (availableSamples > 16384) {
@@ -142,10 +134,10 @@ void Math::flushStaleAudioData(int& availableSamples) {
         // Individually flush every octave to prevent Decimation Cascade Desync.
         for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct) {
             int ready = octaves[static_cast<size_t>(oct)].fifo.getNumReady();
-            int keepWanted = 1024 >> oct;
+            const int keepWanted = 1024 >> oct;
 
             if (ready > keepWanted) {
-                int drop = ready - keepWanted;
+                const int drop = ready - keepWanted;
                 int startOne, sizeOne, startTwo, sizeTwo;
                 octaves[static_cast<size_t>(oct)].fifo.prepareToRead(drop, startOne, sizeOne, startTwo, sizeTwo);
                 octaves[static_cast<size_t>(oct)].fifo.finishedRead(sizeOne + sizeTwo);
@@ -235,10 +227,11 @@ void Math::processPitchDetection() {
         
         // Feed the latest block to the pitch detector
         std::copy(rawAudioHistoryBuffer.end() - 4096, rawAudioHistoryBuffer.end(), pitchAnalysisBuffer.begin());
-        
+
+        //fixme: Is it needed?
         // Apply gain to the analysis buffer to ensure signal is strong enough for peak picking
-        juce::FloatVectorOperations::multiply(pitchAnalysisBuffer.data(), 15.0f, 4096);
-        
+        // juce::FloatVectorOperations::multiply(pitchAnalysisBuffer.data(), 15.0f, 4096);
+
         const float detectedPitch = pitchDetector->getPitch(pitchAnalysisBuffer, static_cast<int>(samplingFreq));
         
         if (detectedPitch > 0.0f) {
@@ -286,13 +279,12 @@ void Math::processCqtAndEqualization() {
 }
 
 void Math::publishResultsToUi() {
-    // --- Push Results to UI ---
+    // Push Results to UI
     const juce::CriticalSection::ScopedLockType lock(resultLock);
     if (eyeResults.size() == currentEyeData.size()) {
         std::ranges::copy(currentEyeData, eyeResults.begin());
     }
 
-    // fixme remove Old line buffer logic for discrete CQT bins
     if (rollResults.size() == currentRollData.size()) {
         std::ranges::copy(currentRollData, rollResults.begin());
     }
@@ -302,12 +294,12 @@ void Math::publishResultsToUi() {
     newDataAvailable.store(true, std::memory_order_release);
 }
 
-void Math::getRollPeaks(std::vector<SpectralPeak>& destinationArray) {
+void Math::getRollStftResults(std::vector<SpectralPeak>& destinationArray) {
     const juce::CriticalSection::ScopedLockType lock(resultLock);
     destinationArray = uiRollPeaks;
 }
 
-void Math::getCircleResults(std::vector<double>& destinationArray) {
+void Math::getEyeResults(std::vector<double>& destinationArray) {
     const juce::CriticalSection::ScopedLockType lock(resultLock);
     if (destinationArray.size() != eyeResults.size()) {
         destinationArray.resize(eyeResults.size());
@@ -315,7 +307,7 @@ void Math::getCircleResults(std::vector<double>& destinationArray) {
     std::copy(eyeResults.begin(), eyeResults.end(), destinationArray.begin());
 }
 
-void Math::getLineResults(std::vector<double>& destinationArray) {
+void Math::getRollCqtResults(std::vector<double>& destinationArray) {
     const juce::CriticalSection::ScopedLockType lock(resultLock);
     if (destinationArray.size() != rollResults.size()) destinationArray.resize(rollResults.size());
     std::copy(rollResults.begin(), rollResults.end(), destinationArray.begin());

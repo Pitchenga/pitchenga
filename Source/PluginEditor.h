@@ -30,16 +30,16 @@ private:
 
     Needle needle;
     Eye eye;
-    RollStft stftRoll;
-    RollCqt cqtRoll;
+    RollStft rollStft;
+    RollCqt rollCqt;
     Splitter splitter;
 
     Control control;
 
     // Shared results for rendering
-    std::vector<double> circleBuffer;
-    std::vector<SpectralPeak> rollPeaksBuffer;
-    std::vector<double> cqtRollBuffer;
+    std::vector<double> eyeBuffer;
+    std::vector<SpectralPeak> rollStftBuffer;
+    std::vector<double> rollCqtBuffer;
 
     static constexpr int uiRefreshRateHz = 48;
 

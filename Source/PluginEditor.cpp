@@ -5,14 +5,14 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     : AudioProcessorEditor(&p),
     processor(p),
     worker(p),
-    stftRoll(p),
-    cqtRoll(p),
+    rollStft(p),
+    rollCqt(p),
     splitter(p),
     control(p) {
     addAndMakeVisible(needle);
     addAndMakeVisible(eye);
-    addAndMakeVisible(stftRoll);
-    addAndMakeVisible(cqtRoll);
+    addAndMakeVisible(rollStft);
+    addAndMakeVisible(rollCqt);
 
     addAndMakeVisible(control);
     control.onVisibilityChanged = [this] { resized(); };
@@ -20,7 +20,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     addAndMakeVisible(splitter);
     splitter.onDragged = [this] { resized(); };
 
-    circleBuffer.resize(Eye::totalFoldedBins, 0.0);
+    eyeBuffer.resize(Eye::totalFoldedBins, 0.0);
 
     setResizable(true, true);
     setSize(processor.settings.lastUIWidth, processor.settings.lastUIHeight);
@@ -49,17 +49,17 @@ void PitchengaAudioProcessorEditor::timerCallback() {
 
     // --- Update the visualizers ---
     if (worker.hasNewData()) {
-        worker.getCircleResults(circleBuffer);
-        worker.getRollPeaks(rollPeaksBuffer);
-        worker.getLineResults(cqtRollBuffer);
+        worker.getEyeResults(eyeBuffer);
+        worker.getRollStftResults(rollStftBuffer);
+        worker.getRollCqtResults(rollCqtBuffer);
         worker.clearNewDataFlag();
 
-        if (processor.settings.isShowEye) eye.updateResults(circleBuffer);
+        if (processor.settings.isShowEye) eye.updateResults(eyeBuffer);
         if (processor.settings.isShowRoll) {
-            if (processor.settings.isUseStftRoll) {
-                stftRoll.updateResults(rollPeaksBuffer);
+            if (processor.settings.isUseRollStft) {
+                rollStft.updateResults(rollStftBuffer);
             } else {
-                cqtRoll.updateResults(cqtRollBuffer);
+                rollCqt.updateResults(rollCqtBuffer);
             }
         }
     }
@@ -67,10 +67,10 @@ void PitchengaAudioProcessorEditor::timerCallback() {
     //fixme: Is it needed?
     // Force continuous UI repaints to allow smooth sub-pixel interpolation of the scrolling visual
     // if (processor.settings.isShowRoll) {
-    //     if (processor.settings.isUseStftRoll) {
-    //         stftRoll.repaint();
+    //     if (processor.settings.isUseRollStft) {
+    //         rollStft.repaint();
     //     } else {
-    //         cqtRoll.repaint();
+    //         rollCqt.repaint();
     //     }
     // }
 }
@@ -88,8 +88,8 @@ void PitchengaAudioProcessorEditor::resized() {
     // Give the control bar its own dedicated, non-overlapping space at the top left
     control.setBounds(bounds.removeFromTop(static_cast<int>(control.getPreferredHeight())));
 
-    stftRoll.setVisible(processor.settings.isShowRoll && processor.settings.isUseStftRoll);
-    cqtRoll.setVisible(processor.settings.isShowRoll && !processor.settings.isUseStftRoll);
+    rollStft.setVisible(processor.settings.isShowRoll && processor.settings.isUseRollStft);
+    rollCqt.setVisible(processor.settings.isShowRoll && !processor.settings.isUseRollStft);
     eye.setVisible(processor.settings.isShowEye);
     needle.setVisible(processor.settings.isShowNeedle);
 
@@ -103,10 +103,10 @@ void PitchengaAudioProcessorEditor::resized() {
         const int rollHeight = static_cast<int>(static_cast<float>(availableHeight) * processor.settings.splitRatio);
 
         auto rollRect = bounds.removeFromTop(rollHeight);
-        if (processor.settings.isUseStftRoll) {
-            stftRoll.setBounds(rollRect);
+        if (processor.settings.isUseRollStft) {
+            rollStft.setBounds(rollRect);
         } else {
-            cqtRoll.setBounds(rollRect);
+            rollCqt.setBounds(rollRect);
         }
 
         if (processor.settings.isShowNeedle) {
@@ -120,10 +120,10 @@ void PitchengaAudioProcessorEditor::resized() {
         if (processor.settings.isShowRoll) {
             const int rollHeight = bounds.getHeight() - needleHeight - (processor.settings.isShowEye ? bounds.getHeight() / 2 : 0);
             auto rollRect = bounds.removeFromTop(rollHeight);
-            if (processor.settings.isUseStftRoll) {
-                stftRoll.setBounds(rollRect);
+            if (processor.settings.isUseRollStft) {
+                rollStft.setBounds(rollRect);
             } else {
-                cqtRoll.setBounds(rollRect);
+                rollCqt.setBounds(rollRect);
             }
         }
 
