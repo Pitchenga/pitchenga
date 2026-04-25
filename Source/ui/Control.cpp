@@ -72,28 +72,31 @@ Control::Control(PitchengaAudioProcessor& proc)
     buttonPlugs.onClick = [this] {
         juce::PopupMenu menu;
         menu.addItem(1, "Open Plugin Browser...");
+        menu.addItem(2, "Rescan Plugins");
         menu.addSeparator();
 
         auto& list = processor.getKnownPluginList();
         auto types = list.getTypes();
         
         // Filter and add only instruments (synths) to the menu
-        int id = 2;
+        int id = 3;
         for (int i = 0; i < types.size(); ++i) {
             if (types[i].isInstrument) {
                 menu.addItem(id, types[i].name);
             }
-            id++; // Keep ID in sync with types index + 2
+            id++; // Keep ID in sync with types index + 3
         }
 
         menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&buttonPlugs),
             [this](int result) {
                 if (result == 1) {
                     processor.openPluginBrowser();
-                } else if (result > 1) {
+                } else if (result == 2) {
+                    processor.rescanPlugins();
+                } else if (result > 2) {
                     auto& listRef = processor.getKnownPluginList();
                     auto typesRef = listRef.getTypes();
-                    const int index = result - 2;
+                    const int index = result - 3;
                     if (index >= 0 && index < typesRef.size()) {
                         processor.loadExternalPlugin(typesRef[static_cast<size_t>(index)]);
                     }

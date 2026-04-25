@@ -155,14 +155,6 @@ void Math::flushStaleAudioData(int& availableSamples) {
             }
         }
         availableSamples = octaves[0].fifo.getNumReady();
-
-        //fixme: Is it needed?
-        // Clear history buffers to prevent a massive broadband noise burst (the "CRT flicker" flash)
-        // std::fill(rawAudioHistoryBuffer.begin(), rawAudioHistoryBuffer.end(), 0.0f);
-        // for (auto& win : slidingWindows) {
-            // std::fill(win.begin(), win.end(), 0.0f);
-        // }
-        // std::fill(pitchAnalysisBuffer.begin(), pitchAnalysisBuffer.end(), 0.0f);
     }
 }
 
@@ -226,7 +218,7 @@ void Math::consumeAudioFromFifo() {
                         rawAudioHistoryBuffer.begin() + (32768 - actualRead) + size1
                     );
 
-                // --- Decimate for Pitch Detection (4x downsampling with 300Hz LP filter) ---
+                // Decimate for Pitch Detection (4x downsampling with 300Hz LP filter)
                 const int decimatedSamplesAdded = actualRead / 4;
                 if (decimatedSamplesAdded > 0) {
                     std::memmove(
@@ -281,7 +273,7 @@ void Math::processCqtAndEqualization() {
     const int binsPerOctave = cqtEngine.getBinsPerOctave();
     const int signalBlockSize = cqtEngine.getSignalBlockSize();
 
-    // --- CQT Processing (For Eye) ---
+    // CQT Processing (For Eye)
     for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct) {
         const auto& window = slidingWindows[static_cast<size_t>(oct)];
         if (window.size() == static_cast<size_t>(signalBlockSize)) {

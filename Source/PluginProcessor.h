@@ -81,6 +81,7 @@ public:
 
     // Plugin Hosting
     void loadExternalPlugin(const juce::PluginDescription& description);
+    void rescanPlugins() const;
     void openPluginBrowser();
     void showExternalPluginEditor();
     juce::AudioProcessorEditor* createExternalPluginEditor();

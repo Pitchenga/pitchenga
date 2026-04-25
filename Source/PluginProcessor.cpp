@@ -188,6 +188,13 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
     }
 }
 
+void PitchengaAudioProcessor::rescanPlugins() const {
+    for (int i = 0; i < formatManager.getNumFormats(); ++i) {
+        auto* format = formatManager.getFormat(i);
+        format->searchPathsForPlugins(format->getDefaultLocationsToSearch(), true);
+    }
+}
+
 void PitchengaAudioProcessor::openPluginBrowser() {
     if (onOpenPluginBrowser) {
         onOpenPluginBrowser();
