@@ -31,6 +31,7 @@ public:
         bool isExternalPluginWindowOpen = false;
 
         float splitRatio = 0.3130223751068115f;
+        juce::String currentPresetName;
 
         [[nodiscard]] bool isShowRollLabels() const {
             return !(isShowRoll && isShowNeedle);

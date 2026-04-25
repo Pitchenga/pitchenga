@@ -133,6 +133,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                     
                     // Factory is read-only
                     currentPresetFile = juce::File();
+                    processor.settings.currentPresetName = "Factory Default";
                     comboPresets.setText("Factory Default", juce::NotificationType::dontSendNotification);
                 }
             }
@@ -151,6 +152,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                         PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
                         processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
                         currentPresetFile = userDefaultFile;
+                        processor.settings.currentPresetName = "User Default";
                         comboPresets.setText("User Default", juce::NotificationType::dontSendNotification);
                     }
                 }
@@ -168,6 +170,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                         processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
                         
                         currentPresetFile = userDefaultFile;
+                        processor.settings.currentPresetName = "User Default";
                         comboPresets.setText("User Default", juce::NotificationType::dontSendNotification);
                     }
                 }
@@ -196,6 +199,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                                 PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
                                 processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
                                 currentPresetFile = result;
+                                processor.settings.currentPresetName = result.getFileNameWithoutExtension();
                                 refreshPresets(); // To handle case where file was outside the dir
                             }
                         }
@@ -215,6 +219,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                         PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
                         processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
                         currentPresetFile = presetFile;
+                        processor.settings.currentPresetName = presetFile.getFileNameWithoutExtension();
                         comboPresets.setText(presetFile.getFileNameWithoutExtension(), juce::NotificationType::dontSendNotification);
                     }
                 }
@@ -222,7 +227,24 @@ Control::Control(PitchengaAudioProcessor& proc)
         }
         updateButtonStates();
     };
+
     refreshPresets();
+
+    // Restore selection by name
+    if (processor.settings.currentPresetName.isNotEmpty()) {
+        const auto presetName = processor.settings.currentPresetName;
+        if (presetName == "User Default") {
+             comboPresets.setSelectedId(2, juce::NotificationType::dontSendNotification);
+        } else {
+             for (int i = 0; i < comboPresets.getNumItems(); ++i) {
+                if (comboPresets.getItemText(i) == presetName) {
+                    comboPresets.setSelectedItemIndex(i, juce::NotificationType::dontSendNotification);
+                    break;
+                }
+            }
+        }
+        comboPresets.setText(presetName, juce::NotificationType::dontSendNotification);
+    }
 
     setupToggleButton(toggleTweak, processor.settings.isShowTweakPanel);
     toggleTweak.onClick = [this] {
@@ -292,6 +314,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                     const juce::XmlElement xml = processor.settings.createXml();
                     if (xml.writeTo(result)) {
                         currentPresetFile = result;
+                        processor.settings.currentPresetName = result.getFileNameWithoutExtension();
                         refreshPresets();
                     } else {
                         juce::AlertWindow::showMessageBoxAsync(
@@ -316,6 +339,7 @@ Control::Control(PitchengaAudioProcessor& proc)
             // Delete User Default and flip to Factory Default
             if (currentPresetFile.deleteFile()) {
                 currentPresetFile = juce::File();
+                processor.settings.currentPresetName = "Factory Default";
                 comboPresets.setSelectedId(1, juce::NotificationType::sendNotification);
                 refreshPresets();
             }
@@ -323,6 +347,7 @@ Control::Control(PitchengaAudioProcessor& proc)
             // Delete general preset
             if (currentPresetFile.deleteFile()) {
                 currentPresetFile = juce::File();
+                processor.settings.currentPresetName = "Factory Default";
                 comboPresets.setSelectedId(1, juce::NotificationType::sendNotification);
                 refreshPresets();
             }
@@ -561,6 +586,7 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isExternalPluginWindowOpen", isExternalPluginWindowOpen);
 
     xml.setAttribute("splitRatio", splitRatio);
+    xml.setAttribute("currentPresetName", currentPresetName);
 
     return xml;
 }
@@ -599,6 +625,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isExternalPluginWindowOpen = xml.getBoolAttribute("isExternalPluginWindowOpen", isExternalPluginWindowOpen);
 
     splitRatio = static_cast<float>(xml.getDoubleAttribute("splitRatio", splitRatio));
+    currentPresetName = xml.getStringAttribute("currentPresetName", currentPresetName);
 
     return true;
 }
