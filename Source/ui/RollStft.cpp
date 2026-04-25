@@ -7,8 +7,7 @@
 RollStft::RollStft(PitchengaAudioProcessor& proc) : processor(proc) {}
 
 void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
-    if (!processor.settings.showSteam
-        || !processor.settings.useStftRoll
+    if (!processor.settings.useStftRoll
         || processor.settings.freezeRoll
         || !isVisible()
     ) {

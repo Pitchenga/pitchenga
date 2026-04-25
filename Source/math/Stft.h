@@ -36,7 +36,9 @@ public:
     // bool enablePsychoacousticTilt = true;
     bool enablePsychoacousticTilt = false;
     bool enableTailKiller = true;
+    // bool enableTailKiller = false;
     bool enableTemporalSmoothing = true;
+    // bool enableTemporalSmoothing = false;
 
     // Gradiental Peak Extractor Factors
     float bassShrinkerExponent = 64.0f;    // High exponent to heavily pinch wide bass lobes
@@ -49,7 +51,7 @@ private:
     void performStft(const std::vector<float>& timeDomainSignal);
     void calculateRawBands(const std::vector<float>& timeDomainSignal);
     void stitchResolutionBands();
-    void sculptSpectrum();
+    void extractPeaks();
     void applyProgressiveSmoothing();
 
     void applyPsychoacousticTilt();

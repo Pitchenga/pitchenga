@@ -60,7 +60,7 @@ void Stft::performStft(const std::vector<float>& timeDomainSignal) {
     stitchResolutionBands();
 
     if (enablePeakExtraction) {
-        sculptSpectrum();
+        extractPeaks();
     }
 
     applyProgressiveSmoothing();
@@ -133,7 +133,7 @@ void Stft::stitchResolutionBands() {
     }
 }
 
-void Stft::sculptSpectrum() {
+void Stft::extractPeaks() {
     // --- GRADIENTAL PEAK EXTRACTOR ---
     // Sculpt the spectrum to shrink wide lobes horizontally and expand peaks vertically
     std::vector<float> sharpenedMagnitudes(stitchedSize, 0.0f);
