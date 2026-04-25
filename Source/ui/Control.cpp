@@ -444,8 +444,11 @@ void Control::refreshPresets() {
 
         int id = 4;
         for (auto& file : files) {
-            comboPresets.addItem(file.getFileNameWithoutExtension(), id++);
-            presets.push_back(file);
+            // Exclude user-default.xml from the general list as it has its own item
+            if (file.getFileName() != "user-default.xml") {
+                comboPresets.addItem(file.getFileNameWithoutExtension(), id++);
+                presets.push_back(file);
+            }
         }
     }
 
