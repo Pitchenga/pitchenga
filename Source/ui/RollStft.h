@@ -35,12 +35,12 @@ private:
     static float freqToMidi(float freq);
     static float frequencyToX(float frequencyHz, float width);
 
-    void paintFrame();
+    void buildFrame();
     void paintFrame(juce::Graphics& graphics) const;
     static void paintLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, int midiNote, float targetCenter, float startY, juce::Colour baseColor);
     void pumpSteam();
     void paintSteam(const juce::Graphics& graphics) const;
-    void paintPeaks(juce::Graphics& graphics) const;
+    void paintForrest(juce::Graphics& graphics) const;
 
     static juce::Font getLabelFont();
     static float getLabelAreaHeight();

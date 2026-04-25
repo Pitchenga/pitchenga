@@ -32,9 +32,14 @@ bool RollCqt::expand() {
 }
 
 void RollCqt::updateResults(const std::vector<double>& results) {
-    if (!isVisible()) return;
+    if (processor.settings.useStftRoll
+        || processor.settings.freezeRoll
+        || results.empty()
+        || !isVisible()
+    ) {
+        return;
+    }
 
-    if (results.empty()) return;
     displayMagnitudes = results;
 
     if (smoother == nullptr || lastKnownSize != results.size()) {
@@ -62,7 +67,7 @@ void RollCqt::resized() {
         // Initialize the rolling buffer whenever the window resizes
         steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
         steamScrollOffset = 0;
-        paintFrame();
+        buildFrame();
     }
 }
 
@@ -80,9 +85,9 @@ float RollCqt::getLabelAreaHeight() {
 
 void RollCqt::paint(juce::Graphics& graphics) {
     if (!cachedFrame.isValid()) {
-        paintFrame();
+        buildFrame();
     }
-    
+
     const int width = getWidth();
     const int height = getHeight();
     const float labelAreaHeight = getLabelAreaHeight();
@@ -111,7 +116,7 @@ void RollCqt::paint(juce::Graphics& graphics) {
     graphics.restoreState();
 }
 
-void RollCqt::paintFrame() {
+void RollCqt::buildFrame() {
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
@@ -135,17 +140,17 @@ void RollCqt::paintLabel(
     juce::Graphics& graphics,
     const float labelHeight,
     const float maxTextWidth,
-    const int i,
+    const int binIndex,
     const float targetCenter,
     const float startY,
     const juce::Colour baseColor
 ) {
-    if (i == 0) {
+    if (binIndex == 0) {
         // Not drawing a half label
         return;
     }
     constexpr int startMidiNote = 12;
-    const int midiNote = i + startMidiNote;
+    const int midiNote = binIndex + startMidiNote;
 
     const juce::String name = getNoteName(midiNote);
 
@@ -204,7 +209,7 @@ void RollCqt::paintFrame(juce::Graphics& graphics) const {
         graphics.setColour(gridColor);
 
         if (isBlackKey) {
-            const float dashLengths[] = { 4.0f, 4.0f };
+            const float dashLengths[] = {4.0f, 4.0f};
             graphics.drawDashedLine(juce::Line<float>(targetCenter, startY, targetCenter, endY), dashLengths, 2, 1.0f);
         } else {
             graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
@@ -297,10 +302,10 @@ void RollCqt::paintSteam(const juce::Graphics& graphics) const {
 
     // Target is steamScrollOffset
     const float target = static_cast<float>(steamScrollOffset);
-    
+
     // Mutable interpolation logic
     auto* nonConstThis = const_cast<RollCqt*>(this);
-    
+
     // Handle wrap-around for the interpolator
     const float halfHeight = static_cast<float>(height) * 0.5f;
     if (target < nonConstThis->visualScrollOffset - halfHeight) {
@@ -315,6 +320,12 @@ void RollCqt::paintSteam(const juce::Graphics& graphics) const {
 
     // Use AffineTransform for sub-pixel smooth scrolling to cure the 43Hz vs 60Hz mismatch (CRT flicker).
     // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
-    graphics.drawImageTransformed(steamImage, juce::AffineTransform::translation(0.0f, -nonConstThis->visualScrollOffset));
-    graphics.drawImageTransformed(steamImage, juce::AffineTransform::translation(0.0f, static_cast<float>(height) - nonConstThis->visualScrollOffset));
+    graphics.drawImageTransformed(
+        steamImage,
+        juce::AffineTransform::translation(0.0f, -nonConstThis->visualScrollOffset)
+    );
+    graphics.drawImageTransformed(
+        steamImage,
+        juce::AffineTransform::translation(0.0f, static_cast<float>(height) - nonConstThis->visualScrollOffset)
+    );
 }

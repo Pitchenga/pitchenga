@@ -22,7 +22,7 @@ public:
     static float getLabelAreaHeight();
 
 private:
-    void paintFrame();
+    void buildFrame();
     void paintFrame(juce::Graphics& graphics) const;
 
     static juce::String getNoteName(int midiNote);
@@ -30,7 +30,7 @@ private:
         juce::Graphics& graphics,
         float labelHeight,
         float maxTextWidth,
-        int i,
+        int binIndex,
         float targetCenter,
         float startY,
         juce::Colour baseColor

@@ -30,7 +30,7 @@ void RollStft::resized() {
         // Initialize the rolling buffer whenever the window resizes
         steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
         steamScrollOffset = 0;
-        paintFrame();
+        buildFrame();
     }
 }
 
@@ -58,7 +58,7 @@ float RollStft::frequencyToX(float frequencyHz, float width) {
 
 void RollStft::paint(juce::Graphics& graphics) {
     if (!cachedFrame.isValid()) {
-        paintFrame();
+        buildFrame();
     }
 
     const int width = getWidth();
@@ -77,16 +77,14 @@ void RollStft::paint(juce::Graphics& graphics) {
         paintSteam(graphics);
     }
 
-    if (!activePeaks.empty()) {
-        if (processor.settings.showForrest) {
-            paintPeaks(graphics);
-        }
+    if (!activePeaks.empty() && processor.settings.showForrest) {
+        paintForrest(graphics);
     }
 
     graphics.restoreState();
 }
 
-void RollStft::paintFrame() {
+void RollStft::buildFrame() {
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
@@ -149,14 +147,14 @@ void RollStft::paintFrame(juce::Graphics& graphics) const {
     const int startMidi = static_cast<int>(std::ceil(minMidiNote));
     const int endMidi = static_cast<int>(std::floor(maxMidiNote));
 
-    for (int i = startMidi; i <= endMidi; ++i) {
-        const int chroma = i % 12;
+    for (int midiNote = startMidi; midiNote <= endMidi; ++midiNote) {
+        const int chroma = midiNote % 12;
 
         // fixme: move to ToneName
         // Identify standard "black" keys
         const bool isBlackKey = chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10;
 
-        const float hz = 440.0f * std::pow(2.0f, (static_cast<float>(i) - 69.0f) / 12.0f);
+        const float hz = 440.0f * std::pow(2.0f, (static_cast<float>(midiNote) - 69.0f) / 12.0f);
         const float targetCenter = frequencyToX(hz, static_cast<float>(getWidth()));
 
         const float startY = 0.0f;
@@ -173,11 +171,11 @@ void RollStft::paintFrame(juce::Graphics& graphics) const {
             graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
         }
 
-        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor);
+        paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, totalHeight, baseColor);
     }
 }
 
-void RollStft::paintPeaks(juce::Graphics& graphics) const {
+void RollStft::paintForrest(juce::Graphics& graphics) const {
     const int width = getWidth();
     const float plotHeight = std::max(1.0f, static_cast<float>(getHeight()) - getLabelAreaHeight());
 
@@ -215,12 +213,7 @@ void RollStft::paintPeaks(juce::Graphics& graphics) const {
 }
 
 void RollStft::pumpSteam() {
-    if (activePeaks.empty()
-        || !processor.settings.useStftRoll
-        || !processor.settings.showSteam
-        || processor.settings.freezeRoll
-        || !steamImage.isValid()
-    ) {
+    if (activePeaks.empty() || !steamImage.isValid()) {
         return;
     };
 
@@ -238,8 +231,6 @@ void RollStft::pumpSteam() {
 
     // Clear the new row first to prevent ghosting from previous treadmill cycles
     steamImage.clear(juce::Rectangle<int>(0, drawY, width, speedPx), juce::Colours::transparentBlack);
-
-    if (activePeaks.empty()) return;
 
     juce::Graphics graphics(steamImage);
 
