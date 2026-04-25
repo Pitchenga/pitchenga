@@ -45,6 +45,7 @@ public:
 
     void resized() override;
     void updateVisibilityFromState();
+    void refreshPresets();
 
     [[nodiscard]] float getPreferredHeight() const;
 
@@ -74,9 +75,9 @@ private:
     juce::TextButton toggleTweak{"Tweak"};
     juce::Component tweakPanel;
     juce::ComboBox comboPresets{"Presets"};
+    std::vector<juce::File> presets;
     juce::TextButton buttonLoad{"Load"};
     juce::TextButton buttonSave{"Save"};
-    juce::TextButton buttonNuke{"Nuke"};
 
     std::unique_ptr<juce::FileChooser> chooser;
 
