@@ -23,6 +23,8 @@ public:
         bool isShowSteam = true;
         bool isShowForrest = false;
 
+        bool isMonitoringEnabled = false;
+
         float splitRatio = 0.3130223751068115f;
 
         [[nodiscard]] bool isisShowRollLabels() const {
@@ -57,6 +59,10 @@ private:
     juce::TextButton toggleisFreezeRoll{"Freeze"};
     juce::TextButton toggleSteam{"Steam"};
     juce::TextButton toggleForrest{"Forest"};
+
+    juce::TextButton toggleMonitor{"Monitor"};
+    juce::TextButton buttonInstrument{"Instrument"};
+    juce::TextButton buttonShow{"Show"};
 
     juce::Label buildTimestampLabel;
 

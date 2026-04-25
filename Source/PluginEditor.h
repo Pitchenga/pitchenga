@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_audio_processors/juce_audio_processors.h>
 #include "PluginProcessor.h"
 #include "math/Math.h"
 #include "ui/Needle.h"
@@ -19,6 +20,8 @@ public:
     void resized() override;
 
     void updateVisibilityFromState();
+    void openPluginWindow();
+    void openPluginBrowserWindow();
 
 private:
     void timerCallback() override;
@@ -42,6 +45,9 @@ private:
     std::vector<double> rollCqtBuffer;
 
     static constexpr int uiRefreshRateHz = 48;
+
+    std::unique_ptr<juce::DocumentWindow> pluginWindow;
+    std::unique_ptr<juce::DocumentWindow> browserWindow;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PitchengaAudioProcessorEditor)
 };

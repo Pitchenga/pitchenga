@@ -79,6 +79,20 @@ public:
     void getStateInformation(juce::MemoryBlock& destData) override;
     void setStateInformation(const void* data, int sizeInBytes) override;
 
+    // Plugin Hosting
+    void loadExternalPlugin(const juce::PluginDescription& description);
+    void openPluginBrowser();
+    void showExternalPluginEditor();
+    juce::AudioProcessorEditor* createExternalPluginEditor();
+    bool isExternalPluginLoaded() const { return externalPlugin != nullptr; }
+    
+    juce::AudioPluginFormatManager& getFormatManager() { return formatManager; }
+    juce::KnownPluginList& getKnownPluginList() { return knownPluginList; }
+    
+    std::function<void()> onShowExternalPluginEditor;
+    std::function<void()> onOpenPluginBrowser;
+    std::function<void()> onPluginLoaded;
+
     // Default size is used if no state is loaded
     int lastUIWidth = 601;
     int lastUIHeight = 951;
@@ -112,6 +126,14 @@ private:
 
     Agc agcLeft{0.0001f, 0.4f, 2.0f};
     Agc agcRight{0.0001f, 0.4f, 2.0f};
+
+    // Plugin Hosting Engine
+    juce::AudioPluginFormatManager formatManager;
+    juce::KnownPluginList knownPluginList;
+    std::unique_ptr<juce::AudioPluginInstance> externalPlugin;
+    juce::CriticalSection pluginLock;
+    juce::AudioBuffer<float> pluginOutputBuffer;
+    juce::AudioBuffer<float> micBuffer;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PitchengaAudioProcessor)
 };

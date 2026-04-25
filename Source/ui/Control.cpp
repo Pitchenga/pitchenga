@@ -63,6 +63,42 @@ Control::Control(PitchengaAudioProcessor& proc)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
+    setupToggleButton(toggleMonitor, processor.settings.isMonitoringEnabled);
+    toggleMonitor.onClick = [this] {
+        processor.settings.isMonitoringEnabled = toggleMonitor.getToggleState();
+    };
+
+    buttonInstrument.setButtonText("Instrument");
+    buttonInstrument.onClick = [this] {
+        juce::PopupMenu menu;
+        menu.addItem(1, "Open Plugin Browser...");
+        menu.addSeparator();
+
+        auto& list = processor.getKnownPluginList();
+        int id = 2;
+        for (auto& desc : list.getTypes()) {
+            menu.addItem(id++, desc.name);
+        }
+
+        menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&buttonInstrument),
+            [this](int result) {
+                if (result == 1) {
+                    processor.openPluginBrowser();
+                } else if (result > 1) {
+                    auto& listRef = processor.getKnownPluginList();
+                    auto types = listRef.getTypes();
+                    if (static_cast<size_t>(result - 2) < static_cast<size_t>(types.size())) {
+                        processor.loadExternalPlugin(types[static_cast<size_t>(result - 2)]);
+                    }
+                }
+            });
+    };
+
+    buttonShow.setButtonText("Show");
+    buttonShow.onClick = [this] {
+        processor.showExternalPluginEditor();
+    };
+
     setupToggleButton(toggleTweak, showTweakPanel);
     toggleTweak.onClick = [this] {
         showTweakPanel = toggleTweak.getToggleState();
@@ -119,6 +155,10 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(toggleSteam);
     addAndMakeVisible(toggleForrest);
 
+    addAndMakeVisible(toggleMonitor);
+    addAndMakeVisible(buttonInstrument);
+    addAndMakeVisible(buttonShow);
+
     addAndMakeVisible(toggleTweak);
     addAndMakeVisible(tweakPanel);
     tweakPanel.addAndMakeVisible(buttonCopy);
@@ -154,6 +194,8 @@ void Control::updateVisibilityFromState() {
     toggleSteam.setToggleState(processor.settings.isShowSteam, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
+    toggleMonitor.setToggleState(processor.settings.isMonitoringEnabled, juce::NotificationType::dontSendNotification);
+
     updateButtonStates();
 }
 
@@ -163,6 +205,9 @@ void Control::updateButtonStates() {
     toggleRollType.setVisible(rollActive);
     toggleSteam.setVisible(rollActive);
     toggleForrest.setVisible(rollActive);
+    
+    buttonShow.setVisible(processor.isExternalPluginLoaded());
+    
     tweakPanel.setVisible(showTweakPanel);
     resized();
 }
@@ -189,6 +234,7 @@ void Control::resized() {
 
     // Pack the buttons to the left with minimal offsets dynamically sizing to their text
     auto positionButton = [&](juce::TextButton& btn) {
+        if (!btn.isVisible()) return;
         const float textWidth = juce::GlyphArrangement::getStringWidth(font, btn.getButtonText());
         const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 16; // 16px horizontal padding
         btn.setBounds(topRow.removeFromLeft(buttonWidth).reduced(2));
@@ -208,6 +254,10 @@ void Control::resized() {
     positionButton(toggleNeedle);
     positionButton(toggleEye);
     positionButton(toggleRoll);
+
+    positionButton(buttonInstrument);
+    positionButton(buttonShow);
+    positionButton(toggleMonitor);
 
     positionButtonRight(toggleTweak, topRow);
 
@@ -245,6 +295,8 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isShowForrest", isShowForrest);
     xml.setAttribute("isShowSteam", isShowSteam);
 
+    xml.setAttribute("isMonitoringEnabled", isMonitoringEnabled);
+
     xml.setAttribute("splitRatio", splitRatio);
 
     return xml;
@@ -267,6 +319,8 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isFreezeRoll = xml.getBoolAttribute("isFreezeRoll", isFreezeRoll);
     isShowForrest = xml.getBoolAttribute("isShowForrest", isShowForrest);
     isShowSteam = xml.getBoolAttribute("isShowSteam", isShowSteam);
+
+    isMonitoringEnabled = xml.getBoolAttribute("isMonitoringEnabled", isMonitoringEnabled);
 
     splitRatio = static_cast<float>(xml.getDoubleAttribute("splitRatio", splitRatio));
 

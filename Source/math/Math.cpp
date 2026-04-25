@@ -268,9 +268,9 @@ void Math::processPitchDetection() {
         // juce::FloatVectorOperations::multiply(pitchAnalysisBuffer.data(), 15.0f, 4096);
         const float detectedPitch = pitchDetector->getPitch(decimatedAnalysisBuffer, static_cast<int>(decimatedSamplingFreq));
         
-        if (detectedPitch > 0.0f) {
-            Util::debug("Math Thread - Detected Pitch: " + juce::String(detectedPitch) + " Hz (Decimated)");
-        }
+        // if (detectedPitch > 0.0f) {
+            // Util::debug("Math Thread - Detected Pitch: " + juce::String(detectedPitch) + " Hz (Decimated)");
+        // }
         
         // Update the atomic variable for the UI timer to read
         processor.currentPitchHz.store(detectedPitch, std::memory_order_relaxed);
