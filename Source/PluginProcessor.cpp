@@ -164,7 +164,7 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     }
 
     // Conditional input monitoring
-    if (settings.isEarEnabled) {
+    if (settings.isEarEnabled || wrapperType != wrapperType_Standalone) {
         for (int ch = 0; ch < totalNumOutputChannels; ++ch) {
             buffer.addFrom(ch, 0, micBuffer, ch % micBuffer.getNumChannels(), 0, numSamples);
         }
