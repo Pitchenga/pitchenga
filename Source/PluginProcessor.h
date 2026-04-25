@@ -116,6 +116,10 @@ public:
     // This is the lock-free bridge to the GUI
     std::atomic<float> currentPitchHz{-1.0f};
 
+    static inline const juce::String settingsErrorTitle = "Settings Error";
+    static inline const juce::String settingsErrorMessage = "Failed to load profile: incompatible or outdated settings format.";
+    static inline const juce::String pluginRestorationErrorMessage = "Failed to restore external plug-in from profile.";
+
 private:
     std::array<OctaveBuffer, numOctaves> octaves;
     std::vector<float> monoBuffer;

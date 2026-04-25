@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "Util.h"
+#include <stdexcept>
 
 PitchengaAudioProcessor::PitchengaAudioProcessor()
     : AudioProcessor(
@@ -338,9 +339,13 @@ void PitchengaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
 }
 
 void PitchengaAudioProcessor::setStateInformation(const void* data, const int sizeInBytes) {
-    const std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+    try {
+        const std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
 
-    if (xmlState != nullptr && settings.loadFromXml(*xmlState)) {
+        if (xmlState == nullptr || !settings.loadFromXml(*xmlState)) {
+            throw std::runtime_error(settingsErrorMessage.toStdString());
+        }
+
         if (auto* editor = getActiveEditor()) {
             editor->setSize(settings.lastUiWidth, settings.lastUiHeight);
             if (auto* pitchengaEditor = dynamic_cast<PitchengaAudioProcessorEditor*>(editor)) {
@@ -350,39 +355,52 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, const int si
 
         // Restore the external plugin from the merged settings
         if (settings.externalPluginDescriptionXml.isNotEmpty()) {
-            if (auto pluginDescriptionXml = juce::XmlDocument::parse(settings.externalPluginDescriptionXml)) {
-                juce::PluginDescription pluginDescription;
-                if (pluginDescription.loadFromXml(*pluginDescriptionXml)) {
-                    // For setup restoration, we suspend processing during the entire operation
-                    // (including state setting) to avoid crashes like 0x10 (null dereference 
-                    // during processing while plugin is inconsistent).
-                    suspendProcessing(true);
+            auto pluginDescriptionXml = juce::XmlDocument::parse(settings.externalPluginDescriptionXml);
+            if (pluginDescriptionXml == nullptr) {
+                throw std::runtime_error(pluginRestorationErrorMessage.toStdString());
+            }
 
-                    loadExternalPlugin(pluginDescription, false);
+            juce::PluginDescription pluginDescription;
+            if (!pluginDescription.loadFromXml(*pluginDescriptionXml)) {
+                throw std::runtime_error(pluginRestorationErrorMessage.toStdString());
+            }
 
-                    if (externalPlugin != nullptr) {
-                        if (settings.externalPluginStateBase64.isNotEmpty()) {
-                            juce::MemoryBlock pluginState;
-                            if (pluginState.fromBase64Encoding(settings.externalPluginStateBase64)) {
-                                externalPlugin->setStateInformation(pluginState.getData(), static_cast<int>(pluginState.getSize()));
-                            }
-                        }
+            // For setup restoration, we suspend processing during the entire operation
+            // (including state setting) to avoid crashes like 0x10 (null dereference 
+            // during processing while plugin is inconsistent).
+            suspendProcessing(true);
+
+            loadExternalPlugin(pluginDescription, false);
+
+            if (externalPlugin != nullptr) {
+                if (settings.externalPluginStateBase64.isNotEmpty()) {
+                    juce::MemoryBlock pluginState;
+                    if (pluginState.fromBase64Encoding(settings.externalPluginStateBase64)) {
+                        externalPlugin->setStateInformation(pluginState.getData(), static_cast<int>(pluginState.getSize()));
                     }
+                }
+            }
 
-                    suspendProcessing(false);
+            suspendProcessing(false);
 
-                    // Restore the plugin window visibility state
-                    if (settings.isExternalPluginWindowOpen) {
-                        if (onShowExternalPluginEditor) {
-                            onShowExternalPluginEditor();
-                        }
-                    }
+            // Restore the plugin window visibility state
+            if (settings.isExternalPluginWindowOpen) {
+                if (onShowExternalPluginEditor) {
+                    onShowExternalPluginEditor();
                 }
             }
         } else {
             unloadExternalPlugin();
         }
-
+    } catch (const std::exception& e) {
+        suspendProcessing(false);
+        juce::MessageManager::callAsync([message = juce::String(e.what())] {
+            juce::AlertWindow::showMessageBoxAsync(
+                juce::MessageBoxIconType::WarningIcon,
+                settingsErrorTitle,
+                message
+            );
+        });
     }
 }
 
