@@ -4,47 +4,53 @@
 #include <vector>
 #include <complex>
 #include <algorithm>
+#include <cmath>
+#include "../Util.h"
 
-/**
- * Port of sevagh/pitch-detection MPM algorithm to JUCE.
- * https://github.com/sevagh/pitch-detection
- */
 namespace sevagh {
 
+/**
+ * Port of sevagh/pitch-detection Mpm algorithm to JUCE.
+ * https://github.com/sevagh/pitch-detection
+ */
 template <typename T>
 class PitchDetector {
 public:
     explicit PitchDetector(int bufferSize)
-        : nfft(bufferSize),
-          order(static_cast<int>(std::log2(bufferSize))),
-          fft(order),
-          fftBuffer(static_cast<size_t>(nfft)),
-          nsdf(static_cast<size_t>(nfft))
+        : numFftPoints(bufferSize),
+          fftOrder(static_cast<int>(std::log2(bufferSize))),
+          fft(fftOrder),
+          fftBuffer(static_cast<size_t>(numFftPoints)),
+          nsdfBuffer(static_cast<size_t>(numFftPoints))
     {
     }
     
     T getPitch(const std::vector<T>& audioBuffer, int sampleRate) {
-        computeAcorr(audioBuffer);
+        computeNsdf(audioBuffer);
 
         std::vector<int> maxPositions = peakPicking();
-        std::vector<std::pair<T, T>> estimates;
+        if (maxPositions.empty()) {
+            return static_cast<T>(-1.0);
+        }
 
-        T highestAmplitude = -1e30f; // Use a very small number
+        std::vector<std::pair<T, T>> estimates;
+        T highestAmplitude = static_cast<T>(-1e30);
 
         for (int i : maxPositions) {
-            highestAmplitude = std::max(highestAmplitude, static_cast<T>(nsdf[static_cast<size_t>(i)]));
-            if (nsdf[static_cast<size_t>(i)] > MPM_SMALL_CUTOFF) {
+            highestAmplitude = std::max(highestAmplitude, static_cast<T>(nsdfBuffer[static_cast<size_t>(i)]));
+            if (nsdfBuffer[static_cast<size_t>(i)] > MpmSmallCutoff) {
                 auto x = parabolicInterpolation(i);
                 estimates.push_back(x);
                 highestAmplitude = std::max(highestAmplitude, x.second);
             }
         }
 
-        if (estimates.empty())
-            return -1.0;
+        if (estimates.empty()) {
+            return static_cast<T>(-1.0);
+        }
 
-        T actualCutoff = MPM_CUTOFF * highestAmplitude;
-        T period = 0.0;
+        T actualCutoff = MpmCutoff * highestAmplitude;
+        T period = static_cast<T>(0.0);
 
         for (auto i : estimates) {
             if (i.second >= actualCutoff) {
@@ -53,101 +59,110 @@ public:
             }
         }
 
-        if (period <= 0.0) return -1.0;
+        if (period <= static_cast<T>(0.0)) {
+            return static_cast<T>(-1.0);
+        }
         
         T pitchEstimate = static_cast<T>(sampleRate) / period;
-        return (pitchEstimate > MPM_LOWER_PITCH_CUTOFF) ? pitchEstimate : -1.0;
+        
+        if (pitchEstimate > MpmLowerPitchCutoff) {
+            return pitchEstimate;
+        }
+        
+        return static_cast<T>(-1.0);
     }
 
 private:
-    int nfft;
-    int order;
+    int numFftPoints;
+    int fftOrder;
     juce::dsp::FFT fft;
-    std::vector<std::complex<float>> fftBuffer;
-    std::vector<float> nsdf;
+    std::vector<juce::dsp::Complex<float>> fftBuffer;
+    std::vector<float> nsdfBuffer;
 
-    void computeAcorr(const std::vector<T>& audioBuffer) {
-        for (size_t i = 0; i < static_cast<size_t>(nfft); ++i) {
-            if (i < audioBuffer.size())
-                fftBuffer[i] = { static_cast<float>(audioBuffer[i]), 0.0f };
-            else
-                fftBuffer[i] = { 0.0f, 0.0f };
+    void computeNsdf(const std::vector<T>& audioBuffer) {
+        const size_t size = static_cast<size_t>(numFftPoints);
+        
+        // Autocorrelation using Fft
+        for (size_t i = 0; i < size; ++i) {
+            fftBuffer[i] = { i < audioBuffer.size() ? static_cast<float>(audioBuffer[i]) : 0.0f, 0.0f };
         }
-
         fft.perform(fftBuffer.data(), fftBuffer.data(), false);
 
-        float scale = 1.0f / static_cast<float>(nfft);
-        for (size_t i = 0; i < static_cast<size_t>(nfft); ++i) {
-            fftBuffer[i] = (fftBuffer[i] * std::conj(fftBuffer[i])) * scale;
+        for (size_t i = 0; i < size; ++i) {
+            float real = fftBuffer[i].real;
+            float imag = fftBuffer[i].imag;
+            float magSq = real * real + imag * imag;
+            fftBuffer[i] = { magSq, 0.0f };
         }
-
         fft.perform(fftBuffer.data(), fftBuffer.data(), true);
 
-        for (size_t i = 0; i < static_cast<size_t>(nfft); ++i) {
-            nsdf[i] = fftBuffer[i].real();
+        // Square Sum m[k]
+        std::vector<float> squareSums(size, 0.0f);
+        float totalSumSquares = 0.0f;
+        for (size_t i = 0; i < size; ++i) {
+            float val = i < audioBuffer.size() ? static_cast<float>(audioBuffer[i]) : 0.0f;
+            totalSumSquares += val * val;
+        }
+
+        squareSums[0] = 2.0f * totalSumSquares;
+        for (size_t k = 1; k < size; ++k) {
+            float valPrevious = (k - 1) < audioBuffer.size() ? static_cast<float>(audioBuffer[k - 1]) : 0.0f;
+            float valEnd = (size - k) < audioBuffer.size() ? static_cast<float>(audioBuffer[size - k]) : 0.0f;
+            squareSums[k] = squareSums[k - 1] - valPrevious * valPrevious - valEnd * valEnd;
+        }
+
+        // Nsdf = 2 * r[k] / m[k]
+        float fftScaleFactor = 1.0f / static_cast<float>(numFftPoints);
+        for (size_t k = 0; k < size; ++k) {
+            float realCorrelation = fftBuffer[k].real * fftScaleFactor;
+            if (squareSums[k] > 1e-6f) {
+                nsdfBuffer[k] = 2.0f * realCorrelation / squareSums[k];
+            } else {
+                nsdfBuffer[k] = 0.0f;
+            }
         }
     }
 
     std::vector<int> peakPicking() {
         std::vector<int> maxPositions;
-        int pos = 0;
-        int curMaxPos = 0;
-        int size = nfft;
+        const int size = static_cast<int>(nsdfBuffer.size());
+        const int searchRange = size / 2;
 
-        while (pos < (size - 1) / 3 && nsdf[static_cast<size_t>(pos)] > 0)
-            pos++;
-        while (pos < size - 1 && nsdf[static_cast<size_t>(pos)] <= 0.0)
-            pos++;
-
-        if (pos == 0) pos = 1;
-
-        while (pos < size - 1) {
-            if (nsdf[static_cast<size_t>(pos)] > nsdf[static_cast<size_t>(pos - 1)] && 
-                nsdf[static_cast<size_t>(pos)] >= nsdf[static_cast<size_t>(pos + 1)] &&
-                (curMaxPos == 0 || nsdf[static_cast<size_t>(pos)] > nsdf[static_cast<size_t>(curMaxPos)])) {
-                curMaxPos = pos;
-            }
-            pos++;
-            if (pos < size - 1 && nsdf[static_cast<size_t>(pos)] <= 0) {
-                if (curMaxPos > 0) {
-                    maxPositions.push_back(curMaxPos);
-                    curMaxPos = 0;
-                }
-                while (pos < size - 1 && nsdf[static_cast<size_t>(pos)] <= 0.0) {
-                    pos++;
+        for (int i = 1; i < searchRange - 1; ++i) {
+            if (nsdfBuffer[static_cast<size_t>(i)] > nsdfBuffer[static_cast<size_t>(i - 1)] && 
+                nsdfBuffer[static_cast<size_t>(i)] >= nsdfBuffer[static_cast<size_t>(i + 1)]) {
+                if (nsdfBuffer[static_cast<size_t>(i)] > 0.0f) {
+                    maxPositions.push_back(i);
                 }
             }
-        }
-        if (curMaxPos > 0) {
-            maxPositions.push_back(curMaxPos);
         }
         return maxPositions;
     }
 
-    std::pair<T, T> parabolicInterpolation(int x_) {
-        T x = static_cast<T>(x_);
-        int size = static_cast<int>(nsdf.size());
+    std::pair<T, T> parabolicInterpolation(int peakIndex) {
+        T x = static_cast<T>(peakIndex);
+        int size = static_cast<int>(nsdfBuffer.size());
 
-        if (x_ < 1) {
-            int xAdjusted = (nsdf[0] <= nsdf[1]) ? 0 : 1;
-            return { static_cast<T>(xAdjusted), static_cast<T>(nsdf[static_cast<size_t>(xAdjusted)]) };
-        } else if (x_ >= size - 1) {
-            int xAdjusted = (nsdf[static_cast<size_t>(size - 1)] <= nsdf[static_cast<size_t>(size - 2)]) ? size - 1 : size - 2;
-            return { static_cast<T>(xAdjusted), static_cast<T>(nsdf[static_cast<size_t>(xAdjusted)]) };
-        } else {
-            T den = static_cast<T>(nsdf[static_cast<size_t>(x_ + 1)] + nsdf[static_cast<size_t>(x_ - 1)] - 2.0f * nsdf[static_cast<size_t>(x_)]);
-            T delta = static_cast<T>(nsdf[static_cast<size_t>(x_ - 1)] - nsdf[static_cast<size_t>(x_ + 1)]);
-            if (std::abs(den) < 1e-10)
-                return { x, static_cast<T>(nsdf[static_cast<size_t>(x_)]) };
-            
-            return { x + delta / (2.0f * den),
-                     static_cast<T>(nsdf[static_cast<size_t>(x_)]) - delta * delta / (8.0f * den) };
+        if (peakIndex < 1 || peakIndex >= size - 1) {
+             return { x, static_cast<T>(nsdfBuffer[static_cast<size_t>(peakIndex)]) };
         }
+
+        T sampleBefore = static_cast<T>(nsdfBuffer[static_cast<size_t>(peakIndex - 1)]);
+        T samplePeak = static_cast<T>(nsdfBuffer[static_cast<size_t>(peakIndex)]);
+        T sampleAfter = static_cast<T>(nsdfBuffer[static_cast<size_t>(peakIndex + 1)]);
+
+        T denominator = sampleBefore + sampleAfter - 2.0f * samplePeak;
+        if (std::abs(denominator) < static_cast<T>(1e-10)) {
+            return { x, samplePeak };
+        }
+        
+        T delta = (sampleBefore - sampleAfter) / (static_cast<T>(2.0) * denominator);
+        return { x + delta, samplePeak - (sampleBefore - sampleAfter) * delta / static_cast<T>(4.0) };
     }
 
-    static constexpr T MPM_CUTOFF = 0.93f;
-    static constexpr T MPM_SMALL_CUTOFF = 0.5f;
-    static constexpr T MPM_LOWER_PITCH_CUTOFF = 80.0f;
+    static constexpr T MpmCutoff = static_cast<T>(0.93);
+    static constexpr T MpmSmallCutoff = static_cast<T>(0.3);
+    static constexpr T MpmLowerPitchCutoff = static_cast<T>(80.0);
 };
 
 } // namespace sevagh

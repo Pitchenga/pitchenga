@@ -229,13 +229,22 @@ void Math::consumeAudioFromFifo() {
 }
 
 void Math::processPitchDetection() {
-    // --- Pitch Detection (Using latest 4096 samples) ---
+    // Pitch Detection (Using latest 4096 samples)
     if (pitchDetector != nullptr) {
         const double samplingFreq = processor.getSampleRate() > 0 ? processor.getSampleRate() : 44100.0;
-        // Force weak fundamentals above the MPM clarity threshold.
+        
+        // Feed the latest block to the pitch detector
         std::copy(rawAudioHistoryBuffer.end() - 4096, rawAudioHistoryBuffer.end(), pitchAnalysisBuffer.begin());
-        juce::FloatVectorOperations::multiply(pitchAnalysisBuffer.data(), 12.0f, 4096);
+        
+        // Apply gain to the analysis buffer to ensure signal is strong enough for peak picking
+        juce::FloatVectorOperations::multiply(pitchAnalysisBuffer.data(), 15.0f, 4096);
+        
         const float detectedPitch = pitchDetector->getPitch(pitchAnalysisBuffer, static_cast<int>(samplingFreq));
+        
+        if (detectedPitch > 0.0f) {
+            Util::debug("Math Thread - Detected Pitch: " + juce::String(detectedPitch) + " Hz");
+        }
+        
         // Update the atomic variable for the UI timer to read
         processor.currentPitchHz.store(detectedPitch, std::memory_order_relaxed);
     }
