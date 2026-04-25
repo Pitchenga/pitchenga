@@ -261,9 +261,16 @@ Control::Control(PitchengaAudioProcessor& proc)
 
     buttonSaveAs.setButtonText("Save As");
     buttonSaveAs.onClick = [this] {
+        const juce::String currentName = comboPresets.getText();
+        juce::String suggestedName = currentName;
+        
+        if (currentName == "Presets..." || currentName == "Factory Default" || currentName == "User Default") {
+            suggestedName = "user-default";
+        }
+
         chooser = std::make_unique<juce::FileChooser>(
             "Select where to save the settings...",
-            juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga"),
+            juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga").getChildFile(suggestedName),
             "*.xml"
         );
 
