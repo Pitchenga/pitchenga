@@ -214,6 +214,8 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 }
 
 void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& description, bool forceOpenWindow) {
+    if (wrapperType != wrapperType_Standalone) return;
+
     juce::String errorMessage;
     const double sampleRate = getSampleRate();
     const int blockSize = getBlockSize();
