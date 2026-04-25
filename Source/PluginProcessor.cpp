@@ -303,7 +303,7 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, const int si
 
     if (xmlState != nullptr && settings.loadFromXml(*xmlState)) {
         if (auto* editor = getActiveEditor()) {
-            editor->setSize(settings.lastUIWidth, settings.lastUIHeight);
+            editor->setSize(settings.lastUiWidth, settings.lastUiHeight);
             if (auto* pitchengaEditor = dynamic_cast<PitchengaAudioProcessorEditor*>(editor)) {
                 pitchengaEditor->updateVisibilityFromState();
             }

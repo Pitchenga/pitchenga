@@ -47,7 +47,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     rollCqtBuffer.resize(PitchengaAudioProcessor::numOctaves * 12);
 
     setResizable(true, true);
-    setSize(processor.settings.lastUIWidth, processor.settings.lastUIHeight);
+    setSize(processor.settings.lastUiWidth, processor.settings.lastUiHeight);
 
     startTimerHz(uiRefreshRateHz);
     worker.startThread(juce::Thread::Priority::high);
@@ -158,8 +158,8 @@ void PitchengaAudioProcessorEditor::updateVisibilityFromState() {
 
 void PitchengaAudioProcessorEditor::resized() {
     auto bounds = getLocalBounds();
-    processor.settings.lastUIWidth = getWidth();
-    processor.settings.lastUIHeight = getHeight();
+    processor.settings.lastUiWidth = getWidth();
+    processor.settings.lastUiHeight = getHeight();
 
     // Give the control bar its own dedicated, non-overlapping space at the top left
     control.setBounds(bounds.removeFromTop(static_cast<int>(control.getPreferredHeight())));

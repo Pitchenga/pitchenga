@@ -11,8 +11,8 @@ public:
     // Data model for UI settings.
     // Handles its own XML parsing, but lives in the Processor to survive window closures.
     struct Settings {
-        int lastUIWidth = 601;
-        int lastUIHeight = 951;
+        int lastUiWidth = 601;
+        int lastUiHeight = 951;
 
         bool isShowRoll = true;
         bool isShowEye = true;
@@ -32,7 +32,7 @@ public:
 
         float splitRatio = 0.3130223751068115f;
 
-        [[nodiscard]] bool isisShowRollLabels() const {
+        [[nodiscard]] bool isShowRollLabels() const {
             return !(isShowRoll && isShowNeedle);
         }
 
@@ -76,7 +76,9 @@ private:
     juce::Component tweakPanel;
     juce::ComboBox comboPresets{"Presets"};
     std::vector<juce::File> presets;
+    juce::File currentPresetFile;
     juce::TextButton buttonSave{"Save"};
+    juce::TextButton buttonSaveAs{"Save As"};
 
     std::unique_ptr<juce::FileChooser> chooser;
 

@@ -81,7 +81,7 @@ juce::Font RollCqt::getLabelFont() {
 
 float RollCqt::getLabelAreaHeight() const {
     //fixme: Unify range and hide labels when adjacent to tuner
-    // if (!processor.settings.isisShowRollLabels()) {
+    // if (!processor.settings.isShowRollLabels()) {
         // return 0.0f;
     // }
     return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8") + 4.0f;

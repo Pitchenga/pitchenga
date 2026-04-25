@@ -130,10 +130,14 @@ Control::Control(PitchengaAudioProcessor& proc)
                     juce::MemoryBlock destData;
                     PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
                     processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
+                    
+                    // Factory is selected -> Save will go to user-default.xml
+                    currentPresetFile = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+                        .getChildFile("Pitchenga").getChildFile("user-default.xml");
                 }
             }
         } else if (id == 2) {
-            // Load user-default.xml from app data dir
+            // Load user-default.xml
             const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
             const auto userDefaultFile = appDataDir.getChildFile("user-default.xml");
             if (auto xml = juce::XmlDocument::parse(userDefaultFile)) {
@@ -144,10 +148,11 @@ Control::Control(PitchengaAudioProcessor& proc)
                     juce::MemoryBlock destData;
                     PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
                     processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
+                    currentPresetFile = userDefaultFile;
                 }
             }
         } else if (id == 3) {
-            // Other... (Load button functionality)
+            // File... (Load file dialog)
             chooser = std::make_unique<juce::FileChooser>(
                 "Select a settings file to load...",
                 juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga"),
@@ -169,6 +174,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                                 juce::MemoryBlock destData;
                                 PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
                                 processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
+                                currentPresetFile = result;
                             }
                         }
                     }
@@ -186,6 +192,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                         juce::MemoryBlock destData;
                         PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
                         processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
+                        currentPresetFile = presetFile;
                     }
                 }
             }
@@ -202,6 +209,29 @@ Control::Control(PitchengaAudioProcessor& proc)
 
     buttonSave.setButtonText("Save");
     buttonSave.onClick = [this] {
+        if (currentPresetFile == juce::File()) {
+            currentPresetFile = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+                .getChildFile("Pitchenga").getChildFile("user-default.xml");
+        }
+
+        // Sync current plugin state into settings first
+        juce::MemoryBlock dummy;
+        processor.getStateInformation(dummy);
+        
+        const juce::XmlElement xml = processor.settings.createXml();
+        if (xml.writeTo(currentPresetFile)) {
+            refreshPresets();
+        } else {
+            juce::AlertWindow::showMessageBoxAsync(
+                juce::MessageBoxIconType::WarningIcon,
+                "Error",
+                "Failed to overwrite setup file."
+            );
+        }
+    };
+
+    buttonSaveAs.setButtonText("Save As");
+    buttonSaveAs.onClick = [this] {
         chooser = std::make_unique<juce::FileChooser>(
             "Select where to save the settings...",
             juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga"),
@@ -225,6 +255,7 @@ Control::Control(PitchengaAudioProcessor& proc)
 
                     const juce::XmlElement xml = processor.settings.createXml();
                     if (xml.writeTo(result)) {
+                        currentPresetFile = result;
                         refreshPresets();
                     } else {
                         juce::AlertWindow::showMessageBoxAsync(
@@ -233,12 +264,10 @@ Control::Control(PitchengaAudioProcessor& proc)
                             "Failed to write settings to file."
                         );
                     }
-
                 }
             }
         );
     };
-
 
     addAndMakeVisible(toggleNeedle);
     addAndMakeVisible(toggleEye);
@@ -256,6 +285,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(buttonPlug);
     tweakPanel.addAndMakeVisible(comboPresets);
     tweakPanel.addAndMakeVisible(buttonSave);
+    tweakPanel.addAndMakeVisible(buttonSaveAs);
 
 #include "build_timestamp.h"
 
@@ -370,9 +400,10 @@ void Control::resized() {
         positionButton(buttonPlugs, panelBounds);
         positionButton(buttonPlug, panelBounds);
 
+        positionButtonRight(buttonSaveAs, panelBounds);
         positionButtonRight(buttonSave, panelBounds);
         
-        // Position the dropdown to the left of the Save button (which is furthest right now)
+        // Position the dropdown to the left of the Save buttons
         const int comboWidth = 140;
         comboPresets.setBounds(panelBounds.removeFromRight(comboWidth).reduced(2));
     }
@@ -393,7 +424,7 @@ void Control::refreshPresets() {
     }
     
     comboPresets.addSeparator();
-    comboPresets.addItem("Other...", 3);
+    comboPresets.addItem("File...", 3);
     comboPresets.addSeparator();
 
     presets.clear();
@@ -417,8 +448,8 @@ juce::XmlElement Control::Settings::createXml() const {
     juce::XmlElement xml(getSettingsTagName());
 
     // Add width and height as attributes
-    xml.setAttribute("uiWidth", lastUIWidth);
-    xml.setAttribute("uiHeight", lastUIHeight);
+    xml.setAttribute("uiWidth", lastUiWidth);
+    xml.setAttribute("uiHeight", lastUiHeight);
 
     xml.setAttribute("isShowRoll", isShowRoll);
     xml.setAttribute("isShowEye", isShowEye);
@@ -453,8 +484,8 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
 
     // Update the processor variables.
     // If the attributes don't exist, it keeps the defaults initialized in .h
-    lastUIWidth = xml.getIntAttribute("uiWidth", lastUIWidth);
-    lastUIHeight = xml.getIntAttribute("uiHeight", lastUIHeight);
+    lastUiWidth = xml.getIntAttribute("uiWidth", lastUiWidth);
+    lastUiHeight = xml.getIntAttribute("uiHeight", lastUiHeight);
 
     isShowRoll = xml.getBoolAttribute("isShowRoll", isShowRoll);
     isShowEye = xml.getBoolAttribute("isShowEye", isShowEye);
