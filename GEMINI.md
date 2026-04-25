@@ -4,7 +4,7 @@ Pitchenga is a real-time music visualization application and audio plugin.
 
 ### STRICT SCOPE MANDATE - CRITICAL
 
-- STRICT NO-REVERT POLICY: Do NOT revert user's changes. Before planning any changes or using write_file - re-read all the relevant files from disk - do NOT rely on your context state. For any discrepancies between your context state and the actual state of a file, assume that the changes were made deliberately by the user and do NOT revert them - recalibrate your planned changes accordingly. This is a hard rule and cannot be violated.
+- STRICT NO-REVERT POLICY: Do NOT revert user's changes. Do NOT "re-apply" changes that you made that were deleted by the user. Before planning any changes or using write_file - re-read all the relevant files from disk - do NOT rely on your context state. For any discrepancies between your context state and the actual state of a file, assume that the changes were made deliberately by the user and do NOT revert them - recalibrate your planned changes accordingly. This is a hard rule and cannot be violated.
 - STRICT COMMENT PRESERVATION POLICY: Do NOT blindly remove existing comments or commented-out code. Before making any changes or using write_file, explicitly print out all existing comments in the code you are about to change. After the change double-check and ensure that all pre-existing comments still exist. If any pre-existing comments became outdated then explicitly notify the user that an outdated comment is being removed.
 - CRITICAL: Always use descriptive names, except for "i", "x", "y". This is a hard rule and cannot be violated.
 - CRITICAL: Do not use numbers for steps in comments, as they quickly become outdated and hard to manage.

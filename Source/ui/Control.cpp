@@ -395,10 +395,10 @@ void Control::updateButtonStates() {
 
     tweakPanel.setVisible(processor.settings.isShowTweakPanel);
 
-    // Disable Save and Delete buttons for Factory Default
+    // Disable Save and Delete buttons for Factory Default (ID 1) and nothing selected (ID 0)
     const int selectedId = comboPresets.getSelectedId();
-    buttonSave.setEnabled(selectedId != 1);
-    buttonDelete.setEnabled(selectedId != 1);
+    buttonSave.setEnabled(selectedId > 1);
+    buttonDelete.setEnabled(selectedId != 1 && selectedId != 0);
 
     resized();
 }
