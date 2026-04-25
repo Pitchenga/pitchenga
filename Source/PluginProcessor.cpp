@@ -32,10 +32,11 @@ PitchengaAudioProcessor::~PitchengaAudioProcessor() {
 }
 
 void PitchengaAudioProcessor::loadDefaultSettings() {
-    // Attempt to load user-default.xml from the application data directory
+    // Attempt to load user-default.xml from the "presets" sub-folder
     const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
-    const auto userDefaultFile = appDataDir.getChildFile("user-default.xml");
-    
+    const auto presetsDir = appDataDir.getChildFile("presets");
+    const auto userDefaultFile = presetsDir.getChildFile("user-default.xml");
+
     if (userDefaultFile.existsAsFile()) {
         if (auto xml = juce::XmlDocument::parse(userDefaultFile)) {
             // Tag name check is done in loadFromXml (which handles build profiles)
