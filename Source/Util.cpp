@@ -59,7 +59,7 @@ bool Util::createFile() {
     }
     if (!logFile.exists()) {
         auto result = logFile.create();
-        if (!result) DBG("Failed creating logFile=" + logFile.getFullPathName());
+        if (!result) DBG("Failed creating logFile=" + logFile.getFullPathName())
         return result;
     }
     return true;
