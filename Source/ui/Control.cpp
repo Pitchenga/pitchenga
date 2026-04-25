@@ -264,7 +264,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         const juce::String currentName = comboPresets.getText();
         juce::String suggestedName = currentName;
         
-        if (currentName == "Presets..." || currentName == "Factory Default" || currentName == "User Default") {
+        if (currentName == "" || currentName == "Presets..." || currentName == "Factory Default" || currentName == "User Default") {
             suggestedName = "user-default";
         }
 
