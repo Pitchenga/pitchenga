@@ -301,39 +301,7 @@ void RollCqt::paintSteam(const juce::Graphics& graphics) const {
 
     const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
 
-    // Target is steamScrollOffset
-    const float target = static_cast<float>(steamScrollOffset);
-
-    // Mutable interpolation logic
-    auto* nonConstThis = const_cast<RollCqt*>(this);
-
-    // Handle wrap-around for the interpolator
-    const float halfHeight = static_cast<float>(height) * 0.5f;
-    if (target < nonConstThis->visualScrollOffset - halfHeight) {
-        nonConstThis->visualScrollOffset -= static_cast<float>(height);
-    } else if (target > nonConstThis->visualScrollOffset + halfHeight) {
-        nonConstThis->visualScrollOffset += static_cast<float>(height);
-    }
-
-    // Chase the target smoothly to decouple the UI from the math thread's bursty frame processing.
-    // 0.3f provides a snappy but buttery smooth lock-on.
-    nonConstThis->visualScrollOffset += (target - nonConstThis->visualScrollOffset) * 0.3f;
-
-    // Normalize back to [0, height] to prevent the first/last frame bleed at top/bottom
-    while (nonConstThis->visualScrollOffset >= static_cast<float>(height))
-        nonConstThis->visualScrollOffset -= static_cast<float>(height);
-    while (nonConstThis->visualScrollOffset < 0.0f)
-        nonConstThis->visualScrollOffset += static_cast<float>(height);
-
-    // Use AffineTransform for sub-pixel smooth scrolling to cure the 43Hz vs 60Hz mismatch (CRT flicker).
     // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
-    // Shift by an extra -1px to ensure the flickering write-head (drawY) is always safely off-screen top
-    graphics.drawImageTransformed(
-        steamImage,
-        juce::AffineTransform::translation(0.0f, -nonConstThis->visualScrollOffset - 1.0f)
-    );
-    graphics.drawImageTransformed(
-        steamImage,
-        juce::AffineTransform::translation(0.0f, static_cast<float>(height) - nonConstThis->visualScrollOffset - 1.0f)
-    );
+    graphics.drawImageAt(steamImage, 0, -steamScrollOffset);
+    graphics.drawImageAt(steamImage, 0, height - steamScrollOffset);
 }

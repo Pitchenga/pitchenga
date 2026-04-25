@@ -156,12 +156,13 @@ void Math::flushStaleAudioData(int& availableSamples) {
         }
         availableSamples = octaves[0].fifo.getNumReady();
 
+        //fixme: Is it needed?
         // Clear history buffers to prevent a massive broadband noise burst (the "CRT flicker" flash)
-        std::fill(rawAudioHistoryBuffer.begin(), rawAudioHistoryBuffer.end(), 0.0f);
-        for (auto& win : slidingWindows) {
-            std::fill(win.begin(), win.end(), 0.0f);
-        }
-        std::fill(pitchAnalysisBuffer.begin(), pitchAnalysisBuffer.end(), 0.0f);
+        // std::fill(rawAudioHistoryBuffer.begin(), rawAudioHistoryBuffer.end(), 0.0f);
+        // for (auto& win : slidingWindows) {
+            // std::fill(win.begin(), win.end(), 0.0f);
+        // }
+        // std::fill(pitchAnalysisBuffer.begin(), pitchAnalysisBuffer.end(), 0.0f);
     }
 }
 
