@@ -364,14 +364,16 @@ Control::~Control() {
 
 void Control::showPlugsMenu() {
     juce::PopupMenu menu;
-    menu.addItem(1, "Open Plug-ins Browser...");
-    menu.addItem(2, "Rescan Plug-ins");
+    menu.addItem(1, "Open Plugins Browser...");
+    menu.addItem(2, "Rescan Plugins");
+    menu.addSeparator();
+    menu.addItem(3, "Unload Plugin", processor.isExternalPluginLoaded());
     menu.addSeparator();
 
     auto& list = processor.getKnownPluginList();
     auto types = list.getTypes();
 
-    int id = 3;
+    int id = 4;
     for (int i = 0; i < types.size(); ++i) {
         if (types[i].isInstrument) {
             menu.addItem(id, types[i].name);
@@ -388,10 +390,12 @@ void Control::showPlugsMenu() {
                 isRescanning = true;
                 processor.rescanPlugins();
                 showPlugsMenu();
-            } else if (result > 2) {
+            } else if (result == 3) {
+                processor.unloadExternalPlugin();
+            } else if (result > 3) {
                 auto& listRef = processor.getKnownPluginList();
                 auto typesRef = listRef.getTypes();
-                const int index = result - 3;
+                const int index = result - 4;
                 if (index >= 0 && index < typesRef.size()) {
                     processor.loadExternalPlugin(typesRef[static_cast<size_t>(index)], true);
                 }

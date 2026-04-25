@@ -81,6 +81,7 @@ public:
 
     // Plugin Hosting
     void loadExternalPlugin(const juce::PluginDescription& description, bool forceOpenWindow = false);
+    void unloadExternalPlugin();
     void rescanPlugins();
     void openPluginBrowser();
     void showExternalPluginEditor();
