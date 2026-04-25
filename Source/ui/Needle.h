@@ -2,6 +2,8 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <array>
 
+#include "RollStft.h"
+
 class Needle : public juce::Component {
 public:
     Needle();
@@ -30,10 +32,8 @@ private:
     static void paintLabel(juce::Graphics& graphics, int midiNote, float x, float stripY);
 
     // fixme: restore the Pitch enum and use Pitch references instead of hard-coded midi
-    // fixme: Does not work below Mi2
-    // Range: Ra2 to Mi6
-    float minMidi = 12.0f;
-    float maxMidi = 108.0f;
+    float minMidi = RollStft::minMidiNote;
+    float maxMidi = RollStft::maxMidiNote;
     float currentMidi = -1.0f;
 
     juce::Image cachedLabels;

@@ -80,9 +80,10 @@ juce::Font RollCqt::getLabelFont() {
 }
 
 float RollCqt::getLabelAreaHeight() const {
-    if (!processor.settings.isisShowRollLabels()) {
-        return 0.0f;
-    }
+    //fixme: Unify range and hide labels when adjacent to tuner
+    // if (!processor.settings.isisShowRollLabels()) {
+        // return 0.0f;
+    // }
     return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8") + 4.0f;
 }
 
@@ -218,9 +219,8 @@ void RollCqt::paintFrame(juce::Graphics& graphics) const {
             graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
         }
 
-        if (processor.settings.isisShowRollLabels()) {
-            paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor);
-        }
+        //fixme: Unify range and hide labels when adjacent to tuner
+        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor);
     }
 }
 

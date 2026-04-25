@@ -14,7 +14,12 @@ public:
     void paint(juce::Graphics& graphics) override;
     void resized() override;
 
+    //fixme: Does not seem to do anything?
     bool enableDynamicStemWidth = true;
+    // bool enableDynamicStemWidth = false;
+
+    static constexpr int minMidiNote = 22.0;
+    static constexpr int maxMidiNote = 94.0;
 
 private:
     PitchengaAudioProcessor& processor;
@@ -26,9 +31,6 @@ private:
     static constexpr float steamSpeedPxPerFrame = 1.0f;
 
     juce::Image cachedFrame;
-
-    static constexpr int minMidiNote = 12.0;
-    static constexpr int maxMidiNote = 108.0;
 
     static float freqToMidi(float freq);
     static float frequencyToX(float frequencyHz, float width);
