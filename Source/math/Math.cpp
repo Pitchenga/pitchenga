@@ -53,10 +53,21 @@ void Math::setupCqtBuffers() {
 }
 
 void Math::setupPitchDetection() {
-    // Pitch Setup
-    pitchDetector = std::make_unique<sevagh::PitchDetector<float>>(4096);
+    const double samplingFreq = processor.getSampleRate() > 0 ? processor.getSampleRate() : 44100.0;
+
+    // Pitch Setup - We use a 1024 buffer for decimated audio (equivalent to 4096 at full rate)
+    pitchDetector = std::make_unique<sevagh::PitchDetector<float>>(1024);
     rawAudioHistoryBuffer.assign(32768, 0.0f);
     pitchAnalysisBuffer.assign(4096, 0.0f);
+
+    // Decimation setup (G1 and below support)
+    decimatedHistoryBuffer.assign(8192, 0.0f);
+    decimatedAnalysisBuffer.assign(1024, 0.0f);
+    decimationCounter = 0;
+
+    // 300Hz Low-Pass filter to remove harmonics before decimation
+    pitchLowpass.coefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass(samplingFreq, 300.0f);
+    pitchLowpass.reset();
 }
 
 void Math::setupStft() {
@@ -214,6 +225,29 @@ void Math::consumeAudioFromFifo() {
                         buffer.begin() + (start2 + size2),
                         rawAudioHistoryBuffer.begin() + (32768 - actualRead) + size1
                     );
+
+                // --- Decimate for Pitch Detection (4x downsampling with 300Hz LP filter) ---
+                const int decimatedSamplesAdded = actualRead / 4;
+                if (decimatedSamplesAdded > 0) {
+                    std::memmove(
+                        decimatedHistoryBuffer.data(),
+                        decimatedHistoryBuffer.data() + decimatedSamplesAdded,
+                        static_cast<size_t>(8192 - decimatedSamplesAdded) * sizeof(float)
+                    );
+
+                    float* writePtr = decimatedHistoryBuffer.data() + (8192 - decimatedSamplesAdded);
+                    int writeIdx = 0;
+                    for (int i = 0; i < actualRead; ++i) {
+                        const float s = (i < size1) ? buffer[static_cast<size_t>(start1 + i)] : buffer[static_cast<size_t>(start2 + (i - size1))];
+                        const float filtered = pitchLowpass.processSample(s);
+                        if (++decimationCounter >= 4) {
+                            decimationCounter = 0;
+                            if (writeIdx < decimatedSamplesAdded) {
+                                writePtr[writeIdx++] = filtered;
+                            }
+                        }
+                    }
+                }
             }
             fifo.finishedRead(actualRead);
         }
@@ -224,18 +258,18 @@ void Math::processPitchDetection() {
     // Pitch Detection (Using latest 4096 samples)
     if (pitchDetector != nullptr) {
         const double samplingFreq = processor.getSampleRate() > 0 ? processor.getSampleRate() : 44100.0;
+        const double decimatedSamplingFreq = samplingFreq / 4.0;
         
-        // Feed the latest block to the pitch detector
-        std::copy(rawAudioHistoryBuffer.end() - 4096, rawAudioHistoryBuffer.end(), pitchAnalysisBuffer.begin());
+        // Feed the latest block (1024 decimated samples) to the pitch detector
+        std::copy(decimatedHistoryBuffer.end() - 1024, decimatedHistoryBuffer.end(), decimatedAnalysisBuffer.begin());
 
         //fixme: Is it needed?
         // Apply gain to the analysis buffer to ensure signal is strong enough for peak picking
         // juce::FloatVectorOperations::multiply(pitchAnalysisBuffer.data(), 15.0f, 4096);
-
-        const float detectedPitch = pitchDetector->getPitch(pitchAnalysisBuffer, static_cast<int>(samplingFreq));
+        const float detectedPitch = pitchDetector->getPitch(decimatedAnalysisBuffer, static_cast<int>(decimatedSamplingFreq));
         
         if (detectedPitch > 0.0f) {
-            Util::debug("Math Thread - Detected Pitch: " + juce::String(detectedPitch) + " Hz");
+            Util::debug("Math Thread - Detected Pitch: " + juce::String(detectedPitch) + " Hz (Decimated)");
         }
         
         // Update the atomic variable for the UI timer to read

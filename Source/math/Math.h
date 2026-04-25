@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_core/juce_core.h>
+#include <juce_dsp/juce_dsp.h>
 #include "../PluginProcessor.h"
 #include "Cqt.h"
 #include "Analyzers.h"
@@ -43,7 +44,7 @@ private:
 
     PitchengaAudioProcessor& processor;
 
-    // --- CQT Engine for Eye and RollCqt ---
+    // CQT Engine for Eye and RollCqt
     Cqt cqtEngine;
     std::unique_ptr<HarmonicPatternPitchClassDetector> pitchClassDetector;
     std::unique_ptr<SpectralEqualizer> spectralEqualizer;
@@ -61,17 +62,23 @@ private:
     std::vector<float> rawAudioHistoryBuffer;
     std::vector<float> pitchAnalysisBuffer;
 
+    // Decimation for Pitch Detection
+    juce::dsp::IIR::Filter<float> pitchLowpass;
+    std::vector<float> decimatedHistoryBuffer;
+    std::vector<float> decimatedAnalysisBuffer;
+    int decimationCounter = 0;
+
     std::vector<double> currentEyeData;
     std::vector<double> currentRollData;
 
-    // --- Thread-Safe Output Buffers ---
+    // Thread-Safe Output Buffers
     juce::CriticalSection resultLock;
     std::vector<double> eyeResults;
     std::vector<double> rollResults;
     std::atomic<bool> newDataAvailable{false};
 
 
-    // -- STFT Engine for RollStft
+    // STFT Engine for RollStft
     Stft stft;
     std::vector<SpectralPeak> currentRollPeaks;
     std::vector<SpectralPeak> uiRollPeaks;
