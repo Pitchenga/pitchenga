@@ -247,6 +247,7 @@ void PitchengaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
     
     settings.externalPluginDescriptionXml = {};
     settings.externalPluginStateBase64 = {};
+    settings.isExternalPluginWindowOpen = false;
 
     if (externalPlugin != nullptr) {
         juce::MemoryBlock pluginState;
@@ -256,6 +257,12 @@ void PitchengaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
         auto pluginDescription = externalPlugin->getPluginDescription();
         if (auto pluginDescriptionXml = pluginDescription.createXml()) {
             settings.externalPluginDescriptionXml = pluginDescriptionXml->toString();
+        }
+        
+        if (auto* editor = getActiveEditor()) {
+            if (auto* pitchengaEditor = dynamic_cast<PitchengaAudioProcessorEditor*>(editor)) {
+                settings.isExternalPluginWindowOpen = pitchengaEditor->isPluginWindowOpen();
+            }
         }
     }
 
@@ -290,6 +297,13 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, const int si
                         juce::MemoryBlock pluginState;
                         if (pluginState.fromBase64Encoding(settings.externalPluginStateBase64)) {
                             externalPlugin->setStateInformation(pluginState.getData(), static_cast<int>(pluginState.getSize()));
+                        }
+                    }
+
+                    // Restore the plugin window visibility state
+                    if (settings.isExternalPluginWindowOpen) {
+                        if (onShowExternalPluginEditor) {
+                            onShowExternalPluginEditor();
                         }
                     }
                 }

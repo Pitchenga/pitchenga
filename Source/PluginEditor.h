@@ -24,6 +24,8 @@ public:
     void openPluginBrowserWindow();
     void startPluginScan();
 
+    bool isPluginWindowOpen() const { return pluginWindow != nullptr && pluginWindow->isVisible(); }
+
 private:
     void timerCallback() override;
 

@@ -28,6 +28,7 @@ public:
 
         juce::String externalPluginDescriptionXml;
         juce::String externalPluginStateBase64;
+        bool isExternalPluginWindowOpen = false;
 
         float splitRatio = 0.3130223751068115f;
 

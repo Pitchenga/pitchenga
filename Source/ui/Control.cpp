@@ -397,6 +397,8 @@ juce::XmlElement Control::Settings::createXml() const {
     if (externalPluginStateBase64.isNotEmpty()) {
         xml.createNewChildElement("ExternalPluginState")->setAttribute("base64", externalPluginStateBase64);
     }
+    
+    xml.setAttribute("isExternalPluginWindowOpen", isExternalPluginWindowOpen);
 
     xml.setAttribute("splitRatio", splitRatio);
 
@@ -433,6 +435,8 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     if (auto* stateXmlElement = xml.getChildByName("ExternalPluginState")) {
         externalPluginStateBase64 = stateXmlElement->getStringAttribute("base64");
     }
+    
+    isExternalPluginWindowOpen = xml.getBoolAttribute("isExternalPluginWindowOpen", isExternalPluginWindowOpen);
 
     splitRatio = static_cast<float>(xml.getDoubleAttribute("splitRatio", splitRatio));
 
