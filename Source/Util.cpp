@@ -19,7 +19,7 @@ juce::File Util::logFile = juce::File::getSpecialLocation(juce::File::userApplic
 
 juce::String Util::getTimestamp() {
     const auto time = juce::Time::getCurrentTime();
-    return time.formatted("%H.%M.%S"D) + "." + juce::String(time.getMilliseconds()).paddedLeft('0', 3);
+    return time.formatted("%H.%M.%S") + "." + juce::String(time.getMilliseconds()).paddedLeft('0', 3);
 }
 
 void Util::init() {

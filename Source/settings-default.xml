@@ -1,3 +1,3 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<PITCHENGA_DEBUG uiWidth="601" uiHeight="951" isShowRoll="1" isShowEye="1" showTuna="1" isUseRollStft="1" isFreezeRoll="0"
-                 isShowForrest="0" isShowSteam="1" splitRatio="0.3130223751068115"/>
+<PITCHENGA_DEBUG uiWidth="601" uiHeight="951" isShowRoll="1" isShowEye="1" isShowNeedle="1" isUseRollStft="1" isFreezeRoll="0"
+                 isShowForrest="0" isShowSteam="1" isMonitoringEnabled="0" splitRatio="0.3130223751068115"/>
