@@ -1,11 +1,12 @@
 #pragma once
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <array>
-#include "../Tone.h"
+
+class PitchengaAudioProcessor;
 
 class Needle : public juce::Component {
 public:
-    Needle();
+    explicit Needle(PitchengaAudioProcessor& proc);
 
     void setPitchFrequency(float frequencyHz);
     void setRange(float minMidiNote, float maxMidiNote);
@@ -30,7 +31,7 @@ private:
     static juce::String getNoteName(int midiNote);
     static void paintLabel(juce::Graphics& graphics, int midiNote, float x, float stripY);
 
-    // fixme: restore the Pitch enum and use Pitch references instead of hard-coded mini
+    // fixme: restore the Pitch enum and use Pitch references instead of hard-coded midi
     // fixme: Does not work below Mi2
     // Range: Ra2 to Mi6
     float minMidi = 12.0f;
@@ -42,8 +43,9 @@ private:
     float strobePhase = 0.0f;
     float targetVelocity = 0.0f;
     float currentVelocity = 0.0f;
+    PitchengaAudioProcessor& processor;
     static constexpr int strobeCycleWidth = 60;
-    std::array<float, 60> strobeIntensities;
+    std::array<float, 60> strobeIntensities{};
 
     int framesSinceSignalLost = 0;
     static constexpr int spinHoldFrames = 64;

@@ -23,7 +23,7 @@ public:
 private:
     void timerCallback() override;
 
-    PitchengaAudioProcessor& audioProcessor;
+    PitchengaAudioProcessor& processor;
 
     // Background worker for heavy DSP
     Math worker;

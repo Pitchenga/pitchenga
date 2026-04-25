@@ -16,50 +16,50 @@ static juce::String getSettingsTagName() {
 #endif
 }
 
-Control::Control(PitchengaAudioProcessor& processorToUse)
-    : audioProcessor(processorToUse) {
+Control::Control(PitchengaAudioProcessor& proc)
+    : processor(proc) {
 
-    setupToggleButton(toggleRoll, audioProcessor.settings.showRoll);
+    setupToggleButton(toggleRoll, processor.settings.showRoll);
     toggleRoll.onClick = [this] {
-        audioProcessor.settings.showRoll = toggleRoll.getToggleState();
+        processor.settings.showRoll = toggleRoll.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
         updateButtonStates();
     };
 
-    setupToggleButton(toggleEye, audioProcessor.settings.showEye);
+    setupToggleButton(toggleEye, processor.settings.showEye);
     toggleEye.onClick = [this] {
-        audioProcessor.settings.showEye = toggleEye.getToggleState();
+        processor.settings.showEye = toggleEye.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleNeedle, audioProcessor.settings.showNeedle);
+    setupToggleButton(toggleNeedle, processor.settings.showNeedle);
     toggleNeedle.onClick = [this] {
-        audioProcessor.settings.showNeedle = toggleNeedle.getToggleState();
+        processor.settings.showNeedle = toggleNeedle.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleSteam, audioProcessor.settings.showSteam);
+    setupToggleButton(toggleSteam, processor.settings.showSteam);
     toggleSteam.onClick = [this] {
-        audioProcessor.settings.showSteam = toggleSteam.getToggleState();
+        processor.settings.showSteam = toggleSteam.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleFreezeRoll, audioProcessor.settings.freezeRoll);
+    setupToggleButton(toggleFreezeRoll, processor.settings.freezeRoll);
     toggleFreezeRoll.onClick = [this] {
-        audioProcessor.settings.freezeRoll = toggleFreezeRoll.getToggleState();
+        processor.settings.freezeRoll = toggleFreezeRoll.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    toggleRollType.setButtonText(audioProcessor.settings.useStftRoll ? "STFT" : "CQT");
+    toggleRollType.setButtonText(processor.settings.useStftRoll ? "STFT" : "CQT");
     toggleRollType.onClick = [this] {
-        audioProcessor.settings.useStftRoll = !audioProcessor.settings.useStftRoll;
-        toggleRollType.setButtonText(audioProcessor.settings.useStftRoll ? "STFT" : "CQT");
+        processor.settings.useStftRoll = !processor.settings.useStftRoll;
+        toggleRollType.setButtonText(processor.settings.useStftRoll ? "STFT" : "CQT");
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleForrest, audioProcessor.settings.showForrest);
+    setupToggleButton(toggleForrest, processor.settings.showForrest);
     toggleForrest.onClick = [this] {
-        audioProcessor.settings.showForrest = toggleForrest.getToggleState();
+        processor.settings.showForrest = toggleForrest.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -74,7 +74,7 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
     buttonCopy.setColour(juce::TextButton::buttonColourId, juce::Colours::black.withAlpha(0.4f));
     buttonCopy.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
     buttonCopy.onClick = [this] {
-        juce::XmlElement xml = audioProcessor.settings.createXml();
+        juce::XmlElement xml = processor.settings.createXml();
         juce::SystemClipboard::copyTextToClipboard(xml.toString());
         juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::InfoIcon, "Copied", "Settings copied to clipboard.");
     };
@@ -95,7 +95,7 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
                     juce::File defaultSettingsFile(juce::File(__FILE__).getParentDirectory().getParentDirectory().getChildFile("settings-default.xml"));
                     if (auto xml = juce::XmlDocument::parse(defaultSettingsFile)) {
                         xml->setTagName(getSettingsTagName()); // Ensure the tag matches what loadFromXml expects
-                        bool loaded = audioProcessor.settings.loadFromXml(*xml);
+                        bool loaded = processor.settings.loadFromXml(*xml);
                         if (loaded) {
                             updateVisibilityFromState();
                             if (onVisibilityChanged) onVisibilityChanged();
@@ -145,20 +145,20 @@ void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
 }
 
 void Control::updateVisibilityFromState() {
-    toggleRoll.setToggleState(audioProcessor.settings.showRoll, juce::NotificationType::dontSendNotification);
-    toggleEye.setToggleState(audioProcessor.settings.showEye, juce::NotificationType::dontSendNotification);
-    toggleNeedle.setToggleState(audioProcessor.settings.showNeedle, juce::NotificationType::dontSendNotification);
-    toggleFreezeRoll.setToggleState(audioProcessor.settings.freezeRoll, juce::NotificationType::dontSendNotification);
+    toggleRoll.setToggleState(processor.settings.showRoll, juce::NotificationType::dontSendNotification);
+    toggleEye.setToggleState(processor.settings.showEye, juce::NotificationType::dontSendNotification);
+    toggleNeedle.setToggleState(processor.settings.showNeedle, juce::NotificationType::dontSendNotification);
+    toggleFreezeRoll.setToggleState(processor.settings.freezeRoll, juce::NotificationType::dontSendNotification);
     
-    toggleRollType.setButtonText(audioProcessor.settings.useStftRoll ? "STFT" : "CQT");
-    toggleSteam.setToggleState(audioProcessor.settings.showSteam, juce::NotificationType::dontSendNotification);
-    toggleForrest.setToggleState(audioProcessor.settings.showForrest, juce::NotificationType::dontSendNotification);
+    toggleRollType.setButtonText(processor.settings.useStftRoll ? "STFT" : "CQT");
+    toggleSteam.setToggleState(processor.settings.showSteam, juce::NotificationType::dontSendNotification);
+    toggleForrest.setToggleState(processor.settings.showForrest, juce::NotificationType::dontSendNotification);
 
     updateButtonStates();
 }
 
 void Control::updateButtonStates() {
-    const bool rollActive = audioProcessor.settings.showRoll;
+    const bool rollActive = processor.settings.showRoll;
     toggleFreezeRoll.setVisible(rollActive);
     toggleRollType.setVisible(rollActive);
     toggleSteam.setVisible(rollActive);

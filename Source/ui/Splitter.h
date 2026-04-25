@@ -7,7 +7,7 @@
 // Custom draggable 4px horizontal split bar
 class Splitter : public juce::Component {
 public:
-    explicit Splitter(PitchengaAudioProcessor& processorToUse);
+    explicit Splitter(PitchengaAudioProcessor& proc);
     void mouseDrag(const juce::MouseEvent& e) override;
     void paint(juce::Graphics& g) override;
     void mouseEnter(const juce::MouseEvent& e) override;
@@ -16,7 +16,7 @@ public:
     std::function<void()> onDragged;
 
 private:
-    PitchengaAudioProcessor& audioProcessor;
+    PitchengaAudioProcessor& processor;
     bool isHovered = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Splitter)

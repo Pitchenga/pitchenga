@@ -1,7 +1,7 @@
 #include "Splitter.h"
 #include "Needle.h"
 
-Splitter::Splitter(PitchengaAudioProcessor& processorToUse) : audioProcessor(processorToUse) {
+Splitter::Splitter(PitchengaAudioProcessor& proc) : processor(proc) {
     setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
 }
 
@@ -29,7 +29,7 @@ void Splitter::mouseDrag(const juce::MouseEvent& e) {
 
         // Calculate dynamic bounds exactly matching resized() architecture
         const float topControlHeight = 24.0f;
-        const float bottomNeedleHeight = audioProcessor.settings.showNeedle ? Needle::getPreferredHeight() + 1.0f : 0.0f;
+        const float bottomNeedleHeight = processor.settings.showNeedle ? Needle::getPreferredHeight() + 1.0f : 0.0f;
         const float availableHeight = static_cast<float>(parent->getHeight()) - topControlHeight - bottomNeedleHeight;
 
         const float adjustedY = static_cast<float>(eventInParent.y) - topControlHeight;
@@ -39,8 +39,8 @@ void Splitter::mouseDrag(const juce::MouseEvent& e) {
             // Prevent dragging completely out of bounds (keep between 10% and 90%)
             const float clampedRatio = std::max(0.1f, std::min(0.9f, newRatio));
 
-            if (std::abs(audioProcessor.settings.splitRatio - clampedRatio) > 0.001f) {
-                audioProcessor.settings.splitRatio = clampedRatio;
+            if (std::abs(processor.settings.splitRatio - clampedRatio) > 0.001f) {
+                processor.settings.splitRatio = clampedRatio;
                 if (onDragged) onDragged();
             }
         }

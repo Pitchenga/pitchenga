@@ -1,8 +1,8 @@
 #include "Math.h"
 #include "../Util.h"
 
-Math::Math(PitchengaAudioProcessor& processorToUse)
-    : Thread("VisualizeWorker"), audioProcessor(processorToUse) {
+Math::Math(PitchengaAudioProcessor& proc)
+    : Thread("VisualizeWorker"), processor(proc) {
     setupBuffers();
 }
 
@@ -20,7 +20,7 @@ void Math::setupBuffers() {
 void Math::setupCqtEngine() {
     Cqt::Config config;
     config.octaves = PitchengaAudioProcessor::numOctaves;
-    config.samplingFreq = audioProcessor.getSampleRate() > 0 ? audioProcessor.getSampleRate() : 44100.0;
+    config.samplingFreq = processor.getSampleRate() > 0 ? processor.getSampleRate() : 44100.0;
     cqtEngine.updateConfig(config);
     cqtEngine.init();
 
@@ -53,7 +53,7 @@ void Math::setupCqtBuffers() {
 }
 
 void Math::setupPitchDetection() {
-    const double samplingFreq = audioProcessor.getSampleRate() > 0 ? audioProcessor.getSampleRate() : 44100.0;
+    const double samplingFreq = processor.getSampleRate() > 0 ? processor.getSampleRate() : 44100.0;
 
     // --- Pitch Setup ---
     pitchDetector = std::make_unique<adamski::PitchMPM>(static_cast<int>(samplingFreq), 4096);
@@ -62,7 +62,7 @@ void Math::setupPitchDetection() {
 }
 
 void Math::setupStft() {
-    const double samplingFreq = audioProcessor.getSampleRate() > 0 ? audioProcessor.getSampleRate() : 44100.0;
+    const double samplingFreq = processor.getSampleRate() > 0 ? processor.getSampleRate() : 44100.0;
     stft.initialize(samplingFreq);
 }
 
@@ -90,9 +90,9 @@ double Math::amplitudeToDbRescaled(const double amplitude) {
 
 void Math::run() {
     while (!threadShouldExit()) {
-        updateSampleRate(audioProcessor.getSampleRate());
+        updateSampleRate(processor.getSampleRate());
 
-        auto& octaves = audioProcessor.getOctaves();
+        auto& octaves = processor.getOctaves();
         const int signalBlockSize = cqtEngine.getSignalBlockSize();
 
         if (signalBlockSize <= 0 || slidingWindows.empty()) {
@@ -114,15 +114,15 @@ void Math::run() {
 
         if (availableSamples >= 1024) {
             consumeAudioFromFifo();
-            if (audioProcessor.settings.showNeedle) {
+            if (processor.settings.showNeedle) {
                 processPitchDetection();
             }
-            if (audioProcessor.settings.showEye
-                || (audioProcessor.settings.showRoll && !audioProcessor.settings.useStftRoll)
+            if (processor.settings.showEye
+                || (processor.settings.showRoll && !processor.settings.useStftRoll)
             ) {
                 processCqtAndEqualization();
             }
-            if (audioProcessor.settings.showRoll && audioProcessor.settings.useStftRoll) {
+            if (processor.settings.showRoll && processor.settings.useStftRoll) {
                 processStft();
             }
             publishResultsToUi();
@@ -139,7 +139,7 @@ void Math::flushStaleAudioData(int& availableSamples) {
 
     if (availableSamples > 16384) {
         Util::debug("!!! FLUSHING STALE AUDIO !!! Dropping from " + juce::String(availableSamples) + " samples.");
-        auto& octaves = audioProcessor.getOctaves();
+        auto& octaves = processor.getOctaves();
 
         // Individually flush every octave to prevent Decimation Cascade Desync.
         for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct) {
@@ -166,7 +166,7 @@ void Math::flushStaleAudioData(int& availableSamples) {
 }
 
 void Math::consumeAudioFromFifo() {
-    auto& octaves = audioProcessor.getOctaves();
+    auto& octaves = processor.getOctaves();
     const int signalBlockSize = cqtEngine.getSignalBlockSize();
 
     for (int oct = 0; oct < PitchengaAudioProcessor::numOctaves; ++oct) {
@@ -238,7 +238,7 @@ void Math::processPitchDetection() {
         juce::FloatVectorOperations::multiply(pitchAnalysisBuffer.data(), 12.0f, 4096);
         const float detectedPitch = pitchDetector->getPitch(pitchAnalysisBuffer.data());
         // Update the atomic variable for the UI timer to read
-        audioProcessor.currentPitchHz.store(detectedPitch, std::memory_order_relaxed);
+        processor.currentPitchHz.store(detectedPitch, std::memory_order_relaxed);
     }
 }
 

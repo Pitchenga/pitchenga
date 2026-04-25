@@ -9,7 +9,7 @@
 
 class Math : public juce::Thread {
 public:
-    explicit Math(PitchengaAudioProcessor& processorToUse);
+    explicit Math(PitchengaAudioProcessor& proc);
     ~Math() override;
 
     void run() override;
@@ -41,7 +41,7 @@ private:
     void processCqtAndEqualization();
     void publishResultsToUi();
 
-    PitchengaAudioProcessor& audioProcessor;
+    PitchengaAudioProcessor& processor;
 
     // --- CQT Engine for Eye and RollCqt ---
     Cqt cqtEngine;

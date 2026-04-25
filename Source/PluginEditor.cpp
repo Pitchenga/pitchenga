@@ -2,8 +2,14 @@
 #include "PluginEditor.h"
 
 PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProcessor& p)
-    : AudioProcessorEditor(&p), audioProcessor(p), worker(p), needle(), eye(), stftRoll(p), cqtRoll(p), splitter(p), control(p) {
-
+    : AudioProcessorEditor(&p),
+    processor(p),
+    worker(p),
+    needle(p),
+    stftRoll(p),
+    cqtRoll(p),
+    splitter(p),
+    control(p) {
     addAndMakeVisible(needle);
     addAndMakeVisible(eye);
     addAndMakeVisible(stftRoll);
@@ -18,7 +24,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     circleBuffer.resize(Eye::totalFoldedBins, 0.0);
 
     setResizable(true, true);
-    setSize(audioProcessor.settings.lastUIWidth, audioProcessor.settings.lastUIHeight);
+    setSize(processor.settings.lastUIWidth, processor.settings.lastUIHeight);
 
     worker.startThread(juce::Thread::Priority::high);
     startTimerHz(uiRefreshRateHz);
@@ -37,7 +43,7 @@ void PitchengaAudioProcessorEditor::updateVisibilityFromState() {
 void PitchengaAudioProcessorEditor::timerCallback() {
     // --- Update the Needle ---
     // Read the lock-free atomic variable
-    const float latestPitchHz = audioProcessor.currentPitchHz.load(std::memory_order_relaxed);
+    const float latestPitchHz = processor.currentPitchHz.load(std::memory_order_relaxed);
 
     // Feed it to the needle visualizer component
     needle.setPitchFrequency(latestPitchHz);
@@ -49,9 +55,9 @@ void PitchengaAudioProcessorEditor::timerCallback() {
         worker.getLineResults(cqtRollBuffer);
         worker.clearNewDataFlag();
 
-        if (audioProcessor.settings.showEye) eye.updateResults(circleBuffer);
-        if (audioProcessor.settings.showRoll) {
-            if (audioProcessor.settings.useStftRoll) {
+        if (processor.settings.showEye) eye.updateResults(circleBuffer);
+        if (processor.settings.showRoll) {
+            if (processor.settings.useStftRoll) {
                 stftRoll.updateResults(rollPeaksBuffer);
             } else {
                 cqtRoll.updateResults(cqtRollBuffer);
@@ -61,8 +67,8 @@ void PitchengaAudioProcessorEditor::timerCallback() {
 
     //fixme: Is it needed?
     // Force continuous UI repaints to allow smooth sub-pixel interpolation of the scrolling visual
-    // if (audioProcessor.settings.showRoll) {
-    //     if (audioProcessor.settings.useStftRoll) {
+    // if (processor.settings.showRoll) {
+    //     if (processor.settings.useStftRoll) {
     //         stftRoll.repaint();
     //     } else {
     //         cqtRoll.repaint();
@@ -75,44 +81,44 @@ void PitchengaAudioProcessorEditor::paint(juce::Graphics& g) {
 }
 
 void PitchengaAudioProcessorEditor::resized() {
-    audioProcessor.settings.lastUIWidth = getWidth();
-    audioProcessor.settings.lastUIHeight = getHeight();
+    processor.settings.lastUIWidth = getWidth();
+    processor.settings.lastUIHeight = getHeight();
 
     auto bounds = getLocalBounds();
 
     // Give the control bar its own dedicated, non-overlapping space at the top left
     control.setBounds(bounds.removeFromTop(static_cast<int>(control.getPreferredHeight())));
 
-    stftRoll.setVisible(audioProcessor.settings.showRoll && audioProcessor.settings.useStftRoll);
-    cqtRoll.setVisible(audioProcessor.settings.showRoll && !audioProcessor.settings.useStftRoll);
-    eye.setVisible(audioProcessor.settings.showEye);
-    needle.setVisible(audioProcessor.settings.showNeedle);
+    stftRoll.setVisible(processor.settings.showRoll && processor.settings.useStftRoll);
+    cqtRoll.setVisible(processor.settings.showRoll && !processor.settings.useStftRoll);
+    eye.setVisible(processor.settings.showEye);
+    needle.setVisible(processor.settings.showNeedle);
 
     // Only show splitter if both resizable elements are active
-    splitter.setVisible(audioProcessor.settings.showRoll && audioProcessor.settings.showEye);
+    splitter.setVisible(processor.settings.showRoll && processor.settings.showEye);
 
-    if (audioProcessor.settings.showNeedle) {
+    if (processor.settings.showNeedle) {
         needle.setBounds(bounds.removeFromBottom(static_cast<int>(Needle::getPreferredHeight() + 1)));
     }
 
-    if (audioProcessor.settings.showRoll && audioProcessor.settings.showEye) {
+    if (processor.settings.showRoll && processor.settings.showEye) {
         const int availableHeight = bounds.getHeight();
-        const int rollHeight = static_cast<int>(static_cast<float>(availableHeight) * audioProcessor.settings.splitRatio);
+        const int rollHeight = static_cast<int>(static_cast<float>(availableHeight) * processor.settings.splitRatio);
 
-        if (audioProcessor.settings.useStftRoll) {
+        if (processor.settings.useStftRoll) {
             stftRoll.setBounds(bounds.removeFromTop(rollHeight));
         } else {
             cqtRoll.setBounds(bounds.removeFromTop(rollHeight));
         }
         splitter.setBounds(bounds.removeFromTop(4)); // Dedicated 4px hit-box for the resizer
         eye.setBounds(bounds);
-    } else if (audioProcessor.settings.showRoll) {
-        if (audioProcessor.settings.useStftRoll) {
+    } else if (processor.settings.showRoll) {
+        if (processor.settings.useStftRoll) {
             stftRoll.setBounds(bounds);
         } else {
             cqtRoll.setBounds(bounds);
         }
-    } else if (audioProcessor.settings.showEye) {
+    } else if (processor.settings.showEye) {
         eye.setBounds(bounds);
     }
 }

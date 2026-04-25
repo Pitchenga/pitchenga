@@ -29,7 +29,7 @@ public:
         bool loadFromXml(const juce::XmlElement& xml);
     };
 
-    explicit Control(PitchengaAudioProcessor& processorToUse);
+    explicit Control(PitchengaAudioProcessor& proc);
     ~Control() override = default;
 
     void resized() override;
@@ -44,7 +44,7 @@ private:
     static void setupToggleButton(juce::TextButton& button, bool initialState);
     void updateButtonStates();
 
-    PitchengaAudioProcessor& audioProcessor;
+    PitchengaAudioProcessor& processor;
 
     juce::TextButton toggleNeedle{"Needle"};
     juce::TextButton toggleEye{"Eye"};
