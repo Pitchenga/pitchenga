@@ -115,6 +115,17 @@ Control::Control(PitchengaAudioProcessor& proc)
         processor.showExternalPluginEditor();
     };
 
+    comboPresets.setTextWhenNothingSelected("Presets...");
+    comboPresets.addItem("Factory Default", 1);
+    comboPresets.onChange = [this] {
+        const int id = comboPresets.getSelectedId();
+        if (id == 1) {
+            processor.loadDefaultSettings();
+            updateVisibilityFromState();
+            if (onVisibilityChanged) onVisibilityChanged();
+        }
+    };
+
     setupToggleButton(toggleTweak, processor.settings.isShowTweakPanel);
     toggleTweak.onClick = [this] {
         processor.settings.isShowTweakPanel = toggleTweak.getToggleState();
@@ -247,6 +258,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(tweakPanel);
     tweakPanel.addAndMakeVisible(buttonPlugs);
     tweakPanel.addAndMakeVisible(buttonPlug);
+    tweakPanel.addAndMakeVisible(comboPresets);
     tweakPanel.addAndMakeVisible(buttonLoad);
     tweakPanel.addAndMakeVisible(buttonSave);
     tweakPanel.addAndMakeVisible(buttonNuke);
@@ -366,6 +378,11 @@ void Control::resized() {
 
         positionButtonRight(buttonSave, panelBounds);
         positionButtonRight(buttonLoad, panelBounds);
+        
+        // Position the dropdown between Load and Nuke
+        const int comboWidth = 120;
+        comboPresets.setBounds(panelBounds.removeFromRight(comboWidth).reduced(2));
+
         positionButtonRight(buttonNuke, panelBounds);
     }
 }

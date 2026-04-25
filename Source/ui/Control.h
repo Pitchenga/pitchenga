@@ -73,6 +73,7 @@ private:
 
     juce::TextButton toggleTweak{"Tweak"};
     juce::Component tweakPanel;
+    juce::ComboBox comboPresets{"Presets"};
     juce::TextButton buttonLoad{"Load"};
     juce::TextButton buttonSave{"Save"};
     juce::TextButton buttonNuke{"Nuke"};
