@@ -215,7 +215,7 @@ private:
 
     static constexpr T mpmCutoff = static_cast<T>(0.93);
     static constexpr T mpmSmallCutoff = static_cast<T>(0.5);
-    static constexpr T mpmLowerPitchCutoff = static_cast<T>(50.0);
+    static constexpr T mpmLowerPitchCutoff = static_cast<T>(16.35);
 };
 
 } // namespace sevagh
