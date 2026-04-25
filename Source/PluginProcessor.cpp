@@ -185,7 +185,7 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     }
 }
 
-void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& description) {
+void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& description, bool forceOpenWindow) {
     juce::String errorMessage;
     const double sampleRate = getSampleRate();
     const int blockSize = getBlockSize();
@@ -201,6 +201,10 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
         // while the plugin is still alive but suspended.
         if (onPluginAboutToBeDeleted) {
             onPluginAboutToBeDeleted();
+        }
+        
+        if (forceOpenWindow) {
+            settings.isExternalPluginWindowOpen = true;
         }
 
         {
@@ -300,16 +304,23 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, const int si
             if (auto pluginDescriptionXml = juce::XmlDocument::parse(settings.externalPluginDescriptionXml)) {
                 juce::PluginDescription pluginDescription;
                 if (pluginDescription.loadFromXml(*pluginDescriptionXml)) {
-                    // loadExternalPlugin already handles suspension, onPluginAboutToBeDeleted, 
-                    // and thread-safe instance replacement.
-                    loadExternalPlugin(pluginDescription);
+                    // For setup restoration, we suspend processing during the entire operation
+                    // (including state setting) to avoid crashes like 0x10 (null dereference 
+                    // during processing while plugin is inconsistent).
+                    suspendProcessing(true);
 
-                    if (externalPlugin != nullptr && settings.externalPluginStateBase64.isNotEmpty()) {
-                        juce::MemoryBlock pluginState;
-                        if (pluginState.fromBase64Encoding(settings.externalPluginStateBase64)) {
-                            externalPlugin->setStateInformation(pluginState.getData(), static_cast<int>(pluginState.getSize()));
+                    loadExternalPlugin(pluginDescription, false);
+
+                    if (externalPlugin != nullptr) {
+                        if (settings.externalPluginStateBase64.isNotEmpty()) {
+                            juce::MemoryBlock pluginState;
+                            if (pluginState.fromBase64Encoding(settings.externalPluginStateBase64)) {
+                                externalPlugin->setStateInformation(pluginState.getData(), static_cast<int>(pluginState.getSize()));
+                            }
                         }
                     }
+
+                    suspendProcessing(false);
 
                     // Restore the plugin window visibility state
                     if (settings.isExternalPluginWindowOpen) {
@@ -320,6 +331,7 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, const int si
                 }
             }
         }
+
     }
 }
 

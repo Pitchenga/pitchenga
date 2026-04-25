@@ -80,7 +80,7 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     // Plugin Hosting
-    void loadExternalPlugin(const juce::PluginDescription& description);
+    void loadExternalPlugin(const juce::PluginDescription& description, bool forceOpenWindow = false);
     void rescanPlugins();
     void openPluginBrowser();
     void showExternalPluginEditor();

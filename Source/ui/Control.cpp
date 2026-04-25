@@ -101,7 +101,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                         auto typesRef = listRef.getTypes();
                         const int index = result - 3;
                         if (index >= 0 && index < typesRef.size()) {
-                            processor.loadExternalPlugin(typesRef[static_cast<size_t>(index)]);
+                            processor.loadExternalPlugin(typesRef[static_cast<size_t>(index)], true);
                         }
                     }
                 }
