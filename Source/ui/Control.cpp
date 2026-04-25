@@ -119,7 +119,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     comboPresets.onChange = [this] {
         const int id = comboPresets.getSelectedId();
         if (id == 1) {
-            // Functional Factory Default reset
+            // Load factory settings-default.xml
             const juce::File factoryDefaultFile(juce::File(__FILE__).getParentDirectory().getParentDirectory().getChildFile("settings-default.xml"));
             if (auto xml = juce::XmlDocument::parse(factoryDefaultFile)) {
                 xml->setTagName(getSettingsTagName());
@@ -131,9 +131,10 @@ Control::Control(PitchengaAudioProcessor& proc)
                     PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
                     processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
                     
-                    // Factory is selected -> Save will go to user-default.xml
+                    // Factory selected -> Overwrite Save will target user-default.xml
                     currentPresetFile = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
                         .getChildFile("Pitchenga").getChildFile("user-default.xml");
+                    comboPresets.setText("Factory Default", juce::NotificationType::dontSendNotification);
                 }
             }
         } else if (id == 2) {
@@ -149,6 +150,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                     PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
                     processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
                     currentPresetFile = userDefaultFile;
+                    comboPresets.setText("User Default", juce::NotificationType::dontSendNotification);
                 }
             }
         } else if (id == 3) {
@@ -175,6 +177,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                                 PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
                                 processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
                                 currentPresetFile = result;
+                                refreshPresets(); // To handle case where file was outside the dir
                             }
                         }
                     }
@@ -193,6 +196,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                         PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
                         processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
                         currentPresetFile = presetFile;
+                        comboPresets.setText(presetFile.getFileNameWithoutExtension(), juce::NotificationType::dontSendNotification);
                     }
                 }
             }
@@ -221,6 +225,12 @@ Control::Control(PitchengaAudioProcessor& proc)
         const juce::XmlElement xml = processor.settings.createXml();
         if (xml.writeTo(currentPresetFile)) {
             refreshPresets();
+            // Explicitly force text update for transitions like Factory -> User Default
+            if (currentPresetFile.getFileName() == "user-default.xml") {
+                comboPresets.setText("User Default", juce::NotificationType::dontSendNotification);
+            } else {
+                comboPresets.setText(currentPresetFile.getFileNameWithoutExtension(), juce::NotificationType::dontSendNotification);
+            }
         } else {
             juce::AlertWindow::showMessageBoxAsync(
                 juce::MessageBoxIconType::WarningIcon,
@@ -431,13 +441,35 @@ void Control::refreshPresets() {
     if (appDataDir.exists()) {
         juce::Array<juce::File> files;
         appDataDir.findChildFiles(files, juce::File::findFiles, false, "*.xml");
-        
+
         int id = 4;
-        for (auto& f : files) {
-            // Exclude user-default from the general list
-            if (f.getFileName() != "user-default.xml") {
-                comboPresets.addItem(f.getFileNameWithoutExtension(), id++);
-                presets.push_back(f);
+        for (auto& file : files) {
+            comboPresets.addItem(file.getFileNameWithoutExtension(), id++);
+            presets.push_back(file);
+        }
+    }
+
+
+    // Maintain current selection text if applicable
+    if (currentPresetFile.existsAsFile()) {
+        const auto activeFileName = currentPresetFile.getFileName();
+        if (activeFileName == "user-default.xml") {
+            comboPresets.setSelectedId(2, juce::NotificationType::dontSendNotification);
+            comboPresets.setText("User Default", juce::NotificationType::dontSendNotification);
+        } else {
+            // Find by filename
+            const auto activeNameNoExt = currentPresetFile.getFileNameWithoutExtension();
+            bool found = false;
+            for (int i = 0; i < comboPresets.getNumItems(); ++i) {
+                if (comboPresets.getItemText(i) == activeNameNoExt) {
+                    comboPresets.setSelectedItemIndex(i, juce::NotificationType::dontSendNotification);
+                    comboPresets.setText(activeNameNoExt, juce::NotificationType::dontSendNotification);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                 comboPresets.setText(activeNameNoExt, juce::NotificationType::dontSendNotification);
             }
         }
     }
