@@ -120,8 +120,8 @@ Control::Control(PitchengaAudioProcessor& proc)
         const int id = comboPresets.getSelectedId();
         if (id == 1) {
             // Functional Factory Default reset
-            const juce::File defaultSettingsFile(juce::File(__FILE__).getParentDirectory().getParentDirectory().getChildFile("settings-default.xml"));
-            if (auto xml = juce::XmlDocument::parse(defaultSettingsFile)) {
+            const juce::File factoryDefaultFile(juce::File(__FILE__).getParentDirectory().getParentDirectory().getChildFile("settings-default.xml"));
+            if (auto xml = juce::XmlDocument::parse(factoryDefaultFile)) {
                 xml->setTagName(getSettingsTagName());
                 if (processor.settings.loadFromXml(*xml)) {
                     updateVisibilityFromState();
@@ -132,8 +132,50 @@ Control::Control(PitchengaAudioProcessor& proc)
                     processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
                 }
             }
-        } else if (id > 1) {
-            const size_t index = static_cast<size_t>(id - 2);
+        } else if (id == 2) {
+            // Load user-default.xml from app data dir
+            const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
+            const auto userDefaultFile = appDataDir.getChildFile("user-default.xml");
+            if (auto xml = juce::XmlDocument::parse(userDefaultFile)) {
+                if (processor.settings.loadFromXml(*xml)) {
+                    updateVisibilityFromState();
+                    if (onVisibilityChanged) onVisibilityChanged();
+                    
+                    juce::MemoryBlock destData;
+                    PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
+                    processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
+                }
+            }
+        } else if (id == 3) {
+            // Other... (Load button functionality)
+            chooser = std::make_unique<juce::FileChooser>(
+                "Select a settings file to load...",
+                juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga"),
+                "*.xml"
+            );
+
+            auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+            chooser->launchAsync(
+                flags,
+                [this](const juce::FileChooser& fc) {
+                    auto result = fc.getResult();
+                    if (result.existsAsFile()) {
+                        if (auto xml = juce::XmlDocument::parse(result)) {
+                            if (processor.settings.loadFromXml(*xml)) {
+                                updateVisibilityFromState();
+                                if (onVisibilityChanged) onVisibilityChanged();
+
+                                juce::MemoryBlock destData;
+                                PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
+                                processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
+                            }
+                        }
+                    }
+                }
+            );
+        } else if (id > 3) {
+            const size_t index = static_cast<size_t>(id - 4);
             if (index < presets.size()) {
                 const auto& presetFile = presets[index];
                 if (auto xml = juce::XmlDocument::parse(presetFile)) {
@@ -156,36 +198,6 @@ Control::Control(PitchengaAudioProcessor& proc)
         processor.settings.isShowTweakPanel = toggleTweak.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
         updateButtonStates();
-    };
-
-    buttonLoad.setButtonText("Load");
-    buttonLoad.onClick = [this] {
-        chooser = std::make_unique<juce::FileChooser>(
-            "Select a settings file to load...",
-            juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga"),
-            "*.xml"
-        );
-
-        auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
-
-        chooser->launchAsync(
-            flags,
-            [this](const juce::FileChooser& fc) {
-                auto result = fc.getResult();
-                if (result.existsAsFile()) {
-                    if (auto xml = juce::XmlDocument::parse(result)) {
-                        if (processor.settings.loadFromXml(*xml)) {
-                            updateVisibilityFromState();
-                            if (onVisibilityChanged) onVisibilityChanged();
-
-                            juce::MemoryBlock destData;
-                            processor.copyXmlToBinary(*xml, destData);
-                            processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
-                        }
-                    }
-                }
-            }
-        );
     };
 
     buttonSave.setButtonText("Save");
@@ -243,7 +255,6 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(buttonPlugs);
     tweakPanel.addAndMakeVisible(buttonPlug);
     tweakPanel.addAndMakeVisible(comboPresets);
-    tweakPanel.addAndMakeVisible(buttonLoad);
     tweakPanel.addAndMakeVisible(buttonSave);
 
 #include "build_timestamp.h"
@@ -360,10 +371,9 @@ void Control::resized() {
         positionButton(buttonPlug, panelBounds);
 
         positionButtonRight(buttonSave, panelBounds);
-        positionButtonRight(buttonLoad, panelBounds);
         
-        // Position the dropdown between Load and Save (Save is furthest right now)
-        const int comboWidth = 120;
+        // Position the dropdown to the left of the Save button (which is furthest right now)
+        const int comboWidth = 140;
         comboPresets.setBounds(panelBounds.removeFromRight(comboWidth).reduced(2));
     }
 }
@@ -371,19 +381,30 @@ void Control::resized() {
 void Control::refreshPresets() {
     comboPresets.clear(juce::NotificationType::dontSendNotification);
     comboPresets.addItem("Factory Default", 1);
+    
+    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
+    const auto userDefaultFile = appDataDir.getChildFile("user-default.xml");
+    
+    if (userDefaultFile.existsAsFile()) {
+        comboPresets.addItem("User Default", 2);
+    } else {
+        comboPresets.addItem("User Default", 2);
+        comboPresets.setItemEnabled(2, false);
+    }
+    
+    comboPresets.addSeparator();
+    comboPresets.addItem("Other...", 3);
     comboPresets.addSeparator();
 
     presets.clear();
-    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
-    
     if (appDataDir.exists()) {
         juce::Array<juce::File> files;
         appDataDir.findChildFiles(files, juce::File::findFiles, false, "*.xml");
         
-        int id = 2;
+        int id = 4;
         for (auto& f : files) {
-            // Exclude the main settings file if it exists there
-            if (f.getFileName() != "settings.xml") {
+            // Exclude user-default from the general list
+            if (f.getFileName() != "user-default.xml") {
                 comboPresets.addItem(f.getFileNameWithoutExtension(), id++);
                 presets.push_back(f);
             }

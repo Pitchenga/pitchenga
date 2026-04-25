@@ -76,7 +76,6 @@ private:
     juce::Component tweakPanel;
     juce::ComboBox comboPresets{"Presets"};
     std::vector<juce::File> presets;
-    juce::TextButton buttonLoad{"Load"};
     juce::TextButton buttonSave{"Save"};
 
     std::unique_ptr<juce::FileChooser> chooser;

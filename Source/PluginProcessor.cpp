@@ -15,13 +15,23 @@ PitchengaAudioProcessor::PitchengaAudioProcessor()
 PitchengaAudioProcessor::~PitchengaAudioProcessor() = default;
 
 void PitchengaAudioProcessor::loadDefaultSettings() {
-    // Attempt to load settings-default.xml from the Source directory
-    const juce::File defaultSettingsFile(juce::File(__FILE__).getSiblingFile("settings-default.xml"));
+    // Attempt to load user-default.xml from the application data directory
+    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
+    const auto userDefaultFile = appDataDir.getChildFile("user-default.xml");
     
-    if (auto xml = juce::XmlDocument::parse(defaultSettingsFile)) {
-        // We need the helper method from Control.cpp or to duplicate the tag logic. 
-        // For simplicity and adherence to existing patterns, we'll assume the tag name 
-        // is handled correctly by loadFromXml which checks the build profile.
+    if (userDefaultFile.existsAsFile()) {
+        if (auto xml = juce::XmlDocument::parse(userDefaultFile)) {
+            // Tag name check is done in loadFromXml (which handles build profiles)
+            if (settings.loadFromXml(*xml)) {
+                return;
+            }
+        }
+    }
+
+    // Fallback to the factory setting in the Source directory
+    const juce::File factoryDefaultFile(juce::File(__FILE__).getSiblingFile("settings-default.xml"));
+    
+    if (auto xml = juce::XmlDocument::parse(factoryDefaultFile)) {
         settings.loadFromXml(*xml);
     }
 }
