@@ -18,7 +18,6 @@ static juce::String getSettingsTagName() {
 
 Control::Control(PitchengaAudioProcessor& proc)
     : processor(proc) {
-
     setupToggleButton(toggleRoll, processor.settings.isShowRoll);
     toggleRoll.onClick = [this] {
         processor.settings.isShowRoll = toggleRoll.getToggleState();
@@ -79,7 +78,7 @@ Control::Control(PitchengaAudioProcessor& proc)
 
             auto& list = processor.getKnownPluginList();
             auto types = list.getTypes();
-            
+
             int id = 3;
             for (int i = 0; i < types.size(); ++i) {
                 if (types[i].isInstrument) {
@@ -88,7 +87,8 @@ Control::Control(PitchengaAudioProcessor& proc)
                 id++;
             }
 
-            menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&buttonPlugs),
+            menu.showMenuAsync(
+                juce::PopupMenu::Options().withTargetComponent(&buttonPlugs),
                 [this, showPlugsMenu](int result) {
                     if (result == 1) {
                         processor.openPluginBrowser();
@@ -104,7 +104,8 @@ Control::Control(PitchengaAudioProcessor& proc)
                             processor.loadExternalPlugin(typesRef[static_cast<size_t>(index)]);
                         }
                     }
-                });
+                }
+            );
         };
         showPlugsMenu();
     };
@@ -121,13 +122,70 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
-    buttonCopy.setButtonText("Copy");
-    buttonCopy.setColour(juce::TextButton::buttonColourId, juce::Colours::black.withAlpha(0.4f));
-    buttonCopy.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
-    buttonCopy.onClick = [this] {
-        juce::XmlElement xml = processor.settings.createXml();
-        juce::SystemClipboard::copyTextToClipboard(xml.toString());
-        juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::InfoIcon, "Copied", "Settings copied to clipboard.");
+    buttonLoad.setButtonText("Load");
+    buttonLoad.onClick = [this] {
+        chooser = std::make_unique<juce::FileChooser>(
+            "Select a settings file to load...",
+            juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga"),
+            "*.xml"
+        );
+
+        auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+        chooser->launchAsync(
+            flags,
+            [this](const juce::FileChooser& fc) {
+                auto result = fc.getResult();
+                if (result.existsAsFile()) {
+                    if (auto xml = juce::XmlDocument::parse(result)) {
+                        if (processor.settings.loadFromXml(*xml)) {
+                            updateVisibilityFromState();
+                            if (onVisibilityChanged) onVisibilityChanged();
+
+                            juce::MemoryBlock destData;
+                            processor.copyXmlToBinary(*xml, destData);
+                            processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
+                        }
+                    }
+                }
+            }
+        );
+    };
+
+    buttonSave.setButtonText("Save");
+    buttonSave.onClick = [this] {
+        chooser = std::make_unique<juce::FileChooser>(
+            "Select where to save the settings...",
+            juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga"),
+            "*.xml"
+        );
+
+        auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
+            juce::FileBrowserComponent::warnAboutOverwriting;
+
+        chooser->launchAsync(
+            flags,
+            [this](const juce::FileChooser& fc) {
+                auto result = fc.getResult();
+                if (result != juce::File()) {
+                    if (result.getFileExtension() != ".xml") {
+                        result = result.withFileExtension(".xml");
+                    }
+
+                    juce::MemoryBlock dummy;
+                    processor.getStateInformation(dummy);
+
+                    const juce::XmlElement xml = processor.settings.createXml();
+                    if (!xml.writeTo(result)) {
+                        juce::AlertWindow::showMessageBoxAsync(
+                            juce::MessageBoxIconType::WarningIcon,
+                            "Error",
+                            "Failed to write settings to file."
+                        );
+                    }
+                }
+            }
+        );
     };
 
     buttonNuke.setColour(juce::TextButton::buttonColourId, juce::Colours::darkred.withAlpha(0.6f));
@@ -135,15 +193,20 @@ Control::Control(PitchengaAudioProcessor& proc)
     buttonNuke.onClick = [this] {
         juce::AlertWindow::showAsync(
             juce::MessageBoxOptions()
-                .withIconType(juce::MessageBoxIconType::WarningIcon)
-                .withTitle("Reset Settings")
-                .withMessage("Are you sure you want to reset to factory settings?")
-                .withButton("Yes")
-                .withButton("No")
-                .withAssociatedComponent(this),
+            .withIconType(juce::MessageBoxIconType::WarningIcon)
+            .withTitle("Reset Settings")
+            .withMessage("Are you sure you want to reset to factory settings?")
+            .withButton("Yes")
+            .withButton("No")
+            .withAssociatedComponent(this),
             [this](int result) {
-                if (result == 1) { // 1 is the index of the first button ("Yes")
-                    juce::File defaultSettingsFile(juce::File(__FILE__).getParentDirectory().getParentDirectory().getChildFile("settings-default.xml"));
+                if (result == 1) {
+                    // 1 is the index of the first button ("Yes")
+                    juce::File defaultSettingsFile(
+                        juce::File(__FILE__).getParentDirectory().getParentDirectory().getChildFile(
+                            "settings-default.xml"
+                        )
+                    );
                     if (auto xml = juce::XmlDocument::parse(defaultSettingsFile)) {
                         xml->setTagName(getSettingsTagName()); // Ensure the tag matches what loadFromXml expects
                         bool loaded = processor.settings.loadFromXml(*xml);
@@ -151,10 +214,18 @@ Control::Control(PitchengaAudioProcessor& proc)
                             updateVisibilityFromState();
                             if (onVisibilityChanged) onVisibilityChanged();
                         } else {
-                            juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, "Error", "Failed to apply settings from XML.");
+                            juce::AlertWindow::showMessageBoxAsync(
+                                juce::MessageBoxIconType::WarningIcon,
+                                "Error",
+                                "Failed to apply settings."
+                            );
                         }
                     } else {
-                        juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, "Error", "Could not find or parse: " + defaultSettingsFile.getFullPathName());
+                        juce::AlertWindow::showMessageBoxAsync(
+                            juce::MessageBoxIconType::WarningIcon,
+                            "Error",
+                            "Could not find or parse: " + defaultSettingsFile.getFullPathName()
+                        );
                     }
                 }
             }
@@ -171,12 +242,13 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(toggleForrest);
 
     addAndMakeVisible(toggleEar);
-    
+
     addAndMakeVisible(toggleTweak);
     addAndMakeVisible(tweakPanel);
     tweakPanel.addAndMakeVisible(buttonPlugs);
     tweakPanel.addAndMakeVisible(buttonPlug);
-    tweakPanel.addAndMakeVisible(buttonCopy);
+    tweakPanel.addAndMakeVisible(buttonLoad);
+    tweakPanel.addAndMakeVisible(buttonSave);
     tweakPanel.addAndMakeVisible(buttonNuke);
 
 #include "build_timestamp.h"
@@ -204,7 +276,7 @@ void Control::updateVisibilityFromState() {
     toggleEye.setToggleState(processor.settings.isShowEye, juce::NotificationType::dontSendNotification);
     toggleNeedle.setToggleState(processor.settings.isShowNeedle, juce::NotificationType::dontSendNotification);
     toggleisFreezeRoll.setToggleState(processor.settings.isFreezeRoll, juce::NotificationType::dontSendNotification);
-    
+
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
     toggleSteam.setToggleState(processor.settings.isShowSteam, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
@@ -221,9 +293,9 @@ void Control::updateButtonStates() {
     toggleRollType.setVisible(rollActive);
     toggleSteam.setVisible(rollActive);
     toggleForrest.setVisible(rollActive);
-    
+
     buttonPlug.setEnabled(processor.isExternalPluginLoaded());
-    
+
     tweakPanel.setVisible(processor.settings.isShowTweakPanel);
     resized();
 }
@@ -244,7 +316,7 @@ void Control::resized() {
 
     // Calculate row height
     int rowHeight = static_cast<int>(font.getHeight() + 8.0f);
-    
+
     // Create the top row
     auto topRow = bounds.removeFromTop(rowHeight);
 
@@ -260,8 +332,10 @@ void Control::resized() {
         if (!button.isVisible()) return;
         float textWidth = juce::GlyphArrangement::getStringWidth(font, button.getButtonText());
         if (&button == &toggleRollType) {
-            textWidth = juce::jmax(juce::GlyphArrangement::getStringWidth(font, "STFT"),
-                                   juce::GlyphArrangement::getStringWidth(font, "CQT"));
+            textWidth = juce::jmax(
+                juce::GlyphArrangement::getStringWidth(font, "STFT"),
+                juce::GlyphArrangement::getStringWidth(font, "CQT")
+            );
         }
         const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 16; // 16px horizontal padding
         button.setBounds(container.removeFromRight(buttonWidth).reduced(2));
@@ -285,13 +359,14 @@ void Control::resized() {
 
     if (processor.settings.isShowTweakPanel) {
         tweakPanel.setBounds(bounds); // Use the entire remaining bounds (the bottom row)
-        
+
         auto panelBounds = tweakPanel.getLocalBounds();
         positionButton(buttonPlugs, panelBounds);
         positionButton(buttonPlug, panelBounds);
-        
+
+        positionButtonRight(buttonSave, panelBounds);
+        positionButtonRight(buttonLoad, panelBounds);
         positionButtonRight(buttonNuke, panelBounds);
-        positionButtonRight(buttonCopy, panelBounds);
     }
 }
 

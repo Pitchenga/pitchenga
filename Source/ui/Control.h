@@ -72,8 +72,11 @@ private:
 
     juce::TextButton toggleTweak{"Tweak"};
     juce::Component tweakPanel;
-    juce::TextButton buttonCopy{"Copy"};
+    juce::TextButton buttonLoad{"Load"};
+    juce::TextButton buttonSave{"Save"};
     juce::TextButton buttonNuke{"Nuke"};
+
+    std::unique_ptr<juce::FileChooser> chooser;
 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Control)

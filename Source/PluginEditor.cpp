@@ -26,6 +26,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     processor.onOpenPluginBrowser = [this] { openPluginBrowserWindow(); };
     processor.onRescanPlugins = [this] { startPluginScan(); };
     processor.onPluginLoaded = [this] { openPluginWindow(); };
+    processor.onPluginAboutToBeDeleted = [this] { pluginWindow = nullptr; };
 
     addAndMakeVisible(needle);
     addAndMakeVisible(eye);
@@ -57,6 +58,7 @@ PitchengaAudioProcessorEditor::~PitchengaAudioProcessorEditor() {
     processor.onOpenPluginBrowser = nullptr;
     processor.onRescanPlugins = nullptr;
     processor.onPluginLoaded = nullptr;
+    processor.onPluginAboutToBeDeleted = nullptr;
 }
 
 void PitchengaAudioProcessorEditor::timerCallback() {

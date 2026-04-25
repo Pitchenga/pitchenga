@@ -1,8 +1,8 @@
 #include "Util.h"
 #include "build_timestamp.h"
 
-bool Util::debugLogEnabled = true;
-// bool Util::debugLogEnabled = false;
+// bool Util::debugLogEnabled = true;
+bool Util::debugLogEnabled = false;
 
 juce::String Util::startTimestamp = getTimestamp();
 

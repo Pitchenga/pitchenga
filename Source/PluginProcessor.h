@@ -84,6 +84,7 @@ public:
     void rescanPlugins();
     void openPluginBrowser();
     void showExternalPluginEditor();
+    void loadDefaultSettings();
     juce::AudioProcessorEditor* createExternalPluginEditor();
     bool isExternalPluginLoaded() const { return externalPlugin != nullptr; }
     
@@ -94,6 +95,7 @@ public:
     std::function<void()> onOpenPluginBrowser;
     std::function<void()> onRescanPlugins;
     std::function<void()> onPluginLoaded;
+    std::function<void()> onPluginAboutToBeDeleted;
 
     static constexpr int numOctaves = 8;
     // 32768 is sufficient to hold the lowest octave buffers without overrun at 30fps

@@ -9,9 +9,22 @@ PitchengaAudioProcessor::PitchengaAudioProcessor()
         .withOutput("Output", juce::AudioChannelSet::stereo(), true)
     ) {
     juce::addDefaultFormatsToManager(formatManager);
+    loadDefaultSettings();
 }
 
 PitchengaAudioProcessor::~PitchengaAudioProcessor() = default;
+
+void PitchengaAudioProcessor::loadDefaultSettings() {
+    // Attempt to load settings-default.xml from the Source directory
+    const juce::File defaultSettingsFile(juce::File(__FILE__).getSiblingFile("settings-default.xml"));
+    
+    if (auto xml = juce::XmlDocument::parse(defaultSettingsFile)) {
+        // We need the helper method from Control.cpp or to duplicate the tag logic. 
+        // For simplicity and adherence to existing patterns, we'll assume the tag name 
+        // is handled correctly by loadFromXml which checks the build profile.
+        settings.loadFromXml(*xml);
+    }
+}
 
 void PitchengaAudioProcessor::prepareToPlay(const double sampleRate, const int samplesPerBlock) {
     const size_t bufferSize = static_cast<size_t>(std::max(samplesPerBlock, 4096));
@@ -181,6 +194,11 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
     auto instance = formatManager.createPluginInstance(description, sampleRate > 0 ? sampleRate : 44100.0, blockSize > 0 ? blockSize : 512, errorMessage);
     
     if (instance != nullptr) {
+        // Safe UI cleanup: notify the editor to close any open plugin window before we replace the instance
+        if (onPluginAboutToBeDeleted) {
+            onPluginAboutToBeDeleted();
+        }
+
         const juce::ScopedLock lock(pluginLock);
         
         // Ensure the new instance is prepared if we have valid host settings
@@ -261,6 +279,11 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, const int si
             if (auto pluginDescriptionXml = juce::XmlDocument::parse(settings.externalPluginDescriptionXml)) {
                 juce::PluginDescription pluginDescription;
                 if (pluginDescription.loadFromXml(*pluginDescriptionXml)) {
+                    // Safe UI cleanup before replacing the plugin
+                    if (onPluginAboutToBeDeleted) {
+                        onPluginAboutToBeDeleted();
+                    }
+
                     loadExternalPlugin(pluginDescription);
                     
                     if (externalPlugin != nullptr && settings.externalPluginStateBase64.isNotEmpty()) {
