@@ -114,9 +114,9 @@ Control::Control(PitchengaAudioProcessor& proc)
         processor.showExternalPluginEditor();
     };
 
-    setupToggleButton(toggleTweak, showTweakPanel);
+    setupToggleButton(toggleTweak, processor.settings.isShowTweakPanel);
     toggleTweak.onClick = [this] {
-        showTweakPanel = toggleTweak.getToggleState();
+        processor.settings.isShowTweakPanel = toggleTweak.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
         updateButtonStates();
     };
@@ -210,6 +210,7 @@ void Control::updateVisibilityFromState() {
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
     toggleEar.setToggleState(processor.settings.isEarEnabled, juce::NotificationType::dontSendNotification);
+    toggleTweak.setToggleState(processor.settings.isShowTweakPanel, juce::NotificationType::dontSendNotification);
 
     updateButtonStates();
 }
@@ -223,14 +224,14 @@ void Control::updateButtonStates() {
     
     buttonPlug.setEnabled(processor.isExternalPluginLoaded());
     
-    tweakPanel.setVisible(showTweakPanel);
+    tweakPanel.setVisible(processor.settings.isShowTweakPanel);
     resized();
 }
 
 float Control::getPreferredHeight() const {
     const juce::Font font = juce::FontOptions(15.0f).withStyle("Bold");
     float h = font.getHeight() + 8.0f;
-    if (showTweakPanel) {
+    if (processor.settings.isShowTweakPanel) {
         h *= 2.0f;
     }
     return h;
@@ -282,7 +283,7 @@ void Control::resized() {
     topRow.removeFromRight(8);
     buildTimestampLabel.setBounds(topRow);
 
-    if (showTweakPanel) {
+    if (processor.settings.isShowTweakPanel) {
         tweakPanel.setBounds(bounds); // Use the entire remaining bounds (the bottom row)
         
         auto panelBounds = tweakPanel.getLocalBounds();
@@ -312,6 +313,7 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isShowSteam", isShowSteam);
 
     xml.setAttribute("isEarEnabled", isEarEnabled);
+    xml.setAttribute("isShowTweakPanel", isShowTweakPanel);
 
     xml.setAttribute("splitRatio", splitRatio);
 
@@ -337,6 +339,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isShowSteam = xml.getBoolAttribute("isShowSteam", isShowSteam);
 
     isEarEnabled = xml.getBoolAttribute("isEarEnabled", isEarEnabled);
+    isShowTweakPanel = xml.getBoolAttribute("isShowTweakPanel", isShowTweakPanel);
 
     splitRatio = static_cast<float>(xml.getDoubleAttribute("splitRatio", splitRatio));
 

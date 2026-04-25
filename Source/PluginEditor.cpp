@@ -133,6 +133,11 @@ void PitchengaAudioProcessorEditor::startPluginScan() {
             }
         }
     }
+    
+    // Close the residual plugin manager window after the scan is complete as requested
+    if (browserWindow != nullptr) {
+        browserWindow->setVisible(false);
+    }
 }
 
 void PitchengaAudioProcessorEditor::paint(juce::Graphics& g) {

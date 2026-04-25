@@ -24,6 +24,7 @@ public:
         bool isShowForrest = false;
 
         bool isEarEnabled = false;
+        bool isShowTweakPanel = false;
 
         float splitRatio = 0.3130223751068115f;
 
@@ -67,7 +68,6 @@ private:
     juce::Label buildTimestampLabel;
 
     juce::TextButton toggleTweak{"Tweak"};
-    bool showTweakPanel = false;
     juce::Component tweakPanel;
     juce::TextButton buttonCopy{"Copy"};
     juce::TextButton buttonNuke{"Nuke"};
