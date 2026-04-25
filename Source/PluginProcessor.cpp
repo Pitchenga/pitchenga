@@ -174,18 +174,18 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
 void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& description) {
     juce::String errorMessage;
-    const double sr = getSampleRate();
-    const int bs = getBlockSize();
+    const double sampleRate = getSampleRate();
+    const int blockSize = getBlockSize();
     
     // Create the plugin instance with host's current settings or defaults if not yet prepared
-    auto instance = formatManager.createPluginInstance(description, sr > 0 ? sr : 44100.0, bs > 0 ? bs : 512, errorMessage);
+    auto instance = formatManager.createPluginInstance(description, sampleRate > 0 ? sampleRate : 44100.0, blockSize > 0 ? blockSize : 512, errorMessage);
     
     if (instance != nullptr) {
         const juce::ScopedLock lock(pluginLock);
         
         // Ensure the new instance is prepared if we have valid host settings
-        if (sr > 0 && bs > 0) {
-            instance->prepareToPlay(sr, bs);
+        if (sampleRate > 0 && blockSize > 0) {
+            instance->prepareToPlay(sampleRate, blockSize);
         }
         
         externalPlugin = std::move(instance);
