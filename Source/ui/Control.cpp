@@ -156,11 +156,11 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(toggleForrest);
 
     addAndMakeVisible(toggleEar);
-    addAndMakeVisible(buttonPlugs);
-    addAndMakeVisible(buttonPlug);
-
+    
     addAndMakeVisible(toggleTweak);
     addAndMakeVisible(tweakPanel);
+    tweakPanel.addAndMakeVisible(buttonPlugs);
+    tweakPanel.addAndMakeVisible(buttonPlug);
     tweakPanel.addAndMakeVisible(buttonCopy);
     tweakPanel.addAndMakeVisible(buttonNuke);
 
@@ -233,11 +233,11 @@ void Control::resized() {
     auto topRow = bounds.removeFromTop(rowHeight);
 
     // Pack the buttons to the left with minimal offsets dynamically sizing to their text
-    auto positionButton = [&](juce::TextButton& btn) {
+    auto positionButton = [&](juce::TextButton& btn, juce::Rectangle<int>& container) {
         if (!btn.isVisible()) return;
         const float textWidth = juce::GlyphArrangement::getStringWidth(font, btn.getButtonText());
         const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 16; // 16px horizontal padding
-        btn.setBounds(topRow.removeFromLeft(buttonWidth).reduced(2));
+        btn.setBounds(container.removeFromLeft(buttonWidth).reduced(2));
     };
 
     auto positionButtonRight = [&](juce::TextButton& button, juce::Rectangle<int>& container) {
@@ -251,13 +251,11 @@ void Control::resized() {
         button.setBounds(container.removeFromRight(buttonWidth).reduced(2));
     };
 
-    positionButton(toggleNeedle);
-    positionButton(toggleEye);
-    positionButton(toggleRoll);
+    positionButton(toggleNeedle, topRow);
+    positionButton(toggleEye, topRow);
+    positionButton(toggleRoll, topRow);
 
-    positionButton(buttonPlugs);
-    positionButton(buttonPlug);
-    positionButton(toggleEar);
+    positionButton(toggleEar, topRow);
 
     positionButtonRight(toggleTweak, topRow);
 
@@ -273,6 +271,9 @@ void Control::resized() {
         tweakPanel.setBounds(bounds); // Use the entire remaining bounds (the bottom row)
         
         auto panelBounds = tweakPanel.getLocalBounds();
+        positionButton(buttonPlugs, panelBounds);
+        positionButton(buttonPlug, panelBounds);
+        
         positionButtonRight(buttonNuke, panelBounds);
         positionButtonRight(buttonCopy, panelBounds);
     }
