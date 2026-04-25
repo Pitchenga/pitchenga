@@ -49,7 +49,7 @@ void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
     // We must use extractRawBins to preserve the progressively carved visual width of these lobes.
     extractRawBins();
 
-    if (enablePsychoacousticTilt) {
+    if (isEnablePsychoacousticTilt) {
         applyPsychoacousticTilt();
     }
     scaleForUi();
@@ -59,7 +59,7 @@ void Stft::performStft(const std::vector<float>& timeDomainSignal) {
     calculateRawBands(timeDomainSignal);
     stitchResolutionBands();
 
-    if (enablePeakExtraction) {
+    if (isEnablePeakExtraction) {
         extractPeaks();
     }
 
@@ -219,7 +219,7 @@ void Stft::applyProgressiveSmoothing() {
         const float freq = static_cast<float>(i) * unifiedBinResolution;
         float dynamicSmoothWeight = 1.0f;
 
-        if (enableTemporalSmoothing) {
+        if (isEnableTemporalSmoothing) {
             // Logarithmic Progressive Smoother:
             // Calculates smooth weight continuously based on exact frequency. Eliminates all crossover tears.
             const float logFrequency = std::log10(std::max(minFrequencyHz, freq));
@@ -340,7 +340,7 @@ void Stft::scaleForUi() {
             const float decibels = 20.0f * std::log10(linearAmplitude);
             float normalized = std::max(0.0f, 1.0f - decibels * zeroAmplitudeDbInv);
 
-            if (enableTailKiller) {
+            if (isEnableTailKiller) {
                 // Per-Bin Noise Gate (Tail Killer)
                 if (normalized < gateThreshold) {
                     const float ratio = normalized / gateThreshold;
@@ -358,7 +358,7 @@ void Stft::scaleForUi() {
             const float rawDecibels = 20.0f * std::log10(rawLinearAmplitude);
             float rawNormalized = std::max(0.0f, 1.0f - rawDecibels * zeroAmplitudeDbInv);
 
-            if (enableTailKiller) {
+            if (isEnableTailKiller) {
                 if (rawNormalized < gateThreshold) {
                     const float ratio = rawNormalized / gateThreshold;
                     rawNormalized = rawNormalized * ratio * ratio;

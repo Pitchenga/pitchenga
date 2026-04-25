@@ -19,7 +19,7 @@ public:
     static constexpr int getPreferredHeight() { return 619; }
 
     static juce::Font getLabelFont();
-    static float getLabelAreaHeight();
+    float getLabelAreaHeight() const;
 
 private:
     void buildFrame();

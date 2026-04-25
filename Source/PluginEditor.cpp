@@ -5,7 +5,6 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     : AudioProcessorEditor(&p),
     processor(p),
     worker(p),
-    needle(p),
     stftRoll(p),
     cqtRoll(p),
     splitter(p),
@@ -55,9 +54,9 @@ void PitchengaAudioProcessorEditor::timerCallback() {
         worker.getLineResults(cqtRollBuffer);
         worker.clearNewDataFlag();
 
-        if (processor.settings.showEye) eye.updateResults(circleBuffer);
-        if (processor.settings.showRoll) {
-            if (processor.settings.useStftRoll) {
+        if (processor.settings.isShowEye) eye.updateResults(circleBuffer);
+        if (processor.settings.isShowRoll) {
+            if (processor.settings.isUseStftRoll) {
                 stftRoll.updateResults(rollPeaksBuffer);
             } else {
                 cqtRoll.updateResults(cqtRollBuffer);
@@ -67,8 +66,8 @@ void PitchengaAudioProcessorEditor::timerCallback() {
 
     //fixme: Is it needed?
     // Force continuous UI repaints to allow smooth sub-pixel interpolation of the scrolling visual
-    // if (processor.settings.showRoll) {
-    //     if (processor.settings.useStftRoll) {
+    // if (processor.settings.isShowRoll) {
+    //     if (processor.settings.isUseStftRoll) {
     //         stftRoll.repaint();
     //     } else {
     //         cqtRoll.repaint();
@@ -89,36 +88,51 @@ void PitchengaAudioProcessorEditor::resized() {
     // Give the control bar its own dedicated, non-overlapping space at the top left
     control.setBounds(bounds.removeFromTop(static_cast<int>(control.getPreferredHeight())));
 
-    stftRoll.setVisible(processor.settings.showRoll && processor.settings.useStftRoll);
-    cqtRoll.setVisible(processor.settings.showRoll && !processor.settings.useStftRoll);
-    eye.setVisible(processor.settings.showEye);
-    needle.setVisible(processor.settings.showNeedle);
+    stftRoll.setVisible(processor.settings.isShowRoll && processor.settings.isUseStftRoll);
+    cqtRoll.setVisible(processor.settings.isShowRoll && !processor.settings.isUseStftRoll);
+    eye.setVisible(processor.settings.isShowEye);
+    needle.setVisible(processor.settings.isShowNeedle);
 
     // Only show splitter if both resizable elements are active
-    splitter.setVisible(processor.settings.showRoll && processor.settings.showEye);
+    splitter.setVisible(processor.settings.isShowRoll && processor.settings.isShowEye);
 
-    if (processor.settings.showNeedle) {
-        needle.setBounds(bounds.removeFromBottom(static_cast<int>(Needle::getPreferredHeight() + 1)));
-    }
+    const int needleHeight = processor.settings.isShowNeedle ? static_cast<int>(Needle::getPreferredHeight() + 1) : 0;
 
-    if (processor.settings.showRoll && processor.settings.showEye) {
-        const int availableHeight = bounds.getHeight();
+    if (processor.settings.isShowRoll && processor.settings.isShowEye) {
+        const int availableHeight = bounds.getHeight() - needleHeight - 4; // 4 is splitter height
         const int rollHeight = static_cast<int>(static_cast<float>(availableHeight) * processor.settings.splitRatio);
 
-        if (processor.settings.useStftRoll) {
-            stftRoll.setBounds(bounds.removeFromTop(rollHeight));
+        auto rollRect = bounds.removeFromTop(rollHeight);
+        if (processor.settings.isUseStftRoll) {
+            stftRoll.setBounds(rollRect);
         } else {
-            cqtRoll.setBounds(bounds.removeFromTop(rollHeight));
+            cqtRoll.setBounds(rollRect);
         }
+
+        if (processor.settings.isShowNeedle) {
+            needle.setBounds(bounds.removeFromTop(needleHeight));
+        }
+
         splitter.setBounds(bounds.removeFromTop(4)); // Dedicated 4px hit-box for the resizer
         eye.setBounds(bounds);
-    } else if (processor.settings.showRoll) {
-        if (processor.settings.useStftRoll) {
-            stftRoll.setBounds(bounds);
-        } else {
-            cqtRoll.setBounds(bounds);
+    } else {
+        // Vertical stack logic when eye or roll is missing (no splitter)
+        if (processor.settings.isShowRoll) {
+            const int rollHeight = bounds.getHeight() - needleHeight - (processor.settings.isShowEye ? bounds.getHeight() / 2 : 0);
+            auto rollRect = bounds.removeFromTop(rollHeight);
+            if (processor.settings.isUseStftRoll) {
+                stftRoll.setBounds(rollRect);
+            } else {
+                cqtRoll.setBounds(rollRect);
+            }
         }
-    } else if (processor.settings.showEye) {
-        eye.setBounds(bounds);
+
+        if (processor.settings.isShowNeedle) {
+            needle.setBounds(bounds.removeFromTop(needleHeight));
+        }
+
+        if (processor.settings.isShowEye) {
+            eye.setBounds(bounds);
+        }
     }
 }

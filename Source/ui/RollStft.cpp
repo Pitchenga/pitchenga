@@ -7,8 +7,8 @@
 RollStft::RollStft(PitchengaAudioProcessor& proc) : processor(proc) {}
 
 void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
-    if (!processor.settings.useStftRoll
-        || processor.settings.freezeRoll
+    if (!processor.settings.isUseStftRoll
+        || processor.settings.isFreezeRoll
         || !isVisible()
     ) {
         return;
@@ -41,7 +41,10 @@ juce::Font RollStft::getLabelFont() {
     };
 }
 
-float RollStft::getLabelAreaHeight() {
+float RollStft::getLabelAreaHeight() const {
+    if (!processor.settings.isisShowRollLabels()) {
+        return 0.0f;
+    }
     return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8") + 4.0f;
 }
 
@@ -73,11 +76,11 @@ void RollStft::paint(juce::Graphics& graphics) {
     // Clip the top 1 pixel to hide the "blinking lights" artifact caused by the treadmill write-head/interpolation lag
     graphics.reduceClipRegion(0, 1, width, plotHeight - 1);
 
-    if (processor.settings.showSteam) {
+    if (processor.settings.isShowSteam) {
         paintSteam(graphics);
     }
 
-    if (!activePeaks.empty() && processor.settings.showForrest) {
+    if (!activePeaks.empty() && processor.settings.isShowForrest) {
         paintForrest(graphics);
     }
 
@@ -171,7 +174,9 @@ void RollStft::paintFrame(juce::Graphics& graphics) const {
             graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
         }
 
-        paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, totalHeight, baseColor);
+        if (processor.settings.isisShowRollLabels()) {
+            paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, totalHeight, baseColor);
+        }
     }
 }
 

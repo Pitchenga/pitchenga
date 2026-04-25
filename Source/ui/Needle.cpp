@@ -2,7 +2,7 @@
 #include <cmath>
 #include "../Tone.h"
 
-Needle::Needle(PitchengaAudioProcessor& proc) : processor(proc) {
+Needle::Needle() {
     // Pre-calculate the sine wave intensities once during construction
     for (int i = 0; i < strobeCycleWidth; ++i) {
         const float sineVal = std::sin(juce::MathConstants<float>::twoPi * static_cast<float>(i) / static_cast<float>(strobeCycleWidth));

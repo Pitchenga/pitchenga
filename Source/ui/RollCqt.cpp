@@ -32,8 +32,8 @@ bool RollCqt::expand() {
 }
 
 void RollCqt::updateResults(const std::vector<double>& results) {
-    if (processor.settings.useStftRoll
-        || processor.settings.freezeRoll
+    if (processor.settings.isUseStftRoll
+        || processor.settings.isFreezeRoll
         || results.empty()
         || !isVisible()
     ) {
@@ -51,7 +51,7 @@ void RollCqt::updateResults(const std::vector<double>& results) {
 
     displayMagnitudes = smoother->smooth(displayMagnitudes);
 
-    if (processor.settings.showSteam) {
+    if (processor.settings.isShowSteam) {
         pumpSteam();
     }
 
@@ -79,7 +79,10 @@ juce::Font RollCqt::getLabelFont() {
     };
 }
 
-float RollCqt::getLabelAreaHeight() {
+float RollCqt::getLabelAreaHeight() const {
+    if (!processor.settings.isisShowRollLabels()) {
+        return 0.0f;
+    }
     return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8") + 4.0f;
 }
 
@@ -105,11 +108,11 @@ void RollCqt::paint(juce::Graphics& graphics) {
     graphics.saveState();
     graphics.reduceClipRegion(0, 0, width, plotHeight);
 
-    if (processor.settings.showSteam) {
+    if (processor.settings.isShowSteam) {
         paintSteam(graphics);
     }
 
-    if (processor.settings.showForrest) {
+    if (processor.settings.isShowForrest) {
         paintBins(graphics);
     }
 
@@ -215,7 +218,9 @@ void RollCqt::paintFrame(juce::Graphics& graphics) const {
             graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
         }
 
-        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor);
+        if (processor.settings.isisShowRollLabels()) {
+            paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor);
+        }
     }
 }
 

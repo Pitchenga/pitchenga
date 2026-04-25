@@ -31,14 +31,14 @@ public:
     void initialize(double sampleRateToUse);
     void processFrame(const std::vector<float>& timeDomainSignal);
 
-    bool enablePeakExtraction = true;
-    // bool enablePeakExtraction = false;
-    // bool enablePsychoacousticTilt = true;
-    bool enablePsychoacousticTilt = false;
-    bool enableTailKiller = true;
-    // bool enableTailKiller = false;
-    bool enableTemporalSmoothing = true;
-    // bool enableTemporalSmoothing = false;
+    bool isEnablePeakExtraction = true;
+    // bool isEnablePeakExtraction = false;
+    // bool isEnablePsychoacousticTilt = true;
+    bool isEnablePsychoacousticTilt = false;
+    bool isEnableTailKiller = true;
+    // bool isEnableTailKiller = false;
+    bool isEnableTemporalSmoothing = true;
+    // bool isEnableTemporalSmoothing = false;
 
     // Gradiental Peak Extractor Factors
     float bassShrinkerExponent = 64.0f;    // High exponent to heavily pinch wide bass lobes

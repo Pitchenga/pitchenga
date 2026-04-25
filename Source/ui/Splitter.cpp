@@ -29,7 +29,7 @@ void Splitter::mouseDrag(const juce::MouseEvent& e) {
 
         // Calculate dynamic bounds exactly matching resized() architecture
         const float topControlHeight = 24.0f;
-        const float bottomNeedleHeight = processor.settings.showNeedle ? Needle::getPreferredHeight() + 1.0f : 0.0f;
+        const float bottomNeedleHeight = processor.settings.isShowNeedle ? Needle::getPreferredHeight() + 1.0f : 0.0f;
         const float availableHeight = static_cast<float>(parent->getHeight()) - topControlHeight - bottomNeedleHeight;
 
         const float adjustedY = static_cast<float>(eventInParent.y) - topControlHeight;

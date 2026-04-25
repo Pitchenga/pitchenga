@@ -19,47 +19,47 @@ static juce::String getSettingsTagName() {
 Control::Control(PitchengaAudioProcessor& proc)
     : processor(proc) {
 
-    setupToggleButton(toggleRoll, processor.settings.showRoll);
+    setupToggleButton(toggleRoll, processor.settings.isShowRoll);
     toggleRoll.onClick = [this] {
-        processor.settings.showRoll = toggleRoll.getToggleState();
+        processor.settings.isShowRoll = toggleRoll.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
         updateButtonStates();
     };
 
-    setupToggleButton(toggleEye, processor.settings.showEye);
+    setupToggleButton(toggleEye, processor.settings.isShowEye);
     toggleEye.onClick = [this] {
-        processor.settings.showEye = toggleEye.getToggleState();
+        processor.settings.isShowEye = toggleEye.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleNeedle, processor.settings.showNeedle);
+    setupToggleButton(toggleNeedle, processor.settings.isShowNeedle);
     toggleNeedle.onClick = [this] {
-        processor.settings.showNeedle = toggleNeedle.getToggleState();
+        processor.settings.isShowNeedle = toggleNeedle.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleSteam, processor.settings.showSteam);
+    setupToggleButton(toggleSteam, processor.settings.isShowSteam);
     toggleSteam.onClick = [this] {
-        processor.settings.showSteam = toggleSteam.getToggleState();
+        processor.settings.isShowSteam = toggleSteam.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleFreezeRoll, processor.settings.freezeRoll);
-    toggleFreezeRoll.onClick = [this] {
-        processor.settings.freezeRoll = toggleFreezeRoll.getToggleState();
+    setupToggleButton(toggleisFreezeRoll, processor.settings.isFreezeRoll);
+    toggleisFreezeRoll.onClick = [this] {
+        processor.settings.isFreezeRoll = toggleisFreezeRoll.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    toggleRollType.setButtonText(processor.settings.useStftRoll ? "STFT" : "CQT");
+    toggleRollType.setButtonText(processor.settings.isUseStftRoll ? "STFT" : "CQT");
     toggleRollType.onClick = [this] {
-        processor.settings.useStftRoll = !processor.settings.useStftRoll;
-        toggleRollType.setButtonText(processor.settings.useStftRoll ? "STFT" : "CQT");
+        processor.settings.isUseStftRoll = !processor.settings.isUseStftRoll;
+        toggleRollType.setButtonText(processor.settings.isUseStftRoll ? "STFT" : "CQT");
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleForrest, processor.settings.showForrest);
+    setupToggleButton(toggleForrest, processor.settings.isShowForrest);
     toggleForrest.onClick = [this] {
-        processor.settings.showForrest = toggleForrest.getToggleState();
+        processor.settings.isShowForrest = toggleForrest.getToggleState();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -114,7 +114,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(toggleNeedle);
     addAndMakeVisible(toggleEye);
     addAndMakeVisible(toggleRoll);
-    addAndMakeVisible(toggleFreezeRoll);
+    addAndMakeVisible(toggleisFreezeRoll);
     addAndMakeVisible(toggleRollType);
     addAndMakeVisible(toggleSteam);
     addAndMakeVisible(toggleForrest);
@@ -145,21 +145,21 @@ void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
 }
 
 void Control::updateVisibilityFromState() {
-    toggleRoll.setToggleState(processor.settings.showRoll, juce::NotificationType::dontSendNotification);
-    toggleEye.setToggleState(processor.settings.showEye, juce::NotificationType::dontSendNotification);
-    toggleNeedle.setToggleState(processor.settings.showNeedle, juce::NotificationType::dontSendNotification);
-    toggleFreezeRoll.setToggleState(processor.settings.freezeRoll, juce::NotificationType::dontSendNotification);
+    toggleRoll.setToggleState(processor.settings.isShowRoll, juce::NotificationType::dontSendNotification);
+    toggleEye.setToggleState(processor.settings.isShowEye, juce::NotificationType::dontSendNotification);
+    toggleNeedle.setToggleState(processor.settings.isShowNeedle, juce::NotificationType::dontSendNotification);
+    toggleisFreezeRoll.setToggleState(processor.settings.isFreezeRoll, juce::NotificationType::dontSendNotification);
     
-    toggleRollType.setButtonText(processor.settings.useStftRoll ? "STFT" : "CQT");
-    toggleSteam.setToggleState(processor.settings.showSteam, juce::NotificationType::dontSendNotification);
-    toggleForrest.setToggleState(processor.settings.showForrest, juce::NotificationType::dontSendNotification);
+    toggleRollType.setButtonText(processor.settings.isUseStftRoll ? "STFT" : "CQT");
+    toggleSteam.setToggleState(processor.settings.isShowSteam, juce::NotificationType::dontSendNotification);
+    toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
     updateButtonStates();
 }
 
 void Control::updateButtonStates() {
-    const bool rollActive = processor.settings.showRoll;
-    toggleFreezeRoll.setVisible(rollActive);
+    const bool rollActive = processor.settings.isShowRoll;
+    toggleisFreezeRoll.setVisible(rollActive);
     toggleRollType.setVisible(rollActive);
     toggleSteam.setVisible(rollActive);
     toggleForrest.setVisible(rollActive);
@@ -214,7 +214,7 @@ void Control::resized() {
     positionButtonRight(toggleForrest, topRow);
     positionButtonRight(toggleSteam, topRow);
     positionButtonRight(toggleRollType, topRow);
-    positionButtonRight(toggleFreezeRoll, topRow);
+    positionButtonRight(toggleisFreezeRoll, topRow);
 
     topRow.removeFromRight(8);
     buildTimestampLabel.setBounds(topRow);
@@ -236,14 +236,14 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("uiWidth", lastUIWidth);
     xml.setAttribute("uiHeight", lastUIHeight);
 
-    xml.setAttribute("showRoll", showRoll);
-    xml.setAttribute("showEye", showEye);
-    xml.setAttribute("showNeedle", showNeedle);
+    xml.setAttribute("isShowRoll", isShowRoll);
+    xml.setAttribute("isShowEye", isShowEye);
+    xml.setAttribute("isShowNeedle", isShowNeedle);
 
-    xml.setAttribute("useStftRoll", useStftRoll);
-    xml.setAttribute("freezeRoll", freezeRoll);
-    xml.setAttribute("showForrest", showForrest);
-    xml.setAttribute("showSteam", showSteam);
+    xml.setAttribute("isUseStftRoll", isUseStftRoll);
+    xml.setAttribute("isFreezeRoll", isFreezeRoll);
+    xml.setAttribute("isShowForrest", isShowForrest);
+    xml.setAttribute("isShowSteam", isShowSteam);
 
     xml.setAttribute("splitRatio", splitRatio);
 
@@ -259,14 +259,14 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     lastUIWidth = xml.getIntAttribute("uiWidth", lastUIWidth);
     lastUIHeight = xml.getIntAttribute("uiHeight", lastUIHeight);
 
-    showRoll = xml.getBoolAttribute("showRoll", showRoll);
-    showEye = xml.getBoolAttribute("showEye", showEye);
-    showNeedle = xml.getBoolAttribute("showNeedle", showNeedle);
+    isShowRoll = xml.getBoolAttribute("isShowRoll", isShowRoll);
+    isShowEye = xml.getBoolAttribute("isShowEye", isShowEye);
+    isShowNeedle = xml.getBoolAttribute("isShowNeedle", isShowNeedle);
 
-    useStftRoll = xml.getBoolAttribute("useStftRoll", useStftRoll);
-    freezeRoll = xml.getBoolAttribute("freezeRoll", freezeRoll);
-    showForrest = xml.getBoolAttribute("showForrest", showForrest);
-    showSteam = xml.getBoolAttribute("showSteam", showSteam);
+    isUseStftRoll = xml.getBoolAttribute("isUseStftRoll", isUseStftRoll);
+    isFreezeRoll = xml.getBoolAttribute("isFreezeRoll", isFreezeRoll);
+    isShowForrest = xml.getBoolAttribute("isShowForrest", isShowForrest);
+    isShowSteam = xml.getBoolAttribute("isShowSteam", isShowSteam);
 
     splitRatio = static_cast<float>(xml.getDoubleAttribute("splitRatio", splitRatio));
 

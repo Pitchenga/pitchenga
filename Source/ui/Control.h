@@ -14,16 +14,20 @@ public:
         int lastUIWidth = 601;
         int lastUIHeight = 951;
 
-        bool showRoll = true;
-        bool showEye = true;
-        bool showNeedle = true;
+        bool isShowRoll = true;
+        bool isShowEye = true;
+        bool isShowNeedle = true;
 
-        bool useStftRoll = true;
-        bool freezeRoll = false;
-        bool showSteam = true;
-        bool showForrest = false;
+        bool isUseStftRoll = true;
+        bool isFreezeRoll = false;
+        bool isShowSteam = true;
+        bool isShowForrest = false;
 
         float splitRatio = 0.3130223751068115f;
+
+        [[nodiscard]] bool isisShowRollLabels() const {
+            return !(isShowRoll && isShowNeedle);
+        }
 
         [[nodiscard]] juce::XmlElement createXml() const;
         bool loadFromXml(const juce::XmlElement& xml);
@@ -50,7 +54,7 @@ private:
     juce::TextButton toggleEye{"Eye"};
     juce::TextButton toggleRoll{"Roll"};
     juce::TextButton toggleRollType{"STFT"};
-    juce::TextButton toggleFreezeRoll{"Freeze"};
+    juce::TextButton toggleisFreezeRoll{"Freeze"};
     juce::TextButton toggleSteam{"Steam"};
     juce::TextButton toggleForrest{"Forest"};
 

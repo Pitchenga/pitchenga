@@ -2,11 +2,9 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <array>
 
-class PitchengaAudioProcessor;
-
 class Needle : public juce::Component {
 public:
-    explicit Needle(PitchengaAudioProcessor& proc);
+    Needle();
 
     void setPitchFrequency(float frequencyHz);
     void setRange(float minMidiNote, float maxMidiNote);
@@ -43,7 +41,6 @@ private:
     float strobePhase = 0.0f;
     float targetVelocity = 0.0f;
     float currentVelocity = 0.0f;
-    PitchengaAudioProcessor& processor;
     static constexpr int strobeCycleWidth = 60;
     std::array<float, 60> strobeIntensities{};
 

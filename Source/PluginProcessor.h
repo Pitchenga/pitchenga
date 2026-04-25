@@ -84,9 +84,9 @@ public:
     int lastUIWidth = 601;
     int lastUIHeight = 951;
 
-    bool showRoll = true;
-    bool showEye = true;
-    bool showNeedle = true;
+    bool isShowRoll = true;
+    bool isShowEye = true;
+    bool isShowNeedle = true;
 
     static constexpr int numOctaves = 8;
     // 32768 is sufficient to hold the lowest octave buffers without overrun at 30fps
