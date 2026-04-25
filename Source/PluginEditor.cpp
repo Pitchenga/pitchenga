@@ -24,7 +24,12 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     // Set processor callbacks
     processor.onShowExternalPluginEditor = [this] { openPluginWindow(); };
     processor.onOpenPluginBrowser = [this] { openPluginBrowserWindow(); };
-    processor.onPluginLoaded = [this] { control.updateVisibilityFromState(); };
+    
+    // When a new plugin is loaded, update UI visibility and automatically open the new editor window
+    processor.onPluginLoaded = [this] { 
+        control.updateVisibilityFromState(); 
+        openPluginWindow();
+    };
 
     addAndMakeVisible(needle);
     addAndMakeVisible(eye);
@@ -76,16 +81,16 @@ void PitchengaAudioProcessorEditor::timerCallback() {
 }
 
 void PitchengaAudioProcessorEditor::openPluginWindow() {
-    if (pluginWindow == nullptr) {
+    // Destroy the existing window to ensure we start fresh with the new plugin's preferred size and title
+    pluginWindow = nullptr;
+
+    if (auto* externalEditor = processor.createExternalPluginEditor()) {
         pluginWindow = std::make_unique<ExternalPluginWindow>(
-            "Plug",
+            externalEditor->getAudioProcessor()->getName(),
             juce::Colours::black,
             juce::DocumentWindow::closeButton
         );
         pluginWindow->setUsingNativeTitleBar(true);
-    }
-    
-    if (auto* externalEditor = processor.createExternalPluginEditor()) {
         pluginWindow->setContentNonOwned(externalEditor, true);
         pluginWindow->setVisible(true);
     }
@@ -99,7 +104,8 @@ void PitchengaAudioProcessorEditor::openPluginBrowserWindow() {
             juce::DocumentWindow::closeButton
         );
         browserWindow->setUsingNativeTitleBar(true);
-        browserWindow->setSize(600, 400);
+        browserWindow->setResizable(true, true);
+        browserWindow->setSize(900, 900);
         
         auto& formatManager = processor.getFormatManager();
         auto& knownPluginList = processor.getKnownPluginList();
