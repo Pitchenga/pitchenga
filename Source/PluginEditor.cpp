@@ -25,6 +25,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     processor.onShowExternalPluginEditor = [this] { openPluginWindow(); };
     processor.onOpenPluginBrowser = [this] { openPluginBrowserWindow(); };
     processor.onRescanPlugins = [this] { startPluginScan(); };
+    processor.onPluginLoaded = [this] { openPluginWindow(); };
 
     addAndMakeVisible(needle);
     addAndMakeVisible(eye);

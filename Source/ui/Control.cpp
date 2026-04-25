@@ -73,8 +73,8 @@ Control::Control(PitchengaAudioProcessor& proc)
         // We use a local lambda to show the menu so we can re-invoke it for "Rescan"
         std::function<void()> showPlugsMenu = [this, &showPlugsMenu]() {
             juce::PopupMenu menu;
-            menu.addItem(1, "Open Plugin Browser...");
-            menu.addItem(2, "Rescan Plugins");
+            menu.addItem(1, "Open Plugs Browser...");
+            menu.addItem(2, "Rescan Plugs");
             menu.addSeparator();
 
             auto& list = processor.getKnownPluginList();
