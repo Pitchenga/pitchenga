@@ -358,6 +358,23 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, const int si
                     }
                 }
             }
+        } else {
+            // Clear current plugin if it was cleared in settings
+            suspendProcessing(true);
+            if (onPluginAboutToBeDeleted) {
+                onPluginAboutToBeDeleted();
+            }
+            {
+                const juce::ScopedLock lock(pluginLock);
+                if (externalPlugin != nullptr) {
+                    externalPlugin->releaseResources();
+                }
+                externalPlugin = nullptr;
+            }
+            suspendProcessing(false);
+            if (onPluginLoaded) {
+                juce::MessageManager::callAsync([this] { if (onPluginLoaded) onPluginLoaded(); });
+            }
         }
 
     }
