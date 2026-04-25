@@ -21,14 +21,15 @@ struct Control::PluginListListener : juce::ChangeListener {
 #define PITCHENGA_MACRO_STRING(x) PITCHENGA_MACRO_STRING2(x)
 
 static juce::String getSettingsTagName() {
-#ifdef CMAKE_BUILD_PROFILE
-    juce::String profile = PITCHENGA_MACRO_STRING(CMAKE_BUILD_PROFILE);
-    profile = profile.removeCharacters("\"");
-    if (profile.isEmpty()) profile = "DEFAULT";
-    return "PITCHENGA_" + profile.toUpperCase();
-#else
-    return "PITCHENGA_DEFAULT";
-#endif
+    return "PITCHENGA";
+    // #ifdef CMAKE_BUILD_PROFILE
+    //     juce::String profile = PITCHENGA_MACRO_STRING(CMAKE_BUILD_PROFILE);
+    //     profile = profile.removeCharacters("\"");
+    //     if (profile.isEmpty()) profile = "DEFAULT";
+    //     return "PITCHENGA_" + profile.toUpperCase();
+    // #else
+    //     return "PITCHENGA_DEFAULT";
+    // #endif
 }
 
 Control::Control(PitchengaAudioProcessor& proc)
@@ -258,8 +259,11 @@ Control::Control(PitchengaAudioProcessor& proc)
         const juce::String currentName = comboPresets.getText();
         juce::String suggestedName = currentName;
 
-        if (currentName == "" || currentName == "Presets..." || currentName == "Factory Default" || currentName ==
-            "User Default") {
+        if (currentName == ""
+            || currentName == "Presets..."
+            || currentName == "Factory Default"
+            || currentName == "User Default"
+        ) {
             suggestedName = "user-default";
         }
 
@@ -313,7 +317,7 @@ Control::Control(PitchengaAudioProcessor& proc)
             // Delete User Default and flip to Factory Default
             if (currentPresetFile.deleteFile()) {
                 currentPresetFile = juce::File();
-                processor.settings.currentPresetName = "Factory Default";
+                processor.settings.currentPresetName = "";
                 comboPresets.setSelectedId(1, juce::NotificationType::sendNotification);
                 refreshPresets();
             }
@@ -321,7 +325,7 @@ Control::Control(PitchengaAudioProcessor& proc)
             // Delete general preset
             if (currentPresetFile.deleteFile()) {
                 currentPresetFile = juce::File();
-                processor.settings.currentPresetName = "Factory Default";
+                processor.settings.currentPresetName = "";
                 comboPresets.setSelectedId(1, juce::NotificationType::sendNotification);
                 refreshPresets();
             }
