@@ -175,37 +175,6 @@ Control::Control(PitchengaAudioProcessor& proc)
                     }
                 }
             }
-        } else if (id == 3) {
-            // File... (Load file dialog)
-            chooser = std::make_unique<juce::FileChooser>(
-                "Select a settings file to load...",
-                juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga"),
-                "*.xml"
-            );
-
-            auto flags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
-
-            chooser->launchAsync(
-                flags,
-                [this](const juce::FileChooser& fc) {
-                    auto result = fc.getResult();
-                    if (result.existsAsFile()) {
-                        if (auto xml = juce::XmlDocument::parse(result)) {
-                            if (processor.settings.loadFromXml(*xml)) {
-                                updateVisibilityFromState();
-                                if (onVisibilityChanged) onVisibilityChanged();
-
-                                juce::MemoryBlock destData;
-                                PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
-                                processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
-                                currentPresetFile = result;
-                                processor.settings.currentPresetName = result.getFileNameWithoutExtension();
-                                refreshPresets(); // To handle case where file was outside the dir
-                            }
-                        }
-                    }
-                }
-            );
         } else if (id > 3) {
             const size_t index = static_cast<size_t>(id - 4);
             if (index < presets.size()) {
@@ -234,11 +203,18 @@ Control::Control(PitchengaAudioProcessor& proc)
     if (processor.settings.currentPresetName.isNotEmpty()) {
         const auto presetName = processor.settings.currentPresetName;
         if (presetName == "User Default") {
-             comboPresets.setSelectedId(2, juce::NotificationType::dontSendNotification);
+            comboPresets.setSelectedId(2, juce::NotificationType::dontSendNotification);
+            const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
+            currentPresetFile = appDataDir.getChildFile("user-default.xml");
+        } else if (presetName == "Factory Default") {
+            comboPresets.setSelectedId(1, juce::NotificationType::dontSendNotification);
+            currentPresetFile = juce::File();
         } else {
-             for (int i = 0; i < comboPresets.getNumItems(); ++i) {
-                if (comboPresets.getItemText(i) == presetName) {
-                    comboPresets.setSelectedItemIndex(i, juce::NotificationType::dontSendNotification);
+            for (size_t i = 0; i < presets.size(); ++i) {
+                if (presets[i].getFileNameWithoutExtension() == presetName) {
+                    // Item IDs for general presets start at 4
+                    comboPresets.setSelectedId(static_cast<int>(i) + 4, juce::NotificationType::dontSendNotification);
+                    currentPresetFile = presets[i];
                     break;
                 }
             }
@@ -509,8 +485,6 @@ void Control::refreshPresets() {
     // User Default is always available now, falling back to Factory if file is missing
     comboPresets.addItem("User Default", 2);
     
-    comboPresets.addSeparator();
-    comboPresets.addItem("File...", 3);
     comboPresets.addSeparator();
 
     presets.clear();
