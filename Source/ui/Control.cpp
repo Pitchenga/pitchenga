@@ -232,7 +232,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         juce::AlertWindow::showOkCancelBox(
             juce::MessageBoxIconType::QuestionIcon,
             saveConfirmTitle,
-            saveConfirmMessage,
+            saveConfirmMessage.replace("{NAME}", comboPresets.getText()),
             "Save",
             "Cancel",
             nullptr,
@@ -305,7 +305,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         juce::AlertWindow::showOkCancelBox(
             juce::MessageBoxIconType::QuestionIcon,
             deleteConfirmTitle,
-            deleteConfirmMessage,
+            deleteConfirmMessage.replace("{NAME}", comboPresets.getText()),
             "Delete",
             "Cancel",
             nullptr,

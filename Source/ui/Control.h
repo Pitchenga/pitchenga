@@ -58,9 +58,9 @@ public:
 
 private:
     static inline const juce::String saveConfirmTitle = "Save Preset";
-    static inline const juce::String saveConfirmMessage = "Are you sure you want to overwrite the current preset?";
+    static inline const juce::String saveConfirmMessage = "Are you sure you want to overwrite preset '{NAME}'?";
     static inline const juce::String deleteConfirmTitle = "Delete Preset";
-    static inline const juce::String deleteConfirmMessage = "Are you sure you want to delete the current preset?";
+    static inline const juce::String deleteConfirmMessage = "Are you sure you want to delete preset '{NAME}'?";
 
     void timerCallback() override;
     void saveCurrentPreset();
