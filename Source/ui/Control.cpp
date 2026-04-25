@@ -75,9 +75,15 @@ Control::Control(PitchengaAudioProcessor& proc)
         menu.addSeparator();
 
         auto& list = processor.getKnownPluginList();
+        auto types = list.getTypes();
+        
+        // Filter and add only instruments (synths) to the menu
         int id = 2;
-        for (auto& desc : list.getTypes()) {
-            menu.addItem(id++, desc.name);
+        for (int i = 0; i < types.size(); ++i) {
+            if (types[i].isInstrument) {
+                menu.addItem(id, types[i].name);
+            }
+            id++; // Keep ID in sync with types index + 2
         }
 
         menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&buttonPlugs),
@@ -86,9 +92,10 @@ Control::Control(PitchengaAudioProcessor& proc)
                     processor.openPluginBrowser();
                 } else if (result > 1) {
                     auto& listRef = processor.getKnownPluginList();
-                    auto types = listRef.getTypes();
-                    if (static_cast<size_t>(result - 2) < static_cast<size_t>(types.size())) {
-                        processor.loadExternalPlugin(types[static_cast<size_t>(result - 2)]);
+                    auto typesRef = listRef.getTypes();
+                    const int index = result - 2;
+                    if (index >= 0 && index < typesRef.size()) {
+                        processor.loadExternalPlugin(typesRef[static_cast<size_t>(index)]);
                     }
                 }
             });
@@ -206,7 +213,7 @@ void Control::updateButtonStates() {
     toggleSteam.setVisible(rollActive);
     toggleForrest.setVisible(rollActive);
     
-    buttonPlug.setVisible(processor.isExternalPluginLoaded());
+    buttonPlug.setEnabled(processor.isExternalPluginLoaded());
     
     tweakPanel.setVisible(showTweakPanel);
     resized();
