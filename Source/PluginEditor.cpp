@@ -158,8 +158,6 @@ void PitchengaAudioProcessorEditor::updateVisibilityFromState() {
 
 void PitchengaAudioProcessorEditor::resized() {
     auto bounds = getLocalBounds();
-    processor.settings.lastUiWidth = getWidth();
-    processor.settings.lastUiHeight = getHeight();
 
     // Give the control bar its own dedicated, non-overlapping space at the top left
     control.setBounds(bounds.removeFromTop(static_cast<int>(control.getPreferredHeight())));

@@ -150,7 +150,6 @@ Control::Control(PitchengaAudioProcessor& proc)
         }
 
         updateButtonStates();
-        syncPresetText();
     };
 
     refreshPresets();
@@ -537,12 +536,6 @@ void Control::resized() {
         positionButtonRight(toggleSteam, panelBounds);
         positionButtonRight(toggleRollType, panelBounds);
     }
-}
-
-void Control::syncPresetText() {
-    const juce::String activeName = comboPresets.getText();
-    comboPresets.setSelectedItemIndex(-1, juce::NotificationType::dontSendNotification);
-    comboPresets.setText(activeName, juce::NotificationType::dontSendNotification);
 }
 
 void Control::refreshPresets() {

@@ -49,7 +49,6 @@ public:
     void resized() override;
     void updateVisibilityFromState();
     void refreshPresets();
-    void syncPresetText();
     void showPlugsMenu();
 
     [[nodiscard]] float getPreferredHeight() const;
