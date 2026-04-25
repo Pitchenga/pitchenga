@@ -131,9 +131,8 @@ Control::Control(PitchengaAudioProcessor& proc)
                     PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
                     processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
                     
-                    // Factory selected -> Overwrite Save will target user-default.xml
-                    currentPresetFile = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-                        .getChildFile("Pitchenga").getChildFile("user-default.xml");
+                    // Factory is read-only
+                    currentPresetFile = juce::File();
                     comboPresets.setText("Factory Default", juce::NotificationType::dontSendNotification);
                 }
             }
@@ -141,16 +140,36 @@ Control::Control(PitchengaAudioProcessor& proc)
             // Load user-default.xml
             const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
             const auto userDefaultFile = appDataDir.getChildFile("user-default.xml");
-            if (auto xml = juce::XmlDocument::parse(userDefaultFile)) {
-                if (processor.settings.loadFromXml(*xml)) {
-                    updateVisibilityFromState();
-                    if (onVisibilityChanged) onVisibilityChanged();
-                    
-                    juce::MemoryBlock destData;
-                    PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
-                    processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
-                    currentPresetFile = userDefaultFile;
-                    comboPresets.setText("User Default", juce::NotificationType::dontSendNotification);
+            
+            if (userDefaultFile.existsAsFile()) {
+                if (auto xml = juce::XmlDocument::parse(userDefaultFile)) {
+                    if (processor.settings.loadFromXml(*xml)) {
+                        updateVisibilityFromState();
+                        if (onVisibilityChanged) onVisibilityChanged();
+                        
+                        juce::MemoryBlock destData;
+                        PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
+                        processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
+                        currentPresetFile = userDefaultFile;
+                        comboPresets.setText("User Default", juce::NotificationType::dontSendNotification);
+                    }
+                }
+            } else {
+                // Fallback to factory if missing, but keep User Default context for Saving
+                const juce::File factoryDefaultFile(juce::File(__FILE__).getParentDirectory().getParentDirectory().getChildFile("settings-default.xml"));
+                if (auto xml = juce::XmlDocument::parse(factoryDefaultFile)) {
+                    xml->setTagName(getSettingsTagName());
+                    if (processor.settings.loadFromXml(*xml)) {
+                        updateVisibilityFromState();
+                        if (onVisibilityChanged) onVisibilityChanged();
+                        
+                        juce::MemoryBlock destData;
+                        PitchengaAudioProcessor::copyXmlToBinary(*xml, destData);
+                        processor.setStateInformation(destData.getData(), static_cast<int>(destData.getSize()));
+                        
+                        currentPresetFile = userDefaultFile;
+                        comboPresets.setText("User Default", juce::NotificationType::dontSendNotification);
+                    }
                 }
             }
         } else if (id == 3) {
@@ -201,6 +220,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                 }
             }
         }
+        updateButtonStates();
     };
     refreshPresets();
 
@@ -214,8 +234,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     buttonSave.setButtonText("Save");
     buttonSave.onClick = [this] {
         if (currentPresetFile == juce::File()) {
-            currentPresetFile = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-                .getChildFile("Pitchenga").getChildFile("user-default.xml");
+            return;
         }
 
         // Sync current plugin state into settings first
@@ -279,6 +298,30 @@ Control::Control(PitchengaAudioProcessor& proc)
         );
     };
 
+    buttonDelete.setButtonText("Delete");
+    buttonDelete.onClick = [this] {
+        if (currentPresetFile == juce::File()) {
+            return;
+        }
+
+        const int selectedId = comboPresets.getSelectedId();
+        if (selectedId == 2) {
+            // Delete User Default and flip to Factory Default
+            if (currentPresetFile.deleteFile()) {
+                currentPresetFile = juce::File();
+                comboPresets.setSelectedId(1, juce::NotificationType::sendNotification);
+                refreshPresets();
+            }
+        } else if (selectedId > 3) {
+            // Delete general preset
+            if (currentPresetFile.deleteFile()) {
+                currentPresetFile = juce::File();
+                comboPresets.setSelectedId(1, juce::NotificationType::sendNotification);
+                refreshPresets();
+            }
+        }
+    };
+
     addAndMakeVisible(toggleNeedle);
     addAndMakeVisible(toggleEye);
     addAndMakeVisible(toggleRoll);
@@ -296,6 +339,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(comboPresets);
     tweakPanel.addAndMakeVisible(buttonSave);
     tweakPanel.addAndMakeVisible(buttonSaveAs);
+    tweakPanel.addAndMakeVisible(buttonDelete);
 
 #include "build_timestamp.h"
 
@@ -343,6 +387,12 @@ void Control::updateButtonStates() {
     buttonPlug.setEnabled(processor.isExternalPluginLoaded());
 
     tweakPanel.setVisible(processor.settings.isShowTweakPanel);
+
+    // Disable Save and Delete buttons for Factory Default
+    const int selectedId = comboPresets.getSelectedId();
+    buttonSave.setEnabled(selectedId != 1);
+    buttonDelete.setEnabled(selectedId != 1);
+
     resized();
 }
 
@@ -410,6 +460,7 @@ void Control::resized() {
         positionButton(buttonPlugs, panelBounds);
         positionButton(buttonPlug, panelBounds);
 
+        positionButtonRight(buttonDelete, panelBounds);
         positionButtonRight(buttonSaveAs, panelBounds);
         positionButtonRight(buttonSave, panelBounds);
         
@@ -423,21 +474,15 @@ void Control::refreshPresets() {
     comboPresets.clear(juce::NotificationType::dontSendNotification);
     comboPresets.addItem("Factory Default", 1);
     
-    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
-    const auto userDefaultFile = appDataDir.getChildFile("user-default.xml");
-    
-    if (userDefaultFile.existsAsFile()) {
-        comboPresets.addItem("User Default", 2);
-    } else {
-        comboPresets.addItem("User Default", 2);
-        comboPresets.setItemEnabled(2, false);
-    }
+    // User Default is always available now, falling back to Factory if file is missing
+    comboPresets.addItem("User Default", 2);
     
     comboPresets.addSeparator();
     comboPresets.addItem("File...", 3);
     comboPresets.addSeparator();
 
     presets.clear();
+    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
     if (appDataDir.exists()) {
         juce::Array<juce::File> files;
         appDataDir.findChildFiles(files, juce::File::findFiles, false, "*.xml");

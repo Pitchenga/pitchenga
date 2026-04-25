@@ -79,6 +79,7 @@ private:
     juce::File currentPresetFile;
     juce::TextButton buttonSave{"Save"};
     juce::TextButton buttonSaveAs{"Save As"};
+    juce::TextButton buttonDelete{"Delete"};
 
     std::unique_ptr<juce::FileChooser> chooser;
 
