@@ -38,9 +38,9 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     splitter.onDragged = [this] { resized(); };
 
     eyeBuffer.resize(Eye::totalFoldedBins, 0.0);
+    rollCqtBuffer.resize(PitchengaAudioProcessor::numOctaves * 12);
 
     setResizable(true, true);
-    setResizeLimits(400, 600, 2000, 2000);
     setSize(processor.settings.lastUIWidth, processor.settings.lastUIHeight);
 
     startTimerHz(uiRefreshRateHz);
@@ -78,7 +78,7 @@ void PitchengaAudioProcessorEditor::timerCallback() {
 void PitchengaAudioProcessorEditor::openPluginWindow() {
     if (pluginWindow == nullptr) {
         pluginWindow = std::make_unique<ExternalPluginWindow>(
-            "Instrument",
+            "Plug",
             juce::Colours::black,
             juce::DocumentWindow::closeButton
         );

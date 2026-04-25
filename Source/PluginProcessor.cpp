@@ -121,8 +121,8 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
         buffer.addFrom(ch, 0, pluginOutputBuffer, ch % pluginOutputBuffer.getNumChannels(), 0, numSamples);
     }
 
-    // Conditional Microphone monitoring
-    if (settings.isMonitoringEnabled) {
+    // Conditional input monitoring
+    if (settings.isEarEnabled) {
         for (int ch = 0; ch < totalNumOutputChannels; ++ch) {
             buffer.addFrom(ch, 0, micBuffer, ch % micBuffer.getNumChannels(), 0, numSamples);
         }
@@ -225,7 +225,7 @@ void PitchengaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
 }
 
 void PitchengaAudioProcessor::setStateInformation(const void* data, const int sizeInBytes) {
-    const std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+    const std::unique_ptr xmlState(getXmlFromBinary(data, sizeInBytes));
 
     if (xmlState != nullptr && settings.loadFromXml(*xmlState)) {
         if (auto* editor = getActiveEditor()) {

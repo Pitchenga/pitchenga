@@ -93,14 +93,6 @@ public:
     std::function<void()> onOpenPluginBrowser;
     std::function<void()> onPluginLoaded;
 
-    // Default size is used if no state is loaded
-    int lastUIWidth = 601;
-    int lastUIHeight = 951;
-
-    bool isShowRoll = true;
-    bool isShowEye = true;
-    bool isShowNeedle = true;
-
     static constexpr int numOctaves = 8;
     // 32768 is sufficient to hold the lowest octave buffers without overrun at 30fps
     static constexpr int fifoSize = 32768;

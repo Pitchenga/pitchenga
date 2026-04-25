@@ -63,13 +63,13 @@ Control::Control(PitchengaAudioProcessor& proc)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleMonitor, processor.settings.isMonitoringEnabled);
-    toggleMonitor.onClick = [this] {
-        processor.settings.isMonitoringEnabled = toggleMonitor.getToggleState();
+    setupToggleButton(toggleEar, processor.settings.isEarEnabled);
+    toggleEar.onClick = [this] {
+        processor.settings.isEarEnabled = toggleEar.getToggleState();
     };
 
-    buttonInstrument.setButtonText("Instrument");
-    buttonInstrument.onClick = [this] {
+    buttonPlugs.setButtonText("Plugs");
+    buttonPlugs.onClick = [this] {
         juce::PopupMenu menu;
         menu.addItem(1, "Open Plugin Browser...");
         menu.addSeparator();
@@ -80,7 +80,7 @@ Control::Control(PitchengaAudioProcessor& proc)
             menu.addItem(id++, desc.name);
         }
 
-        menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&buttonInstrument),
+        menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&buttonPlugs),
             [this](int result) {
                 if (result == 1) {
                     processor.openPluginBrowser();
@@ -94,8 +94,8 @@ Control::Control(PitchengaAudioProcessor& proc)
             });
     };
 
-    buttonShow.setButtonText("Show");
-    buttonShow.onClick = [this] {
+    buttonPlug.setButtonText("Plug");
+    buttonPlug.onClick = [this] {
         processor.showExternalPluginEditor();
     };
 
@@ -155,9 +155,9 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(toggleSteam);
     addAndMakeVisible(toggleForrest);
 
-    addAndMakeVisible(toggleMonitor);
-    addAndMakeVisible(buttonInstrument);
-    addAndMakeVisible(buttonShow);
+    addAndMakeVisible(toggleEar);
+    addAndMakeVisible(buttonPlugs);
+    addAndMakeVisible(buttonPlug);
 
     addAndMakeVisible(toggleTweak);
     addAndMakeVisible(tweakPanel);
@@ -194,7 +194,7 @@ void Control::updateVisibilityFromState() {
     toggleSteam.setToggleState(processor.settings.isShowSteam, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
-    toggleMonitor.setToggleState(processor.settings.isMonitoringEnabled, juce::NotificationType::dontSendNotification);
+    toggleEar.setToggleState(processor.settings.isEarEnabled, juce::NotificationType::dontSendNotification);
 
     updateButtonStates();
 }
@@ -206,7 +206,7 @@ void Control::updateButtonStates() {
     toggleSteam.setVisible(rollActive);
     toggleForrest.setVisible(rollActive);
     
-    buttonShow.setVisible(processor.isExternalPluginLoaded());
+    buttonPlug.setVisible(processor.isExternalPluginLoaded());
     
     tweakPanel.setVisible(showTweakPanel);
     resized();
@@ -255,9 +255,9 @@ void Control::resized() {
     positionButton(toggleEye);
     positionButton(toggleRoll);
 
-    positionButton(buttonInstrument);
-    positionButton(buttonShow);
-    positionButton(toggleMonitor);
+    positionButton(buttonPlugs);
+    positionButton(buttonPlug);
+    positionButton(toggleEar);
 
     positionButtonRight(toggleTweak, topRow);
 
@@ -295,7 +295,7 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isShowForrest", isShowForrest);
     xml.setAttribute("isShowSteam", isShowSteam);
 
-    xml.setAttribute("isMonitoringEnabled", isMonitoringEnabled);
+    xml.setAttribute("isEarEnabled", isEarEnabled);
 
     xml.setAttribute("splitRatio", splitRatio);
 
@@ -320,7 +320,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isShowForrest = xml.getBoolAttribute("isShowForrest", isShowForrest);
     isShowSteam = xml.getBoolAttribute("isShowSteam", isShowSteam);
 
-    isMonitoringEnabled = xml.getBoolAttribute("isMonitoringEnabled", isMonitoringEnabled);
+    isEarEnabled = xml.getBoolAttribute("isEarEnabled", isEarEnabled);
 
     splitRatio = static_cast<float>(xml.getDoubleAttribute("splitRatio", splitRatio));
 

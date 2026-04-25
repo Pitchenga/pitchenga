@@ -23,7 +23,7 @@ public:
         bool isShowSteam = true;
         bool isShowForrest = false;
 
-        bool isMonitoringEnabled = false;
+        bool isEarEnabled = false;
 
         float splitRatio = 0.3130223751068115f;
 
@@ -60,9 +60,9 @@ private:
     juce::TextButton toggleSteam{"Steam"};
     juce::TextButton toggleForrest{"Forest"};
 
-    juce::TextButton toggleMonitor{"Monitor"};
-    juce::TextButton buttonInstrument{"Instrument"};
-    juce::TextButton buttonShow{"Show"};
+    juce::TextButton toggleEar{"Ear"};
+    juce::TextButton buttonPlugs{"Plugs"};
+    juce::TextButton buttonPlug{"Plug"};
 
     juce::Label buildTimestampLabel;
 
