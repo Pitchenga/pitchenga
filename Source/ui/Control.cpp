@@ -1,5 +1,18 @@
 #include "Control.h"
+#include <juce_audio_processors/juce_audio_processors.h>
 #include "../PluginProcessor.h"
+
+struct Control::PluginListListener : juce::ChangeListener {
+    explicit PluginListListener(Control& c) : owner(c) {}
+    void changeListenerCallback(juce::ChangeBroadcaster*) override {
+        if (owner.isRescanning) {
+            // Restart the timer every time the list changes.
+            // This acts as a debounce so we only refresh after the scan has settled.
+            owner.startTimer(1000);
+        }
+    }
+    Control& owner;
+};
 
 // --- Settings Persistence Helpers ---
 #define PITCHENGA_MACRO_STRING2(x) #x
@@ -17,7 +30,10 @@ static juce::String getSettingsTagName() {
 }
 
 Control::Control(PitchengaAudioProcessor& proc)
-    : processor(proc) {
+    : processor(proc),
+      listListener(std::make_unique<PluginListListener>(*this)) {
+    processor.getKnownPluginList().addChangeListener(listListener.get());
+
     setupToggleButton(toggleRoll, processor.settings.isShowRoll);
     toggleRoll.onClick = [this] {
         processor.settings.isShowRoll = toggleRoll.getToggleState();
@@ -69,44 +85,6 @@ Control::Control(PitchengaAudioProcessor& proc)
 
     buttonPlugs.setButtonText("Plugs");
     buttonPlugs.onClick = [this] {
-        // We use a local lambda to show the menu so we can re-invoke it for "Rescan"
-        std::function<void()> showPlugsMenu = [this, &showPlugsMenu]() {
-            juce::PopupMenu menu;
-            menu.addItem(1, "Open Plugs Browser...");
-            menu.addItem(2, "Rescan Plugs");
-            menu.addSeparator();
-
-            auto& list = processor.getKnownPluginList();
-            auto types = list.getTypes();
-
-            int id = 3;
-            for (int i = 0; i < types.size(); ++i) {
-                if (types[i].isInstrument) {
-                    menu.addItem(id, types[i].name);
-                }
-                id++;
-            }
-
-            menu.showMenuAsync(
-                juce::PopupMenu::Options().withTargetComponent(&buttonPlugs),
-                [this, showPlugsMenu](int result) {
-                    if (result == 1) {
-                        processor.openPluginBrowser();
-                    } else if (result == 2) {
-                        processor.rescanPlugins();
-                        // Re-show the menu after initiating the scan as requested
-                        showPlugsMenu();
-                    } else if (result > 2) {
-                        auto& listRef = processor.getKnownPluginList();
-                        auto typesRef = listRef.getTypes();
-                        const int index = result - 3;
-                        if (index >= 0 && index < typesRef.size()) {
-                            processor.loadExternalPlugin(typesRef[static_cast<size_t>(index)], true);
-                        }
-                    }
-                }
-            );
-        };
         showPlugsMenu();
     };
 
@@ -358,6 +336,54 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(buildTimestampLabel);
 
     updateButtonStates();
+}
+
+Control::~Control() {
+    processor.getKnownPluginList().removeChangeListener(listListener.get());
+}
+
+void Control::showPlugsMenu() {
+    juce::PopupMenu menu;
+    menu.addItem(1, "Open Plug-ins Browser...");
+    menu.addItem(2, "Rescan Plug-ins");
+    menu.addSeparator();
+
+    auto& list = processor.getKnownPluginList();
+    auto types = list.getTypes();
+
+    int id = 3;
+    for (int i = 0; i < types.size(); ++i) {
+        if (types[i].isInstrument) {
+            menu.addItem(id, types[i].name);
+        }
+        id++;
+    }
+
+    menu.showMenuAsync(
+        juce::PopupMenu::Options().withTargetComponent(&buttonPlugs),
+        [this](int result) {
+            if (result == 1) {
+                processor.openPluginBrowser();
+            } else if (result == 2) {
+                isRescanning = true;
+                processor.rescanPlugins();
+                showPlugsMenu();
+            } else if (result > 2) {
+                auto& listRef = processor.getKnownPluginList();
+                auto typesRef = listRef.getTypes();
+                const int index = result - 3;
+                if (index >= 0 && index < typesRef.size()) {
+                    processor.loadExternalPlugin(typesRef[static_cast<size_t>(index)], true);
+                }
+            }
+        }
+    );
+}
+
+void Control::timerCallback() {
+    stopTimer();
+    isRescanning = false;
+    showPlugsMenu();
 }
 
 void Control::setupToggleButton(juce::TextButton& button, bool initialState) {

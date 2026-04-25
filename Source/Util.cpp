@@ -23,17 +23,11 @@ juce::String Util::getTimestamp() {
 }
 
 void Util::init() {
-    DBG("[" + startTimestamp + "] Starting Pitchenga");
 #if JUCE_DEBUG
     //fixme: Clean-up old log files
     if (debugLogEnabled && logFile.exists()) {
-        if (logFile.deleteFile()) {
-            debug("Deleted logFile=" + logFile.getFullPathName());
-        } else {
-            debug("Failed deleting logFile=" + logFile.getFullPathName());
-        }
+        logFile.deleteFile();
     }
-    debug("Pitchenga started, logFile=" + logFile.getFullPathName() + ", build=" + juce::String(BUILD_TIMESTAMP));
 #endif
 }
 

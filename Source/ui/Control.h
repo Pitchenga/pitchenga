@@ -1,12 +1,14 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_audio_processors/juce_audio_processors.h>
 #include <functional>
 
 // Forward declare the processor to avoid circular includes
 class PitchengaAudioProcessor;
 
-class Control : public juce::Component {
+class Control : public juce::Component,
+    juce::Timer {
 public:
     // Data model for UI settings.
     // Handles its own XML parsing, but lives in the Processor to survive window closures.
@@ -42,11 +44,12 @@ public:
     };
 
     explicit Control(PitchengaAudioProcessor& proc);
-    ~Control() override = default;
+    ~Control() override;
 
     void resized() override;
     void updateVisibilityFromState();
     void refreshPresets();
+    void showPlugsMenu();
 
     [[nodiscard]] float getPreferredHeight() const;
 
@@ -54,10 +57,15 @@ public:
     std::function<void()> onVisibilityChanged;
 
 private:
+    void timerCallback() override;
     static void setupToggleButton(juce::TextButton& button, bool initialState);
     void updateButtonStates();
 
     PitchengaAudioProcessor& processor;
+
+    struct PluginListListener;
+    std::unique_ptr<PluginListListener> listListener;
+    bool isRescanning = false;
 
     juce::TextButton toggleNeedle{"Needle"};
     juce::TextButton toggleEye{"Eye"};
