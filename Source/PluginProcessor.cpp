@@ -9,10 +9,27 @@ PitchengaAudioProcessor::PitchengaAudioProcessor()
         .withOutput("Output", juce::AudioChannelSet::stereo(), true)
     ) {
     juce::addDefaultFormatsToManager(formatManager);
+
+    // Load plugin list
+    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
+    const auto pluginListFile = appDataDir.getChildFile("plugins.xml");
+    if (pluginListFile.existsAsFile()) {
+        if (auto xml = juce::XmlDocument::parse(pluginListFile)) {
+            knownPluginList.recreateFromXml(*xml);
+        }
+    }
+
     loadDefaultSettings();
 }
 
-PitchengaAudioProcessor::~PitchengaAudioProcessor() = default;
+PitchengaAudioProcessor::~PitchengaAudioProcessor() {
+    // Save plugin list
+    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
+    const auto pluginListFile = appDataDir.getChildFile("plugins.xml");
+    if (auto xml = knownPluginList.createXml()) {
+        xml->writeTo(pluginListFile);
+    }
+}
 
 void PitchengaAudioProcessor::loadDefaultSettings() {
     // Attempt to load user-default.xml from the application data directory
