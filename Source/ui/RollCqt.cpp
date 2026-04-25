@@ -103,7 +103,8 @@ void RollCqt::paint(juce::Graphics& graphics) {
     if (currentTotalBins <= 0 || currentBinsPerOctave <= 0 || displayMagnitudes.empty()) return;
 
     graphics.saveState();
-    graphics.reduceClipRegion(0, 0, width, plotHeight);
+    // Clip the top 1 pixel to hide the "blinking lights" artifact caused by the treadmill write-head/interpolation lag
+    graphics.reduceClipRegion(0, 1, width, plotHeight - 1);
 
     if (processor.settings.showSteam) {
         paintSteam(graphics);
@@ -318,14 +319,21 @@ void RollCqt::paintSteam(const juce::Graphics& graphics) const {
     // 0.3f provides a snappy but buttery smooth lock-on.
     nonConstThis->visualScrollOffset += (target - nonConstThis->visualScrollOffset) * 0.3f;
 
+    // Normalize back to [0, height] to prevent the first/last frame bleed at top/bottom
+    while (nonConstThis->visualScrollOffset >= static_cast<float>(height))
+        nonConstThis->visualScrollOffset -= static_cast<float>(height);
+    while (nonConstThis->visualScrollOffset < 0.0f)
+        nonConstThis->visualScrollOffset += static_cast<float>(height);
+
     // Use AffineTransform for sub-pixel smooth scrolling to cure the 43Hz vs 60Hz mismatch (CRT flicker).
     // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
+    // Shift by an extra -1px to ensure the flickering write-head (drawY) is always safely off-screen top
     graphics.drawImageTransformed(
         steamImage,
-        juce::AffineTransform::translation(0.0f, -nonConstThis->visualScrollOffset)
+        juce::AffineTransform::translation(0.0f, -nonConstThis->visualScrollOffset - 1.0f)
     );
     graphics.drawImageTransformed(
         steamImage,
-        juce::AffineTransform::translation(0.0f, static_cast<float>(height) - nonConstThis->visualScrollOffset)
+        juce::AffineTransform::translation(0.0f, static_cast<float>(height) - nonConstThis->visualScrollOffset - 1.0f)
     );
 }

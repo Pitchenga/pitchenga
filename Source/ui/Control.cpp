@@ -126,7 +126,7 @@ Control::Control(PitchengaAudioProcessor& processorToUse)
 
 #include "build_timestamp.h"
 
-    buildTimestampLabel.setText(juce::String("Build: ") + BUILD_TIMESTAMP, juce::NotificationType::dontSendNotification);
+    buildTimestampLabel.setText(juce::String("Build ") + BUILD_TIMESTAMP, juce::NotificationType::dontSendNotification);
     buildTimestampLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
     buildTimestampLabel.setFont(juce::FontOptions(13.0f));
     buildTimestampLabel.setJustificationType(juce::Justification::centredLeft);
@@ -213,8 +213,8 @@ void Control::resized() {
 
     positionButtonRight(toggleForrest, topRow);
     positionButtonRight(toggleSteam, topRow);
-    positionButtonRight(toggleFreezeRoll, topRow);
     positionButtonRight(toggleRollType, topRow);
+    positionButtonRight(toggleFreezeRoll, topRow);
 
     topRow.removeFromRight(8);
     buildTimestampLabel.setBounds(topRow);
