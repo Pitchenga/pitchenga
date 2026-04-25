@@ -23,11 +23,6 @@ add_subdirectory(libs/JUCE)
 # Eigen (Math library)
 add_subdirectory(libs/eigen)
 
-# Pitch Detection and FFT helpers
-# These require being added as JUCE modules to integrate correctly with the plugin
-juce_add_module(libs/pitch_detector)
-juce_add_module(libs/audio_fft)
-
 # Define the exact plugin we are building
 juce_add_plugin(Pitchenga
         # Plugin metadata
@@ -77,6 +72,7 @@ set(PITCHENGA_SOURCES
         Source/Util.cpp
         Source/math/Stft.h
         Source/math/Stft.cpp
+        Source/math/PitchDetector.h
 )
 
 # Generate a build timestamp
@@ -96,8 +92,6 @@ target_link_libraries(Pitchenga PRIVATE
         juce::juce_audio_utils
         juce::juce_dsp                 # Contains the fast FFT class
         Eigen3::Eigen
-        pitch_detector
-        audio_fft
         PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags)

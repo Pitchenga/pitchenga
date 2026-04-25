@@ -53,10 +53,8 @@ void Math::setupCqtBuffers() {
 }
 
 void Math::setupPitchDetection() {
-    const double samplingFreq = processor.getSampleRate() > 0 ? processor.getSampleRate() : 44100.0;
-
     // --- Pitch Setup ---
-    pitchDetector = std::make_unique<adamski::PitchMPM>(static_cast<int>(samplingFreq), 4096);
+    pitchDetector = std::make_unique<sevagh::PitchDetector<float>>(4096);
     rawAudioHistoryBuffer.assign(32768, 0.0f);
     pitchAnalysisBuffer.assign(4096, 0.0f);
 }
@@ -233,10 +231,11 @@ void Math::consumeAudioFromFifo() {
 void Math::processPitchDetection() {
     // --- Pitch Detection (Using latest 4096 samples) ---
     if (pitchDetector != nullptr) {
+        const double samplingFreq = processor.getSampleRate() > 0 ? processor.getSampleRate() : 44100.0;
         // Force weak fundamentals above the MPM clarity threshold.
         std::copy(rawAudioHistoryBuffer.end() - 4096, rawAudioHistoryBuffer.end(), pitchAnalysisBuffer.begin());
         juce::FloatVectorOperations::multiply(pitchAnalysisBuffer.data(), 12.0f, 4096);
-        const float detectedPitch = pitchDetector->getPitch(pitchAnalysisBuffer.data());
+        const float detectedPitch = pitchDetector->getPitch(pitchAnalysisBuffer, static_cast<int>(samplingFreq));
         // Update the atomic variable for the UI timer to read
         processor.currentPitchHz.store(detectedPitch, std::memory_order_relaxed);
     }

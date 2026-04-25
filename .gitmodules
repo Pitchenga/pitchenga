@@ -4,9 +4,3 @@
 [submodule "libs/eigen"]
 	path = libs/eigen
 	url = https://gitlab.com/libeigen/eigen.git
-[submodule "libs/pitch_detector"]
-	path = libs/pitch_detector
-	url = https://github.com/adamski/pitch_detector.git
-[submodule "libs/audio_fft"]
-	path = libs/audio_fft
-	url = https://github.com/adamski/audio_fft.git

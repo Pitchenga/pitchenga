@@ -4,7 +4,7 @@
 #include "../PluginProcessor.h"
 #include "Cqt.h"
 #include "Analyzers.h"
-#include <pitch_detector/pitch_detector.h>
+#include "PitchDetector.h"
 #include "Stft.h"
 
 class Math : public juce::Thread {
@@ -57,7 +57,7 @@ private:
     std::vector<double> octaveBins;
 
     // --- Pitch Engine for Needle ---
-    std::unique_ptr<adamski::PitchMPM> pitchDetector;
+    std::unique_ptr<sevagh::PitchDetector<float>> pitchDetector;
     std::vector<float> rawAudioHistoryBuffer;
     std::vector<float> pitchAnalysisBuffer;
 

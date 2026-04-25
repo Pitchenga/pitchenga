@@ -2,7 +2,6 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
-#include <pitch_detector/pitch_detector.h>
 #include <vector>
 #include <array>
 #include "ui/Control.h"

@@ -14,7 +14,7 @@ master prompt you will feed to the Gemini CLI to execute Phase 1.
 
 **Phase 2: The Precision Pitch Tracker**
 
-* **Objective:** Drop in the MIT-licensed `adamski/pitch_detector` (MPM algorithm). Run it in parallel with the FFT on
+* **Objective:** Port the MIT-licensed `sevagh/pitch-detection` (MPM algorithm). Run it in parallel with the FFT on
   the audio thread.
 * **Result:** Add the "Tuning Triangle" and the linear octave slider overlay to the UI so you can perfectly lock in your
   vocal pitch over the chords.
