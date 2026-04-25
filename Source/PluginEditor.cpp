@@ -90,7 +90,7 @@ void PitchengaAudioProcessorEditor::openPluginWindow() {
             juce::DocumentWindow::closeButton
         );
         pluginWindow->setUsingNativeTitleBar(true);
-        pluginWindow->setContentNonOwned(externalEditor, true);
+        pluginWindow->setContentOwned(externalEditor, true);
         pluginWindow->setVisible(true);
     }
 }

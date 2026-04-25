@@ -194,20 +194,34 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
     auto instance = formatManager.createPluginInstance(description, sampleRate > 0 ? sampleRate : 44100.0, blockSize > 0 ? blockSize : 512, errorMessage);
     
     if (instance != nullptr) {
-        // Safe UI cleanup: notify the editor to close any open plugin window before we replace the instance
+        // Suspend processing during replacement for absolute safety
+        suspendProcessing(true);
+
+        // Safe UI cleanup: notify the editor to destroy any open plugin window/editor 
+        // while the plugin is still alive but suspended.
         if (onPluginAboutToBeDeleted) {
             onPluginAboutToBeDeleted();
         }
 
-        const juce::ScopedLock lock(pluginLock);
-        
-        // Ensure the new instance is prepared if we have valid host settings
-        if (sampleRate > 0 && blockSize > 0) {
-            instance->prepareToPlay(sampleRate, blockSize);
+        {
+            const juce::ScopedLock lock(pluginLock);
+            
+            // Explicitly release resources of the old plugin before we move the new one in.
+            // This is critical for some plugins to stop background tasks safely.
+            if (externalPlugin != nullptr) {
+                externalPlugin->releaseResources();
+            }
+
+            // Ensure the new instance is prepared if we have valid host settings
+            if (sampleRate > 0 && blockSize > 0) {
+                instance->prepareToPlay(sampleRate, blockSize);
+            }
+            
+            externalPlugin = std::move(instance);
         }
         
-        externalPlugin = std::move(instance);
-        
+        suspendProcessing(false);
+
         if (onPluginLoaded) {
             juce::MessageManager::callAsync([this] { if (onPluginLoaded) onPluginLoaded(); });
         }
@@ -286,13 +300,10 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, const int si
             if (auto pluginDescriptionXml = juce::XmlDocument::parse(settings.externalPluginDescriptionXml)) {
                 juce::PluginDescription pluginDescription;
                 if (pluginDescription.loadFromXml(*pluginDescriptionXml)) {
-                    // Safe UI cleanup before replacing the plugin
-                    if (onPluginAboutToBeDeleted) {
-                        onPluginAboutToBeDeleted();
-                    }
-
+                    // loadExternalPlugin already handles suspension, onPluginAboutToBeDeleted, 
+                    // and thread-safe instance replacement.
                     loadExternalPlugin(pluginDescription);
-                    
+
                     if (externalPlugin != nullptr && settings.externalPluginStateBase64.isNotEmpty()) {
                         juce::MemoryBlock pluginState;
                         if (pluginState.fromBase64Encoding(settings.externalPluginStateBase64)) {
