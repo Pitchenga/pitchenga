@@ -440,6 +440,10 @@ void Control::updateVisibilityFromState() {
 }
 
 void Control::updateButtonStates() {
+    const bool isStandalone = processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone;
+    buttonPlugs.setVisible(isStandalone);
+    buttonPlug.setVisible(isStandalone);
+
     const bool rollActive = processor.settings.isShowRoll;
     toggleisFreezeRoll.setVisible(rollActive);
     toggleRollType.setVisible(rollActive);
