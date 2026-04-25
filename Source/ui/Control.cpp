@@ -70,38 +70,43 @@ Control::Control(PitchengaAudioProcessor& proc)
 
     buttonPlugs.setButtonText("Plugs");
     buttonPlugs.onClick = [this] {
-        juce::PopupMenu menu;
-        menu.addItem(1, "Open Plugin Browser...");
-        menu.addItem(2, "Rescan Plugins");
-        menu.addSeparator();
+        // We use a local lambda to show the menu so we can re-invoke it for "Rescan"
+        std::function<void()> showPlugsMenu = [this, &showPlugsMenu]() {
+            juce::PopupMenu menu;
+            menu.addItem(1, "Open Plugin Browser...");
+            menu.addItem(2, "Rescan Plugins");
+            menu.addSeparator();
 
-        auto& list = processor.getKnownPluginList();
-        auto types = list.getTypes();
-        
-        // Filter and add only instruments (synths) to the menu
-        int id = 3;
-        for (int i = 0; i < types.size(); ++i) {
-            if (types[i].isInstrument) {
-                menu.addItem(id, types[i].name);
-            }
-            id++; // Keep ID in sync with types index + 3
-        }
-
-        menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&buttonPlugs),
-            [this](int result) {
-                if (result == 1) {
-                    processor.openPluginBrowser();
-                } else if (result == 2) {
-                    processor.rescanPlugins();
-                } else if (result > 2) {
-                    auto& listRef = processor.getKnownPluginList();
-                    auto typesRef = listRef.getTypes();
-                    const int index = result - 3;
-                    if (index >= 0 && index < typesRef.size()) {
-                        processor.loadExternalPlugin(typesRef[static_cast<size_t>(index)]);
-                    }
+            auto& list = processor.getKnownPluginList();
+            auto types = list.getTypes();
+            
+            int id = 3;
+            for (int i = 0; i < types.size(); ++i) {
+                if (types[i].isInstrument) {
+                    menu.addItem(id, types[i].name);
                 }
-            });
+                id++;
+            }
+
+            menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&buttonPlugs),
+                [this, showPlugsMenu](int result) {
+                    if (result == 1) {
+                        processor.openPluginBrowser();
+                    } else if (result == 2) {
+                        processor.rescanPlugins();
+                        // Re-show the menu after initiating the scan as requested
+                        showPlugsMenu();
+                    } else if (result > 2) {
+                        auto& listRef = processor.getKnownPluginList();
+                        auto typesRef = listRef.getTypes();
+                        const int index = result - 3;
+                        if (index >= 0 && index < typesRef.size()) {
+                            processor.loadExternalPlugin(typesRef[static_cast<size_t>(index)]);
+                        }
+                    }
+                });
+        };
+        showPlugsMenu();
     };
 
     buttonPlug.setButtonText("Plug");

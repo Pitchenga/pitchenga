@@ -81,7 +81,7 @@ public:
 
     // Plugin Hosting
     void loadExternalPlugin(const juce::PluginDescription& description);
-    void rescanPlugins() const;
+    void rescanPlugins();
     void openPluginBrowser();
     void showExternalPluginEditor();
     juce::AudioProcessorEditor* createExternalPluginEditor();
@@ -92,6 +92,7 @@ public:
     
     std::function<void()> onShowExternalPluginEditor;
     std::function<void()> onOpenPluginBrowser;
+    std::function<void()> onRescanPlugins;
     std::function<void()> onPluginLoaded;
 
     static constexpr int numOctaves = 8;

@@ -24,12 +24,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     // Set processor callbacks
     processor.onShowExternalPluginEditor = [this] { openPluginWindow(); };
     processor.onOpenPluginBrowser = [this] { openPluginBrowserWindow(); };
-    
-    // When a new plugin is loaded, update UI visibility and automatically open the new editor window
-    processor.onPluginLoaded = [this] { 
-        control.updateVisibilityFromState(); 
-        openPluginWindow();
-    };
+    processor.onRescanPlugins = [this] { startPluginScan(); };
 
     addAndMakeVisible(needle);
     addAndMakeVisible(eye);
@@ -59,6 +54,7 @@ PitchengaAudioProcessorEditor::~PitchengaAudioProcessorEditor() {
     // Clear callbacks to avoid dangling pointers
     processor.onShowExternalPluginEditor = nullptr;
     processor.onOpenPluginBrowser = nullptr;
+    processor.onRescanPlugins = nullptr;
     processor.onPluginLoaded = nullptr;
 }
 
@@ -110,17 +106,33 @@ void PitchengaAudioProcessorEditor::openPluginBrowserWindow() {
         auto& formatManager = processor.getFormatManager();
         auto& knownPluginList = processor.getKnownPluginList();
         
-        auto listComponent = std::make_unique<juce::PluginListComponent>(
+        auto list = std::make_unique<juce::PluginListComponent>(
             formatManager, 
             knownPluginList, 
             juce::File(), 
             nullptr
         );
         
-        browserWindow->setContentOwned(listComponent.release(), true);
+        listComponent = list.get();
+        browserWindow->setContentOwned(list.release(), true);
     }
     
     browserWindow->setVisible(true);
+}
+
+void PitchengaAudioProcessorEditor::startPluginScan() {
+    // Ensure the browser component is created so we can use its scanning functionality
+    openPluginBrowserWindow();
+    
+    if (listComponent != nullptr) {
+        auto& formatManager = processor.getFormatManager();
+        for (int i = 0; i < formatManager.getNumFormats(); ++i) {
+            if (auto* format = formatManager.getFormat(i)) {
+                // This triggers the JUCE "Scanning plugins..." progress window
+                listComponent->scanFor(*format);
+            }
+        }
+    }
 }
 
 void PitchengaAudioProcessorEditor::paint(juce::Graphics& g) {

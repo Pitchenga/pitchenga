@@ -22,6 +22,7 @@ public:
     void updateVisibilityFromState();
     void openPluginWindow();
     void openPluginBrowserWindow();
+    void startPluginScan();
 
 private:
     void timerCallback() override;
@@ -48,6 +49,7 @@ private:
 
     std::unique_ptr<juce::DocumentWindow> pluginWindow;
     std::unique_ptr<juce::DocumentWindow> browserWindow;
+    juce::PluginListComponent* listComponent = nullptr;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PitchengaAudioProcessorEditor)
 };
