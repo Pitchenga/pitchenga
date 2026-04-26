@@ -230,6 +230,12 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
         onPluginAboutToBeDeleted();
     }
 
+    {
+        const juce::ScopedLock lock(pluginLock);
+        auto* oldInstance = atomicPlugin.exchange(nullptr, std::memory_order_release);
+        unloadPluginInstance(oldInstance);
+    }
+
     // Load the new plugin instance
     juce::String error;
     auto instance = formatManager.createPluginInstance(
@@ -255,10 +261,7 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
             pluginOutputBuffer.setSize(instance->getTotalNumOutputChannels(), blockSize > 0 ? blockSize : 512, false, true, true);
 
             // Lock-Free Swap: Update the pointer used by the audio thread
-            auto* oldInstance = atomicPlugin.exchange(instance.release(), std::memory_order_release);
-
-            // Safely dispose of the old instance on the Message Thread
-            unloadPluginInstance(oldInstance);
+            atomicPlugin.store(instance.release(), std::memory_order_release);
         }
         
         suspendProcessing(false);
