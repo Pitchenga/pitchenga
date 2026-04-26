@@ -6,7 +6,9 @@
 Needle::Needle() {
     // Pre-calculate the sine wave intensities once during construction
     for (int i = 0; i < strobeCycleWidth; ++i) {
-        const float sineVal = std::sin(juce::MathConstants<float>::twoPi * static_cast<float>(i) / static_cast<float>(strobeCycleWidth));
+        const float sineVal = std::sin(
+            juce::MathConstants<float>::twoPi * static_cast<float>(i) / static_cast<float>(strobeCycleWidth)
+        );
         const float wave = 0.5f * (1.0f + sineVal); // 0.0 to 1.0
 
         // Intensity interpolates from 0.5 to 1.0
@@ -164,11 +166,11 @@ void Needle::paint(juce::Graphics& graphics) {
     // Overlay dynamic strobe shadows
     if (currentMidi >= minMidi && currentMidi <= maxMidi) {
         constexpr float strobeSpreadMidi = 10.0f;
-        
+
         // Calculate the pixel bounds of the strobe effect to avoid full-width iteration
         const float pitchX = static_cast<float>(width) * ((currentMidi - minMidi) / (maxMidi - minMidi));
         const float spreadPx = (strobeSpreadMidi / (maxMidi - minMidi)) * static_cast<float>(width);
-        
+
         const int startX = std::max(0, static_cast<int>(std::floor(pitchX - spreadPx)));
         const int endX = std::min(width - 1, static_cast<int>(std::ceil(pitchX + spreadPx)));
 
@@ -186,8 +188,9 @@ void Needle::paint(juce::Graphics& graphics) {
                 const int index1 = (index0 + 1) % strobeCycleWidth;
                 const float frac = phaseF - static_cast<float>(index0);
 
-                const float intensity = strobeIntensities[static_cast<size_t>(index0)] * (1.0f - frac) +
-                                        strobeIntensities[static_cast<size_t>(index1)] * frac;
+                const float intensity =
+                    strobeIntensities[static_cast<size_t>(index0)] * (1.0f - frac)
+                    + strobeIntensities[static_cast<size_t>(index1)] * frac;
 
                 const float fadeFactor = 1.0f - (distanceMidi / strobeSpreadMidi);
                 const float dimming = (1.0f - intensity) * fadeFactor;
@@ -216,7 +219,8 @@ void Needle::paint(juce::Graphics& graphics) {
 
         // Light up the label
         if (nearestNote > startMidi && nearestNote < endMidi) {
-            const float closestX = bounds.getWidth() * ((static_cast<float>(nearestNote) - minMidi) / (maxMidi - minMidi));
+            const float closestX = bounds.getWidth() * ((static_cast<float>(nearestNote) - minMidi) / (maxMidi -
+                minMidi));
 
             int nearestChroma = nearestNote % 12;
             if (nearestChroma < 0) nearestChroma += 12;
