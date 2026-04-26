@@ -76,7 +76,10 @@ void RollStft::paint(juce::Graphics& graphics) {
     }
 
     if (processor.settings.isShowSteam) {
+        graphics.saveState();
+        graphics.reduceClipRegion(0, 0, logicalWidth, plotHeight);
         paintSteam(graphics);
+        graphics.restoreState();
     }
 
     if (!activePeaks.empty() && processor.settings.isShowForrest) {
