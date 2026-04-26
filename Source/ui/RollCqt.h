@@ -36,6 +36,7 @@ private:
         bool isHorizontal
     );
 
+    //fixme: Implement speed
     const float steamSpeedPxPerFrame = 1.0f;
     const float steamThreshold = 0.0001f;
     struct Steam {

@@ -20,13 +20,20 @@ bool RollCqt::expand() {
     constexpr double visualFloor = 0.2;
     constexpr double rangeInv = 1.2 / (1.0 - visualFloor);
 
+    // Adjusted contrast parameters to match STFT's aggressive peak expansion
+    constexpr double contrastExponent = 2.0;
+    constexpr double visualGain = 2.5;
+
     for (int i = 0; i < totalBins; ++i) {
         if (const double magnitude = magnitudes[i]; magnitude <= visualFloor) {
             magnitudes[i] = 0.0;
         } else {
-            constexpr double contrastExponent = 1.6;
             // Stretch the remaining peaks back to the 0.0 - 1.0 range for drawing
-            const double stretchedMagnitude = (magnitude - visualFloor) * rangeInv;
+            double stretchedMagnitude = (magnitude - visualFloor) * rangeInv;
+
+            // Apply aggressive makeup gain before the exponent to prevent crushing the peaks
+            stretchedMagnitude = std::min(1.0, stretchedMagnitude * visualGain);
+
             magnitudes[i] = std::pow(stretchedMagnitude, contrastExponent);
         }
     }
@@ -334,6 +341,8 @@ void RollCqt::pumpSteam() {
             );
         }
     }
+
+    repaint();
 }
 
 void RollCqt::paintSteam(const juce::Graphics& graphics) const {

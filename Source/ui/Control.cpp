@@ -47,6 +47,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     setupToggleButton(toggleEye, processor.settings.isShowEye);
     toggleEye.onClick = [this] {
         processor.settings.isShowEye = toggleEye.getToggleState();
+        updateButtonStates();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
