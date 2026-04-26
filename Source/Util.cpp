@@ -8,6 +8,7 @@ juce::String Util::startTimestamp = getTimestamp();
 
 juce::File Util::logFile = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
     .getChildFile("pitchenga")
+    .getChildFile("logs")
     .getChildFile("pitchenga-" + startTimestamp + ".log");
 
 
@@ -26,7 +27,10 @@ void Util::init() {
 #if JUCE_DEBUG
     //fixme: Clean-up old log files
     if (debugLogEnabled && logFile.exists()) {
-        logFile.deleteFile();
+        bool deleted = logFile.deleteFile();
+        if (!deleted) {
+            DBG("Failed deleting logFile=" + logFile.getFullPathName());
+        }
     }
 #endif
 }
