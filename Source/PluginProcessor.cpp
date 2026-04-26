@@ -111,21 +111,20 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     if (numSamples <= 0) return;
 
     // Safety check: if host exceeds promised block size, we must skip to avoid OOB/Allocation
-    if (static_cast<size_t>(numSamples) > monoBuffer.size()) return;
+    if (numSamples > micBuffer.getNumSamples() || numSamples > pluginOutputBuffer.getNumSamples()) return;
 
     // --- Audio Routing Matrix ---
     const juce::ScopedLock lock(pluginLock);
 
     // Stream A: Microphone Intake
-    micBuffer.setSize(totalNumInputChannels, numSamples, false, false, false);
-    for (int ch = 0; ch < totalNumInputChannels; ++ch) {
+    // Use jmin to safely handle cases where the host buffer has fewer channels than expected
+    const int numMicChannels = std::min(totalNumInputChannels, buffer.getNumChannels());
+    for (int ch = 0; ch < numMicChannels; ++ch) {
         micBuffer.copyFrom(ch, 0, buffer, ch, 0, numSamples);
     }
 
-
     // Stream B: Instrument Processing
-    pluginOutputBuffer.setSize(totalNumOutputChannels, numSamples, false, false, false);
-    pluginOutputBuffer.clear();
+    pluginOutputBuffer.clear(0, numSamples);
     
     if (externalPlugin != nullptr) {
         externalPlugin->processBlock(pluginOutputBuffer, midiMessages);
@@ -137,22 +136,23 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     std::fill(monoBuffer.begin(), monoBuffer.end(), 0.0f);
 
     // Mix Mic into monoData
-    if (totalNumInputChannels == 1) {
+    if (numMicChannels == 1) {
         juce::FloatVectorOperations::copy(monoData, micBuffer.getReadPointer(0), numSamples);
-    } else if (totalNumInputChannels >= 2) {
+    } else if (numMicChannels >= 2) {
         juce::FloatVectorOperations::copy(monoData, micBuffer.getReadPointer(0), numSamples);
         juce::FloatVectorOperations::add(monoData, micBuffer.getReadPointer(1), numSamples);
         juce::FloatVectorOperations::multiply(monoData, 0.5f, numSamples);
     }
 
     // Mix Instrument into monoData (additive)
-    if (totalNumOutputChannels == 1) {
+    const int numInstOutputChannels = pluginOutputBuffer.getNumChannels();
+    if (numInstOutputChannels == 1) {
         juce::FloatVectorOperations::add(monoData, pluginOutputBuffer.getReadPointer(0), numSamples);
-    } else if (totalNumOutputChannels >= 2) {
+    } else if (numInstOutputChannels >= 2) {
         // Average the stereo output for the mono visualizer
-        for (int i = 0; i < numSamples; ++i) {
-            monoData[i] += (pluginOutputBuffer.getReadPointer(0)[i] + pluginOutputBuffer.getReadPointer(1)[i]) * 0.5f;
-        }
+        juce::FloatVectorOperations::add(monoData, pluginOutputBuffer.getReadPointer(0), numSamples);
+        juce::FloatVectorOperations::add(monoData, pluginOutputBuffer.getReadPointer(1), numSamples);
+        juce::FloatVectorOperations::multiply(monoData, 0.5f, numSamples);
     }
 
     // Stream D: The Speaker Output
@@ -252,6 +252,7 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
                 instance->prepareToPlay(sampleRate, blockSize);
             }
             
+            pluginOutputBuffer.setSize(instance->getTotalNumOutputChannels(), blockSize > 0 ? blockSize : 512, false, true, true);
             externalPlugin = std::move(instance);
         }
         
