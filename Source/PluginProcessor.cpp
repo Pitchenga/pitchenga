@@ -12,7 +12,8 @@ PitchengaAudioProcessor::PitchengaAudioProcessor()
     juce::addDefaultFormatsToManager(formatManager);
 
     // Load plugin list
-    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
+    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+        .getChildFile("Pitchenga");
     const auto pluginListFile = appDataDir.getChildFile("plugins.xml");
     if (pluginListFile.existsAsFile()) {
         if (auto xml = juce::XmlDocument::parse(pluginListFile)) {
@@ -28,7 +29,8 @@ PitchengaAudioProcessor::~PitchengaAudioProcessor() {
     unloadPluginInstance(plugin);
 
     // Save plugin list
-    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
+    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+        .getChildFile("Pitchenga");
     const auto pluginListFile = appDataDir.getChildFile("plugins.xml");
     if (auto xml = knownPluginList.createXml()) {
         xml->writeTo(pluginListFile);
@@ -37,7 +39,8 @@ PitchengaAudioProcessor::~PitchengaAudioProcessor() {
 
 void PitchengaAudioProcessor::loadDefaultSettings() {
     // Attempt to load user-default.xml from the "presets" sub-folder
-    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
+    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+        .getChildFile("Pitchenga");
     const auto presetsDir = appDataDir.getChildFile("presets");
     const auto userDefaultFile = presetsDir.getChildFile("user-default.xml");
 
@@ -52,7 +55,7 @@ void PitchengaAudioProcessor::loadDefaultSettings() {
 
     // Fallback to the factory setting in the Source directory
     const juce::File factoryDefaultFile(juce::File(__FILE__).getSiblingFile("settings-default.xml"));
-    
+
     if (auto xml = juce::XmlDocument::parse(factoryDefaultFile)) {
         settings.loadFromXml(*xml);
     }
@@ -77,7 +80,7 @@ void PitchengaAudioProcessor::prepareToPlay(const double sampleRate, const int s
 
     // Plugin Hosting
     const juce::ScopedLock lock(pluginLock);
-    
+
     const int numOutputChannels = getTotalNumOutputChannels();
     pluginOutputBuffer.setSize(numOutputChannels, samplesPerBlock);
     micBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock);
@@ -128,7 +131,7 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
     // Stream B: Instrument Processing
     pluginOutputBuffer.clear(0, numSamples);
-    
+
     if (plugin != nullptr) {
         plugin->processBlock(pluginOutputBuffer, midiMessages);
     }
@@ -160,7 +163,7 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
     // Stream D: The Speaker Output
     buffer.clear();
-    
+
     // Instrument always goes to speakers
     if (numInstOutputChannels > 0) {
         for (int ch = 0; ch < totalNumOutputChannels; ++ch) {
@@ -242,12 +245,12 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
     // Load the new plugin instance
     juce::String error;
     auto instance = formatManager.createPluginInstance(
-        description, 
-        sampleRate > 0 ? sampleRate : 44100.0, 
-        blockSize > 0 ? blockSize : 512, 
+        description,
+        sampleRate > 0 ? sampleRate : 44100.0,
+        blockSize > 0 ? blockSize : 512,
         error
     );
-    
+
     if (instance != nullptr) {
         if (forceOpenWindow) {
             settings.isExternalPluginWindowOpen = true;
@@ -255,18 +258,24 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
 
         {
             const juce::ScopedLock lock(pluginLock);
-            
+
             // Ensure the new instance is prepared if we have valid host settings
             if (sampleRate > 0 && blockSize > 0) {
                 instance->prepareToPlay(sampleRate, blockSize);
             }
-            
-            pluginOutputBuffer.setSize(instance->getTotalNumOutputChannels(), blockSize > 0 ? blockSize : 512, false, true, true);
+
+            pluginOutputBuffer.setSize(
+                instance->getTotalNumOutputChannels(),
+                blockSize > 0 ? blockSize : 512,
+                false,
+                true,
+                true
+            );
 
             // Lock-Free Swap: Update the pointer used by the audio thread
             atomicPlugin.store(instance.release(), std::memory_order_release);
         }
-        
+
         suspendProcessing(false);
 
         if (onPluginLoaded) {
@@ -296,7 +305,7 @@ void PitchengaAudioProcessor::unloadExternalPlugin() {
 
 void PitchengaAudioProcessor::unloadPluginInstance(juce::AudioPluginInstance* instance) {
     if (instance == nullptr) return;
-    
+
     // Explicitly release resources and delete the instance.
     // Since we are on the Message Thread and processing was suspended/resumed 
     // around the swap, it's safe to delete.
@@ -332,7 +341,7 @@ juce::AudioProcessorEditor* PitchengaAudioProcessor::createExternalPluginEditor(
 
 void PitchengaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
     const juce::ScopedLock lock(pluginLock);
-    
+
     // Sync UI state from editor if it exists
     if (auto* editor = getActiveEditor()) {
         settings.lastUiWidth = editor->getWidth();
@@ -350,7 +359,7 @@ void PitchengaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
         juce::MemoryBlock pluginState;
         plugin->getStateInformation(pluginState);
         settings.externalPluginStateBase64 = pluginState.toBase64Encoding();
-        
+
         auto pluginDescription = plugin->getPluginDescription();
         if (auto pluginDescriptionXml = pluginDescription.createXml()) {
             settings.externalPluginDescriptionXml = pluginDescriptionXml->toString();
@@ -419,13 +428,15 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, int sizeInBy
         }
     } catch (const std::exception& e) {
         suspendProcessing(false);
-        juce::MessageManager::callAsync([message = juce::String(e.what())] {
-            juce::AlertWindow::showMessageBoxAsync(
-                juce::MessageBoxIconType::WarningIcon,
-                settingsErrorTitle,
-                message
-            );
-        });
+        juce::MessageManager::callAsync(
+            [message = juce::String(e.what())] {
+                juce::AlertWindow::showMessageBoxAsync(
+                    juce::MessageBoxIconType::WarningIcon,
+                    settingsErrorTitle,
+                    message
+                );
+            }
+        );
     }
 }
 
