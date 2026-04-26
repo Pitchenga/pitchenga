@@ -80,7 +80,7 @@ private:
     juce::TextButton toggleRoll{"Roll"};
     juce::TextButton toggleRollType{"STFT"};
     juce::TextButton toggleOrientation{"Flip"};
-    juce::TextButton toggleisFreezeRoll{"Freeze"};
+    juce::TextButton toggleIsFreezeRoll{"Freeze"};
     juce::TextButton toggleSteam{"Steam"};
     juce::TextButton toggleForrest{"Forest"};
 
