@@ -157,7 +157,8 @@ void RollCqt::paintLabel(
     const int binIndex,
     const float targetCenter,
     const float startY,
-    const juce::Colour baseColor
+    const juce::Colour baseColor,
+    const bool isHoriz
 ) {
     if (binIndex == 0) {
         // Not drawing a half label
@@ -170,16 +171,31 @@ void RollCqt::paintLabel(
 
     graphics.setColour(baseColor);
     graphics.saveState();
-    graphics.addTransform(
-        juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, targetCenter, startY - 2.0f)
-    );
 
-    graphics.drawText(
-        name,
-        juce::Rectangle(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
-        juce::Justification::centredLeft,
-        false
-    );
+    if (isHoriz) {
+        const float rotX = targetCenter + labelHeight / 2.0f;
+        const float rotY = startY - maxTextWidth;
+        graphics.addTransform(
+            juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi, rotX, rotY)
+        );
+        graphics.drawText(
+            name,
+            juce::Rectangle<float>(rotX, rotY, maxTextWidth, labelHeight),
+            juce::Justification::centredLeft,
+            false
+        );
+    } else {
+        graphics.addTransform(
+            juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, targetCenter, startY - 2.0f)
+        );
+        graphics.drawText(
+            name,
+            juce::Rectangle<float>(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
+            juce::Justification::centredLeft,
+            false
+        );
+    }
+
     graphics.restoreState();
 }
 
@@ -230,7 +246,7 @@ void RollCqt::paintFrame(juce::Graphics& graphics) const {
         }
 
         //fixme: Unify range and hide labels when adjacent to tuner
-        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor);
+        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor, processor.settings.isOrientationHorizontal);
     }
 }
 

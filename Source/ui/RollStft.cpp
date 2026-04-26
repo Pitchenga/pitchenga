@@ -122,7 +122,8 @@ void RollStft::paintLabel(
     const int midiNote,
     const float targetCenter,
     const float startY,
-    const juce::Colour baseColor
+    const juce::Colour baseColor,
+    const bool isHoriz
 ) {
     //fixme: Un-hardcode
     if (midiNote == minMidiNote || midiNote == 108) {
@@ -134,16 +135,31 @@ void RollStft::paintLabel(
 
     graphics.setColour(baseColor);
     graphics.saveState();
-    graphics.addTransform(
-        juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, targetCenter, startY - 2.0f)
-    );
 
-    graphics.drawText(
-        name,
-        juce::Rectangle(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
-        juce::Justification::centredLeft,
-        false
-    );
+    if (isHoriz) {
+        const float rotX = targetCenter + labelHeight / 2.0f;
+        const float rotY = startY - maxTextWidth;
+        graphics.addTransform(
+            juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi, rotX, rotY)
+        );
+        graphics.drawText(
+            name,
+            juce::Rectangle<float>(rotX, rotY, maxTextWidth, labelHeight),
+            juce::Justification::centredLeft,
+            false
+        );
+    } else {
+        graphics.addTransform(
+            juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, targetCenter, startY - 2.0f)
+        );
+        graphics.drawText(
+            name,
+            juce::Rectangle<float>(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
+            juce::Justification::centredLeft,
+            false
+        );
+    }
+
     graphics.restoreState();
 }
 
@@ -185,7 +201,7 @@ void RollStft::paintFrame(juce::Graphics& graphics) const {
         }
 
         if (processor.settings.isShowRollLabels()) {
-            paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, totalHeight, baseColor);
+            paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, totalHeight, baseColor, processor.settings.isOrientationHorizontal);
         }
     }
 }

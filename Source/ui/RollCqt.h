@@ -33,7 +33,8 @@ private:
         int binIndex,
         float targetCenter,
         float startY,
-        juce::Colour baseColor
+        juce::Colour baseColor,
+        bool isHoriz
     );
 
     const float steamSpeedPxPerFrame = 1.0f;
