@@ -13,6 +13,9 @@ public:
 
     void paint(juce::Graphics& graphics) override;
     void resized() override;
+    void paintStrobeOverlay(juce::Graphics& graphics, float stripY, int width);
+    void paintTunerNeedle(juce::Graphics& graphics, juce::Rectangle<float> bounds, float height) const;
+    void paintLabelHighlight(juce::Graphics& graphics, juce::Rectangle<float> bounds, float height) const;
     void applyStrobe(float strobeSpreadMidi, int x, float midiAtX, juce::Colour& color);
 
     static constexpr float stripHeight = 16.0f;

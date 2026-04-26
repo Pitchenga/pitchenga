@@ -148,22 +148,7 @@ void Needle::resized() {
     buildFrame();
 }
 
-void Needle::paint(juce::Graphics& graphics) {
-    if (!cachedGradient.isValid() || !cachedLabels.isValid()) {
-        buildFrame();
-    }
-
-    const auto bounds = getLocalBounds().toFloat();
-    const auto height = static_cast<float>(getHeight());
-    const float stripY = height - stripHeight;
-    const int width = getWidth();
-
-    // Draw static background gradient
-    if (cachedGradient.isValid()) {
-        graphics.drawImageAt(cachedGradient, 0, static_cast<int>(stripY));
-    }
-
-    // Overlay dynamic strobe shadows
+void Needle::paintStrobeOverlay(juce::Graphics& graphics, const float stripY, const int width) {
     if (currentMidi >= minMidi && currentMidi <= maxMidi) {
         constexpr float strobeSpreadMidi = 10.0f;
 
@@ -200,58 +185,82 @@ void Needle::paint(juce::Graphics& graphics) {
             }
         }
     }
+}
+
+void Needle::paintTunerNeedle(juce::Graphics& graphics, const juce::Rectangle<float> bounds, const float height) const {
+    const float pitchX = bounds.getWidth() * ((currentMidi - minMidi) / (maxMidi - minMidi));
+    const float needleStripY = height - stripHeight + tickHeight;
+
+    juce::Path triangle;
+    triangle.addTriangle(
+        pitchX,
+        needleStripY,
+        pitchX - needleTriangleWidth * 0.5f,
+        height,
+        pitchX + needleTriangleWidth * 0.5f,
+        height
+    );
+
+    // Fill the needle with the exact continuous pitch color so it pops out of the darkness
+    float exactChroma = std::fmod(currentMidi, 12.0f);
+    if (exactChroma < 0.0f) exactChroma += 12.0f;
+    const juce::Colour exactPitchColor = Tone::getContinuousColor(exactChroma);
+
+    graphics.setColour(exactPitchColor);
+    graphics.fillPath(triangle);
+
+    graphics.setColour(juce::Colours::black);
+    graphics.strokePath(triangle, juce::PathStrokeType(2.0f));
+}
+
+void Needle::paintLabelHighlight(juce::Graphics& graphics, const juce::Rectangle<float> bounds, const float height) const {
+    graphics.setFont(Common::getLabelFont());
+
+    const float labelStripY = height - stripHeight;
+
+    // Find the nearest perfect whole note to illuminate
+    const int nearestNote = static_cast<int>(std::round(currentMidi));
+    const int startMidi = static_cast<int>(std::ceil(minMidi));
+    const int endMidi = static_cast<int>(std::floor(maxMidi));
+
+    // Light up the label
+    if (nearestNote > startMidi && nearestNote < endMidi) {
+        const float closestX = bounds.getWidth() * ((static_cast<float>(nearestNote) - minMidi) / (maxMidi -
+            minMidi));
+
+        int nearestChroma = nearestNote % 12;
+        if (nearestChroma < 0) nearestChroma += 12;
+        const juce::Colour toneColor = Tone::chromaticScale[static_cast<size_t>(nearestChroma)].color;
+        graphics.setColour(toneColor);
+        paintLabel(graphics, nearestNote, closestX, labelStripY);
+    }
+}
+
+void Needle::paint(juce::Graphics& graphics) {
+    if (!cachedGradient.isValid() || !cachedLabels.isValid()) {
+        buildFrame();
+    }
+
+    const auto bounds = getLocalBounds().toFloat();
+    const auto height = static_cast<float>(getHeight());
+    const float stripY = height - stripHeight;
+    const int width = getWidth();
+
+    // Draw static background gradient
+    if (cachedGradient.isValid()) {
+        graphics.drawImageAt(cachedGradient, 0, static_cast<int>(stripY));
+    }
+
+    // Overlay dynamic strobe shadows
+    paintStrobeOverlay(graphics, stripY, width);
 
     // Overlay the pre-baked labels and ticks
     if (cachedLabels.isValid()) {
         graphics.drawImageAt(cachedLabels, 0, 0);
     }
 
-    // Dynamic Illumination and Needle Overlay
     if (currentMidi >= minMidi && currentMidi <= maxMidi) {
-        graphics.setFont(Common::getLabelFont());
-
-        const float labelStripY = height - stripHeight;
-
-        // Find the nearest perfect whole note to illuminate
-        const int nearestNote = static_cast<int>(std::round(currentMidi));
-        const int startMidi = static_cast<int>(std::ceil(minMidi));
-        const int endMidi = static_cast<int>(std::floor(maxMidi));
-
-        // Light up the label
-        if (nearestNote > startMidi && nearestNote < endMidi) {
-            const float closestX = bounds.getWidth() * ((static_cast<float>(nearestNote) - minMidi) / (maxMidi -
-                minMidi));
-
-            int nearestChroma = nearestNote % 12;
-            if (nearestChroma < 0) nearestChroma += 12;
-            const juce::Colour toneColor = Tone::chromaticScale[static_cast<size_t>(nearestChroma)].color;
-            graphics.setColour(toneColor);
-            paintLabel(graphics, nearestNote, closestX, labelStripY);
-        }
-
-        // Draw the tuner needle
-        const float pitchX = bounds.getWidth() * ((currentMidi - minMidi) / (maxMidi - minMidi));
-        const float needleStripY = height - stripHeight + tickHeight;
-
-        juce::Path triangle;
-        triangle.addTriangle(
-            pitchX,
-            needleStripY,
-            pitchX - needleTriangleWidth * 0.5f,
-            height,
-            pitchX + needleTriangleWidth * 0.5f,
-            height
-        );
-
-        // Fill the needle with the exact continuous pitch color so it pops out of the darkness
-        float exactChroma = std::fmod(currentMidi, 12.0f);
-        if (exactChroma < 0.0f) exactChroma += 12.0f;
-        const juce::Colour exactPitchColor = Tone::getContinuousColor(exactChroma);
-
-        graphics.setColour(exactPitchColor);
-        graphics.fillPath(triangle);
-
-        graphics.setColour(juce::Colours::black);
-        graphics.strokePath(triangle, juce::PathStrokeType(2.0f));
+        paintLabelHighlight(graphics, bounds, height);
+        paintTunerNeedle(graphics, bounds, height);
     }
 }
