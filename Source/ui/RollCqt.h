@@ -13,12 +13,11 @@ public:
     void paint(juce::Graphics&) override;
     void resized() override;
     void updateResults(const std::vector<double>& results);
-    void paintBins(juce::Graphics& graphics) const;
+    void paintForrest(juce::Graphics& graphics) const;
 
     void setEngine(const Cqt* e) { engine = e; }
     static constexpr int getPreferredHeight() { return 619; }
 
-    static juce::Font getLabelFont();
     float getLabelAreaHeight() const;
 
 private:
@@ -34,7 +33,7 @@ private:
         float targetCenter,
         float startY,
         juce::Colour baseColor,
-        bool isHoriz
+        bool isHorizontal
     );
 
     const float steamSpeedPxPerFrame = 1.0f;

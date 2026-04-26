@@ -4,14 +4,15 @@ Pitchenga is a real-time music visualization application and audio plugin.
 
 ### STRICT SCOPE MANDATE - CRITICAL
 
-- CRITICAL NO-REVERT POLICY: Do NOT revert user's changes. Do NOT re-apply your changes that were deleted by the user. Before planning any changes - re-read all the relevant files from disk - do NOT rely on your context state. YOU MUST ALWAYS must call read_file on the target range in the exact same turn as the replace or write_file call using wait_for_previous: true for the edit. Explicitly compare your intended old_string against the output of the most recent read_file. For any discrepancies between your context state and the actual state of a file, assume that the changes were made deliberately by the user and do NOT revert them - recalibrate your planned changes accordingly. This is a hard rule and cannot be violated.
-- CRITICAL COMMENT PRESERVATION POLICY: Do NOT blindly remove existing comments or commented-out code. Before making any changes or using write_file, explicitly print out all existing comments in the code you are about to change. After the change double-check and ensure that all pre-existing comments still exist. If any pre-existing comments became outdated then explicitly notify the user that an outdated comment is being removed.
-- CRITICAL: Always use descriptive names, except for "i", "x", "y". This is a hard rule and cannot be violated.
-- CRITICAL: Do not use numbers for steps in comments, as they quickly become outdated and hard to manage.
-- CRITICAL: Do not add "NEW" or to comments.
-- CRITICAL: Prefer named constants in header file rather than hard-coded values.
-- CRITICAL: Prefer separate functions to long code blocks with a comment.
-- CRITICAL: Use strict camel-case for acronyms, e.g. "variableSqlRdbmsDao" - Good, "ClassSqlRdbmsDao" - Good, rather than "SQLRDBMSDAO" - BAD.
+      - CRITICAL NO-REVERT POLICY: Do NOT revert user's changes. Do NOT re-apply your changes that were deleted by the user. Before planning any changes - re-read all the relevant files from disk - do NOT rely on your context state. YOU MUST ALWAYS must call read_file on the target range in the exact same turn as the replace or write_file call using wait_for_previous: true for the edit. Explicitly compare your intended old_string against the output of the most recent read_file. For any discrepancies between your context state and the actual state of a file, assume that the changes were made deliberately by the user and do NOT revert them - recalibrate your planned changes accordingly. This is a hard rule and cannot be violated.
+      - CRITICAL COMMENT PRESERVATION POLICY: Do NOT blindly remove existing comments or commented-out code. Before making any changes or using write_file, explicitly print out all existing comments in the code you are about to change. After the change double-check and ensure that all pre-existing comments still exist. If any pre-existing comments became outdated then explicitly notify the user that an outdated comment is being removed.
+      - CRITICAL: Always use descriptive names, except for "i" - index, "x"/"y" - coordinates, "e" - exception. This is a hard rule and cannot be violated.
+      - CRITICAL: Do not use numbers for steps in comments, as they quickly become outdated and hard to manage.
+      - CRITICAL: Do not add "NEW" or to comments.
+      - CRITICAL: Prefer named constants in header file rather than hard-coded values.
+      - CRITICAL: Prefer separate functions to long code blocks with a comment.
+      - CRITICAL: Use strict camel-case for acronyms, e.g. "variableSqlRdbmsDao" - Good, "ClassSqlRdbmsDao" - Good, rather than "SQLRDBMSDAO" - BAD.
+      - CRITICAL: Do not shorten words, e.g. "horizontal" - GOOD, "horiz" - BAD; "context" - GOOD, "ctx" - bad.
 
 ## 0. Non-negotiables
 

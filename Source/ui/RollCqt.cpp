@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "Eye.h"
+#include "../Common.h"
 
 RollCqt::RollCqt(PitchengaAudioProcessor& proc) : processor(proc) {}
 
@@ -72,20 +73,12 @@ void RollCqt::resized() {
     }
 }
 
-juce::Font RollCqt::getLabelFont() {
-    return {
-        juce::FontOptions(13.0f)
-        .withStyle("Bold")
-        .withName(juce::Font::getDefaultMonospacedFontName())
-    };
-}
-
 float RollCqt::getLabelAreaHeight() const {
     //fixme: Unify range and hide labels when adjacent to tuner
     // if (!processor.settings.isShowRollLabels()) {
         // return 0.0f;
     // }
-    return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8") + 4.0f;
+    return juce::GlyphArrangement::getStringWidth(Common::getLabelFont(), "Ww8") + 4.0f;
 }
 
 void RollCqt::paint(juce::Graphics& graphics) {
@@ -123,16 +116,16 @@ void RollCqt::paint(juce::Graphics& graphics) {
     }
 
     if (processor.settings.isShowForrest) {
-        paintBins(graphics);
+        paintForrest(graphics);
     }
 
     graphics.restoreState();
 }
 
 void RollCqt::buildFrame() {
-    const bool isHoriz = processor.settings.isOrientationHorizontal;
-    const int logicalWidth = isHoriz ? getHeight() : getWidth();
-    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHorizontal ? getHeight() : getWidth();
+    const int logicalHeight = isHorizontal ? getWidth() : getHeight();
     if (logicalWidth <= 0 || logicalHeight <= 0) return;
 
     if (currentTotalBins <= 0 || currentBinsPerOctave <= 0) return;
@@ -158,7 +151,7 @@ void RollCqt::paintLabel(
     const float targetCenter,
     const float startY,
     const juce::Colour baseColor,
-    const bool isHoriz
+    const bool isHorizontal
 ) {
     if (binIndex == 0) {
         // Not drawing a half label
@@ -172,7 +165,7 @@ void RollCqt::paintLabel(
     graphics.setColour(baseColor);
     graphics.saveState();
 
-    if (isHoriz) {
+    if (isHorizontal) {
         const float rotX = targetCenter + labelHeight / 2.0f;
         const float rotY = startY - maxTextWidth;
         graphics.addTransform(
@@ -217,7 +210,7 @@ void RollCqt::paintFrame(juce::Graphics& graphics) const {
     const float labelAreaHeight = getLabelAreaHeight();
     const float plotHeight = std::max(1.0f, totalHeight - labelAreaHeight);
 
-    const juce::Font labelFont = getLabelFont();
+    const juce::Font labelFont = Common::getLabelFont();
     graphics.setFont(labelFont);
     const float labelHeight = labelFont.getHeight();
     const float maxTextWidth = juce::GlyphArrangement::getStringWidth(labelFont, "Ww8");
@@ -254,10 +247,10 @@ void RollCqt::paintFrame(juce::Graphics& graphics) const {
     }
 }
 
-void RollCqt::paintBins(juce::Graphics& graphics) const {
-    const bool isHoriz = processor.settings.isOrientationHorizontal;
-    const int logicalWidth = isHoriz ? getHeight() : getWidth();
-    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+void RollCqt::paintForrest(juce::Graphics& graphics) const {
+    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHorizontal ? getHeight() : getWidth();
+    const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
     const int width = logicalWidth;
     const float plotHeight = std::max(1.0f, static_cast<float>(logicalHeight) - getLabelAreaHeight());
@@ -290,11 +283,13 @@ void RollCqt::paintBins(juce::Graphics& graphics) const {
 }
 
 void RollCqt::pumpSteam() {
-    if (displayMagnitudes.empty() || !steamImage.isValid()) return;
+    if (displayMagnitudes.empty() || !steamImage.isValid()) {
+        return;
+    }
 
-    const bool isHoriz = processor.settings.isOrientationHorizontal;
-    const int logicalWidth = isHoriz ? getHeight() : getWidth();
-    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHorizontal ? getHeight() : getWidth();
+    const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
     const int width = logicalWidth;
     const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
@@ -308,7 +303,7 @@ void RollCqt::pumpSteam() {
     // Calculate where in the image memory the new row should be drawn
     const int drawY = (height - speedPx + steamScrollOffset) % height;
 
-    // Native JUCE memory wipe: clears the specific row to completely transparent
+    // Clear the new row first to prevent ghosting from previous treadmill cycles
     steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
 
     juce::Graphics graphics(steamImage);
@@ -341,8 +336,8 @@ void RollCqt::pumpSteam() {
 void RollCqt::paintSteam(const juce::Graphics& graphics) const {
     if (!steamImage.isValid()) return;
 
-    const bool isHoriz = processor.settings.isOrientationHorizontal;
-    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
     const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
 

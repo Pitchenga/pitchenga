@@ -1,6 +1,7 @@
 #include "RollStft.h"
 #include "../Tone.h"
 #include "../math/Math.h"
+#include "../Common.h"
 #include <algorithm>
 #include <cmath>
 
@@ -21,9 +22,9 @@ void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
 }
 
 void RollStft::resized() {
-    const bool isHoriz = processor.settings.isOrientationHorizontal;
-    const int logicalWidth = isHoriz ? getHeight() : getWidth();
-    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHorizontal ? getHeight() : getWidth();
+    const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
     if (logicalWidth > 0 && logicalHeight > 0) {
         const int plotHeight = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
@@ -34,19 +35,11 @@ void RollStft::resized() {
     }
 }
 
-juce::Font RollStft::getLabelFont() {
-    return {
-        juce::FontOptions(12.0f)
-        .withStyle("Bold")
-        .withName(juce::Font::getDefaultMonospacedFontName())
-    };
-}
-
 float RollStft::getLabelAreaHeight() const {
     if (!processor.settings.isShowRollLabels()) {
         return 0.0f;
     }
-    return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8") + 4.0f;
+    return juce::GlyphArrangement::getStringWidth(Common::getLabelFont(), "Ww8") + 4.0f;
 }
 
 float RollStft::freqToMidi(float freq) {
@@ -66,15 +59,15 @@ void RollStft::paint(juce::Graphics& graphics) {
 
     const int physicalWidth = getWidth();
     const int physicalHeight = getHeight();
-    const bool isHoriz = processor.settings.isOrientationHorizontal;
-    const int logicalWidth = isHoriz ? physicalHeight : physicalWidth;
-    const int logicalHeight = isHoriz ? physicalWidth : physicalHeight;
+    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHorizontal ? physicalHeight : physicalWidth;
+    const int logicalHeight = isHorizontal ? physicalWidth : physicalHeight;
     const float labelAreaHeight = getLabelAreaHeight();
     const int plotHeight = std::max(1, logicalHeight - static_cast<int>(labelAreaHeight));
 
     graphics.saveState();
 
-    if (isHoriz) {
+    if (isHorizontal) {
         graphics.addTransform(juce::AffineTransform(0, 1, 0, -1, 0, physicalHeight));
     }
 
@@ -94,9 +87,9 @@ void RollStft::paint(juce::Graphics& graphics) {
 }
 
 void RollStft::buildFrame() {
-    const bool isHoriz = processor.settings.isOrientationHorizontal;
-    const int logicalWidth = isHoriz ? getHeight() : getWidth();
-    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHorizontal ? getHeight() : getWidth();
+    const int logicalHeight = isHorizontal ? getWidth() : getHeight();
     if (logicalWidth <= 0 || logicalHeight <= 0) return;
 
     // Create a transparent image (the 'true' flag clears it to zero alpha)
@@ -120,7 +113,7 @@ void RollStft::paintLabel(
     const float targetCenter,
     const float startY,
     const juce::Colour baseColor,
-    const bool isHoriz
+    const bool isHorizontal
 ) {
     //fixme: Un-hardcode
     if (midiNote == minMidiNote || midiNote == 108) {
@@ -133,7 +126,7 @@ void RollStft::paintLabel(
     graphics.setColour(baseColor);
     graphics.saveState();
 
-    if (isHoriz) {
+    if (isHorizontal) {
         const float rotX = targetCenter + labelHeight / 2.0f;
         const float rotY = startY - maxTextWidth;
         graphics.addTransform(
@@ -169,7 +162,7 @@ void RollStft::paintFrame(juce::Graphics& graphics) const {
     const float labelAreaHeight = getLabelAreaHeight();
     const float plotHeight = std::max(1.0f, totalHeight - labelAreaHeight);
 
-    const juce::Font labelFont = getLabelFont();
+    const juce::Font labelFont = Common::getLabelFont();
     graphics.setFont(labelFont);
     const float labelHeight = labelFont.getHeight();
     const float maxTextWidth = juce::GlyphArrangement::getStringWidth(labelFont, "Ww8");
@@ -208,9 +201,10 @@ void RollStft::paintFrame(juce::Graphics& graphics) const {
 }
 
 void RollStft::paintForrest(juce::Graphics& graphics) const {
-    const bool isHoriz = processor.settings.isOrientationHorizontal;
-    const int logicalWidth = isHoriz ? getHeight() : getWidth();
-    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHorizontal ? getHeight() : getWidth();
+    const int logicalHeight = isHorizontal ? getWidth() : getHeight();
+
     const int width = logicalWidth;
     const float plotHeight = std::max(1.0f, static_cast<float>(logicalHeight) - getLabelAreaHeight());
 
@@ -250,11 +244,11 @@ void RollStft::paintForrest(juce::Graphics& graphics) const {
 void RollStft::pumpSteam() {
     if (activePeaks.empty() || !steamImage.isValid()) {
         return;
-    };
+    }
 
-    const bool isHoriz = processor.settings.isOrientationHorizontal;
-    const int logicalWidth = isHoriz ? getHeight() : getWidth();
-    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHorizontal ? getHeight() : getWidth();
+    const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
     const int width = logicalWidth;
     const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
@@ -328,8 +322,9 @@ void RollStft::pumpSteam() {
 void RollStft::paintSteam(const juce::Graphics& graphics) const {
     if (!steamImage.isValid()) return;
 
-    const bool isHoriz = processor.settings.isOrientationHorizontal;
-    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const int logicalHeight = isHorizontal ? getWidth() : getHeight();
+
     const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
 
     // Draw the two halves of the ring buffer to create a flawless infinite upward scroll

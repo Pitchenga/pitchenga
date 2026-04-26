@@ -37,12 +37,11 @@ private:
 
     void buildFrame();
     void paintFrame(juce::Graphics& graphics) const;
-    static void paintLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, int midiNote, float targetCenter, float startY, juce::Colour baseColor, bool isHoriz);
+    static void paintLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, int midiNote, float targetCenter, float startY, juce::Colour baseColor, bool isHorizontal);
     void pumpSteam();
     void paintSteam(const juce::Graphics& graphics) const;
     void paintForrest(juce::Graphics& graphics) const;
 
-    static juce::Font getLabelFont();
     float getLabelAreaHeight() const;
     static juce::String getNoteName(int midiNote);
 

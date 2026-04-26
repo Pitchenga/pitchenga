@@ -1,6 +1,7 @@
 #include "Needle.h"
 #include <cmath>
 #include "../Tone.h"
+#include "../Common.h"
 
 Needle::Needle() {
     // Pre-calculate the sine wave intensities once during construction
@@ -67,8 +68,8 @@ void Needle::paintLabel(juce::Graphics& graphics, const int midiNote, const floa
     const juce::String name = getNoteName(midiNote);
     graphics.saveState();
 
-    const float labelWidth = getLabelWidth();
-    const float labelHeight = getLabelHeight();
+    const float labelWidth = Common::getLabelWidth();
+    const float labelHeight = Common::getLabelHeight();
 
     graphics.addTransform(juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, x, stripY - tickHeight));
 
@@ -89,24 +90,9 @@ void Needle::paintLabel(juce::Graphics& graphics, const int midiNote, const floa
     graphics.restoreState();
 }
 
-juce::Font Needle::getLabelFont() {
-    return {
-        juce::FontOptions(needleFontSize)
-        .withStyle(needleFontStyle)
-        .withName(juce::Font::getDefaultMonospacedFontName())
-    };
-}
-
-float Needle::getLabelHeight() {
-    return juce::GlyphArrangement::getStringWidth(getLabelFont(), "Ww8");
-}
-
-float Needle::getLabelWidth() {
-    return getLabelFont().getHeight();
-}
 
 float Needle::getPreferredHeight() {
-    return stripHeight + tickHeight + getLabelHeight();
+    return stripHeight + tickHeight + Common::getLabelHeight();
 }
 
 void Needle::updateCachedLabels() {
@@ -119,7 +105,7 @@ void Needle::updateCachedLabels() {
     juce::Graphics graphics(cachedLabels);
 
     const float stripY = static_cast<float>(height) - stripHeight;
-    graphics.setFont(getLabelFont());
+    graphics.setFont(Common::getLabelFont());
 
     const int startMidi = static_cast<int>(std::ceil(minMidi));
     const int endMidi = static_cast<int>(std::floor(maxMidi));
@@ -198,7 +184,7 @@ void Needle::paint(juce::Graphics& graphics) {
 
     // Dynamic Illumination Overlay
     if (currentMidi >= minMidi && currentMidi <= maxMidi) {
-        graphics.setFont(getLabelFont());
+        graphics.setFont(Common::getLabelFont());
 
         const float labelStripY = height - stripHeight;
 
@@ -218,7 +204,7 @@ void Needle::paint(juce::Graphics& graphics) {
             paintLabel(graphics, nearestNote, closestX, labelStripY);
         }
 
-        // Draw the needle needle
+        // Draw the tuner needle
         const float pitchX = bounds.getWidth() * ((currentMidi - minMidi) / (maxMidi - minMidi));
         const float needleStripY = height - stripHeight + tickHeight;
 

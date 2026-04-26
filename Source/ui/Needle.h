@@ -17,13 +17,9 @@ public:
     static constexpr float stripHeight = 16.0f;
     static constexpr float tickHeight = 5.0f;
     // labelHeight and labelWidth names are intentionally swapped because the label is rendered sideways
-    static float getLabelHeight();
-    static float getLabelWidth();
     static float getPreferredHeight();
 
     static constexpr float needleTriangleWidth = 12.0f;
-    static constexpr float needleFontSize = 12.0f;
-    static constexpr auto needleFontStyle = "Bold";
 
 private:
     void updateCachedLabels();
@@ -46,8 +42,6 @@ private:
 
     int framesSinceSignalLost = 0;
     static constexpr int spinHoldFrames = 64;
-
-    static juce::Font getLabelFont();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Needle)
 };
