@@ -48,6 +48,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     rollCqtBuffer.resize(PitchengaAudioProcessor::numOctaves * 12);
 
     setResizable(true, true);
+    setWantsKeyboardFocus(true);
     setSize(processor.settings.lastUiWidth, processor.settings.lastUiHeight);
 
     startTimerHz(uiRefreshRateHz);
@@ -214,4 +215,16 @@ void PitchengaAudioProcessorEditor::resized() {
             eye.setBounds(bounds);
         }
     }
+}
+
+bool PitchengaAudioProcessorEditor::keyPressed(const juce::KeyPress& key) {
+    if (key == juce::KeyPress::returnKey || key == juce::KeyPress('f') || key == juce::KeyPress('F')) {
+        if (auto* topLevel = getTopLevelComponent()) {
+            if (auto* window = dynamic_cast<juce::ResizableWindow*>(topLevel)) {
+                window->setFullScreen(!window->isFullScreen());
+                return true;
+            }
+        }
+    }
+    return false;
 }

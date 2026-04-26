@@ -341,7 +341,7 @@ void PitchengaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
     copyXmlToBinary(xml, destData);
 }
 
-void PitchengaAudioProcessor::setStateInformation(const void* data, const int sizeInBytes) {
+void PitchengaAudioProcessor::setStateInformation(const void* data, int sizeInBytes) {
     try {
         const std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
 
@@ -350,6 +350,7 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, const int si
         }
 
         if (auto* editor = getActiveEditor()) {
+            // Apply loaded size before triggering visibility updates which might cause nested resizes
             editor->setSize(settings.lastUiWidth, settings.lastUiHeight);
             if (auto* pitchengaEditor = dynamic_cast<PitchengaAudioProcessorEditor*>(editor)) {
                 pitchengaEditor->updateVisibilityFromState();
