@@ -94,6 +94,12 @@ void RollCqt::paint(juce::Graphics& graphics) {
     const float labelAreaHeight = getLabelAreaHeight();
     const int plotHeight = std::max(1, logicalHeight - static_cast<int>(labelAreaHeight));
 
+    graphics.saveState();
+
+    if (isHorizontal) {
+        graphics.addTransform(juce::AffineTransform(0, 1, 0, -1, 0, physicalHeight));
+    }
+
     if (cachedFrame.isValid()) {
         graphics.drawImageAt(cachedFrame, 0, 0);
     }
@@ -101,22 +107,17 @@ void RollCqt::paint(juce::Graphics& graphics) {
     currentTotalBins = static_cast<int>(displayMagnitudes.size());
     currentBinsPerOctave = currentTotalBins / PitchengaAudioProcessor::numOctaves;
 
-    if (currentTotalBins <= 0 || currentBinsPerOctave <= 0 || displayMagnitudes.empty()) return;
+    if (currentTotalBins > 0 && currentBinsPerOctave > 0 && !displayMagnitudes.empty()) {
+        if (processor.settings.isShowSteam) {
+            graphics.saveState();
+            graphics.reduceClipRegion(0, 0, logicalWidth, plotHeight);
+            paintSteam(graphics);
+            graphics.restoreState();
+        }
 
-    graphics.saveState();
-    
-    if (isHorizontal) {
-        graphics.addTransform(juce::AffineTransform(0, 1, 0, -1, 0, physicalHeight));
-    }
-    
-    graphics.reduceClipRegion(0, 0, logicalWidth, plotHeight);
-
-    if (processor.settings.isShowSteam) {
-        paintSteam(graphics);
-    }
-
-    if (processor.settings.isShowForrest) {
-        paintForrest(graphics);
+        if (processor.settings.isShowForrest) {
+            paintForrest(graphics);
+        }
     }
 
     graphics.restoreState();
