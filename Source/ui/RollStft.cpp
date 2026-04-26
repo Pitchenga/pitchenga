@@ -115,8 +115,7 @@ void RollStft::paintLabel(
     const juce::Colour baseColor,
     const bool isHorizontal
 ) {
-    //fixme: Un-hardcode
-    if (midiNote == minMidiNote || midiNote == 108) {
+    if (midiNote == minMidiNote || midiNote == maxMidiNote) {
         // Not drawing a half label
         return;
     }
