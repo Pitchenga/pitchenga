@@ -34,7 +34,7 @@ private:
     float currentMidi = -1.0f;
 
     juce::Image cachedLabels;
-    juce::Image cachedBackground;
+    juce::Image cachedGradient;
 
     float strobePhase = 0.0f;
     float targetVelocity = 0.0f;
