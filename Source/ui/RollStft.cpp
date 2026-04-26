@@ -219,7 +219,7 @@ void RollStft::paintForrest(juce::Graphics& graphics) const {
             if (enableDynamicStemWidth) {
                 const float nextX = frequencyToX(peak.frequencyHz + peak.bandwidthHz, static_cast<float>(width));
                 // +1.0f forces deliberate sub-pixel overlap to completely kill rendering gaps
-                stemWidthPixels = std::max(1.0f, (nextX - xPos) + 1.0f);
+                stemWidthPixels = std::max(1.0f, nextX - xPos + 1.0f);
             }
 
             const float normalizedMagnitude = std::min(1.0f, std::max(0.0f, peak.magnitude));
@@ -233,7 +233,7 @@ void RollStft::paintForrest(juce::Graphics& graphics) const {
             graphics.setColour(color);
 
             graphics.fillRoundedRectangle(
-                xPos - (stemWidthPixels * 0.5f),
+                xPos - stemWidthPixels * 0.5f,
                 plotHeight - barHeight,
                 stemWidthPixels,
                 barHeight,
@@ -293,9 +293,9 @@ void RollStft::pumpSteam() {
                 float stemWidthPixels = 4.0f;
                 if (doDynamicStem) {
                     // Use the fast derivative approximation instead of another heavy log2
-                    const float nextX = xPos + (derivativeFactor / peak.frequencyHz);
+                    const float nextX = xPos + derivativeFactor / peak.frequencyHz;
                     // +1.0f forces deliberate sub-pixel overlap to completely kill rendering gaps
-                    stemWidthPixels = std::max(1.0f, (nextX - xPos) + 1.0f);
+                    stemWidthPixels = std::max(1.0f, nextX - xPos + 1.0f);
                 }
 
                 // Fast continuous modulus (replaces heavy std::fmod)
@@ -311,7 +311,7 @@ void RollStft::pumpSteam() {
 
                 graphics.setColour(color);
                 graphics.fillRect(
-                    xPos - (stemWidthPixels * 0.5f),
+                    xPos - stemWidthPixels * 0.5f,
                     static_cast<float>(drawY),
                     stemWidthPixels,
                     static_cast<float>(speedPx)

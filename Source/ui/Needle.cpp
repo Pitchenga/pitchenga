@@ -12,7 +12,7 @@ Needle::Needle() {
         const float wave = 0.5f * (1.0f + sineVal); // 0.0 to 1.0
 
         // Intensity interpolates from 0.5 to 1.0
-        strobeIntensities[static_cast<size_t>(i)] = 0.5f + (0.5f * wave);
+        strobeIntensities[static_cast<size_t>(i)] = 0.5f + 0.5f * wave;
     }
 }
 
@@ -148,13 +148,13 @@ void Needle::resized() {
     buildFrame();
 }
 
-void Needle::paintStrobeOverlay(juce::Graphics& graphics, const float stripY, const int width) {
+void Needle::paintStrobeOverlay(juce::Graphics& graphics, const float stripY, const int width) const {
     if (currentMidi >= minMidi && currentMidi <= maxMidi) {
         constexpr float strobeSpreadMidi = 10.0f;
 
         // Calculate the pixel bounds of the strobe effect to avoid full-width iteration
         const float pitchX = static_cast<float>(width) * ((currentMidi - minMidi) / (maxMidi - minMidi));
-        const float spreadPx = (strobeSpreadMidi / (maxMidi - minMidi)) * static_cast<float>(width);
+        const float spreadPx = strobeSpreadMidi / (maxMidi - minMidi) * static_cast<float>(width);
 
         const int startX = std::max(0, static_cast<int>(std::floor(pitchX - spreadPx)));
         const int endX = std::min(width - 1, static_cast<int>(std::ceil(pitchX + spreadPx)));
@@ -177,7 +177,7 @@ void Needle::paintStrobeOverlay(juce::Graphics& graphics, const float stripY, co
                     strobeIntensities[static_cast<size_t>(index0)] * (1.0f - frac)
                     + strobeIntensities[static_cast<size_t>(index1)] * frac;
 
-                const float fadeFactor = 1.0f - (distanceMidi / strobeSpreadMidi);
+                const float fadeFactor = 1.0f - distanceMidi / strobeSpreadMidi;
                 const float dimming = (1.0f - intensity) * fadeFactor;
 
                 graphics.setColour(juce::Colours::black.withAlpha(dimming));

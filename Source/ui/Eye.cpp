@@ -182,7 +182,7 @@ void Eye::paintFrame(juce::Graphics& graphics) const {
         const float arcStart = static_cast<float>(i) * segmentAngleStep;
         // Overlap slightly to prevent anti-aliasing gaps
         const float arcEnd = static_cast<float>(i + 1) * segmentAngleStep + 0.01f;
-        const float chroma = (static_cast<float>(i) / static_cast<float>(numSegments)) * 12.0f;
+        const float chroma = static_cast<float>(i) / static_cast<float>(numSegments) * 12.0f;
 
         juce::Path arcPath;
         arcPath.addCentredArc(center.x, center.y, outerRadius - 1.0f, outerRadius - 1.0f, 0.0f, arcStart, arcEnd, true);
