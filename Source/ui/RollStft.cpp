@@ -82,9 +82,6 @@ void RollStft::paint(juce::Graphics& graphics) {
         graphics.drawImageAt(cachedFrame, 0, 0);
     }
 
-    // Clip the top 1 pixel to hide the "blinking lights" artifact caused by the treadmill write-head/interpolation lag
-    graphics.reduceClipRegion(0, 1, logicalWidth, plotHeight - 1);
-
     if (processor.settings.isShowSteam) {
         paintSteam(graphics);
     }
