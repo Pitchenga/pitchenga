@@ -28,10 +28,25 @@ public:
         const int index2 = (index1 + 1) % 12;
         const float fraction = wrapped - std::floor(wrapped);
 
-        return chromaticScale[static_cast<size_t>(index1)].color
-            .interpolatedWith(
-                chromaticScale[static_cast<size_t>(index2)].color,
-                fraction
-            );
+        const juce::Colour c1 = chromaticScale[static_cast<size_t>(index1)].color;
+        const juce::Colour c2 = chromaticScale[static_cast<size_t>(index2)].color;
+
+        float h1, s1, v1, h2, s2, v2;
+        c1.getHSB(h1, s1, v1);
+        c2.getHSB(h2, s2, v2);
+
+        if (std::abs(h2 - h1) > 0.5f) {
+            if (h2 > h1) h1 += 1.0f;
+            else h2 += 1.0f;
+        }
+
+        float h = h1 + fraction * (h2 - h1);
+        if (h >= 1.0f) h -= 1.0f;
+        if (h < 0.0f) h += 1.0f;
+
+        const float s = s1 + fraction * (s2 - s1);
+        const float v = v1 + fraction * (v2 - v1);
+
+        return juce::Colour::fromHSV(h, s, v, 1.0f);
     }
 };
