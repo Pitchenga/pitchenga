@@ -24,7 +24,7 @@ public:
         bool isFreezeRoll = false;
         bool isShowSteam = true;
         bool isShowForrest = false;
-        bool isOrientationHorizontal = false;
+        bool isRollHorizontal = false;
 
         bool isEarEnabled = false;
         bool isShowTweakPanel = false;
@@ -37,7 +37,7 @@ public:
         juce::String currentPresetName;
 
         [[nodiscard]] bool isShowRollLabels() const {
-            return !(isShowRoll && isShowNeedle);
+            return isRollHorizontal || !(isShowRoll && isShowNeedle);
         }
 
         [[nodiscard]] juce::XmlElement createXml() const;

@@ -60,7 +60,7 @@ void RollCqt::updateResults(const std::vector<double>& results) {
 }
 
 void RollCqt::resized() {
-    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const bool isHorizontal = processor.settings.isRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -88,7 +88,7 @@ void RollCqt::paint(juce::Graphics& graphics) {
 
     const int physicalWidth = getWidth();
     const int physicalHeight = getHeight();
-    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const bool isHorizontal = processor.settings.isRollHorizontal;
     const int logicalWidth = isHorizontal ? physicalHeight : physicalWidth;
     const int logicalHeight = isHorizontal ? physicalWidth : physicalHeight;
     const float labelAreaHeight = getLabelAreaHeight();
@@ -123,7 +123,7 @@ void RollCqt::paint(juce::Graphics& graphics) {
 }
 
 void RollCqt::buildFrame() {
-    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const bool isHorizontal = processor.settings.isRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
     if (logicalWidth <= 0 || logicalHeight <= 0) return;
@@ -193,7 +193,7 @@ void RollCqt::paintLabel(
 }
 
 void RollCqt::paintFrame(juce::Graphics& graphics) const {
-    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const bool isHorizontal = processor.settings.isRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -243,12 +243,12 @@ void RollCqt::paintFrame(juce::Graphics& graphics) const {
         }
 
         //fixme: Unify range and hide labels when adjacent to tuner
-        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor, processor.settings.isOrientationHorizontal);
+        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor, processor.settings.isRollHorizontal);
     }
 }
 
 void RollCqt::paintForrest(juce::Graphics& graphics) const {
-    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const bool isHorizontal = processor.settings.isRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -287,7 +287,7 @@ void RollCqt::pumpSteam() {
         return;
     }
 
-    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const bool isHorizontal = processor.settings.isRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -336,7 +336,7 @@ void RollCqt::pumpSteam() {
 void RollCqt::paintSteam(const juce::Graphics& graphics) const {
     if (!steamImage.isValid()) return;
 
-    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const bool isHorizontal = processor.settings.isRollHorizontal;
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
     const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));

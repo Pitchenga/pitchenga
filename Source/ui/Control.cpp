@@ -75,10 +75,10 @@ Control::Control(PitchengaAudioProcessor& proc)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    toggleOrientation.setButtonText(processor.settings.isOrientationHorizontal ? "Flop" : "Flip");
+    toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flop" : "Flip");
     toggleOrientation.onClick = [this] {
-        processor.settings.isOrientationHorizontal = !processor.settings.isOrientationHorizontal;
-        toggleOrientation.setButtonText(processor.settings.isOrientationHorizontal ? "Flop" : "Flip");
+        processor.settings.isRollHorizontal = !processor.settings.isRollHorizontal;
+        toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flop" : "Flip");
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -435,7 +435,7 @@ void Control::updateVisibilityFromState() {
     toggleisFreezeRoll.setToggleState(processor.settings.isFreezeRoll, juce::NotificationType::dontSendNotification);
 
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
-    toggleOrientation.setButtonText(processor.settings.isOrientationHorizontal ? "Flop" : "Flip");
+    toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flop" : "Flip");
     toggleSteam.setToggleState(processor.settings.isShowSteam, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
@@ -617,7 +617,7 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isFreezeRoll", isFreezeRoll);
     xml.setAttribute("isShowForrest", isShowForrest);
     xml.setAttribute("isShowSteam", isShowSteam);
-    xml.setAttribute("isOrientationHorizontal", isOrientationHorizontal);
+    xml.setAttribute("isRollHorizontal", isRollHorizontal);
 
     xml.setAttribute("isEarEnabled", isEarEnabled);
     xml.setAttribute("isShowTweakPanel", isShowTweakPanel);
@@ -655,7 +655,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isFreezeRoll = xml.getBoolAttribute("isFreezeRoll", isFreezeRoll);
     isShowForrest = xml.getBoolAttribute("isShowForrest", isShowForrest);
     isShowSteam = xml.getBoolAttribute("isShowSteam", isShowSteam);
-    isOrientationHorizontal = xml.getBoolAttribute("isOrientationHorizontal", isOrientationHorizontal);
+    isRollHorizontal = xml.getBoolAttribute("isRollHorizontal", isRollHorizontal);
 
     isEarEnabled = xml.getBoolAttribute("isEarEnabled", isEarEnabled);
     isShowTweakPanel = xml.getBoolAttribute("isShowTweakPanel", isShowTweakPanel);
