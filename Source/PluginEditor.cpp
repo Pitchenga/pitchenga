@@ -171,7 +171,7 @@ void PitchengaAudioProcessorEditor::resized() {
     // Only show splitter if both resizable elements are active
     splitter.setVisible(processor.settings.isShowRoll && processor.settings.isShowEye);
 
-    const int needleHeight = processor.settings.isShowNeedle ? static_cast<int>(Needle::getPreferredHeight() + 1) : 0;
+    const int needleHeight = processor.settings.isShowNeedle ? static_cast<int>(Needle::getPreferredHeight()) : 0;
 
     if (processor.settings.isShowRoll && processor.settings.isShowEye) {
         const int availableHeight = bounds.getHeight() - needleHeight - 4; // 4 is splitter height
