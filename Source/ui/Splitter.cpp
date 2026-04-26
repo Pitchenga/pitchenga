@@ -24,7 +24,7 @@ void Splitter::paint(juce::Graphics& g) {
     if (isHovered) {
         g.fillAll(juce::Colours::white.withAlpha(0.2f));
     } else {
-        g.fillAll(juce::Colours::grey.withAlpha(0.2f));
+        g.fillAll(juce::Colours::black);
     }
 }
 

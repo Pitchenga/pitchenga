@@ -39,7 +39,7 @@ public:
         juce::String currentPresetName;
 
         [[nodiscard]] bool isShowRollLabels() const {
-            return isRollHorizontal || !(isShowRoll && isShowNeedle);
+            return isRollHorizontal || !(!isShowEye && isShowRoll && isShowNeedle);
         }
 
         [[nodiscard]] juce::XmlElement createXml() const;

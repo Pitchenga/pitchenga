@@ -24,6 +24,9 @@ PitchengaAudioProcessor::PitchengaAudioProcessor()
 }
 
 PitchengaAudioProcessor::~PitchengaAudioProcessor() {
+    auto* plugin = atomicPlugin.exchange(nullptr);
+    unloadPluginInstance(plugin);
+
     // Save plugin list
     const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
     const auto pluginListFile = appDataDir.getChildFile("plugins.xml");

@@ -24,8 +24,10 @@ bool RollCqt::expand() {
         if (const double magnitude = magnitudes[i]; magnitude <= visualFloor) {
             magnitudes[i] = 0.0;
         } else {
+            constexpr double contrastExponent = 1.6;
             // Stretch the remaining peaks back to the 0.0 - 1.0 range for drawing
-            magnitudes[i] = (magnitude - visualFloor) * rangeInv;
+            const double stretchedMagnitude = (magnitude - visualFloor) * rangeInv;
+            magnitudes[i] = std::pow(stretchedMagnitude, contrastExponent);
         }
     }
 
