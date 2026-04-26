@@ -39,7 +39,11 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     addAndMakeVisible(rollCqt);
 
     addAndMakeVisible(control);
-    control.onVisibilityChanged = [this] { resized(); };
+    control.onVisibilityChanged = [this] {
+        rollStft.resized();
+        rollCqt.resized();
+        resized();
+    };
 
     addAndMakeVisible(splitter);
     splitter.onDragged = [this] { resized(); };

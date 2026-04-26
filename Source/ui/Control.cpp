@@ -75,6 +75,13 @@ Control::Control(PitchengaAudioProcessor& proc)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
+    toggleOrientation.setButtonText(processor.settings.isOrientationHorizontal ? "Flop" : "Flip");
+    toggleOrientation.onClick = [this] {
+        processor.settings.isOrientationHorizontal = !processor.settings.isOrientationHorizontal;
+        toggleOrientation.setButtonText(processor.settings.isOrientationHorizontal ? "Flop" : "Flip");
+        if (onVisibilityChanged) onVisibilityChanged();
+    };
+
     setupToggleButton(toggleForrest, processor.settings.isShowForrest);
     toggleForrest.onClick = [this] {
         processor.settings.isShowForrest = toggleForrest.getToggleState();
@@ -296,6 +303,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(buttonPlugs);
     tweakPanel.addAndMakeVisible(buttonPlug);
     tweakPanel.addAndMakeVisible(toggleRollType);
+    tweakPanel.addAndMakeVisible(toggleOrientation);
     tweakPanel.addAndMakeVisible(toggleSteam);
     tweakPanel.addAndMakeVisible(toggleForrest);
     tweakPanel.addAndMakeVisible(buttonSaveAs);
@@ -427,6 +435,7 @@ void Control::updateVisibilityFromState() {
     toggleisFreezeRoll.setToggleState(processor.settings.isFreezeRoll, juce::NotificationType::dontSendNotification);
 
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
+    toggleOrientation.setButtonText(processor.settings.isOrientationHorizontal ? "Flop" : "Flip");
     toggleSteam.setToggleState(processor.settings.isShowSteam, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
@@ -445,6 +454,7 @@ void Control::updateButtonStates() {
     const bool rollActive = processor.settings.isShowRoll;
     toggleisFreezeRoll.setVisible(rollActive);
     toggleRollType.setVisible(rollActive);
+    toggleOrientation.setVisible(rollActive);
     toggleSteam.setVisible(rollActive);
     toggleForrest.setVisible(rollActive);
 
@@ -534,6 +544,7 @@ void Control::resized() {
 
         positionButtonRight(toggleForrest, panelBounds);
         positionButtonRight(toggleSteam, panelBounds);
+        positionButtonRight(toggleOrientation, panelBounds);
         positionButtonRight(toggleRollType, panelBounds);
     }
 }
@@ -606,6 +617,7 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isFreezeRoll", isFreezeRoll);
     xml.setAttribute("isShowForrest", isShowForrest);
     xml.setAttribute("isShowSteam", isShowSteam);
+    xml.setAttribute("isOrientationHorizontal", isOrientationHorizontal);
 
     xml.setAttribute("isEarEnabled", isEarEnabled);
     xml.setAttribute("isShowTweakPanel", isShowTweakPanel);
@@ -643,6 +655,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isFreezeRoll = xml.getBoolAttribute("isFreezeRoll", isFreezeRoll);
     isShowForrest = xml.getBoolAttribute("isShowForrest", isShowForrest);
     isShowSteam = xml.getBoolAttribute("isShowSteam", isShowSteam);
+    isOrientationHorizontal = xml.getBoolAttribute("isOrientationHorizontal", isOrientationHorizontal);
 
     isEarEnabled = xml.getBoolAttribute("isEarEnabled", isEarEnabled);
     isShowTweakPanel = xml.getBoolAttribute("isShowTweakPanel", isShowTweakPanel);

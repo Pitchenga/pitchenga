@@ -59,13 +59,14 @@ void RollCqt::updateResults(const std::vector<double>& results) {
 }
 
 void RollCqt::resized() {
-    const int width = getWidth();
-    const int height = getHeight();
+    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHorizontal ? getHeight() : getWidth();
+    const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
-    if (width > 0 && height > 0) {
-        const int plotHeight = std::max(1, height - static_cast<int>(getLabelAreaHeight()));
+    if (logicalWidth > 0 && logicalHeight > 0) {
+        const int plotHeight = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
         // Initialize the rolling buffer whenever the window resizes
-        steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
+        steamImage = juce::Image(juce::Image::ARGB, logicalWidth, plotHeight, true);
         steamScrollOffset = 0;
         buildFrame();
     }
@@ -92,10 +93,13 @@ void RollCqt::paint(juce::Graphics& graphics) {
         buildFrame();
     }
 
-    const int width = getWidth();
-    const int height = getHeight();
+    const int physicalWidth = getWidth();
+    const int physicalHeight = getHeight();
+    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHorizontal ? physicalHeight : physicalWidth;
+    const int logicalHeight = isHorizontal ? physicalWidth : physicalHeight;
     const float labelAreaHeight = getLabelAreaHeight();
-    const int plotHeight = std::max(1, height - static_cast<int>(labelAreaHeight));
+    const int plotHeight = std::max(1, logicalHeight - static_cast<int>(labelAreaHeight));
 
     if (cachedFrame.isValid()) {
         graphics.drawImageAt(cachedFrame, 0, 0);
@@ -107,7 +111,12 @@ void RollCqt::paint(juce::Graphics& graphics) {
     if (currentTotalBins <= 0 || currentBinsPerOctave <= 0 || displayMagnitudes.empty()) return;
 
     graphics.saveState();
-    graphics.reduceClipRegion(0, 0, width, plotHeight);
+    
+    if (isHorizontal) {
+        graphics.addTransform(juce::AffineTransform(0, -1, physicalWidth, -1, 0, physicalHeight));
+    }
+    
+    graphics.reduceClipRegion(0, 0, logicalWidth, plotHeight);
 
     if (processor.settings.isShowSteam) {
         paintSteam(graphics);
@@ -121,14 +130,15 @@ void RollCqt::paint(juce::Graphics& graphics) {
 }
 
 void RollCqt::buildFrame() {
-    const int width = getWidth();
-    const int height = getHeight();
-    if (width <= 0 || height <= 0) return;
+    const bool isHoriz = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHoriz ? getHeight() : getWidth();
+    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+    if (logicalWidth <= 0 || logicalHeight <= 0) return;
 
     if (currentTotalBins <= 0 || currentBinsPerOctave <= 0) return;
 
     // Create a transparent image (the 'true' flag clears it to zero alpha)
-    cachedFrame = juce::Image(juce::Image::ARGB, width, height, true);
+    cachedFrame = juce::Image(juce::Image::ARGB, logicalWidth, logicalHeight, true);
     juce::Graphics graphics(cachedFrame);
     paintFrame(graphics);
 }
@@ -225,8 +235,12 @@ void RollCqt::paintFrame(juce::Graphics& graphics) const {
 }
 
 void RollCqt::paintBins(juce::Graphics& graphics) const {
-    const int width = getWidth();
-    const float plotHeight = std::max(1.0f, static_cast<float>(getHeight()) - getLabelAreaHeight());
+    const bool isHoriz = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHoriz ? getHeight() : getWidth();
+    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+
+    const int width = logicalWidth;
+    const float plotHeight = std::max(1.0f, static_cast<float>(logicalHeight) - getLabelAreaHeight());
 
     const float barWidth = static_cast<float>(width) / static_cast<float>(currentTotalBins);
 
@@ -258,8 +272,12 @@ void RollCqt::paintBins(juce::Graphics& graphics) const {
 void RollCqt::pumpSteam() {
     if (displayMagnitudes.empty() || !steamImage.isValid()) return;
 
-    const int width = getWidth();
-    const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
+    const bool isHoriz = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHoriz ? getHeight() : getWidth();
+    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+
+    const int width = logicalWidth;
+    const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
     if (width <= 0 || height <= 0) return;
 
     const int speedPx = static_cast<int>(steamSpeedPxPerFrame);
@@ -303,7 +321,10 @@ void RollCqt::pumpSteam() {
 void RollCqt::paintSteam(const juce::Graphics& graphics) const {
     if (!steamImage.isValid()) return;
 
-    const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
+    const bool isHoriz = processor.settings.isOrientationHorizontal;
+    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+
+    const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
 
     // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
     graphics.drawImageAt(steamImage, 0, -steamScrollOffset);

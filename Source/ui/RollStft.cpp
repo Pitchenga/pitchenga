@@ -21,13 +21,14 @@ void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
 }
 
 void RollStft::resized() {
-    const int width = getWidth();
-    const int height = getHeight();
+    const bool isHoriz = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHoriz ? getHeight() : getWidth();
+    const int logicalHeight = isHoriz ? getWidth() : getHeight();
 
-    if (width > 0 && height > 0) {
-        const int plotHeight = std::max(1, height - static_cast<int>(getLabelAreaHeight()));
+    if (logicalWidth > 0 && logicalHeight > 0) {
+        const int plotHeight = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
         // Initialize the rolling buffer whenever the window resizes
-        steamImage = juce::Image(juce::Image::ARGB, width, plotHeight, true);
+        steamImage = juce::Image(juce::Image::ARGB, logicalWidth, plotHeight, true);
         steamScrollOffset = 0;
         buildFrame();
     }
@@ -63,18 +64,26 @@ void RollStft::paint(juce::Graphics& graphics) {
         buildFrame();
     }
 
-    const int width = getWidth();
-    const int height = getHeight();
+    const int physicalWidth = getWidth();
+    const int physicalHeight = getHeight();
+    const bool isHoriz = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHoriz ? physicalHeight : physicalWidth;
+    const int logicalHeight = isHoriz ? physicalWidth : physicalHeight;
     const float labelAreaHeight = getLabelAreaHeight();
-    const int plotHeight = std::max(1, height - static_cast<int>(labelAreaHeight));
+    const int plotHeight = std::max(1, logicalHeight - static_cast<int>(labelAreaHeight));
+
+    graphics.saveState();
+
+    if (isHoriz) {
+        graphics.addTransform(juce::AffineTransform(0, -1, physicalWidth, -1, 0, physicalHeight));
+    }
 
     if (cachedFrame.isValid()) {
         graphics.drawImageAt(cachedFrame, 0, 0);
     }
 
-    graphics.saveState();
     // Clip the top 1 pixel to hide the "blinking lights" artifact caused by the treadmill write-head/interpolation lag
-    graphics.reduceClipRegion(0, 1, width, plotHeight - 1);
+    graphics.reduceClipRegion(0, 1, logicalWidth, plotHeight - 1);
 
     if (processor.settings.isShowSteam) {
         paintSteam(graphics);
@@ -88,12 +97,13 @@ void RollStft::paint(juce::Graphics& graphics) {
 }
 
 void RollStft::buildFrame() {
-    const int width = getWidth();
-    const int height = getHeight();
-    if (width <= 0 || height <= 0) return;
+    const bool isHoriz = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHoriz ? getHeight() : getWidth();
+    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+    if (logicalWidth <= 0 || logicalHeight <= 0) return;
 
     // Create a transparent image (the 'true' flag clears it to zero alpha)
-    cachedFrame = juce::Image(juce::Image::ARGB, width, height, true);
+    cachedFrame = juce::Image(juce::Image::ARGB, logicalWidth, logicalHeight, true);
     juce::Graphics graphics(cachedFrame);
     paintFrame(graphics);
 }
@@ -181,8 +191,11 @@ void RollStft::paintFrame(juce::Graphics& graphics) const {
 }
 
 void RollStft::paintForrest(juce::Graphics& graphics) const {
-    const int width = getWidth();
-    const float plotHeight = std::max(1.0f, static_cast<float>(getHeight()) - getLabelAreaHeight());
+    const bool isHoriz = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHoriz ? getHeight() : getWidth();
+    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+    const int width = logicalWidth;
+    const float plotHeight = std::max(1.0f, static_cast<float>(logicalHeight) - getLabelAreaHeight());
 
     for (const auto& peak : activePeaks) {
         const float xPos = frequencyToX(peak.frequencyHz, static_cast<float>(width));
@@ -222,8 +235,12 @@ void RollStft::pumpSteam() {
         return;
     };
 
-    const int width = getWidth();
-    const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
+    const bool isHoriz = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHoriz ? getHeight() : getWidth();
+    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+
+    const int width = logicalWidth;
+    const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
     if (width <= 0 || height <= 0) return;
 
     constexpr int speedPx = static_cast<int>(steamSpeedPxPerFrame);
@@ -294,7 +311,9 @@ void RollStft::pumpSteam() {
 void RollStft::paintSteam(const juce::Graphics& graphics) const {
     if (!steamImage.isValid()) return;
 
-    const int height = std::max(1, getHeight() - static_cast<int>(getLabelAreaHeight()));
+    const bool isHoriz = processor.settings.isOrientationHorizontal;
+    const int logicalHeight = isHoriz ? getWidth() : getHeight();
+    const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
 
     // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
     graphics.drawImageAt(steamImage, 0, -steamScrollOffset);
