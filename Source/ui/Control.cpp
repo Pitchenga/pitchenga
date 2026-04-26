@@ -75,7 +75,6 @@ Control::Control(PitchengaAudioProcessor& proc)
     setupToggleButton(toggleStrobe, processor.settings.isShowStrobe);
     toggleStrobe.onClick = [this] {
         processor.settings.isShowStrobe = toggleStrobe.getToggleState();
-        if (onVisibilityChanged) onVisibilityChanged();
     };
 
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
@@ -300,7 +299,6 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(toggleNeedle);
     addAndMakeVisible(toggleEye);
     addAndMakeVisible(toggleRoll);
-    addAndMakeVisible(toggleLayoutPivot);
     addAndMakeVisible(toggleIsFreezeRoll);
 
     addAndMakeVisible(toggleEar);
@@ -312,6 +310,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(tweakPanel);
     tweakPanel.addAndMakeVisible(buttonPlugs);
     tweakPanel.addAndMakeVisible(buttonPlug);
+    tweakPanel.addAndMakeVisible(toggleLayoutPivot);
     tweakPanel.addAndMakeVisible(toggleStrobe);
     tweakPanel.addAndMakeVisible(toggleRollType);
     tweakPanel.addAndMakeVisible(toggleOrientation);
@@ -468,6 +467,7 @@ void Control::updateButtonStates() {
     toggleIsFreezeRoll.setVisible(rollActive);
     toggleRollType.setVisible(rollActive);
     toggleStrobe.setVisible(processor.settings.isShowNeedle);
+    toggleLayoutPivot.setEnabled(rollActive && processor.settings.isShowEye);
     toggleOrientation.setVisible(rollActive);
     toggleSteam.setVisible(rollActive);
     toggleForrest.setVisible(rollActive);
@@ -528,7 +528,6 @@ void Control::resized() {
     positionButton(toggleNeedle, topRow);
     positionButton(toggleEye, topRow);
     positionButton(toggleRoll, topRow);
-    positionButton(toggleLayoutPivot, topRow);
 
     positionButton(toggleEar, topRow);
 
@@ -562,9 +561,10 @@ void Control::resized() {
         positionButtonRight(toggleOrientation, panelBounds);
         positionButtonRight(toggleRollType, panelBounds);
 
-        // Gap between Roll type and Strobe
+        // Gap between Roll type and Strobe/Pivot group
         panelBounds.removeFromRight(16);
         positionButtonRight(toggleStrobe, panelBounds);
+        positionButtonRight(toggleLayoutPivot, panelBounds);
     }
 }
 

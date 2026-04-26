@@ -247,7 +247,7 @@ void PitchengaAudioProcessorEditor::resized() {
 }
 
 bool PitchengaAudioProcessorEditor::keyPressed(const juce::KeyPress& key) {
-    if (key == juce::KeyPress::returnKey || key == juce::KeyPress('f') || key == juce::KeyPress('F')) {
+    if (key == juce::KeyPress('f') || key == juce::KeyPress('F')) {
         if (auto* topLevel = getTopLevelComponent()) {
             if (auto* window = dynamic_cast<juce::ResizableWindow*>(topLevel)) {
                 window->setFullScreen(!window->isFullScreen());
