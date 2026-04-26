@@ -113,7 +113,7 @@ void Needle::buildFrame() {
         float chroma = std::fmod(midiAtX, 12.0f);
         if (chroma < 0.0f) chroma += 12.0f;
 
-        bgGraphics.setColour(Tone::getContinuousColor(chroma, true));
+        bgGraphics.setColour(Tone::getContinuousColor(chroma));
         bgGraphics.drawVerticalLine(x, 0.0f, stripHeight);
     }
 

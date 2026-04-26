@@ -168,54 +168,75 @@ void PitchengaAudioProcessorEditor::resized() {
     // Give the control bar its own dedicated, non-overlapping space at the top left
     control.setBounds(bounds.removeFromTop(static_cast<int>(control.getPreferredHeight())));
 
-    rollStft.setVisible(processor.settings.isShowRoll && processor.settings.isUseRollStft);
-    rollCqt.setVisible(processor.settings.isShowRoll && !processor.settings.isUseRollStft);
-    eye.setVisible(processor.settings.isShowEye);
-    needle.setVisible(processor.settings.isShowNeedle);
+    const bool isShowRoll = processor.settings.isShowRoll;
+    const bool isShowEye = processor.settings.isShowEye;
+    const bool isShowNeedle = processor.settings.isShowNeedle;
+    const bool isLayoutHorizontal = processor.settings.isLayoutHorizontal;
 
-    // Only show splitter if both resizable elements are active
-    splitter.setVisible(processor.settings.isShowRoll && processor.settings.isShowEye);
+    rollStft.setVisible(isShowRoll && processor.settings.isUseRollStft);
+    rollCqt.setVisible(isShowRoll && !processor.settings.isUseRollStft);
+    eye.setVisible(isShowEye);
+    needle.setVisible(isShowNeedle);
 
-    const int needleHeight = processor.settings.isShowNeedle ? static_cast<int>(Needle::getPreferredHeight()) : 0;
+    // Only show splitter if both resizable elements (Roll and Eye) are active
+    splitter.setVisible(isShowRoll && isShowEye);
 
-    if (processor.settings.isShowRoll && processor.settings.isShowEye) {
-        const int availableHeight = bounds.getHeight() - needleHeight - 4; // 4 is splitter height
-        const int rollHeight = static_cast<int>(static_cast<float>(availableHeight) * processor.settings.splitRatio);
+    const int needleHeight = isShowNeedle ? static_cast<int>(Needle::getPreferredHeight()) : 0;
 
-        auto rollRect = bounds.removeFromTop(rollHeight);
-        if (processor.settings.isUseRollStft) {
-            rollStft.setBounds(rollRect);
+    if (isShowRoll && isShowEye) {
+        if (isLayoutHorizontal) {
+            // --- Horizontal Layout: [Eye/Needle] |Split| [Roll] ---
+            const int availableWidth = bounds.getWidth() - 4; // 4 is splitter width
+            const int eyeWidth = static_cast<int>(static_cast<float>(availableWidth) * (1.0f - processor.settings.splitRatio));
+            
+            auto eyeNeedleRect = bounds.removeFromLeft(eyeWidth);
+            if (isShowNeedle) {
+                needle.setBounds(eyeNeedleRect.removeFromBottom(needleHeight));
+            }
+            eye.setBounds(eyeNeedleRect);
+
+            splitter.setBounds(bounds.removeFromLeft(4));
+            
+            if (processor.settings.isUseRollStft) {
+                rollStft.setBounds(bounds);
+            } else {
+                rollCqt.setBounds(bounds);
+            }
         } else {
-            rollCqt.setBounds(rollRect);
-        }
+            // --- Vertical Layout: [Roll] / [Eye] / [Needle] ---
+            const int availableHeight = bounds.getHeight() - needleHeight - 4; // 4 is splitter height
+            const int rollHeight = static_cast<int>(static_cast<float>(availableHeight) * processor.settings.splitRatio);
 
-        if (processor.settings.isShowNeedle) {
-            needle.setBounds(bounds.removeFromTop(needleHeight));
-        }
-
-        splitter.setBounds(bounds.removeFromTop(4)); // Dedicated 4px hit-box for the resizer
-        eye.setBounds(bounds);
-    } else {
-        // Vertical stack logic when eye or roll is missing (no splitter)
-        if (processor.settings.isShowRoll) {
-            const int rollHeight = bounds.getHeight() - needleHeight - (processor.settings.isShowEye ? bounds.getHeight() / 2 : 0);
             auto rollRect = bounds.removeFromTop(rollHeight);
             if (processor.settings.isUseRollStft) {
                 rollStft.setBounds(rollRect);
             } else {
                 rollCqt.setBounds(rollRect);
             }
-        }
 
-        if (processor.settings.isShowNeedle) {
-            needle.setBounds(bounds.removeFromTop(needleHeight));
+            splitter.setBounds(bounds.removeFromTop(4));
             
-            if (processor.settings.isShowEye && !processor.settings.isShowRoll) {
-                bounds.removeFromTop(1);
+            if (isShowNeedle) {
+                needle.setBounds(bounds.removeFromBottom(needleHeight));
             }
+            eye.setBounds(bounds);
         }
-
-        if (processor.settings.isShowEye) {
+    } else {
+        // --- Simplified stack logic when one primary element is missing ---
+        if (isShowRoll) {
+            auto rollRect = bounds;
+            if (isShowNeedle) {
+                needle.setBounds(rollRect.removeFromBottom(needleHeight));
+            }
+            if (processor.settings.isUseRollStft) {
+                rollStft.setBounds(rollRect);
+            } else {
+                rollCqt.setBounds(rollRect);
+            }
+        } else if (isShowEye) {
+            if (isShowNeedle) {
+                needle.setBounds(bounds.removeFromBottom(needleHeight));
+            }
             eye.setBounds(bounds);
         }
     }

@@ -56,6 +56,12 @@ Control::Control(PitchengaAudioProcessor& proc)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
+    setupToggleButton(toggleLayoutPivot, processor.settings.isLayoutHorizontal);
+    toggleLayoutPivot.onClick = [this] {
+        processor.settings.isLayoutHorizontal = toggleLayoutPivot.getToggleState();
+        if (onVisibilityChanged) onVisibilityChanged();
+    };
+
     setupToggleButton(toggleSteam, processor.settings.isShowSteam);
     toggleSteam.onClick = [this] {
         processor.settings.isShowSteam = toggleSteam.getToggleState();
@@ -288,6 +294,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(toggleNeedle);
     addAndMakeVisible(toggleEye);
     addAndMakeVisible(toggleRoll);
+    addAndMakeVisible(toggleLayoutPivot);
     addAndMakeVisible(toggleIsFreezeRoll);
 
     addAndMakeVisible(toggleEar);
@@ -429,6 +436,7 @@ void Control::updateVisibilityFromState() {
     toggleRoll.setToggleState(processor.settings.isShowRoll, juce::NotificationType::dontSendNotification);
     toggleEye.setToggleState(processor.settings.isShowEye, juce::NotificationType::dontSendNotification);
     toggleNeedle.setToggleState(processor.settings.isShowNeedle, juce::NotificationType::dontSendNotification);
+    toggleLayoutPivot.setToggleState(processor.settings.isLayoutHorizontal, juce::NotificationType::dontSendNotification);
     toggleIsFreezeRoll.setToggleState(processor.settings.isFreezeRoll, juce::NotificationType::dontSendNotification);
 
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
@@ -511,6 +519,7 @@ void Control::resized() {
     positionButton(toggleNeedle, topRow);
     positionButton(toggleEye, topRow);
     positionButton(toggleRoll, topRow);
+    positionButton(toggleLayoutPivot, topRow);
 
     positionButton(toggleEar, topRow);
 
@@ -615,6 +624,7 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isShowForrest", isShowForrest);
     xml.setAttribute("isShowSteam", isShowSteam);
     xml.setAttribute("isRollHorizontal", isRollHorizontal);
+    xml.setAttribute("isLayoutHorizontal", isLayoutHorizontal);
 
     xml.setAttribute("isEarEnabled", isEarEnabled);
     xml.setAttribute("isShowTweakPanel", isShowTweakPanel);
@@ -653,6 +663,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isShowForrest = xml.getBoolAttribute("isShowForrest", isShowForrest);
     isShowSteam = xml.getBoolAttribute("isShowSteam", isShowSteam);
     isRollHorizontal = xml.getBoolAttribute("isRollHorizontal", isRollHorizontal);
+    isLayoutHorizontal = xml.getBoolAttribute("isLayoutHorizontal", isLayoutHorizontal);
 
     isEarEnabled = xml.getBoolAttribute("isEarEnabled", isEarEnabled);
     isShowTweakPanel = xml.getBoolAttribute("isShowTweakPanel", isShowTweakPanel);

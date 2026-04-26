@@ -25,6 +25,7 @@ public:
         bool isShowSteam = true;
         bool isShowForrest = false;
         bool isRollHorizontal = false;
+        bool isLayoutHorizontal = false;
 
         bool isEarEnabled = false;
         bool isShowTweakPanel = false;
@@ -81,6 +82,7 @@ private:
     juce::TextButton toggleRollType{"STFT"};
     juce::TextButton toggleOrientation{"Flip"};
     juce::TextButton toggleIsFreezeRoll{"Freeze"};
+    juce::TextButton toggleLayoutPivot{"Pivot"};
     juce::TextButton toggleSteam{"Steam"};
     juce::TextButton toggleForrest{"Forest"};
 
