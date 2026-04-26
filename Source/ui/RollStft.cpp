@@ -75,7 +75,7 @@ void RollStft::paint(juce::Graphics& graphics) {
     graphics.saveState();
 
     if (isHoriz) {
-        graphics.addTransform(juce::AffineTransform(0, -1, physicalWidth, -1, 0, physicalHeight));
+        graphics.addTransform(juce::AffineTransform(0, 1, 0, -1, 0, physicalHeight));
     }
 
     if (cachedFrame.isValid()) {
@@ -164,7 +164,11 @@ void RollStft::paintLabel(
 }
 
 void RollStft::paintFrame(juce::Graphics& graphics) const {
-    const auto totalHeight = static_cast<float>(getHeight());
+    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHorizontal ? getHeight() : getWidth();
+    const int logicalHeight = isHorizontal ? getWidth() : getHeight();
+
+    const auto totalHeight = static_cast<float>(logicalHeight);
     const float labelAreaHeight = getLabelAreaHeight();
     const float plotHeight = std::max(1.0f, totalHeight - labelAreaHeight);
 
@@ -184,7 +188,7 @@ void RollStft::paintFrame(juce::Graphics& graphics) const {
         const bool isBlackKey = chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10;
 
         const float hz = 440.0f * std::pow(2.0f, (static_cast<float>(midiNote) - 69.0f) / 12.0f);
-        const float targetCenter = frequencyToX(hz, static_cast<float>(getWidth()));
+        const float targetCenter = frequencyToX(hz, static_cast<float>(logicalWidth));
 
         const float startY = 0.0f;
         const float endY = plotHeight;

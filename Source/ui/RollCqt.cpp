@@ -113,7 +113,7 @@ void RollCqt::paint(juce::Graphics& graphics) {
     graphics.saveState();
     
     if (isHorizontal) {
-        graphics.addTransform(juce::AffineTransform(0, -1, physicalWidth, -1, 0, physicalHeight));
+        graphics.addTransform(juce::AffineTransform(0, 1, 0, -1, 0, physicalHeight));
     }
     
     graphics.reduceClipRegion(0, 0, logicalWidth, plotHeight);
@@ -200,6 +200,10 @@ void RollCqt::paintLabel(
 }
 
 void RollCqt::paintFrame(juce::Graphics& graphics) const {
+    const bool isHorizontal = processor.settings.isOrientationHorizontal;
+    const int logicalWidth = isHorizontal ? getHeight() : getWidth();
+    const int logicalHeight = isHorizontal ? getWidth() : getHeight();
+
     int totalOctaves = currentTotalBins / currentBinsPerOctave;
     if (totalOctaves <= 0) totalOctaves = PitchengaAudioProcessor::numOctaves;
     const int totalSemitones = totalOctaves * 12;
@@ -207,9 +211,9 @@ void RollCqt::paintFrame(juce::Graphics& graphics) const {
     if (totalSemitones <= 0) return;
 
     // The exact pixel width of one single CQT bin
-    const float barWidth = static_cast<float>(getWidth()) / static_cast<float>(currentTotalBins);
+    const float barWidth = static_cast<float>(logicalWidth) / static_cast<float>(currentTotalBins);
 
-    const auto totalHeight = static_cast<float>(getHeight());
+    const auto totalHeight = static_cast<float>(logicalHeight);
     const float labelAreaHeight = getLabelAreaHeight();
     const float plotHeight = std::max(1.0f, totalHeight - labelAreaHeight);
 
