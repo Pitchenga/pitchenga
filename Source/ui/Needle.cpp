@@ -3,7 +3,7 @@
 #include "../Tone.h"
 #include "../Common.h"
 
-Needle::Needle() {
+Needle::Needle(PitchengaAudioProcessor& proc) : processor(proc) {
     // Pre-calculate the sine wave intensities once during construction
     for (int i = 0; i < strobeCycleWidth; ++i) {
         const float sineVal = std::sin(
@@ -149,40 +149,41 @@ void Needle::resized() {
 }
 
 void Needle::paintStrobeOverlay(juce::Graphics& graphics, const float stripY, const int width) const {
-    if (currentMidi >= minMidi && currentMidi <= maxMidi) {
-        constexpr float strobeSpreadMidi = 10.0f;
+    if (!processor.settings.isShowStrobe || currentMidi < minMidi || currentMidi > maxMidi) {
+        return;
+    }
+    constexpr float strobeSpreadMidi = 10.0f;
 
-        // Calculate the pixel bounds of the strobe effect to avoid full-width iteration
-        const float pitchX = static_cast<float>(width) * ((currentMidi - minMidi) / (maxMidi - minMidi));
-        const float spreadPx = strobeSpreadMidi / (maxMidi - minMidi) * static_cast<float>(width);
+    // Calculate the pixel bounds of the strobe effect to avoid full-width iteration
+    const float pitchX = static_cast<float>(width) * ((currentMidi - minMidi) / (maxMidi - minMidi));
+    const float spreadPx = strobeSpreadMidi / (maxMidi - minMidi) * static_cast<float>(width);
 
-        const int startX = std::max(0, static_cast<int>(std::floor(pitchX - spreadPx)));
-        const int endX = std::min(width - 1, static_cast<int>(std::ceil(pitchX + spreadPx)));
+    const int startX = std::max(0, static_cast<int>(std::floor(pitchX - spreadPx)));
+    const int endX = std::min(width - 1, static_cast<int>(std::ceil(pitchX + spreadPx)));
 
-        for (int x = startX; x <= endX; ++x) {
-            const float horizontalFraction = width > 1 ? static_cast<float>(x) / static_cast<float>(width - 1) : 0.0f;
-            const float midiAtX = minMidi + horizontalFraction * (maxMidi - minMidi);
-            const float distanceMidi = std::abs(midiAtX - currentMidi);
+    for (int x = startX; x <= endX; ++x) {
+        const float horizontalFraction = width > 1 ? static_cast<float>(x) / static_cast<float>(width - 1) : 0.0f;
+        const float midiAtX = minMidi + horizontalFraction * (maxMidi - minMidi);
+        const float distanceMidi = std::abs(midiAtX - currentMidi);
 
-            if (distanceMidi < strobeSpreadMidi) {
-                const float exactPhase = static_cast<float>(x) - strobePhase;
-                float phaseF = std::fmod(exactPhase, static_cast<float>(strobeCycleWidth));
-                if (phaseF < 0.0f) phaseF += static_cast<float>(strobeCycleWidth);
+        if (distanceMidi < strobeSpreadMidi) {
+            const float exactPhase = static_cast<float>(x) - strobePhase;
+            float phaseF = std::fmod(exactPhase, static_cast<float>(strobeCycleWidth));
+            if (phaseF < 0.0f) phaseF += static_cast<float>(strobeCycleWidth);
 
-                const int index0 = static_cast<int>(phaseF);
-                const int index1 = (index0 + 1) % strobeCycleWidth;
-                const float frac = phaseF - static_cast<float>(index0);
+            const int index0 = static_cast<int>(phaseF);
+            const int index1 = (index0 + 1) % strobeCycleWidth;
+            const float frac = phaseF - static_cast<float>(index0);
 
-                const float intensity =
-                    strobeIntensities[static_cast<size_t>(index0)] * (1.0f - frac)
-                    + strobeIntensities[static_cast<size_t>(index1)] * frac;
+            const float intensity =
+                strobeIntensities[static_cast<size_t>(index0)] * (1.0f - frac)
+                + strobeIntensities[static_cast<size_t>(index1)] * frac;
 
-                const float fadeFactor = 1.0f - distanceMidi / strobeSpreadMidi;
-                const float dimming = (1.0f - intensity) * fadeFactor;
+            const float fadeFactor = 1.0f - distanceMidi / strobeSpreadMidi;
+            const float dimming = (1.0f - intensity) * fadeFactor;
 
-                graphics.setColour(juce::Colours::black.withAlpha(dimming));
-                graphics.drawVerticalLine(x, stripY, stripY + stripHeight);
-            }
+            graphics.setColour(juce::Colours::black.withAlpha(dimming));
+            graphics.drawVerticalLine(x, stripY, stripY + stripHeight);
         }
     }
     // Reset alpha
@@ -215,7 +216,11 @@ void Needle::paintTunerNeedle(juce::Graphics& graphics, const juce::Rectangle<fl
     graphics.strokePath(triangle, juce::PathStrokeType(2.0f));
 }
 
-void Needle::paintLabelHighlight(juce::Graphics& graphics, const juce::Rectangle<float> bounds, const float height) const {
+void Needle::paintLabelHighlight(
+    juce::Graphics& graphics,
+    const juce::Rectangle<float> bounds,
+    const float height
+) const {
     graphics.setFont(Common::getLabelFont());
 
     const float labelStripY = height - stripHeight;

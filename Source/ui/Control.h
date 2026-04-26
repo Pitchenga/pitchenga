@@ -22,6 +22,7 @@ public:
 
         bool isUseRollStft = true;
         bool isFreezeRoll = false;
+        bool isShowStrobe = true;
         bool isShowSteam = true;
         bool isShowForrest = false;
         bool isRollHorizontal = false;
@@ -79,6 +80,7 @@ private:
     juce::TextButton toggleNeedle{"Needle"};
     juce::TextButton toggleEye{"Eye"};
     juce::TextButton toggleRoll{"Roll"};
+    juce::TextButton toggleStrobe{"Strobe"};
     juce::TextButton toggleRollType{"STFT"};
     juce::TextButton toggleOrientation{"Flip"};
     juce::TextButton toggleIsFreezeRoll{"Freeze"};

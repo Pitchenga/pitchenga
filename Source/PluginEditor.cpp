@@ -16,6 +16,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     : AudioProcessorEditor(&p),
     processor(p),
     worker(p),
+    needle(p),
     rollStft(p),
     rollCqt(p),
     splitter(p),
@@ -192,6 +193,7 @@ void PitchengaAudioProcessorEditor::resized() {
             auto eyeNeedleRect = bounds.removeFromLeft(eyeWidth);
             if (isShowNeedle) {
                 needle.setBounds(eyeNeedleRect.removeFromBottom(needleHeight));
+                eyeNeedleRect.removeFromBottom(1); // 1px gap
             }
             eye.setBounds(eyeNeedleRect);
 
@@ -218,6 +220,7 @@ void PitchengaAudioProcessorEditor::resized() {
             
             if (isShowNeedle) {
                 needle.setBounds(bounds.removeFromBottom(needleHeight));
+                bounds.removeFromBottom(1); // 1px gap
             }
             eye.setBounds(bounds);
         }
@@ -236,6 +239,7 @@ void PitchengaAudioProcessorEditor::resized() {
         } else if (isShowEye) {
             if (isShowNeedle) {
                 needle.setBounds(bounds.removeFromBottom(needleHeight));
+                bounds.removeFromBottom(1); // 1px gap
             }
             eye.setBounds(bounds);
         }

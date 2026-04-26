@@ -72,6 +72,12 @@ Control::Control(PitchengaAudioProcessor& proc)
         processor.settings.isFreezeRoll = toggleIsFreezeRoll.getToggleState();
     };
 
+    setupToggleButton(toggleStrobe, processor.settings.isShowStrobe);
+    toggleStrobe.onClick = [this] {
+        processor.settings.isShowStrobe = toggleStrobe.getToggleState();
+        if (onVisibilityChanged) onVisibilityChanged();
+    };
+
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
     toggleRollType.onClick = [this] {
         processor.settings.isUseRollStft = !processor.settings.isUseRollStft;
@@ -306,6 +312,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(tweakPanel);
     tweakPanel.addAndMakeVisible(buttonPlugs);
     tweakPanel.addAndMakeVisible(buttonPlug);
+    tweakPanel.addAndMakeVisible(toggleStrobe);
     tweakPanel.addAndMakeVisible(toggleRollType);
     tweakPanel.addAndMakeVisible(toggleOrientation);
     tweakPanel.addAndMakeVisible(toggleSteam);
@@ -441,6 +448,7 @@ void Control::updateVisibilityFromState() {
 
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
     toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flip" : "Flop");
+    toggleStrobe.setToggleState(processor.settings.isShowStrobe, juce::NotificationType::dontSendNotification);
     toggleSteam.setToggleState(processor.settings.isShowSteam, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
@@ -459,6 +467,7 @@ void Control::updateButtonStates() {
     const bool rollActive = processor.settings.isShowRoll;
     toggleIsFreezeRoll.setVisible(rollActive);
     toggleRollType.setVisible(rollActive);
+    toggleStrobe.setVisible(processor.settings.isShowNeedle);
     toggleOrientation.setVisible(rollActive);
     toggleSteam.setVisible(rollActive);
     toggleForrest.setVisible(rollActive);
@@ -552,6 +561,10 @@ void Control::resized() {
         positionButtonRight(toggleSteam, panelBounds);
         positionButtonRight(toggleOrientation, panelBounds);
         positionButtonRight(toggleRollType, panelBounds);
+
+        // Gap between Roll type and Strobe
+        panelBounds.removeFromRight(16);
+        positionButtonRight(toggleStrobe, panelBounds);
     }
 }
 
@@ -621,6 +634,7 @@ juce::XmlElement Control::Settings::createXml() const {
 
     xml.setAttribute("isUseRollStft", isUseRollStft);
     xml.setAttribute("isFreezeRoll", isFreezeRoll);
+    xml.setAttribute("isShowStrobe", isShowStrobe);
     xml.setAttribute("isShowForrest", isShowForrest);
     xml.setAttribute("isShowSteam", isShowSteam);
     xml.setAttribute("isRollHorizontal", isRollHorizontal);
@@ -660,6 +674,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
 
     isUseRollStft = xml.getBoolAttribute("isUseRollStft", isUseRollStft);
     isFreezeRoll = xml.getBoolAttribute("isFreezeRoll", isFreezeRoll);
+    isShowStrobe = xml.getBoolAttribute("isShowStrobe", isShowStrobe);
     isShowForrest = xml.getBoolAttribute("isShowForrest", isShowForrest);
     isShowSteam = xml.getBoolAttribute("isShowSteam", isShowSteam);
     isRollHorizontal = xml.getBoolAttribute("isRollHorizontal", isRollHorizontal);

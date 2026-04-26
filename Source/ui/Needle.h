@@ -6,7 +6,7 @@
 
 class Needle : public juce::Component {
 public:
-    Needle();
+    explicit Needle(PitchengaAudioProcessor& proc);
 
     void setPitchFrequency(float frequencyHz);
     void setRange(float minMidiNote, float maxMidiNote);
@@ -47,6 +47,8 @@ private:
 
     int framesSinceSignalLost = 0;
     static constexpr int spinHoldFrames = 64;
+
+    PitchengaAudioProcessor& processor;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Needle)
 };
