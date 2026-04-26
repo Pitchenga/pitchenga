@@ -59,13 +59,11 @@ Control::Control(PitchengaAudioProcessor& proc)
     setupToggleButton(toggleSteam, processor.settings.isShowSteam);
     toggleSteam.onClick = [this] {
         processor.settings.isShowSteam = toggleSteam.getToggleState();
-        if (onVisibilityChanged) onVisibilityChanged();
     };
 
     setupToggleButton(toggleisFreezeRoll, processor.settings.isFreezeRoll);
     toggleisFreezeRoll.onClick = [this] {
         processor.settings.isFreezeRoll = toggleisFreezeRoll.getToggleState();
-        if (onVisibilityChanged) onVisibilityChanged();
     };
 
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
@@ -85,7 +83,6 @@ Control::Control(PitchengaAudioProcessor& proc)
     setupToggleButton(toggleForrest, processor.settings.isShowForrest);
     toggleForrest.onClick = [this] {
         processor.settings.isShowForrest = toggleForrest.getToggleState();
-        if (onVisibilityChanged) onVisibilityChanged();
     };
 
     setupToggleButton(toggleEar, processor.settings.isEarEnabled);
