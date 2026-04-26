@@ -54,7 +54,7 @@ void PitchengaAudioProcessor::loadDefaultSettings() {
     }
 
     // Fallback to the factory setting in the Source directory
-    const juce::File factoryDefaultFile(juce::File(__FILE__).getSiblingFile("settings-default.xml"));
+    const juce::File factoryDefaultFile(juce::File(__FILE__).getSiblingFile("factory-settings.xml"));
 
     if (auto xml = juce::XmlDocument::parse(factoryDefaultFile)) {
         settings.loadFromXml(*xml);

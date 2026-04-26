@@ -124,7 +124,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         if (id == 1) {
             newPresetName = "";
             const juce::File factoryDefaultFile(
-                juce::File(__FILE__).getParentDirectory().getParentDirectory().getChildFile("settings-default.xml")
+                juce::File(__FILE__).getParentDirectory().getParentDirectory().getChildFile("factory-settings.xml")
             );
             xml = juce::XmlDocument::parse(factoryDefaultFile);
             if (xml != nullptr) xml->setTagName(getSettingsTagName());
@@ -139,7 +139,7 @@ Control::Control(PitchengaAudioProcessor& proc)
             } else {
                 // Fallback to factory if missing, but keep User Default context for Saving
                 const juce::File factoryDefaultFile(
-                    juce::File(__FILE__).getParentDirectory().getParentDirectory().getChildFile("settings-default.xml")
+                    juce::File(__FILE__).getParentDirectory().getParentDirectory().getChildFile("factory-settings.xml")
                 );
                 xml = juce::XmlDocument::parse(factoryDefaultFile);
                 if (xml != nullptr) xml->setTagName(getSettingsTagName());
