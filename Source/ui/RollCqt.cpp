@@ -20,8 +20,7 @@ bool RollCqt::expand() {
     constexpr double visualFloor = 0.2;
     constexpr double rangeInv = 1.2 / (1.0 - visualFloor);
 
-    // Adjusted contrast parameters to match STFT's aggressive peak expansion
-    constexpr double contrastExponent = 2.0;
+    constexpr double contrastExponent = 1.6;
     constexpr double visualGain = 2.5;
 
     for (int i = 0; i < totalBins; ++i) {
@@ -61,8 +60,8 @@ void RollCqt::updateResults(const std::vector<double>& results) {
 
     displayMagnitudes = smoother->smooth(displayMagnitudes);
 
-    if (processor.settings.isShowSteam) {
-        pumpSteam();
+    if (processor.settings.isShowSmoke) {
+        pumpSmoke();
     }
 
     repaint();
@@ -76,8 +75,8 @@ void RollCqt::resized() {
     if (logicalWidth > 0 && logicalHeight > 0) {
         const int plotHeight = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
         // Initialize the rolling buffer whenever the window resizes
-        steamImage = juce::Image(juce::Image::ARGB, logicalWidth, plotHeight, true);
-        steamScrollOffset = 0;
+        smokeImage = juce::Image(juce::Image::ARGB, logicalWidth, plotHeight, true);
+        smokeScrollOffset = 0;
         buildFrame();
     }
 }
@@ -117,10 +116,10 @@ void RollCqt::paint(juce::Graphics& graphics) {
     currentBinsPerOctave = currentTotalBins / PitchengaAudioProcessor::numOctaves;
 
     if (currentTotalBins > 0 && currentBinsPerOctave > 0 && !displayMagnitudes.empty()) {
-        if (processor.settings.isShowSteam) {
+        if (processor.settings.isShowSmoke) {
             graphics.saveState();
             graphics.reduceClipRegion(0, 0, logicalWidth, plotHeight);
-            paintSteam(graphics);
+            paintSmoke(graphics);
             graphics.restoreState();
         }
 
@@ -292,8 +291,8 @@ void RollCqt::paintForrest(juce::Graphics& graphics) const {
     }
 }
 
-void RollCqt::pumpSteam() {
-    if (displayMagnitudes.empty() || !steamImage.isValid()) {
+void RollCqt::pumpSmoke() {
+    if (displayMagnitudes.empty() || !smokeImage.isValid()) {
         return;
     }
 
@@ -305,25 +304,25 @@ void RollCqt::pumpSteam() {
     const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
     if (width <= 0 || height <= 0) return;
 
-    const int speedPx = static_cast<int>(steamSpeedPxPerFrame);
+    const int speedPx = static_cast<int>(smokeSpeedPxPerFrame);
 
     // Advance the scroll offset and wrap it like a treadmill
-    steamScrollOffset = (steamScrollOffset + speedPx) % height;
+    smokeScrollOffset = (smokeScrollOffset + speedPx) % height;
 
     // Calculate where in the image memory the new row should be drawn
-    const int drawY = (height - speedPx + steamScrollOffset) % height;
+    const int drawY = (height - speedPx + smokeScrollOffset) % height;
 
     // Clear the new row first to prevent ghosting from previous treadmill cycles
-    steamImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
+    smokeImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
 
-    juce::Graphics graphics(steamImage);
+    juce::Graphics graphics(smokeImage);
 
     const int totalBins = static_cast<int>(displayMagnitudes.size());
     const int binsPerOctave = totalBins / PitchengaAudioProcessor::numOctaves;
     const float barWidth = static_cast<float>(width) / static_cast<float>(totalBins);
 
     for (int i = 0; i < totalBins; ++i) {
-        if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > steamThreshold) {
+        if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > smokeThreshold) {
             const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
             const juce::Colour baseColor = Tone::getContinuousColor(chroma);
             constexpr float undimmingGain = 1.1f;
@@ -337,7 +336,7 @@ void RollCqt::pumpSteam() {
                 static_cast<float>(i) * barWidth,
                 static_cast<float>(drawY),
                 barWidth + 0.5f,
-                steamSpeedPxPerFrame
+                smokeSpeedPxPerFrame
             );
         }
     }
@@ -345,8 +344,8 @@ void RollCqt::pumpSteam() {
     repaint();
 }
 
-void RollCqt::paintSteam(const juce::Graphics& graphics) const {
-    if (!steamImage.isValid()) return;
+void RollCqt::paintSmoke(const juce::Graphics& graphics) const {
+    if (!smokeImage.isValid()) return;
 
     const bool isHorizontal = processor.settings.isRollHorizontal;
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
@@ -354,6 +353,6 @@ void RollCqt::paintSteam(const juce::Graphics& graphics) const {
     const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
 
     // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
-    graphics.drawImageAt(steamImage, 0, -steamScrollOffset);
-    graphics.drawImageAt(steamImage, 0, height - steamScrollOffset);
+    graphics.drawImageAt(smokeImage, 0, -smokeScrollOffset);
+    graphics.drawImageAt(smokeImage, 0, height - smokeScrollOffset);
 }

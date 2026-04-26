@@ -26,9 +26,9 @@ private:
 
     std::vector<SpectralPeak> activePeaks;
 
-    juce::Image steamImage;
-    int steamScrollOffset = 0;
-    static constexpr float steamSpeedPxPerFrame = 1.0f;
+    juce::Image smokeImage;
+    int smokeScrollOffset = 0;
+    static constexpr float smokeSpeedPxPerFrame = 1.0f;
 
     juce::Image cachedFrame;
 
@@ -38,8 +38,8 @@ private:
     void buildFrame();
     void paintFrame(juce::Graphics& graphics) const;
     static void paintLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, int midiNote, float targetCenter, float startY, juce::Colour baseColor, bool isHorizontal);
-    void pumpSteam();
-    void paintSteam(const juce::Graphics& graphics) const;
+    void pumpSmoke();
+    void paintSmoke(const juce::Graphics& graphics) const;
     void paintForrest(juce::Graphics& graphics) const;
 
     float getLabelAreaHeight() const;

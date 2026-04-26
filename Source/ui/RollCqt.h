@@ -37,19 +37,19 @@ private:
     );
 
     //fixme: Implement speed
-    const float steamSpeedPxPerFrame = 1.0f;
-    const float steamThreshold = 0.0001f;
-    struct Steam {
+    const float smokeSpeedPxPerFrame = 1.0f;
+    const float smokeThreshold = 0.0001f;
+    struct Smoke {
         float x;
         float y;
         float width;
         juce::Colour color;
     };
-    juce::Image steamImage;
-    int steamScrollOffset = 0;
+    juce::Image smokeImage;
+    int smokeScrollOffset = 0;
 
-    void pumpSteam();
-    void paintSteam(const juce::Graphics& graphics) const;
+    void pumpSmoke();
+    void paintSmoke(const juce::Graphics& graphics) const;
 
     PitchengaAudioProcessor& processor;
     const Cqt* engine = nullptr;

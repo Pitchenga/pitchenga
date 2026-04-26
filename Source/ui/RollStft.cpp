@@ -16,7 +16,7 @@ void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
     }
 
     activePeaks = peaks;
-    pumpSteam();
+    pumpSmoke();
 
     repaint();
 }
@@ -29,8 +29,8 @@ void RollStft::resized() {
     if (logicalWidth > 0 && logicalHeight > 0) {
         const int plotHeight = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
         // Initialize the rolling buffer whenever the window resizes
-        steamImage = juce::Image(juce::Image::ARGB, logicalWidth, plotHeight, true);
-        steamScrollOffset = 0;
+        smokeImage = juce::Image(juce::Image::ARGB, logicalWidth, plotHeight, true);
+        smokeScrollOffset = 0;
         buildFrame();
     }
 }
@@ -75,10 +75,10 @@ void RollStft::paint(juce::Graphics& graphics) {
         graphics.drawImageAt(cachedFrame, 0, 0);
     }
 
-    if (processor.settings.isShowSteam) {
+    if (processor.settings.isShowSmoke) {
         graphics.saveState();
         graphics.reduceClipRegion(0, 0, logicalWidth, plotHeight);
-        paintSteam(graphics);
+        paintSmoke(graphics);
         graphics.restoreState();
     }
 
@@ -243,8 +243,8 @@ void RollStft::paintForrest(juce::Graphics& graphics) const {
     }
 }
 
-void RollStft::pumpSteam() {
-    if (activePeaks.empty() || !steamImage.isValid()) {
+void RollStft::pumpSmoke() {
+    if (activePeaks.empty() || !smokeImage.isValid()) {
         return;
     }
 
@@ -256,18 +256,18 @@ void RollStft::pumpSteam() {
     const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
     if (width <= 0 || height <= 0) return;
 
-    constexpr int speedPx = static_cast<int>(steamSpeedPxPerFrame);
+    constexpr int speedPx = static_cast<int>(smokeSpeedPxPerFrame);
 
     // Advance the scroll offset and wrap it like a treadmill
-    steamScrollOffset = (steamScrollOffset + speedPx) % height;
+    smokeScrollOffset = (smokeScrollOffset + speedPx) % height;
 
     // Calculate where in the image memory the new row should be drawn
-    const int drawY = (height - speedPx + steamScrollOffset) % height;
+    const int drawY = (height - speedPx + smokeScrollOffset) % height;
 
     // Clear the new row first to prevent ghosting from previous treadmill cycles
-    steamImage.clear(juce::Rectangle<int>(0, drawY, width, speedPx), juce::Colours::transparentBlack);
+    smokeImage.clear(juce::Rectangle<int>(0, drawY, width, speedPx), juce::Colours::transparentBlack);
 
-    juce::Graphics graphics(steamImage);
+    juce::Graphics graphics(smokeImage);
 
     const float sr = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
     const float binResHz = sr / 32768.0f;
@@ -289,7 +289,7 @@ void RollStft::pumpSteam() {
 
             // Fast bounds culling
             if (xPos >= -10.0f && xPos <= fWidth + 10.0f) {
-                // Configurable razor-sharp stems for the Steam
+                // Configurable razor-sharp stems for the Smoke
                 float stemWidthPixels = 4.0f;
                 if (doDynamicStem) {
                     // Use the fast derivative approximation instead of another heavy log2
@@ -321,8 +321,8 @@ void RollStft::pumpSteam() {
     }
 }
 
-void RollStft::paintSteam(const juce::Graphics& graphics) const {
-    if (!steamImage.isValid()) return;
+void RollStft::paintSmoke(const juce::Graphics& graphics) const {
+    if (!smokeImage.isValid()) return;
 
     const bool isHorizontal = processor.settings.isRollHorizontal;
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
@@ -330,6 +330,6 @@ void RollStft::paintSteam(const juce::Graphics& graphics) const {
     const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
 
     // Draw the two halves of the ring buffer to create a flawless infinite upward scroll
-    graphics.drawImageAt(steamImage, 0, -steamScrollOffset);
-    graphics.drawImageAt(steamImage, 0, height - steamScrollOffset);
+    graphics.drawImageAt(smokeImage, 0, -smokeScrollOffset);
+    graphics.drawImageAt(smokeImage, 0, height - smokeScrollOffset);
 }

@@ -23,7 +23,7 @@ public:
         bool isUseRollStft = true;
         bool isFreezeRoll = false;
         bool isShowStrobe = true;
-        bool isShowSteam = true;
+        bool isShowSmoke = true;
         bool isShowForrest = false;
         bool isRollHorizontal = false;
         bool isLayoutHorizontal = false;
@@ -85,7 +85,7 @@ private:
     juce::TextButton toggleOrientation{"Flip"};
     juce::TextButton toggleIsFreezeRoll{"Freeze"};
     juce::TextButton toggleLayoutPivot{"Pivot"};
-    juce::TextButton toggleSteam{"Steam"};
+    juce::TextButton toggleSmoke{"Smoke"};
     juce::TextButton toggleForrest{"Forest"};
 
     juce::TextButton toggleEar{"Ear"};

@@ -63,9 +63,9 @@ Control::Control(PitchengaAudioProcessor& proc)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    setupToggleButton(toggleSteam, processor.settings.isShowSteam);
-    toggleSteam.onClick = [this] {
-        processor.settings.isShowSteam = toggleSteam.getToggleState();
+    setupToggleButton(toggleSmoke, processor.settings.isShowSmoke);
+    toggleSmoke.onClick = [this] {
+        processor.settings.isShowSmoke = toggleSmoke.getToggleState();
     };
 
     setupToggleButton(toggleIsFreezeRoll, processor.settings.isFreezeRoll);
@@ -315,7 +315,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(toggleStrobe);
     tweakPanel.addAndMakeVisible(toggleRollType);
     tweakPanel.addAndMakeVisible(toggleOrientation);
-    tweakPanel.addAndMakeVisible(toggleSteam);
+    tweakPanel.addAndMakeVisible(toggleSmoke);
     tweakPanel.addAndMakeVisible(toggleForrest);
     tweakPanel.addAndMakeVisible(buttonSaveAs);
     tweakPanel.addAndMakeVisible(buttonDelete);
@@ -449,7 +449,7 @@ void Control::updateVisibilityFromState() {
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
     toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flip" : "Flop");
     toggleStrobe.setToggleState(processor.settings.isShowStrobe, juce::NotificationType::dontSendNotification);
-    toggleSteam.setToggleState(processor.settings.isShowSteam, juce::NotificationType::dontSendNotification);
+    toggleSmoke.setToggleState(processor.settings.isShowSmoke, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
     toggleEar.setToggleState(processor.settings.isEarEnabled, juce::NotificationType::dontSendNotification);
@@ -470,7 +470,7 @@ void Control::updateButtonStates() {
     toggleStrobe.setVisible(processor.settings.isShowNeedle);
     toggleLayoutPivot.setEnabled(rollActive && processor.settings.isShowEye);
     toggleOrientation.setVisible(rollActive);
-    toggleSteam.setVisible(rollActive);
+    toggleSmoke.setVisible(rollActive);
     toggleForrest.setVisible(rollActive);
 
     buttonPlug.setEnabled(processor.isExternalPluginLoaded());
@@ -558,7 +558,7 @@ void Control::resized() {
         panelBounds.removeFromRight(16);
 
         positionButtonRight(toggleForrest, panelBounds);
-        positionButtonRight(toggleSteam, panelBounds);
+        positionButtonRight(toggleSmoke, panelBounds);
         positionButtonRight(toggleOrientation, panelBounds);
         positionButtonRight(toggleRollType, panelBounds);
 
@@ -637,7 +637,7 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isFreezeRoll", isFreezeRoll);
     xml.setAttribute("isShowStrobe", isShowStrobe);
     xml.setAttribute("isShowForrest", isShowForrest);
-    xml.setAttribute("isShowSteam", isShowSteam);
+    xml.setAttribute("isShowSmoke", isShowSmoke);
     xml.setAttribute("isRollHorizontal", isRollHorizontal);
     xml.setAttribute("isLayoutHorizontal", isLayoutHorizontal);
 
@@ -677,7 +677,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isFreezeRoll = xml.getBoolAttribute("isFreezeRoll", isFreezeRoll);
     isShowStrobe = xml.getBoolAttribute("isShowStrobe", isShowStrobe);
     isShowForrest = xml.getBoolAttribute("isShowForrest", isShowForrest);
-    isShowSteam = xml.getBoolAttribute("isShowSteam", isShowSteam);
+    isShowSmoke = xml.getBoolAttribute("isShowSmoke", isShowSmoke);
     isRollHorizontal = xml.getBoolAttribute("isRollHorizontal", isRollHorizontal);
     isLayoutHorizontal = xml.getBoolAttribute("isLayoutHorizontal", isLayoutHorizontal);
 
