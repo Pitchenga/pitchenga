@@ -108,11 +108,10 @@ namespace sevagh {
 
             fftEngine.perform(fftBuffer.data(), fftBuffer.data(), false);
 
-            const float scale = 1.0f / static_cast<float>(numFftPoints);
             for (size_t i = 0; i < static_cast<size_t>(numFftPoints); ++i) {
                 const float realPart = fftBuffer[i].real();
                 const float imagPart = fftBuffer[i].imag();
-                const float magnitudeSquared = (realPart * realPart + imagPart * imagPart) * scale;
+                const float magnitudeSquared = (realPart * realPart + imagPart * imagPart);
                 fftBuffer[i] = std::complex<float>(magnitudeSquared, 0.0f);
             }
 
@@ -134,16 +133,15 @@ namespace sevagh {
             }
 
             // Nsdf = 2 * r[k] / m[k]
-            // JUCE inverse FFT scales by numFftPoints if using certain backends, but usually it DOES NOT scale.
-            // If RMS=0.01 and N=4096, energy is ~0.4. squareSums[0] is ~0.8.
-            // My logs showed fftBuffer[0].real() around 0.00012, which is way too small.
-            // It means we need to check if we are using the correct scaling.
-            // Actually, if RMS=0.01, sum x^2 = 0.0001 * 4096 = 0.4.
-            // IFFT(FFT(x)^2) at lag 0 should be sum x^2.
-            // If it's 0.00012, it means it was scaled by 1/M^2? Unlikely.
-            // Let's re-calculate r[k] without any extra scaling first to see what we get.
+            // We use the lag-0 value to automatically detect and correct any FFT scaling
+            // nsdf[0] must be 1.0. 
+            float autoScale = 1.0f;
+            if (squareSums[0] > 1e-10f) {
+                autoScale = squareSums[0] / (2.0f * fftBuffer[0].real());
+            }
+
             for (size_t k = 0; k < static_cast<size_t>(actualSize); ++k) {
-                const float rawCorrelation = fftBuffer[k].real();
+                const float rawCorrelation = fftBuffer[k].real() * autoScale;
                 if (squareSums[k] > 1e-10f) {
                     nsdfBuffer[k] = 2.0f * rawCorrelation / squareSums[k];
                 } else {
