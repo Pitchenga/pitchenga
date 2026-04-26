@@ -1,3 +1,64 @@
+that did not change anything.
+
+also, as i said, the break appears between Ti and Do - about 1/4 of the way *before* Do.
+
+If you theory were correct then the break would appear exactly at Do (or maybe a bit after it).
+
+As an experiment i just tried to change Ra color to the same red as do and it did not change anything - the break is still there before Do.
+
+
+
+static juce::Colour getContinuousColor(float chroma, bool log) {
+
+    while (chroma >= 12.0f) chroma -= 12.0f;
+
+    while (chroma < 0.0f) chroma += 12.0f;
+
+
+
+    const int index1 = static_cast<int>(chroma);
+
+    const int index2 = (index1 + 1) % 12;
+
+    const float fraction = chroma - static_cast<float>(index1);
+
+
+
+    // Apply Hermite interpolation (Smoothstep) to eliminate C1 derivative discontinuities
+
+    const float smoothFraction = fraction * fraction * (3.0f - 2.0f * fraction);
+
+
+
+    auto result = chromaticScale[static_cast<size_t>(index1)].color
+
+        .interpolatedWith(chromaticScale[static_cast<size_t>(index2)].color, smoothFraction);
+
+    if (log) {
+
+        Util::debug(
+
+            "chroma=" + std::to_string(chroma)
+
+            // + ", wrapped=" + std::to_string(wrapped)
+
+            + ", index1=" + std::to_string(index1)
+
+            + ", index2=" + std::to_string(index2)
+
+            + ", fraction=" + std::to_string(fraction)
+
+            + ", result=" + result.toDisplayString(true).toStdString()
+
+        );
+
+    }
+
+    return result;
+
+}
+
+
 chroma=10.000000, wrapped=10.000000, index1=10, index2=11, fraction=0.000000, result=FFDF7FFF
 chroma=10.044582, wrapped=10.044582, index1=10, index2=11, fraction=0.044582, result=FFE079FF
 chroma=10.089165, wrapped=10.089165, index1=10, index2=11, fraction=0.089165, result=FFE173FF

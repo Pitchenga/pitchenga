@@ -61,9 +61,9 @@ Control::Control(PitchengaAudioProcessor& proc)
         processor.settings.isShowSteam = toggleSteam.getToggleState();
     };
 
-    setupToggleButton(toggleisFreezeRoll, processor.settings.isFreezeRoll);
-    toggleisFreezeRoll.onClick = [this] {
-        processor.settings.isFreezeRoll = toggleisFreezeRoll.getToggleState();
+    setupToggleButton(toggleIsFreezeRoll, processor.settings.isFreezeRoll);
+    toggleIsFreezeRoll.onClick = [this] {
+        processor.settings.isFreezeRoll = toggleIsFreezeRoll.getToggleState();
     };
 
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
@@ -73,10 +73,10 @@ Control::Control(PitchengaAudioProcessor& proc)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flop" : "Flip");
+    toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flip" : "Flop");
     toggleOrientation.onClick = [this] {
         processor.settings.isRollHorizontal = !processor.settings.isRollHorizontal;
-        toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flop" : "Flip");
+        toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flip" : "Flop");
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -288,7 +288,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(toggleNeedle);
     addAndMakeVisible(toggleEye);
     addAndMakeVisible(toggleRoll);
-    addAndMakeVisible(toggleisFreezeRoll);
+    addAndMakeVisible(toggleIsFreezeRoll);
 
     addAndMakeVisible(toggleEar);
 
@@ -429,10 +429,10 @@ void Control::updateVisibilityFromState() {
     toggleRoll.setToggleState(processor.settings.isShowRoll, juce::NotificationType::dontSendNotification);
     toggleEye.setToggleState(processor.settings.isShowEye, juce::NotificationType::dontSendNotification);
     toggleNeedle.setToggleState(processor.settings.isShowNeedle, juce::NotificationType::dontSendNotification);
-    toggleisFreezeRoll.setToggleState(processor.settings.isFreezeRoll, juce::NotificationType::dontSendNotification);
+    toggleIsFreezeRoll.setToggleState(processor.settings.isFreezeRoll, juce::NotificationType::dontSendNotification);
 
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
-    toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flop" : "Flip");
+    toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flip" : "Flop");
     toggleSteam.setToggleState(processor.settings.isShowSteam, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
@@ -449,7 +449,7 @@ void Control::updateButtonStates() {
     toggleEar.setVisible(isStandalone);
 
     const bool rollActive = processor.settings.isShowRoll;
-    toggleisFreezeRoll.setVisible(rollActive);
+    toggleIsFreezeRoll.setVisible(rollActive);
     toggleRollType.setVisible(rollActive);
     toggleOrientation.setVisible(rollActive);
     toggleSteam.setVisible(rollActive);
@@ -521,7 +521,7 @@ void Control::resized() {
     comboPresets.setBounds(topRow.removeFromRight(comboWidth).reduced(2));
     positionButtonRight(toggleTweak, topRow);
 
-    positionButtonRight(toggleisFreezeRoll, topRow);
+    positionButtonRight(toggleIsFreezeRoll, topRow);
 
     topRow.removeFromRight(8);
     buildTimestampLabel.setBounds(topRow);
