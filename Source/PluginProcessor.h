@@ -87,8 +87,8 @@ public:
     void showExternalPluginEditor();
     void loadDefaultSettings();
     juce::AudioProcessorEditor* createExternalPluginEditor();
-    bool isExternalPluginLoaded() const { return externalPlugin != nullptr; }
-    
+    bool isExternalPluginLoaded() const { return atomicPlugin.load() != nullptr; }
+
     juce::AudioPluginFormatManager& getFormatManager() { return formatManager; }
     juce::KnownPluginList& getKnownPluginList() { return knownPluginList; }
     
@@ -131,8 +131,11 @@ private:
     // Plugin Hosting Engine
     juce::AudioPluginFormatManager formatManager;
     juce::KnownPluginList knownPluginList;
-    std::unique_ptr<juce::AudioPluginInstance> externalPlugin;
+    std::atomic<juce::AudioPluginInstance*> atomicPlugin{nullptr};
     juce::CriticalSection pluginLock;
+    
+    void unloadPluginInstance(juce::AudioPluginInstance* instance);
+
     juce::AudioBuffer<float> pluginOutputBuffer;
     juce::AudioBuffer<float> micBuffer;
 

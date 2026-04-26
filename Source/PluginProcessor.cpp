@@ -79,15 +79,15 @@ void PitchengaAudioProcessor::prepareToPlay(const double sampleRate, const int s
     pluginOutputBuffer.setSize(numOutputChannels, samplesPerBlock);
     micBuffer.setSize(getTotalNumInputChannels(), samplesPerBlock);
 
-    if (externalPlugin != nullptr) {
-        externalPlugin->prepareToPlay(sampleRate, samplesPerBlock);
+    if (auto* plugin = atomicPlugin.load()) {
+        plugin->prepareToPlay(sampleRate, samplesPerBlock);
     }
 }
 
 void PitchengaAudioProcessor::releaseResources() {
     const juce::ScopedLock lock(pluginLock);
-    if (externalPlugin != nullptr) {
-        externalPlugin->releaseResources();
+    if (auto* plugin = atomicPlugin.load()) {
+        plugin->releaseResources();
     }
 }
 
@@ -114,7 +114,7 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     if (numSamples > micBuffer.getNumSamples() || numSamples > pluginOutputBuffer.getNumSamples()) return;
 
     // --- Audio Routing Matrix ---
-    const juce::ScopedLock lock(pluginLock);
+    auto* plugin = atomicPlugin.load(std::memory_order_acquire);
 
     // Stream A: Microphone Intake
     // Use jmin to safely handle cases where the host buffer has fewer channels than expected
@@ -126,8 +126,8 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     // Stream B: Instrument Processing
     pluginOutputBuffer.clear(0, numSamples);
     
-    if (externalPlugin != nullptr) {
-        externalPlugin->processBlock(pluginOutputBuffer, midiMessages);
+    if (plugin != nullptr) {
+        plugin->processBlock(pluginOutputBuffer, midiMessages);
     }
 
     // Stream C: The Visualizer Feed (Blended Mic + Instrument)
@@ -230,17 +230,14 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
         onPluginAboutToBeDeleted();
     }
 
-    {
-        const juce::ScopedLock lock(pluginLock);
-        if (externalPlugin != nullptr) {
-            externalPlugin->releaseResources();
-            externalPlugin = nullptr; // Explicitly destroy before creating the new one
-        }
-    }
-
     // Load the new plugin instance
     juce::String error;
-    auto instance = formatManager.createPluginInstance(description, sampleRate > 0 ? sampleRate : 44100.0, blockSize > 0 ? blockSize : 512, error);
+    auto instance = formatManager.createPluginInstance(
+        description, 
+        sampleRate > 0 ? sampleRate : 44100.0, 
+        blockSize > 0 ? blockSize : 512, 
+        error
+    );
     
     if (instance != nullptr) {
         if (forceOpenWindow) {
@@ -256,7 +253,12 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
             }
             
             pluginOutputBuffer.setSize(instance->getTotalNumOutputChannels(), blockSize > 0 ? blockSize : 512, false, true, true);
-            externalPlugin = std::move(instance);
+
+            // Lock-Free Swap: Update the pointer used by the audio thread
+            auto* oldInstance = atomicPlugin.exchange(instance.release(), std::memory_order_release);
+
+            // Safely dispose of the old instance on the Message Thread
+            unloadPluginInstance(oldInstance);
         }
         
         suspendProcessing(false);
@@ -277,15 +279,23 @@ void PitchengaAudioProcessor::unloadExternalPlugin() {
     }
     {
         const juce::ScopedLock lock(pluginLock);
-        if (externalPlugin != nullptr) {
-            externalPlugin->releaseResources();
-        }
-        externalPlugin = nullptr;
+        auto* oldInstance = atomicPlugin.exchange(nullptr, std::memory_order_release);
+        unloadPluginInstance(oldInstance);
     }
     suspendProcessing(false);
     if (onPluginLoaded) {
         juce::MessageManager::callAsync([this] { if (onPluginLoaded) onPluginLoaded(); });
     }
+}
+
+void PitchengaAudioProcessor::unloadPluginInstance(juce::AudioPluginInstance* instance) {
+    if (instance == nullptr) return;
+    
+    // Explicitly release resources and delete the instance.
+    // Since we are on the Message Thread and processing was suspended/resumed 
+    // around the swap, it's safe to delete.
+    instance->releaseResources();
+    delete instance;
 }
 
 void PitchengaAudioProcessor::rescanPlugins() {
@@ -308,8 +318,8 @@ void PitchengaAudioProcessor::showExternalPluginEditor() {
 
 juce::AudioProcessorEditor* PitchengaAudioProcessor::createExternalPluginEditor() {
     const juce::ScopedLock lock(pluginLock);
-    if (externalPlugin != nullptr) {
-        return externalPlugin->createEditorIfNeeded();
+    if (auto* plugin = atomicPlugin.load()) {
+        return plugin->createEditorIfNeeded();
     }
     return nullptr;
 }
@@ -330,12 +340,12 @@ void PitchengaAudioProcessor::getStateInformation(juce::MemoryBlock& destData) {
     settings.externalPluginDescriptionXml = {};
     settings.externalPluginStateBase64 = {};
 
-    if (externalPlugin != nullptr) {
+    if (auto* plugin = atomicPlugin.load()) {
         juce::MemoryBlock pluginState;
-        externalPlugin->getStateInformation(pluginState);
+        plugin->getStateInformation(pluginState);
         settings.externalPluginStateBase64 = pluginState.toBase64Encoding();
         
-        auto pluginDescription = externalPlugin->getPluginDescription();
+        auto pluginDescription = plugin->getPluginDescription();
         if (auto pluginDescriptionXml = pluginDescription.createXml()) {
             settings.externalPluginDescriptionXml = pluginDescriptionXml->toString();
         }
@@ -380,12 +390,12 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, int sizeInBy
 
             loadExternalPlugin(pluginDescription, false);
 
-            if (externalPlugin != nullptr) {
+            if (auto* plugin = atomicPlugin.load()) {
                 if (settings.externalPluginStateBase64.isNotEmpty()) {
                     juce::MemoryBlock pluginState;
                     if (pluginState.fromBase64Encoding(settings.externalPluginStateBase64)) {
                         const juce::ScopedLock lock(pluginLock);
-                        externalPlugin->setStateInformation(pluginState.getData(), static_cast<int>(pluginState.getSize()));
+                        plugin->setStateInformation(pluginState.getData(), static_cast<int>(pluginState.getSize()));
                     }
                 }
             }
