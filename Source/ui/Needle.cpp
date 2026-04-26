@@ -185,6 +185,8 @@ void Needle::paintStrobeOverlay(juce::Graphics& graphics, const float stripY, co
             }
         }
     }
+    // Reset alpha
+    graphics.setColour(juce::Colours::black);
 }
 
 void Needle::paintTunerNeedle(juce::Graphics& graphics, const juce::Rectangle<float> bounds, const float height) const {
