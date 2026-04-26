@@ -137,6 +137,10 @@ Prefer single-file or single-test runs during iteration. Full suites are for the
 - `lib/`: Third-party libraries
 - `cmake-build-debug/`: Build artifacts and intermediate files.
 
+### Logging
+
+- `Util::debug("Failed loading plugin, name=" + name + ", error=" + error + ",")`
+
 ---
 
 ## 10. Project Learnings

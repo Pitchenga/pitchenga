@@ -236,8 +236,8 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
     }
 
     // Load the new plugin instance
-    juce::String errorMessage;
-    auto instance = formatManager.createPluginInstance(description, sampleRate > 0 ? sampleRate : 44100.0, blockSize > 0 ? blockSize : 512, errorMessage);
+    juce::String error;
+    auto instance = formatManager.createPluginInstance(description, sampleRate > 0 ? sampleRate : 44100.0, blockSize > 0 ? blockSize : 512, error);
     
     if (instance != nullptr) {
         if (forceOpenWindow) {
@@ -262,7 +262,7 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
         }
     } else {
         suspendProcessing(false);
-        Util::debug("Failed to load plugin: " + errorMessage);
+        Util::debug("Failed loading plugin, error=" + error);
     }
 }
 

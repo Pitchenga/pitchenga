@@ -147,7 +147,7 @@ void Needle::paint(juce::Graphics& graphics) {
         float chroma = std::fmod(midiAtX, 12.0f);
         if (chroma < 0.0f) chroma += 12.0f;
 
-        juce::Colour color = Tone::getContinuousColor(chroma);
+        juce::Colour color = Tone::getContinuousColor(chroma, true);
 
         if (currentMidi >= minMidi && currentMidi <= maxMidi) {
             const float distanceMidi = std::abs(midiAtX - currentMidi);
