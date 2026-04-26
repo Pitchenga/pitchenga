@@ -149,6 +149,10 @@ void Stft::extractPeaks() {
     constexpr float midHighFadeStart = 1000.0f;
     constexpr float midHighFadeEnd = 3000.0f;
 
+    std::vector<float> blurredMagnitudes(stitchedSize, 0.0f);
+    std::vector<float> prominence(stitchedSize, 0.0f);
+
+    // Compute Blurred Magnitudes (Moving Average Base)
     for (int i = 0; i < stitchedSize; ++i) {
         const float freq = static_cast<float>(i) * unifiedBinResolution;
         const float centerMagnitude = stitchedMagnitudes[static_cast<size_t>(i)];
@@ -158,7 +162,6 @@ void Stft::extractPeaks() {
         // The Blackman-Harris window has a main lobe width of ~8 bins natively.
         // We multiply the native half-width (4) by the zero-padding factor to find the exact shoulders.
         // All bands are now padded exactly 4x (e.g. 8192 window padded to 32768 FFT).
-
         float exactLobeHalfWidth = 16.0f;
         if (freq < lowMidFadeStart) {
             exactLobeHalfWidth = 16.0f;
@@ -173,27 +176,56 @@ void Stft::extractPeaks() {
         } else {
             exactLobeHalfWidth = 64.0f;
         }
-        int lobeHalfWidthBins = static_cast<int>(std::round(exactLobeHalfWidth));
 
-        // Find the absolute local summit within this lobe's neighborhood
-        float localMax = centerMagnitude;
-        int startJ = std::max(0, i - lobeHalfWidthBins);
-        int endJ = std::min(stitchedSize - 1, i + lobeHalfWidthBins);
-        for (int j = startJ; j <= endJ; ++j) {
-            if (stitchedMagnitudes[static_cast<size_t>(j)] > localMax) {
-                localMax = stitchedMagnitudes[static_cast<size_t>(j)];
+        const int blurRadius = static_cast<int>(std::round(exactLobeHalfWidth));
+
+        float magnitudeSum = 0.0f;
+        int blurSampleCount = 0;
+        const int blurStartIndex = std::max(0, i - blurRadius);
+        const int blurEndIndex = std::min(stitchedSize - 1, i + blurRadius);
+
+        for (int blurIndex = blurStartIndex; blurIndex <= blurEndIndex; ++blurIndex) {
+            magnitudeSum += stitchedMagnitudes[static_cast<size_t>(blurIndex)];
+            blurSampleCount++;
+        }
+        blurredMagnitudes[static_cast<size_t>(i)] = magnitudeSum / static_cast<float>(blurSampleCount);
+
+        // Compute Prominence
+        // How much the signal bulges above the moving average. Tails and valleys have negative prominence.
+        prominence[static_cast<size_t>(i)] = centerMagnitude - blurredMagnitudes[static_cast<size_t>(i)];
+    }
+
+    // Prominence Hill-Climb & Sculpt
+    for (int i = 0; i < stitchedSize; ++i) {
+        // Instantly crush concave signals (valleys and tails like "Ti") to zero.
+        if (prominence[static_cast<size_t>(i)] <= 0.0f || stitchedMagnitudes[static_cast<size_t>(i)] < 1e-6f) {
+            sharpenedMagnitudes[static_cast<size_t>(i)] = 0.0f;
+            continue;
+        }
+
+        // Topographic climb on the PROMINENCE array to accurately find shoulders (like "Ra")
+        int peakIdx = i;
+        if (i > 0 && prominence[static_cast<size_t>(i - 1)] > prominence[static_cast<size_t>(i)]) {
+            while (peakIdx > 0 && prominence[static_cast<size_t>(peakIdx - 1)] > prominence[static_cast<size_t>(peakIdx)]) {
+                peakIdx--;
+            }
+        } else if (i < stitchedSize - 1 && prominence[static_cast<size_t>(i + 1)] > prominence[static_cast<size_t>(i)]) {
+            while (peakIdx < stitchedSize - 1 && prominence[static_cast<size_t>(peakIdx + 1)] > prominence[static_cast<size_t>(peakIdx)]) {
+                peakIdx++;
             }
         }
 
+        // Relative Peak Expander Math:
+        // Calculate ratio compared to the true local summit
+        const float localMax = stitchedMagnitudes[static_cast<size_t>(peakIdx)];
+        const float isolationRatio = stitchedMagnitudes[static_cast<size_t>(i)] / localMax;
+
         // Logarithmic Progressive Shrinker:
         // Dynamically calculate the horizontal carving intensity to equalize the log-scale visual thickness.
+        const float freq = static_cast<float>(i) * unifiedBinResolution;
         const float logFrequency = std::log10(std::max(minFrequencyHz, freq));
         const float logFrequencyNorm = std::min(1.0f, std::max(0.0f, (logFrequency - logMinFrequency) * logFrequencyRangeInv));
         const float dynamicExponent = bassShrinkerExponent - logFrequencyNorm * (bassShrinkerExponent - trebleShrinkerExponent);
-
-        // Relative Peak Expander Math:
-        // Calculate ratio compared to local summit (0.0 to 1.0)
-        const float isolationRatio = centerMagnitude / localMax;
 
         // Raise ratio to exponent to pinch the shoulders, multiply back by localMax to restore true amplitude, then apply vertical makeup
         sharpenedMagnitudes[static_cast<size_t>(i)] = localMax * std::pow(isolationRatio, dynamicExponent) * peakExpanderVertical;
