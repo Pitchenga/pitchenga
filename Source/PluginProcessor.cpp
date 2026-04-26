@@ -380,6 +380,7 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, int sizeInBy
                 if (settings.externalPluginStateBase64.isNotEmpty()) {
                     juce::MemoryBlock pluginState;
                     if (pluginState.fromBase64Encoding(settings.externalPluginStateBase64)) {
+                        const juce::ScopedLock lock(pluginLock);
                         externalPlugin->setStateInformation(pluginState.getData(), static_cast<int>(pluginState.getSize()));
                     }
                 }
