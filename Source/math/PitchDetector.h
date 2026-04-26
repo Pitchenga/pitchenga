@@ -108,10 +108,11 @@ namespace sevagh {
 
             fftEngine.perform(fftBuffer.data(), fftBuffer.data(), false);
 
+            const float scale = 1.0f / static_cast<float>(numFftPoints);
             for (size_t i = 0; i < static_cast<size_t>(numFftPoints); ++i) {
                 const float realPart = fftBuffer[i].real();
                 const float imagPart = fftBuffer[i].imag();
-                const float magnitudeSquared = realPart * realPart + imagPart * imagPart;
+                const float magnitudeSquared = (realPart * realPart + imagPart * imagPart) * scale;
                 fftBuffer[i] = std::complex<float>(magnitudeSquared, 0.0f);
             }
 
