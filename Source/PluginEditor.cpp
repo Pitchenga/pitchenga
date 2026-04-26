@@ -204,6 +204,10 @@ void PitchengaAudioProcessorEditor::resized() {
 
         if (processor.settings.isShowNeedle) {
             needle.setBounds(bounds.removeFromTop(needleHeight));
+            
+            if (processor.settings.isShowEye && !processor.settings.isShowRoll) {
+                bounds.removeFromTop(1);
+            }
         }
 
         if (processor.settings.isShowEye) {
