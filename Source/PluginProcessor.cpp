@@ -159,14 +159,17 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     buffer.clear();
     
     // Instrument always goes to speakers
-    for (int ch = 0; ch < totalNumOutputChannels; ++ch) {
-        buffer.addFrom(ch, 0, pluginOutputBuffer, ch % pluginOutputBuffer.getNumChannels(), 0, numSamples);
+    if (numInstOutputChannels > 0) {
+        for (int ch = 0; ch < totalNumOutputChannels; ++ch) {
+            buffer.addFrom(ch, 0, pluginOutputBuffer, ch % numInstOutputChannels, 0, numSamples);
+        }
     }
 
     // Conditional input monitoring
-    if (settings.isEarEnabled || wrapperType != wrapperType_Standalone) {
+    const int numMicInputChannels = micBuffer.getNumChannels();
+    if (numMicInputChannels > 0 && (settings.isEarEnabled || wrapperType != wrapperType_Standalone)) {
         for (int ch = 0; ch < totalNumOutputChannels; ++ch) {
-            buffer.addFrom(ch, 0, micBuffer, ch % micBuffer.getNumChannels(), 0, numSamples);
+            buffer.addFrom(ch, 0, micBuffer, ch % numMicInputChannels, 0, numSamples);
         }
     }
 
