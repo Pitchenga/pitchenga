@@ -13,6 +13,7 @@ public:
 
     void paint(juce::Graphics& graphics) override;
     void resized() override;
+    void applyStrobe(float strobeSpreadMidi, int x, float midiAtX, juce::Colour& color);
 
     static constexpr float stripHeight = 16.0f;
     static constexpr float tickHeight = 5.0f;
@@ -22,7 +23,7 @@ public:
     static constexpr float needleTriangleWidth = 12.0f;
 
 private:
-    void updateCachedLabels();
+    void buildFrame();
     static float freqToMidi(float freq);
     static juce::String getNoteName(int midiNote);
     static void paintLabel(juce::Graphics& graphics, int midiNote, float x, float stripY);
@@ -33,6 +34,7 @@ private:
     float currentMidi = -1.0f;
 
     juce::Image cachedLabels;
+    juce::Image cachedBackground;
 
     float strobePhase = 0.0f;
     float targetVelocity = 0.0f;

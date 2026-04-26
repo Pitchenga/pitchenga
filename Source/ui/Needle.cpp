@@ -48,7 +48,7 @@ void Needle::setPitchFrequency(const float frequencyHz) {
 void Needle::setRange(const float minMidiNote, const float maxMidiNote) {
     minMidi = minMidiNote;
     maxMidi = maxMidiNote;
-    updateCachedLabels();
+    buildFrame();
     repaint();
 }
 
@@ -95,7 +95,7 @@ float Needle::getPreferredHeight() {
     return stripHeight + tickHeight + Common::getLabelHeight();
 }
 
-void Needle::updateCachedLabels() {
+void Needle::buildFrame() {
     const int width = getWidth();
     const int height = getHeight();
     if (width <= 0 || height <= 0) return;
@@ -128,10 +128,40 @@ void Needle::updateCachedLabels() {
 }
 
 void Needle::resized() {
-    updateCachedLabels();
+    buildFrame();
+}
+
+void Needle::applyStrobe(const float strobeSpreadMidi, int x, const float midiAtX, juce::Colour& color) {
+    if (currentMidi >= minMidi && currentMidi <= maxMidi) {
+        const float distanceMidi = std::abs(midiAtX - currentMidi);
+
+        if (distanceMidi < strobeSpreadMidi) {
+            // Sub-pixel continuous phase calculation prevents micro-stuttering and halting at slow speeds
+            const float exactPhase = static_cast<float>(x) - strobePhase;
+            float phaseF = std::fmod(exactPhase, static_cast<float>(strobeCycleWidth));
+            if (phaseF < 0.0f) phaseF += static_cast<float>(strobeCycleWidth);
+
+            const int index0 = static_cast<int>(phaseF);
+            const int index1 = (index0 + 1) % strobeCycleWidth;
+            const float frac = phaseF - static_cast<float>(index0);
+
+            // Modulate color intensity locally, fading out the strobe effect towards the edges of the section
+            const float intensity = strobeIntensities[static_cast<size_t>(index0)] * (1.0f - frac) +
+                strobeIntensities[static_cast<size_t>(index1)] * frac;
+
+            const float fadeFactor = 1.0f - (distanceMidi / strobeSpreadMidi);
+            const float dimming = (1.0f - intensity) * fadeFactor;
+
+            color = color.interpolatedWith(juce::Colours::black, dimming);
+        }
+    }
 }
 
 void Needle::paint(juce::Graphics& graphics) {
+    if (!cachedLabels.isValid()) {
+        buildFrame();
+    }
+
     const auto bounds = getLocalBounds().toFloat();
     const auto height = static_cast<float>(getHeight());
     const float stripY = height - stripHeight;
@@ -147,31 +177,9 @@ void Needle::paint(juce::Graphics& graphics) {
         float chroma = std::fmod(midiAtX, 12.0f);
         if (chroma < 0.0f) chroma += 12.0f;
 
-        juce::Colour color = Tone::getContinuousColor(chroma, true);
+        juce::Colour color = Tone::getContinuousColor(chroma);
 
-        if (currentMidi >= minMidi && currentMidi <= maxMidi) {
-            const float distanceMidi = std::abs(midiAtX - currentMidi);
-
-            if (distanceMidi < strobeSpreadMidi) {
-                // Sub-pixel continuous phase calculation prevents micro-stuttering and halting at slow speeds
-                const float exactPhase = static_cast<float>(x) - strobePhase;
-                float phaseF = std::fmod(exactPhase, static_cast<float>(strobeCycleWidth));
-                if (phaseF < 0.0f) phaseF += static_cast<float>(strobeCycleWidth);
-
-                const int index0 = static_cast<int>(phaseF);
-                const int index1 = (index0 + 1) % strobeCycleWidth;
-                const float frac = phaseF - static_cast<float>(index0);
-
-                // Modulate color intensity locally, fading out the strobe effect towards the edges of the section
-                const float intensity = strobeIntensities[static_cast<size_t>(index0)] * (1.0f - frac) +
-                                        strobeIntensities[static_cast<size_t>(index1)] * frac;
-
-                const float fadeFactor = 1.0f - (distanceMidi / strobeSpreadMidi);
-                const float dimming = (1.0f - intensity) * fadeFactor;
-
-                color = color.interpolatedWith(juce::Colours::black, dimming);
-            }
-        }
+        // applyStrobe(strobeSpreadMidi, x, midiAtX, color);
 
         graphics.setColour(color);
         graphics.fillRect(static_cast<float>(x), stripY, 1.0f, stripHeight);
@@ -181,6 +189,7 @@ void Needle::paint(juce::Graphics& graphics) {
     if (cachedLabels.isValid()) {
         graphics.drawImageAt(cachedLabels, 0, 0);
     }
+
 
     // Dynamic Illumination Overlay
     if (currentMidi >= minMidi && currentMidi <= maxMidi) {
