@@ -2,7 +2,7 @@
 
 **See your sound: the "perfect pitch" superpower for mere mortals.**
 
-- Pitchenga is a high-precision, zero-latency harmonic visualizer. Designed to take the guesswork out of intonation, transcription, and sound design, it acts as a bionic ear that tells you exactly what is happening in your audio in real-time.
+- Pitchenga is a high-precision, real-time harmonic visualizer. Designed to take the guesswork out of intonation, transcription, and sound design, it acts as a bionic ear — giving you artificial chromesthesia that tells you exactly what is happening in your audio.
 - Whether you are checking your vocal pitch, tuning a tricky synth patch, or transcribing a dense chord progression, Pitchenga provides razor-sharp visual clarity without melting your CPU.
 - [Watch Pitchenga in action on YouTube](//fixme)
 
@@ -10,14 +10,14 @@
 
 - **The Bionic Ear:** A true visual crutch for perfect pitch. Stop guessing what note you or your synth is hitting. Pitchenga provides instantaneous, mathematically accurate visual feedback across a continuous chromatic timeline.
 - **The Ultimate Transcription Tool:** Reverse-engineer complex chords, fast solos, and dense harmonies. Pitchenga is the perfect companion for transcribing music, allowing you to visually decode exactly which notes are being played in any piece of audio without relying solely on your ear.
-- **Surgical Note Isolation:** Standard spectrograms often blur adjacent notes together or crush quieter harmonics. Pitchenga utilizes a custom Topographic Prominence Extractor (Difference-of-Gaussians) to surgically isolate notes. If you play a dense chord or two adjacent semitones, both are drawn with distinct clarity.
-- **Optimized Smooth Rendering:** Visuals are decoupled onto a dedicated 48Hz background math thread. Combined with advanced magnitude smoothing to eliminate flickering, Pitchenga delivers a buttery-smooth, jitter-free scrolling spectrogram that keeps your CPU usage incredibly low.
+- **Surgical Note Isolation:** Standard spectrograms often blur adjacent notes together or crush quieter harmonics. Pitchenga utilizes a custom Topographic Prominence Extraction (Difference-of-Gaussians) to surgically isolate notes. If you play a dense chord or two adjacent semitones, both are drawn with distinct clarity.
+- **Versatile Analyzer:** Highly configurable processing allows Pitchenga to double as a traditional spectrum analyzer. By bypassing the custom sculpting, you gain access to the raw, unprocessed spectral data exactly as you would expect in standard studio tools.
 
 ### Standalone Instrument Support
 
 For quick practice sessions, you do not need to boot up a heavy DAW.
 In Standalone mode, Pitchenga can host a VST3 or AU software instrument.
-A custom internal routing matrix allows you to blend your live microphone with your software synth, complete with independent monitor controls to prevent feedback while you play and sing.
+A custom internal routing matrix allows you to blend any live audio input — such as a microphone, guitar, or line-in — with your software synth, complete with independent monitor controls to prevent feedback while you perform.
 
 ### Downloads & Installation
 
