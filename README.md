@@ -3,9 +3,7 @@
 **See your sound: the "perfect pitch" superpower for mere mortals.**
 
 - Pitchenga is a high-precision, zero-latency harmonic visualizer. Designed to take the guesswork out of intonation, transcription, and sound design, it acts as a bionic ear that tells you exactly what is happening in your audio in real-time.
-
 - Whether you are checking your vocal pitch, tuning a tricky synth patch, or transcribing a dense chord progression, Pitchenga provides razor-sharp visual clarity without melting your CPU.
-
 - [Watch Pitchenga in action on YouTube](//fixme)
 
 ### Core Features
@@ -23,20 +21,20 @@ A custom internal routing matrix allows you to blend your live microphone with y
 
 ### Downloads & Installation
 
-Pre-built binaries are provided in the [Releases](fixme) section.
+Pre-built binaries are provided in the [Releases](//fixme) section.
 
 - **macOS:** Available as a Standalone `.app`, Audio Unit (AU), and VST3. 
 > Note: The current releases are not yet signed with an Apple Developer certificate. You will need to right-click and select "Open" to bypass Gatekeeper on the first launch.
 - **Windows:** Available as a Standalone `.exe` and VST3.
 
-### Licenses and acknowledgments
+### Licenses and Acknowledgments
 
 All original source code is released under the BSD 3-Clause License.
 See the `LICENSE` file in the root of this repository for full details.
 
-This project relies on third-party libraries located in the /libs directory:
+This project relies on third-party libraries and adapted code:
 
-- JUCE Framework: Proprietary JUCE 8 Starter EULA.
-- Open-Source Dependencies: All other libraries in the /libs directory are governed by their own respective open-source licenses. Please refer to the individual LICENSE files provided within each submodule's directory for their exact terms and copyright notices.
-- The pitch detector module is a custom JUCE port of [Sevagh's](https://github.com/sevagh/pitch-detection) original MPM algorithm implementation. Copyright (c) 2018 Sevag Hanssian. MIT License.
-- The "Eye" visualization and CQT harmonic analysis logic were ported from Java to C++ from the original [HaronEye](https://github.com/bzamecnik/harmoneye/tree/master/HarmonEye) project.  Copyright (c) 2012-2014 - Bohumir Zamecnik. MIT License.
+- **JUCE Framework:** Proprietary JUCE 8 Starter EULA.
+- **Open-Source Dependencies:** All other libraries in the `/libs` directory are governed by their own respective open-source licenses. Please refer to the individual `LICENSE` files provided within each submodule's directory for their exact terms and copyright notices.
+- **[sevagh/pitch-detection](https://github.com/sevagh/pitch-detection):** The pitch detector module was ported to JUCE from Sevag Hanssian's original MPM algorithm implementation. Copyright (c) 2018 Sevag Hanssian. MIT License.
+- **[HarmonEye](https://github.com/bzamecnik/harmoneye/tree/master/HarmonEye):** The "Eye" visualization and the CQT harmonic analysis logic were ported to C++ and evolved from the original Java-based HarmonEye project. Copyright (c) 2012-2014 Bohumir Zamecnik. MIT License.
