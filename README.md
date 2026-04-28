@@ -39,7 +39,14 @@ For Linux users, developers, and DSP enthusiasts, Pitchenga can be easily compil
 - Compile the project: `cmake --build build --config Release`
 - The compiled Standalone and Plugin binaries will be located in the `build/Pitchenga_artefacts` directory.
 
-### License
+### Licenses and acknowledgments
 
-//fixme
+All original source code is released under the BSD 3-Clause License.
+See the `LICENSE` file in the root of this repository for full details.
 
+This project relies on third-party libraries located in the /libs directory:
+
+- JUCE Framework: Proprietary JUCE 8 Starter EULA.
+- Open-Source Dependencies: All other libraries in the /libs directory are governed by their own respective open-source licenses. Please refer to the individual LICENSE files provided within each submodule's directory for their exact terms and copyright notices.
+- The pitch detector module is a custom JUCE port of [Sevagh's](https://github.com/sevagh/pitch-detection) original MPM algorithm implementation. Copyright (c) 2018 Sevag Hanssian. MIT License.
+- The "Eye" visualization and CQT harmonic analysis logic were ported from Java to C++ from the original [HaronEye](https://github.com/bzamecnik/harmoneye/tree/master/HarmonEye) project.  Copyright (c) 2012-2014 - Bohumir Zamecnik. MIT License.

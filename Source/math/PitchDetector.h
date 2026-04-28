@@ -9,7 +9,7 @@
 
 namespace sevagh {
     /**
-     * Port of sevagh/pitch-detection Mpm algorithm to JUCE.
+     * Port of sevagh/pitch-detection MPM algorithm to JUCE.
      * https://github.com/sevagh/pitch-detection
      */
     template <typename T>
