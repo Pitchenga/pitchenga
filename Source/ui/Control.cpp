@@ -565,6 +565,7 @@ void Control::resized() {
         // Gap between Roll type and Strobe/Pivot group
         panelBounds.removeFromRight(16);
         positionButtonRight(toggleStrobe, panelBounds);
+        panelBounds.removeFromRight(16);
         positionButtonRight(toggleLayoutPivot, panelBounds);
     }
 }

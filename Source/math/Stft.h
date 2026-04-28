@@ -33,8 +33,8 @@ public:
 
     bool isEnablePeakExtraction = true;
     // bool isEnablePeakExtraction = false;
-    // bool isEnablePsychoacousticTilt = true;
-    bool isEnablePsychoacousticTilt = false;
+    bool isEnablePsychoacousticTilt = true;
+    // bool isEnablePsychoacousticTilt = false;
     bool isEnableTailKiller = true;
     // bool isEnableTailKiller = false;
     bool isEnableTemporalSmoothing = true;

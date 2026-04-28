@@ -44,14 +44,8 @@ void Stft::processFrame(const std::vector<float>& timeDomainSignal) {
     if (multiResolutionBands.empty() || timeDomainSignal.size() < static_cast<size_t>(multiResolutionBands.front().windowSize)) return;
 
     performStft(timeDomainSignal);
-
-    // The Gradiental Peak Extractor (Unsharp Mask) physically sculpts the continuous spectrum inside performStft.
-    // We must use extractRawBins to preserve the progressively carved visual width of these lobes.
     extractRawBins();
-
-    if (isEnablePsychoacousticTilt) {
-        applyPsychoacousticTilt();
-    }
+    applyPsychoacousticTilt();
     scaleForUi();
 }
 
@@ -266,6 +260,8 @@ void Stft::applyProgressiveSmoothing() {
     }
 }
 
+// The Gradiental Peak Extractor (Unsharp Mask) physically sculpts the continuous spectrum inside performStft.
+// We use extractRawBins to preserve the progressively carved visual width of these lobes.
 void Stft::extractRawBins() {
     finalPeaks.clear();
     const float binResolution = static_cast<float>(currentSampleRate) / 32768.0f;
@@ -342,6 +338,8 @@ void Stft::extractRawBins() {
 }
 
 void Stft::applyPsychoacousticTilt() {
+    if (!isEnablePsychoacousticTilt)  return;
+
     constexpr float anchorFrequency = 1000.0f;
     constexpr float tiltDbPerOctave = 3.0f;
 
