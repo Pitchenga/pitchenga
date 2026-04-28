@@ -35,6 +35,6 @@ See the `LICENSE` file in the root of this repository for full details.
 This project relies on third-party libraries and adapted code:
 
 - **JUCE Framework:** Proprietary JUCE 8 Starter EULA.
-- **Open-Source Dependencies:** All other libraries in the `/libs` directory are governed by their own respective open-source licenses. Please refer to the individual `LICENSE` files provided within each submodule's directory for their exact terms and copyright notices.
-- **[sevagh/pitch-detection](https://github.com/sevagh/pitch-detection):** The pitch detector module was ported to JUCE from Sevag Hanssian's original MPM algorithm implementation. Copyright (c) 2018 Sevag Hanssian. MIT License.
 - **[HarmonEye](https://github.com/bzamecnik/harmoneye/tree/master/HarmonEye):** The "Eye" visualization and the CQT harmonic analysis logic were ported to C++ and evolved from the original Java-based HarmonEye project. Copyright (c) 2012-2014 Bohumir Zamecnik. MIT License.
+- **[sevagh/pitch-detection](https://github.com/sevagh/pitch-detection):** The pitch detector module was ported to JUCE from Sevag Hanssian's original MPM algorithm implementation. Copyright (c) 2018 Sevag Hanssian. MIT License.
+- **Open-Source Dependencies:** All other libraries in the `/libs` directory are governed by their own respective open-source licenses. Please refer to the individual `LICENSE` files provided within each submodule's directory for their exact terms and copyright notices.
