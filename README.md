@@ -25,19 +25,9 @@ A custom internal routing matrix allows you to blend your live microphone with y
 
 Pre-built binaries are provided in the [Releases](fixme) section.
 
-- **macOS:** Available as a Standalone `.app`, Audio Unit (AU), and VST3. _(Note: The current releases are not yet signed with an Apple Developer certificate. You will need to right-click and select "Open" to bypass Gatekeeper on the first launch)._
+- **macOS:** Available as a Standalone `.app`, Audio Unit (AU), and VST3. 
+> Note: The current releases are not yet signed with an Apple Developer certificate. You will need to right-click and select "Open" to bypass Gatekeeper on the first launch.
 - **Windows:** Available as a Standalone `.exe` and VST3.
-- **Linux:** Please compile from source using the instructions below.
-
-### Building from Source
-
-For Linux users, developers, and DSP enthusiasts, Pitchenga can be easily compiled using CMake.
-
-- Clone the repository recursively to fetch the JUCE and Eigen submodules: `git clone --recursive https://github.com/yourusername/pitchenga.git`
-- Navigate into the project directory: `cd pitchenga`
-- Configure the build environment: `cmake -B build`
-- Compile the project: `cmake --build build --config Release`
-- The compiled Standalone and Plugin binaries will be located in the `build/Pitchenga_artefacts` directory.
 
 ### Licenses and acknowledgments
 
