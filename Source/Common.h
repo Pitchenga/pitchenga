@@ -4,7 +4,7 @@
 
 class Common {
 public:
-    Common();
+    Common() = delete;
 
     static constexpr float labelFontSize = 12.0f;
     static constexpr auto labelFontStyle = "Bold";

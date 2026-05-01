@@ -21,7 +21,8 @@ namespace sevagh {
             fftOrder(static_cast<int>(std::log2(numFftPoints))),
             fftEngine(fftOrder),
             fftBuffer(static_cast<size_t>(numFftPoints)),
-            nsdfBuffer(static_cast<size_t>(maxBufferSize)) {}
+            nsdfBuffer(static_cast<size_t>(maxBufferSize)),
+            squareSumsBuffer(static_cast<size_t>(maxBufferSize)) {}
 
         T getPitch(const std::vector<T>& audioBuffer, int sampleRate) {
             const int actualSize = std::min(static_cast<int>(audioBuffer.size()), maxBufferSize);
@@ -96,6 +97,7 @@ namespace sevagh {
         juce::dsp::FFT fftEngine;
         std::vector<std::complex<float>> fftBuffer;
         std::vector<float> nsdfBuffer;
+        std::vector<float> squareSumsBuffer;
 
         void computeNsdf(const std::vector<T>& audioBuffer, int actualSize) {
             // Zero-pad to avoid circular correlation
@@ -118,32 +120,32 @@ namespace sevagh {
             fftEngine.perform(fftBuffer.data(), fftBuffer.data(), true);
 
             // Square Sum m[k]
-            std::vector squareSums(static_cast<size_t>(actualSize), 0.0f);
+            std::fill(squareSumsBuffer.begin(), squareSumsBuffer.end(), 0.0f);
             float totalSumSquares = 0.0f;
             for (size_t i = 0; i < static_cast<size_t>(actualSize); ++i) {
                 const float val = static_cast<float>(audioBuffer[i]);
                 totalSumSquares += val * val;
             }
 
-            squareSums[0] = 2.0f * totalSumSquares;
+            squareSumsBuffer[0] = 2.0f * totalSumSquares;
             for (size_t k = 1; k < static_cast<size_t>(actualSize); ++k) {
                 const auto valPrevious = static_cast<float>(audioBuffer[k - 1]);
                 const auto valEnd = static_cast<float>(audioBuffer[static_cast<size_t>(actualSize) - k]);
-                squareSums[k] = std::max(0.0f, squareSums[k - 1] - valPrevious * valPrevious - valEnd * valEnd);
+                squareSumsBuffer[k] = std::max(0.0f, squareSumsBuffer[k - 1] - valPrevious * valPrevious - valEnd * valEnd);
             }
 
             // Nsdf = 2 * r[k] / m[k]
             // We use the lag-0 value to automatically detect and correct any FFT scaling
             // nsdf[0] must be 1.0. 
             float autoScale = 1.0f;
-            if (squareSums[0] > 1e-10f) {
-                autoScale = squareSums[0] / (2.0f * fftBuffer[0].real());
+            if (squareSumsBuffer[0] > 1e-10f) {
+                autoScale = squareSumsBuffer[0] / (2.0f * fftBuffer[0].real());
             }
 
             for (size_t k = 0; k < static_cast<size_t>(actualSize); ++k) {
                 const float rawCorrelation = fftBuffer[k].real() * autoScale;
-                if (squareSums[k] > 1e-10f) {
-                    nsdfBuffer[k] = 2.0f * rawCorrelation / squareSums[k];
+                if (squareSumsBuffer[k] > 1e-10f) {
+                    nsdfBuffer[k] = 2.0f * rawCorrelation / squareSumsBuffer[k];
                 } else {
                     nsdfBuffer[k] = 0.0f;
                 }
