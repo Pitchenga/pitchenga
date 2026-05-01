@@ -60,8 +60,7 @@ float Needle::freqToMidi(const float freq) {
 }
 
 juce::String Needle::getNoteName(const int midiNote) {
-    int chroma = midiNote % 12;
-    if (chroma < 0) chroma += 12;
+    int chroma = Common::fast_mod12(midiNote);
     const int octave = midiNote / 12 - 1;
     return Tone::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
@@ -110,8 +109,7 @@ void Needle::buildFrame() {
         const float horizontalFraction = width > 1 ? static_cast<float>(x) / static_cast<float>(width - 1) : 0.0f;
         const float midiAtX = minMidi + horizontalFraction * (maxMidi - minMidi);
 
-        float chroma = std::fmod(midiAtX, 12.0f);
-        if (chroma < 0.0f) chroma += 12.0f;
+        const float chroma = Common::fast_fmod12(midiAtX);
 
         bgGraphics.setColour(Tone::getContinuousColor(chroma));
         bgGraphics.drawVerticalLine(x, 0.0f, stripHeight);
@@ -130,8 +128,7 @@ void Needle::buildFrame() {
     for (int note = startMidi; note <= endMidi; ++note) {
         const float x = static_cast<float>(width) * ((static_cast<float>(note) - minMidi) / (maxMidi - minMidi));
 
-        int chroma = note % 12;
-        if (chroma < 0) chroma += 12;
+        const int chroma = Common::fast_mod12(note);
 
         const juce::Colour fullColor = Tone::chromaticScale[static_cast<size_t>(chroma)].color;
         graphics.setColour(fullColor);
@@ -168,11 +165,10 @@ void Needle::paintStrobeOverlay(juce::Graphics& graphics, const float stripY, co
 
         if (distanceMidi < strobeSpreadMidi) {
             const float exactPhase = static_cast<float>(x) - strobePhase;
-            float phaseF = std::fmod(exactPhase, static_cast<float>(strobeCycleWidth));
-            if (phaseF < 0.0f) phaseF += static_cast<float>(strobeCycleWidth);
+            const float phaseF = Common::fast_fmod(exactPhase, static_cast<float>(strobeCycleWidth));
 
             const int index0 = static_cast<int>(phaseF);
-            const int index1 = (index0 + 1) % strobeCycleWidth;
+            const int index1 = (index0 >= strobeCycleWidth - 1) ? 0 : index0 + 1;
             const float frac = phaseF - static_cast<float>(index0);
 
             const float intensity =
@@ -205,8 +201,7 @@ void Needle::paintTunerNeedle(juce::Graphics& graphics, const juce::Rectangle<fl
     );
 
     // Fill the needle with the exact continuous pitch color so it pops out of the darkness
-    float exactChroma = std::fmod(currentMidi, 12.0f);
-    if (exactChroma < 0.0f) exactChroma += 12.0f;
+    const float exactChroma = Common::fast_fmod12(currentMidi);
     const juce::Colour exactPitchColor = Tone::getContinuousColor(exactChroma);
 
     graphics.setColour(exactPitchColor);
@@ -235,8 +230,7 @@ void Needle::paintLabelHighlight(
         const float closestX = bounds.getWidth() * ((static_cast<float>(nearestNote) - minMidi) / (maxMidi -
             minMidi));
 
-        int nearestChroma = nearestNote % 12;
-        if (nearestChroma < 0) nearestChroma += 12;
+        const int nearestChroma = Common::fast_mod12(nearestNote);
         const juce::Colour toneColor = Tone::chromaticScale[static_cast<size_t>(nearestChroma)].color;
         graphics.setColour(toneColor);
         paintLabel(graphics, nearestNote, closestX, labelStripY);

@@ -31,7 +31,8 @@ const std::vector<double>& SpectralEqualizer::filter(const std::vector<double>& 
     for (size_t i = 0; i < size; ++i) {
         for (size_t winIndex = 0; winIndex < windowSize; ++winIndex) {
             // Forward-looking asymmetric window
-            const size_t index = (i + winIndex + size) % size;
+            size_t index = i + winIndex;
+            if (index >= size) index -= size;
             window[winIndex] = values[index];
         }
 

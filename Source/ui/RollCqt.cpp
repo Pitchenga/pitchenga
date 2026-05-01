@@ -146,8 +146,7 @@ void RollCqt::buildFrame() {
 }
 
 juce::String RollCqt::getNoteName(const int midiNote) {
-    int chroma = midiNote % 12;
-    if (chroma < 0) chroma += 12;
+    int chroma = Common::fast_mod12(midiNote);
     const int octave = midiNote / 12 - 1;
     return Tone::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
@@ -225,7 +224,7 @@ void RollCqt::paintFrame(juce::Graphics& graphics) const {
     const float maxTextWidth = juce::GlyphArrangement::getStringWidth(labelFont, "Ww8");
 
     for (int i = 0; i < totalSemitones; ++i) {
-        const int chroma = i % 12;
+        const int chroma = Common::fast_mod12(i);
 
         //fixme: move to ToneName
         // Identify standard "black" keys
@@ -265,6 +264,7 @@ void RollCqt::paintForrest(juce::Graphics& graphics) const {
     const float plotHeight = std::max(1.0f, static_cast<float>(logicalHeight) - getLabelAreaHeight());
 
     const float barWidth = static_cast<float>(width) / static_cast<float>(currentTotalBins);
+    const float chromaFactor = 12.0f / static_cast<float>(currentBinsPerOctave);
 
     for (int i = 0; i < currentTotalBins; ++i) {
         if (i >= static_cast<int>(displayMagnitudes.size())) break;
@@ -276,8 +276,7 @@ void RollCqt::paintForrest(juce::Graphics& graphics) const {
         );
         const auto barHeight = static_cast<float>(normalizedMagnitude) * plotHeight;
 
-        const float chroma =
-            static_cast<float>(i % currentBinsPerOctave) * 12.0f / static_cast<float>(currentBinsPerOctave);
+        const float chroma = static_cast<float>(i % currentBinsPerOctave) * chromaFactor;
 
         const juce::Colour color = Tone::getContinuousColor(chroma);
         graphics.setColour(color);
@@ -307,10 +306,12 @@ void RollCqt::pumpSmoke() {
     const int speedPx = static_cast<int>(smokeSpeedPxPerFrame);
 
     // Advance the scroll offset and wrap it like a treadmill
-    smokeScrollOffset = (smokeScrollOffset + speedPx) % height;
+    smokeScrollOffset += speedPx;
+    if (smokeScrollOffset >= height) smokeScrollOffset -= height;
 
     // Calculate where in the image memory the new row should be drawn
-    const int drawY = (height - speedPx + smokeScrollOffset) % height;
+    int drawY = smokeScrollOffset - speedPx;
+    if (drawY < 0) drawY += height;
 
     // Clear the new row first to prevent ghosting from previous treadmill cycles
     smokeImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
@@ -320,10 +321,11 @@ void RollCqt::pumpSmoke() {
     const int totalBins = static_cast<int>(displayMagnitudes.size());
     const int binsPerOctave = totalBins / PitchengaAudioProcessor::numOctaves;
     const float barWidth = static_cast<float>(width) / static_cast<float>(totalBins);
+    const float chromaFactor = 12.0f / static_cast<float>(binsPerOctave);
 
     for (int i = 0; i < totalBins; ++i) {
         if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > smokeThreshold) {
-            const float chroma = static_cast<float>(i % binsPerOctave) * 12.0f / static_cast<float>(binsPerOctave);
+            const float chroma = static_cast<float>(i % binsPerOctave) * chromaFactor;
             const juce::Colour baseColor = Tone::getContinuousColor(chroma);
             constexpr float undimmingGain = 1.1f;
             const juce::Colour color = juce::Colours::black.interpolatedWith(

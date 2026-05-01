@@ -17,11 +17,7 @@ void Eye::updateResults(const std::vector<double>& results) {
 
 juce::Colour Eye::calculateColor(const float velocity, const float toneRatio) {
     //fixme: Simplify with getContinuousColor(), unify coloring logic
-    // NO std::fmod() NEEDED.
-    // toneRatio only ever ranges from -0.444 to 11.444.
-    // A single addition handles the negative wrap perfectly.
-    float wrappedRatio = toneRatio;
-    if (wrappedRatio < 0.0f) wrappedRatio += 12.0f;
+    float wrappedRatio = Common::fast_fmod12(toneRatio);
 
     const int toneNumber = static_cast<int>(std::floor(wrappedRatio));
     const float diff = wrappedRatio - static_cast<float>(toneNumber);
@@ -38,9 +34,7 @@ juce::Colour Eye::calculateColor(const float velocity, const float toneRatio) {
     } else {
         // Transpose -1 or +1 step depending on diff direction
         int pitchyIdx = diff < 0 ? currentIdx - 1 : currentIdx + 1;
-        if (pitchyIdx < 0) pitchyIdx += 12;
-        pitchyIdx %= 12;
-
+        
         // NO MODULO NEEDED.
         // It only moves by exactly 1 step, so a simple bounds check wraps it perfectly.
         if (pitchyIdx < 0) pitchyIdx = 11;
