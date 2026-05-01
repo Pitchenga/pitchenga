@@ -25,8 +25,7 @@ Pitchenga is a real-time music visualization application and audio plugin.
 - CRITICAL: Do not add "NEW" or to comments.
 - CRITICAL: Prefer named constants in header file rather than hard-coded values.
 - CRITICAL: Prefer separate functions to long code blocks with a comment.
-- CRITICAL: Use strict camel-case for acronyms, e.g. "variableSqlRdbmsDao" - Good, "ClassSqlRdbmsDao" - Good, rather
-  than "SQLRDBMSDAO" - BAD.
+- CRITICAL: Use strict camel-case for acronyms, e.g. "SqlRdbmsDao sqlRdbmsDao" - Good; "SQLRDBMSDAO" - BAD.
 - CRITICAL: Do not shorten words, e.g. "horizontal" - GOOD, "horiz" - BAD; "context" - GOOD, "ctx" - bad.
 
 ### MANDATORY PRE-FLIGHT CHECK
