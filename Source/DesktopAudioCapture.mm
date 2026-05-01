@@ -85,6 +85,7 @@ void DesktopAudioCapture::start(double sampleRate) {
         config.excludesCurrentProcessAudio = YES;
         config.sampleRate = static_cast<NSInteger>(sampleRate);
         config.channelCount = 1;
+        config.queueDepth = 3; // Low latency
         
         impl->stream = [[SCStream alloc] initWithFilter:filter configuration:config delegate:nil];
         
