@@ -18,8 +18,8 @@ public:
     bool enableDynamicStemWidth = true;
     // bool enableDynamicStemWidth = false;
 
-    static constexpr int minMidiNote = 22.0;
-    static constexpr int maxMidiNote = 94.0;
+    static constexpr int minMidiNote = 22;
+    static constexpr int maxMidiNote = 94;
 
 private:
     PitchengaAudioProcessor& processor;
