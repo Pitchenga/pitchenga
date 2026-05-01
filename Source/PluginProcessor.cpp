@@ -194,10 +194,18 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
     // Conditional input monitoring
     const int numMicInputChannels = micBuffer.getNumChannels();
-    const float monitorVolume = (wrapperType == wrapperType_Standalone) ? settings.earVolume : 1.0f;
-    if (numMicInputChannels > 0 && monitorVolume > 0.0f) {
-        for (int ch = 0; ch < totalNumOutputChannels; ++ch) {
-            buffer.addFrom(ch, 0, micBuffer, ch % numMicInputChannels, 0, numSamples, monitorVolume);
+    if (numMicInputChannels > 0) {
+        if (wrapperType == wrapperType_Standalone) {
+            if (settings.earVolumeLeft > 0.0f && totalNumOutputChannels > 0) {
+                buffer.addFrom(0, 0, micBuffer, 0 % numMicInputChannels, 0, numSamples, settings.earVolumeLeft);
+            }
+            if (settings.earVolumeRight > 0.0f && totalNumOutputChannels > 1) {
+                buffer.addFrom(1, 0, micBuffer, 1 % numMicInputChannels, 0, numSamples, settings.earVolumeRight);
+            }
+        } else {
+            for (int ch = 0; ch < totalNumOutputChannels; ++ch) {
+                buffer.addFrom(ch, 0, micBuffer, ch % numMicInputChannels, 0, numSamples, 1.0f);
+            }
         }
     }
 

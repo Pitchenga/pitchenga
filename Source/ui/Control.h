@@ -39,7 +39,8 @@ public:
         bool isRollHorizontal = false;
         bool isLayoutHorizontal = false;
 
-        float earVolume = 0.0f;
+        float earVolumeLeft = 0.0f;
+        float earVolumeRight = 0.0f;
         bool isCaptureEnabled = false;
         bool isShowTweakPanel = false;
 
@@ -100,8 +101,10 @@ private:
     juce::TextButton toggleSmoke{"Smoke"};
     juce::TextButton toggleForrest{"Forest"};
 
-    VolumeKnob knobEar;
-    juce::Label volumeLabel;
+    VolumeKnob knobEarLeft;
+    VolumeKnob knobEarRight;
+    juce::Label volumeLabelLeft;
+    juce::Label volumeLabelRight;
     juce::TextButton toggleCapture{"Capture"};
     juce::TextButton buttonPlugs{"Plugs"};
     juce::TextButton buttonPlug{"Plug"};

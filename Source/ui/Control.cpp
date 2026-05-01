@@ -151,31 +151,43 @@ Control::Control(PitchengaAudioProcessor& proc)
         processor.settings.isShowForrest = toggleForrest.getToggleState();
     };
 
-    volumeLabel.setFont(juce::FontOptions(13.0f).withStyle("Bold"));
-    volumeLabel.setJustificationType(juce::Justification::centredLeft);
-    volumeLabel.setColour(juce::Label::textColourId, juce::Colours::white);
-    volumeLabel.setBorderSize(juce::BorderSize(0));
+    volumeLabelLeft.setFont(juce::FontOptions(13.0f).withStyle("Bold"));
+    volumeLabelLeft.setJustificationType(juce::Justification::centredLeft);
+    volumeLabelLeft.setColour(juce::Label::textColourId, juce::Colours::white);
+    volumeLabelLeft.setBorderSize(juce::BorderSize(0));
 
-    auto updateVolumeLabel = [this] {
-        const auto currentVolume = static_cast<float>(knobEar.getValue());
+    volumeLabelRight.setFont(juce::FontOptions(13.0f).withStyle("Bold"));
+    volumeLabelRight.setJustificationType(juce::Justification::centredLeft);
+    volumeLabelRight.setColour(juce::Label::textColourId, juce::Colours::white);
+    volumeLabelRight.setBorderSize(juce::BorderSize(0));
+
+    auto updateVolumeLabel = [](juce::Slider& knob, juce::Label& label) {
+        const auto currentVolume = static_cast<float>(knob.getValue());
         juce::String volumeText;
         if (currentVolume <= 0.0001f) {
             volumeText = "-inf";
-            volumeLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
+            label.setColour(juce::Label::textColourId, juce::Colours::grey);
         } else {
             float decibels = 20.0f * std::log10(currentVolume);
             if (decibels > -0.1f) decibels = 0.0f;
             volumeText = juce::String(decibels, 1);
-            volumeLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+            label.setColour(juce::Label::textColourId, juce::Colours::white);
         }
-        volumeLabel.setText(volumeText, juce::NotificationType::dontSendNotification);
+        label.setText(volumeText, juce::NotificationType::dontSendNotification);
     };
 
-    knobEar.setValue(processor.settings.earVolume, juce::NotificationType::dontSendNotification);
-    updateVolumeLabel();
-    knobEar.onValueChange = [this, updateVolumeLabel] {
-        processor.settings.earVolume = static_cast<float>(knobEar.getValue());
-        updateVolumeLabel();
+    knobEarLeft.setValue(processor.settings.earVolumeLeft, juce::NotificationType::dontSendNotification);
+    updateVolumeLabel(knobEarLeft, volumeLabelLeft);
+    knobEarLeft.onValueChange = [this, updateVolumeLabel] {
+        processor.settings.earVolumeLeft = static_cast<float>(knobEarLeft.getValue());
+        updateVolumeLabel(knobEarLeft, volumeLabelLeft);
+    };
+
+    knobEarRight.setValue(processor.settings.earVolumeRight, juce::NotificationType::dontSendNotification);
+    updateVolumeLabel(knobEarRight, volumeLabelRight);
+    knobEarRight.onValueChange = [this, updateVolumeLabel] {
+        processor.settings.earVolumeRight = static_cast<float>(knobEarRight.getValue());
+        updateVolumeLabel(knobEarRight, volumeLabelRight);
     };
 
     setupToggleButton(toggleCapture, processor.settings.isCaptureEnabled);
@@ -388,8 +400,10 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(toggleRoll);
     addAndMakeVisible(toggleIsFreezeRoll);
 
-    addAndMakeVisible(knobEar);
-    addAndMakeVisible(volumeLabel);
+    addAndMakeVisible(knobEarLeft);
+    addAndMakeVisible(knobEarRight);
+    addAndMakeVisible(volumeLabelLeft);
+    addAndMakeVisible(volumeLabelRight);
 
     addAndMakeVisible(toggleTweak);
     addAndMakeVisible(comboPresets);
@@ -532,7 +546,8 @@ void Control::updateVisibilityFromState() {
     toggleSmoke.setToggleState(processor.settings.isShowSmoke, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
-    knobEar.setValue(processor.settings.earVolume, juce::NotificationType::dontSendNotification);
+    knobEarLeft.setValue(processor.settings.earVolumeLeft, juce::NotificationType::dontSendNotification);
+    knobEarRight.setValue(processor.settings.earVolumeRight, juce::NotificationType::dontSendNotification);
     toggleCapture.setToggleState(processor.settings.isCaptureEnabled, juce::NotificationType::dontSendNotification);
     toggleTweak.setToggleState(processor.settings.isShowTweakPanel, juce::NotificationType::dontSendNotification);
 
@@ -543,7 +558,8 @@ void Control::updateButtonStates() {
     const bool isStandalone = processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone;
     buttonPlugs.setVisible(isStandalone);
     buttonPlug.setVisible(isStandalone);
-    knobEar.setVisible(isStandalone);
+    knobEarLeft.setVisible(isStandalone);
+    knobEarRight.setVisible(isStandalone);
     toggleCapture.setVisible(isStandalone);
 
     const bool rollActive = processor.settings.isShowRoll;
@@ -613,18 +629,19 @@ void Control::resized() {
     positionButton(toggleRoll, topRow);
 
     if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
-        // Layout the circular knob (square, matching rowHeight)
-        knobEar.setBounds(topRow.removeFromLeft(rowHeight).reduced(2));
-        
-        // Add a small gap between the knob and the text
-        topRow.removeFromLeft(1);
-        
+        // Layout the circular knobs (square, matching rowHeight)
+        knobEarLeft.setBounds(topRow.removeFromLeft(rowHeight).reduced(2));
+
         // Layout the label independently with a fixed width based on the maximum string length
-        // to ensure the rest of the UI doesn't "jump" when the volume changes.
-        const float maxTextWidth = juce::GlyphArrangement::getStringWidth(volumeLabel.getFont(), "-00.0");
+        const float maxTextWidth = juce::GlyphArrangement::getStringWidth(volumeLabelLeft.getFont(), "-00.0");
         const int fixedLabelWidth = static_cast<int>(std::ceil(maxTextWidth));
-        
-        volumeLabel.setBounds(topRow.removeFromLeft(fixedLabelWidth));
+        volumeLabelLeft.setBounds(topRow.removeFromLeft(fixedLabelWidth));
+
+        // Add a small gap between left and right controls
+        topRow.removeFromLeft(1);
+
+        knobEarRight.setBounds(topRow.removeFromLeft(rowHeight).reduced(2));
+        volumeLabelRight.setBounds(topRow.removeFromLeft(fixedLabelWidth));
     }
 
     // Position save, presets and tweak from the right
@@ -650,18 +667,12 @@ void Control::resized() {
         positionButtonRight(buttonSaveAs, panelBounds);
         positionButtonRight(buttonDelete, panelBounds);
 
-        // Gap between save buttons and the moved roll control buttons
-        panelBounds.removeFromRight(16);
-
         positionButtonRight(toggleForrest, panelBounds);
         positionButtonRight(toggleSmoke, panelBounds);
         positionButtonRight(toggleOrientation, panelBounds);
         positionButtonRight(toggleRollType, panelBounds);
 
-        // Gap between Roll type and Strobe/Pivot group
-        panelBounds.removeFromRight(16);
         positionButtonRight(toggleStrobe, panelBounds);
-        panelBounds.removeFromRight(16);
         positionButtonRight(toggleLayoutPivot, panelBounds);
     }
 }
@@ -738,7 +749,8 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isRollHorizontal", isRollHorizontal);
     xml.setAttribute("isLayoutHorizontal", isLayoutHorizontal);
 
-    xml.setAttribute("earVolume", earVolume);
+    xml.setAttribute("earVolumeLeft", earVolumeLeft);
+    xml.setAttribute("earVolumeRight", earVolumeRight);
     xml.setAttribute("isCaptureEnabled", isCaptureEnabled);
     xml.setAttribute("isShowTweakPanel", isShowTweakPanel);
 
@@ -779,7 +791,8 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isRollHorizontal = xml.getBoolAttribute("isRollHorizontal", isRollHorizontal);
     isLayoutHorizontal = xml.getBoolAttribute("isLayoutHorizontal", isLayoutHorizontal);
 
-    earVolume = static_cast<float>(xml.getDoubleAttribute("earVolume", earVolume));
+    earVolumeLeft = static_cast<float>(xml.getDoubleAttribute("earVolumeLeft", earVolumeLeft));
+    earVolumeRight = static_cast<float>(xml.getDoubleAttribute("earVolumeRight", earVolumeRight));
     isCaptureEnabled = xml.getBoolAttribute("isCaptureEnabled", isCaptureEnabled);
     isShowTweakPanel = xml.getBoolAttribute("isShowTweakPanel", isShowTweakPanel);
 
