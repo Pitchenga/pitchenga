@@ -100,7 +100,8 @@ private:
     juce::TextButton toggleSmoke{"Smoke"};
     juce::TextButton toggleForrest{"Forest"};
 
-    VolumeKnob sliderEar;
+    VolumeKnob knobEar;
+    juce::Label volumeLabel;
     juce::TextButton toggleCapture{"Capture"};
     juce::TextButton buttonPlugs{"Plugs"};
     juce::TextButton buttonPlug{"Plug"};

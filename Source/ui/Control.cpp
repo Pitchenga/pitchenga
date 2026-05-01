@@ -168,9 +168,31 @@ Control::Control(PitchengaAudioProcessor& proc)
         processor.settings.isShowForrest = toggleForrest.getToggleState();
     };
 
-    sliderEar.setValue(processor.settings.earVolume, juce::NotificationType::dontSendNotification);
-    sliderEar.onValueChange = [this] {
-        processor.settings.earVolume = static_cast<float>(sliderEar.getValue());
+    volumeLabel.setFont(juce::FontOptions(13.0f).withStyle("Bold"));
+    volumeLabel.setJustificationType(juce::Justification::centredLeft);
+    volumeLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+
+    auto updateVolumeLabel = [this] {
+        const auto currentVolume = static_cast<float>(knobEar.getValue());
+        juce::String volumeText;
+        if (currentVolume <= 0.0001f) {
+            volumeText = "-inf";
+            volumeLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
+        } else {
+            float decibels = 20.0f * std::log10(currentVolume);
+            if (decibels > -0.1f) decibels = 0.0f;
+            volumeText = juce::String(decibels, 1);
+            volumeLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+        }
+        volumeLabel.setText(volumeText, juce::NotificationType::dontSendNotification);
+        resized(); // Re-layout to accommodate text width changes
+    };
+
+    knobEar.setValue(processor.settings.earVolume, juce::NotificationType::dontSendNotification);
+    updateVolumeLabel();
+    knobEar.onValueChange = [this, updateVolumeLabel] {
+        processor.settings.earVolume = static_cast<float>(knobEar.getValue());
+        updateVolumeLabel();
     };
 
     setupToggleButton(toggleCapture, processor.settings.isCaptureEnabled);
@@ -383,7 +405,8 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(toggleRoll);
     addAndMakeVisible(toggleIsFreezeRoll);
 
-    addAndMakeVisible(sliderEar);
+    addAndMakeVisible(knobEar);
+    addAndMakeVisible(volumeLabel);
 
     addAndMakeVisible(toggleTweak);
     addAndMakeVisible(comboPresets);
@@ -493,16 +516,8 @@ void Control::saveCurrentPreset() {
 
 void Control::deleteCurrentPreset() {
     const int selectedId = comboPresets.getSelectedId();
-    if (selectedId == 2) {
+    if (selectedId >= 2) {
         // Delete User Default and flip to Factory Default
-        if (currentPresetFile.deleteFile()) {
-            currentPresetFile = juce::File();
-            processor.settings.currentPresetName = "";
-            comboPresets.setSelectedId(1, juce::NotificationType::sendNotification);
-            refreshPresets();
-        }
-    } else if (selectedId > 3) {
-        // Delete general preset
         if (currentPresetFile.deleteFile()) {
             currentPresetFile = juce::File();
             processor.settings.currentPresetName = "";
@@ -534,7 +549,7 @@ void Control::updateVisibilityFromState() {
     toggleSmoke.setToggleState(processor.settings.isShowSmoke, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
-    sliderEar.setValue(processor.settings.earVolume, juce::NotificationType::dontSendNotification);
+    knobEar.setValue(processor.settings.earVolume, juce::NotificationType::dontSendNotification);
     toggleCapture.setToggleState(processor.settings.isCaptureEnabled, juce::NotificationType::dontSendNotification);
     toggleTweak.setToggleState(processor.settings.isShowTweakPanel, juce::NotificationType::dontSendNotification);
 
@@ -545,7 +560,7 @@ void Control::updateButtonStates() {
     const bool isStandalone = processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone;
     buttonPlugs.setVisible(isStandalone);
     buttonPlug.setVisible(isStandalone);
-    sliderEar.setVisible(isStandalone);
+    knobEar.setVisible(isStandalone);
     toggleCapture.setVisible(isStandalone);
 
     const bool rollActive = processor.settings.isShowRoll;
@@ -590,11 +605,11 @@ void Control::resized() {
     auto topRow = bounds.removeFromTop(rowHeight);
 
     // Pack the buttons to the left with minimal offsets dynamically sizing to their text
-    auto positionButton = [&](juce::TextButton& btn, juce::Rectangle<int>& container) {
-        if (!btn.isVisible()) return;
-        const float textWidth = juce::GlyphArrangement::getStringWidth(font, btn.getButtonText());
+    auto positionButton = [&](juce::TextButton& button, juce::Rectangle<int>& container) {
+        if (!button.isVisible()) return;
+        const float textWidth = juce::GlyphArrangement::getStringWidth(font, button.getButtonText());
         const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 16; // 16px horizontal padding
-        btn.setBounds(container.removeFromLeft(buttonWidth).reduced(2));
+        button.setBounds(container.removeFromLeft(buttonWidth).reduced(2));
     };
 
     auto positionButtonRight = [&](juce::TextButton& button, juce::Rectangle<int>& container) {
@@ -615,9 +630,8 @@ void Control::resized() {
     positionButton(toggleRoll, topRow);
 
     if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
-        const float textWidth = juce::GlyphArrangement::getStringWidth(font, "-inf");
-        const int sliderWidth = rowHeight + 10 + static_cast<int>(std::ceil(textWidth)) + 4;
-        sliderEar.setBounds(topRow.removeFromLeft(sliderWidth).reduced(2));
+        const int knobTotalWidth = rowHeight + 10 + 44;
+        knobEar.setBounds(topRow.removeFromLeft(knobTotalWidth).reduced(2));
     }
 
     // Position save, presets and tweak from the right

@@ -17,6 +17,7 @@ be terminated.
 3. Unscoped Justification: If No, why is this strictly necessary for the literal request?
 4. Revert Check: Does this intended change restore code I previously wrote that is currently missing from the disk?
    (Yes/No)
+5. Variable Name Check: Are all newly introduced variables fully descriptive words (no abbreviations like ctx, g, val, cx, db)? (Yes/No)
 
 -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
 
@@ -47,6 +48,7 @@ be terminated.
   than "SQLRDBMSDAO" - BAD.
 - CRITICAL: Do not shorten words, e.g. "horizontal" - GOOD, "horiz" - BAD; "context" - GOOD, "ctx" - BAD;
   "value" - GOOD, "val" - BAD.
+- 
 
 ## 0. Non-negotiables
 
