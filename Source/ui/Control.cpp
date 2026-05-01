@@ -31,57 +31,40 @@ Control::VolumeKnob::VolumeKnob() {
     SettableTooltipClient::setTooltip("Monitor Volume (Click to toggle)");
 }
 
-void Control::VolumeKnob::paint(juce::Graphics& g) {
+void Control::VolumeKnob::paint(juce::Graphics& graphics) {
     auto bounds = getLocalBounds().toFloat();
-    const float textWidth = 44.0f;
-    auto knobBounds = bounds.removeFromLeft(bounds.getWidth() - textWidth);
+    
+    const float radius = std::min(bounds.getWidth(), bounds.getHeight()) * 0.5f - 2.0f;
+    const float centerX = bounds.getCentreX();
+    const float centerY = bounds.getCentreY();
 
-    const float radius = std::min(knobBounds.getWidth(), knobBounds.getHeight()) * 0.5f - 2.0f;
-    const float cx = knobBounds.getCentreX();
-    const float cy = knobBounds.getCentreY();
-
-    const auto val = static_cast<float>(getValue());
+    const auto currentVolume = static_cast<float>(getValue());
 
     // Background
-    g.setColour(juce::Colours::black.withAlpha(0.4f));
-    g.fillEllipse(cx - radius, cy - radius, radius * 2.0f, radius * 2.0f);
+    graphics.setColour(juce::Colours::black.withAlpha(0.4f));
+    graphics.fillEllipse(centerX - radius, centerY - radius, radius * 2.0f, radius * 2.0f);
 
     // Outline
-    g.setColour(juce::Colours::grey);
-    g.drawEllipse(cx - radius, cy - radius, radius * 2.0f, radius * 2.0f, 1.0f);
+    graphics.setColour(juce::Colours::grey);
+    graphics.drawEllipse(centerX - radius, centerY - radius, radius * 2.0f, radius * 2.0f, 1.0f);
 
     constexpr float startAngle = -juce::MathConstants<float>::pi * 0.75f;
-    const float endAngle = startAngle + (val * juce::MathConstants<float>::pi * 1.5f);
+    const float endAngle = startAngle + (currentVolume * juce::MathConstants<float>::pi * 1.5f);
 
     // Fill Arc
-    if (val > 0.0f) {
-        juce::Path arc;
-        arc.addCentredArc(cx, cy, radius * 0.7f, radius * 0.7f, 0.0f, startAngle, endAngle, true);
-        g.setColour(juce::Colours::white.withAlpha(0.8f));
-        g.strokePath(arc, juce::PathStrokeType(2.0f, juce::PathStrokeType::curved));
+    if (currentVolume > 0.0f) {
+        juce::Path volumeArc;
+        volumeArc.addCentredArc(centerX, centerY, radius * 0.7f, radius * 0.7f, 0.0f, startAngle, endAngle, true);
+        graphics.setColour(juce::Colours::white.withAlpha(0.8f));
+        graphics.strokePath(volumeArc, juce::PathStrokeType(2.0f, juce::PathStrokeType::curved));
     }
 
     // Pointer
-    const float px = cx + std::sin(endAngle) * radius * 0.7f;
-    const float py = cy - std::cos(endAngle) * radius * 0.7f;
+    const float pointerX = centerX + std::sin(endAngle) * radius * 0.7f;
+    const float pointerY = centerY - std::cos(endAngle) * radius * 0.7f;
 
-    g.setColour(val > 0.0f ? juce::Colours::white : juce::Colours::grey.withAlpha(0.5f));
-    g.drawLine(cx, cy, px, py, 2.0f);
-
-    // Text
-    g.setColour(val > 0.0f ? juce::Colours::white : juce::Colours::grey);
-    g.setFont(juce::FontOptions(13.0f).withStyle("Bold"));
-
-    juce::String text;
-    if (val <= 0.0001f) {
-        text = "-inf";
-    } else {
-        float db = 20.0f * std::log10(val);
-        if (db > -0.1f) db = 0.0f;
-        text = juce::String(db, 1);
-    }
-
-    g.drawText(text, bounds, juce::Justification::centredLeft, false);
+    graphics.setColour(currentVolume > 0.0f ? juce::Colours::white : juce::Colours::grey.withAlpha(0.5f));
+    graphics.drawLine(centerX, centerY, pointerX, pointerY, 2.0f);
 }
 
 void Control::VolumeKnob::mouseDown(const juce::MouseEvent& e) {
@@ -185,7 +168,6 @@ Control::Control(PitchengaAudioProcessor& proc)
             volumeLabel.setColour(juce::Label::textColourId, juce::Colours::white);
         }
         volumeLabel.setText(volumeText, juce::NotificationType::dontSendNotification);
-        resized(); // Re-layout to accommodate text width changes
     };
 
     knobEar.setValue(processor.settings.earVolume, juce::NotificationType::dontSendNotification);
@@ -427,7 +409,7 @@ Control::Control(PitchengaAudioProcessor& proc)
 
 #include "build_timestamp.h"
 
-    buildTimestampLabel.setText(juce::String("Build ") + BUILD_TIMESTAMP, juce::NotificationType::dontSendNotification);
+    buildTimestampLabel.setText(BUILD_TIMESTAMP, juce::NotificationType::dontSendNotification);
     buildTimestampLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
     buildTimestampLabel.setFont(juce::FontOptions(13.0f));
     buildTimestampLabel.setJustificationType(juce::Justification::centredLeft);
@@ -630,8 +612,23 @@ void Control::resized() {
     positionButton(toggleRoll, topRow);
 
     if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
-        const int knobTotalWidth = rowHeight + 10 + 44;
+        // Layout constants
+        const int buttonPadding = 10;
+        const int gapBetweenKnobAndText = 4;
+        
+        // Calculate a fixed width for text allocation based on the widest possible string ("-inf")
+        // This ensures the layout is stable and doesn't "jump" when the volume changes.
+        const float textAllocationWidth = juce::GlyphArrangement::getStringWidth(volumeLabel.getFont(), "-inf");
+        
+        // Total width is the circular dial (rowHeight wide) + padding + gap + text
+        const int knobTotalWidth = rowHeight + buttonPadding + gapBetweenKnobAndText + static_cast<int>(std::ceil(textAllocationWidth));
+        
         knobEar.setBounds(topRow.removeFromLeft(knobTotalWidth).reduced(2));
+        
+        // The volumeLabel sits inside the right-hand portion of knobEar's allocated space
+        auto labelBounds = knobEar.getBounds();
+        labelBounds.removeFromLeft(rowHeight + buttonPadding + gapBetweenKnobAndText);
+        volumeLabel.setBounds(labelBounds);
     }
 
     // Position save, presets and tweak from the right
