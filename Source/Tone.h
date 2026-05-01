@@ -29,7 +29,7 @@ public:
         float wrapped = std::fmod(chroma, 12.0f);
         if (wrapped < 0.0f) wrapped += 12.0f;
 
-        const int index1 = static_cast<int>(std::floor(wrapped)) % 12;
+        const int index1 = static_cast<int>(std::floor(wrapped));
         const int index2 = (index1 + 1) % 12;
         const float fraction = wrapped - std::floor(wrapped);
 
