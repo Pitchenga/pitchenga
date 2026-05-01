@@ -88,7 +88,7 @@ void PitchengaAudioProcessor::prepareToPlay(const double sampleRate, const int s
         plugin->prepareToPlay(sampleRate, samplesPerBlock);
     }
 
-    if (settings.isCaptureEnabled) {
+    if (settings.isCaptureEnabled && wrapperType == wrapperType_Standalone) {
         desktopCapture.start(sampleRate);
     }
     
@@ -366,7 +366,9 @@ void PitchengaAudioProcessor::showExternalPluginEditor() {
 }
 
 void PitchengaAudioProcessor::startDesktopCapture() {
-    desktopCapture.start(getSampleRate());
+    if (wrapperType == wrapperType_Standalone) {
+        desktopCapture.start(getSampleRate());
+    }
 }
 
 void PitchengaAudioProcessor::stopDesktopCapture() {

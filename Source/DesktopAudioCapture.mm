@@ -1,8 +1,11 @@
+#include "DesktopAudioCapture.h"
+#include "Util.h"
+
+#if PITCHENGA_USE_SCREEN_CAPTURE
+
 #import <ScreenCaptureKit/ScreenCaptureKit.h>
 #import <CoreMedia/CoreMedia.h>
 #import <AVFoundation/AVFoundation.h>
-#include "DesktopAudioCapture.h"
-#include "Util.h"
 
 @interface DesktopAudioCaptureDelegate : NSObject <SCStreamOutput>
 @property (nonatomic, assign) DesktopAudioCapture* owner;
@@ -117,6 +120,22 @@ void DesktopAudioCapture::stop() {
         impl->stream = nil;
     }
 }
+
+#else
+
+struct DesktopAudioCapture::Impl {};
+
+DesktopAudioCapture::DesktopAudioCapture() : impl(std::make_unique<Impl>()) {
+    ringBuffer.assign(ringBufferSize, 0.0f);
+}
+
+DesktopAudioCapture::~DesktopAudioCapture() {}
+
+void DesktopAudioCapture::start(double) {}
+
+void DesktopAudioCapture::stop() {}
+
+#endif
 
 void DesktopAudioCapture::pushAudio(const float* data, int numSamples) {
     const auto scope = fifo.write(numSamples);
