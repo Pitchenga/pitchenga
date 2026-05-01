@@ -102,6 +102,16 @@ Control::Control(PitchengaAudioProcessor& proc)
         processor.settings.isEarEnabled = toggleEar.getToggleState();
     };
 
+    setupToggleButton(toggleCapture, processor.settings.isCaptureEnabled);
+    toggleCapture.onClick = [this] {
+        processor.settings.isCaptureEnabled = toggleCapture.getToggleState();
+        if (processor.settings.isCaptureEnabled) {
+            processor.startDesktopCapture();
+        } else {
+            processor.stopDesktopCapture();
+        }
+    };
+
     buttonPlugs.setButtonText("Plugs");
     buttonPlugs.onClick = [this] {
         showPlugsMenu();
@@ -311,6 +321,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(tweakPanel);
     tweakPanel.addAndMakeVisible(buttonPlugs);
     tweakPanel.addAndMakeVisible(buttonPlug);
+    tweakPanel.addAndMakeVisible(toggleCapture);
     tweakPanel.addAndMakeVisible(toggleLayoutPivot);
     tweakPanel.addAndMakeVisible(toggleStrobe);
     tweakPanel.addAndMakeVisible(toggleRollType);
@@ -453,6 +464,7 @@ void Control::updateVisibilityFromState() {
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
     toggleEar.setToggleState(processor.settings.isEarEnabled, juce::NotificationType::dontSendNotification);
+    toggleCapture.setToggleState(processor.settings.isCaptureEnabled, juce::NotificationType::dontSendNotification);
     toggleTweak.setToggleState(processor.settings.isShowTweakPanel, juce::NotificationType::dontSendNotification);
 
     updateButtonStates();
@@ -463,6 +475,7 @@ void Control::updateButtonStates() {
     buttonPlugs.setVisible(isStandalone);
     buttonPlug.setVisible(isStandalone);
     toggleEar.setVisible(isStandalone);
+    toggleCapture.setVisible(isStandalone);
 
     const bool rollActive = processor.settings.isShowRoll;
     toggleIsFreezeRoll.setVisible(rollActive);
@@ -550,6 +563,7 @@ void Control::resized() {
         auto panelBounds = tweakPanel.getLocalBounds();
         positionButton(buttonPlugs, panelBounds);
         positionButton(buttonPlug, panelBounds);
+        positionButton(toggleCapture, panelBounds);
 
         positionButtonRight(buttonSaveAs, panelBounds);
         positionButtonRight(buttonDelete, panelBounds);
@@ -643,6 +657,7 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isLayoutHorizontal", isLayoutHorizontal);
 
     xml.setAttribute("isEarEnabled", isEarEnabled);
+    xml.setAttribute("isCaptureEnabled", isCaptureEnabled);
     xml.setAttribute("isShowTweakPanel", isShowTweakPanel);
 
     if (externalPluginDescriptionXml.isNotEmpty()) {
@@ -683,6 +698,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isLayoutHorizontal = xml.getBoolAttribute("isLayoutHorizontal", isLayoutHorizontal);
 
     isEarEnabled = xml.getBoolAttribute("isEarEnabled", isEarEnabled);
+    isCaptureEnabled = xml.getBoolAttribute("isCaptureEnabled", isCaptureEnabled);
     isShowTweakPanel = xml.getBoolAttribute("isShowTweakPanel", isShowTweakPanel);
 
     externalPluginDescriptionXml = {};

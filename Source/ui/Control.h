@@ -29,6 +29,7 @@ public:
         bool isLayoutHorizontal = false;
 
         bool isEarEnabled = false;
+        bool isCaptureEnabled = false;
         bool isShowTweakPanel = false;
 
         juce::String externalPluginDescriptionXml;
@@ -89,6 +90,7 @@ private:
     juce::TextButton toggleForrest{"Forest"};
 
     juce::TextButton toggleEar{"Ear"};
+    juce::TextButton toggleCapture{"Capture"};
     juce::TextButton buttonPlugs{"Plugs"};
     juce::TextButton buttonPlug{"Plug"};
 

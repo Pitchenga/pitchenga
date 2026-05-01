@@ -13,6 +13,7 @@
     isRollHorizontal="1"
     isLayoutHorizontal="0"
     isEarEnabled="0"
+    isCaptureEnabled="0"
     isShowTweakPanel="0"
     isExternalPluginWindowOpen="0"
     splitRatio="0.3130223751068115">

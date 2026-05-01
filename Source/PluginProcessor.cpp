@@ -89,7 +89,10 @@ void PitchengaAudioProcessor::prepareToPlay(const double sampleRate, const int s
         plugin->prepareToPlay(sampleRate, samplesPerBlock);
     }
 
-    desktopCapture.start(sampleRate);
+    if (settings.isCaptureEnabled) {
+        desktopCapture.start(sampleRate);
+    }
+    
     desktopAudioBuffer.assign(bufferSize, 0.0f);
 }
 
@@ -347,6 +350,14 @@ void PitchengaAudioProcessor::showExternalPluginEditor() {
     if (onShowExternalPluginEditor) {
         onShowExternalPluginEditor();
     }
+}
+
+void PitchengaAudioProcessor::startDesktopCapture() {
+    desktopCapture.start(getSampleRate());
+}
+
+void PitchengaAudioProcessor::stopDesktopCapture() {
+    desktopCapture.stop();
 }
 
 juce::AudioProcessorEditor* PitchengaAudioProcessor::createExternalPluginEditor() {

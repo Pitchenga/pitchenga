@@ -90,6 +90,9 @@ public:
     juce::AudioProcessorEditor* createExternalPluginEditor();
     bool isExternalPluginLoaded() const { return atomicPlugin.load() != nullptr; }
 
+    void startDesktopCapture();
+    void stopDesktopCapture();
+
     juce::AudioPluginFormatManager& getFormatManager() { return formatManager; }
     juce::KnownPluginList& getKnownPluginList() { return knownPluginList; }
     
