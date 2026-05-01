@@ -42,7 +42,7 @@ be terminated.
 3. Unscoped Justification: If No, why is this strictly necessary for the literal request?
 4. Revert Check: Does this intended change restore code I previously wrote that is currently missing from the disk?
    (Yes/No)
-5. Guidelines check: Do all changes follow the CRITICAL RULES? (Yes/No)
+5. Rules check: Does any of the changes violate any of the CRITICAL RULES? (Yes/No)
 
 -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
 
@@ -53,14 +53,14 @@ be terminated.
 
 These rules override everything else in this file when in conflict:
 
-1. **Disagree when you disagree.** If the user's premise is wrong, say so before doing the work. Agreeing with false
+- **Disagree when you disagree.** If the user's premise is wrong, say so before doing the work. Agreeing with false
    premises to be polite is the single worst failure mode in coding agents.
-2. **Never fabricate.** Not file paths, not commit hashes, not API names, not test results, not library functions. If
+- **Never fabricate.** Not file paths, not commit hashes, not API names, not test results, not library functions. If
    you don't know, read the file, run the command, or say "I don't know, let me check."
-3. **Stop when confused.** If the task has two plausible interpretations, ask. Do not pick silently and proceed.
-4. **Touch only what you must.** Every changed line must trace directly to the user's request. No drive-by refactors,
+- **Stop when confused.** If the task has two plausible interpretations, ask. Do not pick silently and proceed.
+- **Touch only what you must.** Every changed line must trace directly to the user's request. No drive-by refactors,
    fixing bugs, reformatting, or cleanups.
-5. **Only requested changes.** No features beyond what was asked.
+- **Only requested changes.** No features beyond what was asked.
 
 ---
 
@@ -70,11 +70,10 @@ These rules override everything else in this file when in conflict:
 
 - State your plan in one or two sentences before editing. For anything non-trivial, produce a numbered list of steps
   with a verification check for each.
-- Read the files you will touch. Read the files that call the files you will touch. Claude Code: use subagents for
-  exploration so the main context stays clean.
+- Read the files you will touch. Read the files that call the files you will touch.
 - Match existing patterns in the codebase. If the project uses pattern X, use pattern X, even if you'd do it differently
   in a greenfield repo.
-- Surface assumptions out loud: "I'm assuming you want X, Y, Z. If that's wrong, say so." Do not bury assumptions inside
+- Print assumptions out loud: "I'm assuming you want X, Y, Z. If that's wrong, say so." Do not bury assumptions inside
   the implementation.
 - If two approaches exist, present both with tradeoffs. Do not pick one silently. Exception: trivial tasks (typo,
   rename, log line) where the diff fits in one sentence.
@@ -135,38 +134,11 @@ For every task:
   better prompt.
 - After two failed corrections on the same issue, stop. Summarize what you learned and ask the user to reset the session
   with a sharper prompt.
-- Use subagents (Claude Code: "use subagents to investigate X") for exploration tasks that would otherwise pollute the
-  main context with dozens of file reads.
-- When committing, write descriptive commit messages (subject under 72 chars, body explains the why). No "update file"
-  or "fix bug" commits. No "Co-Authored-By: Claude" attribution unless the project explicitly wants it.
+- Use subagents for exploration tasks that would otherwise pollute the main context with dozens of file reads.
 
 ---
 
-## 6. Communication style
-
-- Direct, not diplomatic.
-- When a question has a clear answer, give it. When it does not, say so and give your best read on the tradeoffs.
-
----
-
-## 7. When to ask, when to proceed
-
-**Ask before proceeding when:**
-
-- The request has two plausible interpretations and the choice materially affects the output.
-- The change touches something you've been told is load-bearing, versioned, or has a migration path.
-- You need a credential, a secret, or a production resource you don't have access to.
-- The user's stated goal and the literal request appear to conflict.
-
-**Proceed without asking when:**
-
-- The task is trivial and reversible (typo, rename a local variable, add a log line).
-- The ambiguity can be resolved by reading the code or running a command.
-- The user has already answered the question once in this session.
-
----
-
-## 8. Project context
+## 6. Project context
 
 **Fill this in per project. Keep it specific. Delete sections that don't apply.**
 
@@ -184,8 +156,6 @@ For every task:
 - Run locally:
   `killall Pitchenga; ./cmake-build-debug/Pitchenga_artefacts/Debug/Standalone/Pitchenga.app/Contents/MacOS/Pitchenga`
 
-Prefer single-file or single-test runs during iteration. Full suites are for the final verification pass.
-
 ### Layout
 
 - `Source/`: Core plugin source files.
@@ -197,15 +167,3 @@ Prefer single-file or single-test runs during iteration. Full suites are for the
 
 - `Util::debug("Failed loading plugin, name=" + name + ", error=" + error + ",")`
 
----
-
-## 10. Project Learnings
-
-**Accumulated corrections. This section is for the agent to maintain, not just the human.**
-
-When the user corrects your approach, append a one-line rule here before ending the session. Write it concretely ("
-Always use X for Y"), never abstractly ("be careful with Y"). If an existing line already covers the correction, tighten
-it instead of adding a new one. Remove lines when the underlying issue goes away (model upgrades, refactors, process
-changes).
-
-- ...
