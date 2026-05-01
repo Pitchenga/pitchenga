@@ -43,6 +43,10 @@ juce_add_plugin(Pitchenga
         PLUGINHOST_VST3 TRUE
         PLIST_TO_MERGE "<plist><dict><key>NSScreenCaptureUsageDescription</key><string>Pitchenga needs screen capture access to visualize your desktop audio.</string></dict></plist>")
 
+add_custom_command(TARGET Pitchenga_AU POST_BUILD
+        COMMAND /usr/libexec/PlistBuddy -c "Delete :NSScreenCaptureUsageDescription" "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist"
+        COMMENT "Removing screen capture usage description from AU plist")
+
 # Tell CMake which C++ files to compile
 set(PITCHENGA_SOURCES
         Source/PluginProcessor.cpp
@@ -77,7 +81,6 @@ set(PITCHENGA_SOURCES
         Source/math/Stft.cpp
         Source/math/PitchDetector.h
         Source/DesktopAudioCapture.h
-        Source/DesktopAudioCapture.mm
 )
 
 # Generate a build timestamp
@@ -97,12 +100,18 @@ target_link_libraries(Pitchenga PRIVATE
         juce::juce_audio_utils
         juce::juce_dsp                 # Contains the fast FFT class
         Eigen3::Eigen
-        "-framework ScreenCaptureKit"
         "-framework CoreMedia"
         "-framework AVFoundation"
         PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags)
+
+target_link_libraries(Pitchenga_Standalone PRIVATE "-framework ScreenCaptureKit")
+target_sources(Pitchenga_Standalone PRIVATE Source/DesktopAudioCapture.mm)
+target_compile_definitions(Pitchenga_Standalone PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=1)
+
+target_sources(Pitchenga_AU PRIVATE Source/DesktopAudioCapture.mm)
+target_compile_definitions(Pitchenga_AU PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
 
 target_compile_features(Pitchenga PUBLIC cxx_std_20)
 
