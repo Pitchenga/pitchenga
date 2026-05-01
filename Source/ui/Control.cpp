@@ -31,6 +31,41 @@ Control::VolumeKnob::VolumeKnob() {
     setTooltip("Monitor Volume (Click to toggle)");
 }
 
+void Control::VolumeKnob::paint(juce::Graphics& g) {
+    auto bounds = getLocalBounds().toFloat();
+    const float radius = std::min(bounds.getWidth(), bounds.getHeight()) * 0.5f - 2.0f;
+    const float cx = bounds.getCentreX();
+    const float cy = bounds.getCentreY();
+
+    const float val = static_cast<float>(getValue());
+
+    // Background
+    g.setColour(juce::Colours::black.withAlpha(0.4f));
+    g.fillEllipse(cx - radius, cy - radius, radius * 2.0f, radius * 2.0f);
+
+    // Outline
+    g.setColour(juce::Colours::grey);
+    g.drawEllipse(cx - radius, cy - radius, radius * 2.0f, radius * 2.0f, 1.0f);
+
+    constexpr float startAngle = -juce::MathConstants<float>::pi * 0.75f;
+    const float endAngle = startAngle + (val * juce::MathConstants<float>::pi * 1.5f);
+
+    // Fill Arc
+    if (val > 0.0f) {
+        juce::Path arc;
+        arc.addCentredArc(cx, cy, radius * 0.7f, radius * 0.7f, 0.0f, startAngle, endAngle, true);
+        g.setColour(juce::Colours::white.withAlpha(0.8f));
+        g.strokePath(arc, juce::PathStrokeType(2.0f, juce::PathStrokeType::curved));
+    }
+
+    // Pointer
+    const float px = cx + std::sin(endAngle) * radius * 0.7f;
+    const float py = cy - std::cos(endAngle) * radius * 0.7f;
+
+    g.setColour(val > 0.0f ? juce::Colours::white : juce::Colours::grey.withAlpha(0.5f));
+    g.drawLine(cx, cy, px, py, 2.0f);
+}
+
 void Control::VolumeKnob::mouseDown(const juce::MouseEvent& e) {
     Slider::mouseDown(e);
     wasDragged = false;
@@ -561,7 +596,7 @@ void Control::resized() {
     positionButton(toggleEye, topRow);
     positionButton(toggleRoll, topRow);
 
-    if (sliderEar.isVisible()) {
+    if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
         const int sliderWidth = rowHeight + 10;
         sliderEar.setBounds(topRow.removeFromLeft(sliderWidth).reduced(2));
     }

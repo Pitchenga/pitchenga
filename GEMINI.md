@@ -15,8 +15,8 @@ be terminated.
 1. File: [File path you intend to modify]
 2. Scoped: Was this file explicitly requested by the user? (Yes/No)
 3. Unscoped Justification: If No, why is this strictly necessary for the literal request?
-4. Revert Check: Does this intended change restore code I previously wrote that is currently missing from the disk? (
-   Yes/No)
+4. Revert Check: Does this intended change restore code I previously wrote that is currently missing from the disk?
+  (Yes/No)
 
 -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
 
