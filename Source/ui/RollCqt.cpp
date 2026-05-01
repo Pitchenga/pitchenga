@@ -81,7 +81,7 @@ void RollCqt::resized() {
     }
 }
 
-float RollCqt::getLabelAreaHeight() const {
+float RollCqt::getLabelAreaHeight() {
     //fixme: Unify range and hide labels when adjacent to tuner
     // if (!processor.settings.isShowRollLabels()) {
         // return 0.0f;

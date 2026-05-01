@@ -88,6 +88,9 @@ void PitchengaAudioProcessor::prepareToPlay(const double sampleRate, const int s
     if (auto* plugin = atomicPlugin.load()) {
         plugin->prepareToPlay(sampleRate, samplesPerBlock);
     }
+
+    desktopCapture.start(sampleRate);
+    desktopAudioBuffer.assign(bufferSize, 0.0f);
 }
 
 void PitchengaAudioProcessor::releaseResources() {
@@ -161,7 +164,22 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
         juce::FloatVectorOperations::multiply(monoData, 0.5f, numSamples);
     }
 
-    // Stream D: The Speaker Output
+    // Stream D: Desktop Audio Capture
+    const int available = desktopCapture.getFifo().getNumReady();
+    if (available > 0) {
+        const int samplesToRead = std::min(available, numSamples);
+        const auto scope = desktopCapture.getFifo().read(samplesToRead);
+
+        if (scope.blockSize1 > 0) {
+            juce::FloatVectorOperations::add(monoData, desktopCapture.getBuffer().data() + scope.startIndex1, scope.blockSize1);
+        }
+
+        if (scope.blockSize2 > 0) {
+            juce::FloatVectorOperations::add(monoData + scope.blockSize1, desktopCapture.getBuffer().data() + scope.startIndex2, scope.blockSize2);
+        }
+    }
+
+    // Stream E: The Speaker Output
     buffer.clear();
 
     // Instrument always goes to speakers

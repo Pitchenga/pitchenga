@@ -18,7 +18,7 @@ public:
     void setEngine(const Cqt* e) { engine = e; }
     static constexpr int getPreferredHeight() { return 619; }
 
-    float getLabelAreaHeight() const;
+    static float getLabelAreaHeight();
 
 private:
     void buildFrame();

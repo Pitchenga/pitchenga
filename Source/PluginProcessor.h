@@ -6,6 +6,7 @@
 #include <array>
 #include "ui/Control.h"
 #include "math/Agc.h"
+#include "DesktopAudioCapture.h"
 
 class FastButterworth {
     std::array<float, 7> inputSamples{0.0f};
@@ -138,6 +139,9 @@ private:
 
     juce::AudioBuffer<float> pluginOutputBuffer;
     juce::AudioBuffer<float> micBuffer;
+    
+    DesktopAudioCapture desktopCapture;
+    std::vector<float> desktopAudioBuffer;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PitchengaAudioProcessor)
 };

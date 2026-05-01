@@ -40,7 +40,8 @@ juce_add_plugin(Pitchenga
         COPY_PLUGIN_AFTER_BUILD TRUE      # Automatically drops the AU into your Mac's plugin folder
         MICROPHONE_PERMISSION_ENABLED TRUE
         PLUGINHOST_AU TRUE
-        PLUGINHOST_VST3 TRUE)
+        PLUGINHOST_VST3 TRUE
+        PLIST_TO_MERGE "<plist><dict><key>NSScreenCaptureUsageDescription</key><string>Pitchenga needs screen capture access to visualize your desktop audio.</string></dict></plist>")
 
 # Tell CMake which C++ files to compile
 set(PITCHENGA_SOURCES
@@ -75,6 +76,8 @@ set(PITCHENGA_SOURCES
         Source/math/Stft.h
         Source/math/Stft.cpp
         Source/math/PitchDetector.h
+        Source/DesktopAudioCapture.h
+        Source/DesktopAudioCapture.mm
 )
 
 # Generate a build timestamp
@@ -94,6 +97,9 @@ target_link_libraries(Pitchenga PRIVATE
         juce::juce_audio_utils
         juce::juce_dsp                 # Contains the fast FFT class
         Eigen3::Eigen
+        "-framework ScreenCaptureKit"
+        "-framework CoreMedia"
+        "-framework AVFoundation"
         PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags)
