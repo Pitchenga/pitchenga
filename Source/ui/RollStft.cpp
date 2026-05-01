@@ -102,8 +102,7 @@ void RollStft::buildFrame() {
 }
 
 juce::String RollStft::getNoteName(const int midiNote) {
-    int chroma = midiNote % 12;
-    if (chroma < 0) chroma += 12;
+    int chroma = Common::fast_mod12(midiNote);
     const int octave = midiNote / 12 - 1;
     return Tone::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
 }
@@ -173,7 +172,7 @@ void RollStft::paintFrame(juce::Graphics& graphics) const {
     const int endMidi = static_cast<int>(std::floor(maxMidiNote));
 
     for (int midiNote = startMidi; midiNote <= endMidi; ++midiNote) {
-        const int chroma = midiNote % 12;
+        const int chroma = Common::fast_mod12(midiNote);
 
         // fixme: move to ToneName
         // Identify standard "black" keys
@@ -225,9 +224,8 @@ void RollStft::paintForrest(juce::Graphics& graphics) const {
             const float normalizedMagnitude = std::min(1.0f, std::max(0.0f, peak.magnitude));
             const auto barHeight = normalizedMagnitude * plotHeight;
 
-            float midi = freqToMidi(peak.frequencyHz);
-            float continuousChroma = std::fmod(midi, 12.0f);
-            if (continuousChroma < 0.0f) continuousChroma += 12.0f;
+            const float midi = freqToMidi(peak.frequencyHz);
+            const float continuousChroma = Common::fast_fmod12(midi);
 
             const juce::Colour color = Tone::getContinuousColor(continuousChroma);
             graphics.setColour(color);
@@ -259,10 +257,12 @@ void RollStft::pumpSmoke() {
     constexpr int speedPx = static_cast<int>(smokeSpeedPxPerFrame);
 
     // Advance the scroll offset and wrap it like a treadmill
-    smokeScrollOffset = (smokeScrollOffset + speedPx) % height;
+    smokeScrollOffset += speedPx;
+    if (smokeScrollOffset >= height) smokeScrollOffset -= height;
 
     // Calculate where in the image memory the new row should be drawn
-    const int drawY = (height - speedPx + smokeScrollOffset) % height;
+    int drawY = smokeScrollOffset - speedPx;
+    if (drawY < 0) drawY += height;
 
     // Clear the new row first to prevent ghosting from previous treadmill cycles
     smokeImage.clear(juce::Rectangle<int>(0, drawY, width, speedPx), juce::Colours::transparentBlack);
@@ -299,9 +299,7 @@ void RollStft::pumpSmoke() {
                 }
 
                 // Fast continuous modulus (replaces heavy std::fmod)
-                float continuousChroma = midi;
-                while (continuousChroma >= 12.0f) continuousChroma -= 12.0f;
-                while (continuousChroma < 0.0f) continuousChroma += 12.0f;
+                const float continuousChroma = Common::fast_fmod12(midi);
 
                 const juce::Colour baseColor = Tone::getContinuousColor(continuousChroma);
                 constexpr float undimmingGain = 1.3f;
