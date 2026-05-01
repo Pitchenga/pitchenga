@@ -615,7 +615,8 @@ void Control::resized() {
     positionButton(toggleRoll, topRow);
 
     if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
-        const int sliderWidth = rowHeight + 10 + 44;
+        const float textWidth = juce::GlyphArrangement::getStringWidth(font, "-inf");
+        const int sliderWidth = rowHeight + 10 + static_cast<int>(std::ceil(textWidth)) + 4;
         sliderEar.setBounds(topRow.removeFromLeft(sliderWidth).reduced(2));
     }
 

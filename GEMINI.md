@@ -16,7 +16,7 @@ be terminated.
 2. Scoped: Was this file explicitly requested by the user? (Yes/No)
 3. Unscoped Justification: If No, why is this strictly necessary for the literal request?
 4. Revert Check: Does this intended change restore code I previously wrote that is currently missing from the disk?
-  (Yes/No)
+   (Yes/No)
 
 -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
 
@@ -38,14 +38,15 @@ be terminated.
   change double-check and ensure that all pre-existing comments still exist. If any pre-existing comments became
   outdated then explicitly notify the user that an outdated comment is being removed.
 - CRITICAL: Always use descriptive names, except for "i" - index, "x"/"y" - coordinates, "e" - exception. This is a hard
-  rule and cannot be violated.
+  rule and cannot be violated. E.g.: "g" - BAD, "graphics" - GOOD; "cx" - BAD, "centerX" - GOOD.
 - CRITICAL: Do not use numbers for steps in comments, as they quickly become outdated and hard to manage.
 - CRITICAL: Do not add "NEW" or to comments.
 - CRITICAL: Prefer named constants in header file rather than hard-coded values.
 - CRITICAL: Prefer separate functions to long code blocks with a comment.
 - CRITICAL: Use strict camel-case for acronyms, e.g. "variableSqlRdbmsDao" - Good, "ClassSqlRdbmsDao" - Good, rather
   than "SQLRDBMSDAO" - BAD.
-- CRITICAL: Do not shorten words, e.g. "horizontal" - GOOD, "horiz" - BAD; "context" - GOOD, "ctx" - bad.
+- CRITICAL: Do not shorten words, e.g. "horizontal" - GOOD, "horiz" - BAD; "context" - GOOD, "ctx" - BAD;
+  "value" - GOOD, "val" - BAD.
 
 ## 0. Non-negotiables
 
