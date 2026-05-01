@@ -33,9 +33,12 @@ Control::VolumeKnob::VolumeKnob() {
 
 void Control::VolumeKnob::paint(juce::Graphics& g) {
     auto bounds = getLocalBounds().toFloat();
-    const float radius = std::min(bounds.getWidth(), bounds.getHeight()) * 0.5f - 2.0f;
-    const float cx = bounds.getCentreX();
-    const float cy = bounds.getCentreY();
+    const float textWidth = 44.0f;
+    auto knobBounds = bounds.removeFromLeft(bounds.getWidth() - textWidth);
+
+    const float radius = std::min(knobBounds.getWidth(), knobBounds.getHeight()) * 0.5f - 2.0f;
+    const float cx = knobBounds.getCentreX();
+    const float cy = knobBounds.getCentreY();
 
     const auto val = static_cast<float>(getValue());
 
@@ -64,6 +67,21 @@ void Control::VolumeKnob::paint(juce::Graphics& g) {
 
     g.setColour(val > 0.0f ? juce::Colours::white : juce::Colours::grey.withAlpha(0.5f));
     g.drawLine(cx, cy, px, py, 2.0f);
+
+    // Text
+    g.setColour(val > 0.0f ? juce::Colours::white : juce::Colours::grey);
+    g.setFont(juce::FontOptions(13.0f).withStyle("Bold"));
+    
+    juce::String text;
+    if (val <= 0.0001f) {
+        text = "-inf";
+    } else {
+        float db = 20.0f * std::log10(val);
+        if (db > -0.1f) db = 0.0f;
+        text = juce::String(db, 1);
+    }
+    
+    g.drawText(text, bounds, juce::Justification::centredLeft, false);
 }
 
 void Control::VolumeKnob::mouseDown(const juce::MouseEvent& e) {
