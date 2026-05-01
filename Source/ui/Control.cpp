@@ -154,6 +154,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     volumeLabel.setFont(juce::FontOptions(13.0f).withStyle("Bold"));
     volumeLabel.setJustificationType(juce::Justification::centredLeft);
     volumeLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+    volumeLabel.setBorderSize(juce::BorderSize(0));
 
     auto updateVolumeLabel = [this] {
         const auto currentVolume = static_cast<float>(knobEar.getValue());
@@ -616,12 +617,12 @@ void Control::resized() {
         knobEar.setBounds(topRow.removeFromLeft(rowHeight).reduced(2));
         
         // 2. Add a small gap between the knob and the text
-        topRow.removeFromLeft(4);
+        topRow.removeFromLeft(1);
         
         // 3. Layout the label independently with a fixed width based on the maximum string length
         // to ensure the rest of the UI doesn't "jump" when the volume changes.
-        const float maxTextWidth = juce::GlyphArrangement::getStringWidth(volumeLabel.getFont(), "-inf");
-        const int fixedLabelWidth = static_cast<int>(std::ceil(maxTextWidth)) + 2; // +2px buffer for safety
+        const float maxTextWidth = juce::GlyphArrangement::getStringWidth(volumeLabel.getFont(), "-00.0");
+        const int fixedLabelWidth = static_cast<int>(std::ceil(maxTextWidth));
         
         volumeLabel.setBounds(topRow.removeFromLeft(fixedLabelWidth));
     }
