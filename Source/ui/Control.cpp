@@ -22,14 +22,32 @@ struct Control::PluginListListener : juce::ChangeListener {
 
 static juce::String getSettingsTagName() {
     return "PITCHENGA";
-    // #ifdef CMAKE_BUILD_PROFILE
-    //     juce::String profile = PITCHENGA_MACRO_STRING(CMAKE_BUILD_PROFILE);
-    //     profile = profile.removeCharacters("\"");
-    //     if (profile.isEmpty()) profile = "DEFAULT";
-    //     return "PITCHENGA_" + profile.toUpperCase();
-    // #else
-    //     return "PITCHENGA_DEFAULT";
-    // #endif
+}
+
+Control::VolumeKnob::VolumeKnob() {
+    setSliderStyle(RotaryHorizontalVerticalDrag);
+    setTextBoxStyle(NoTextBox, false, 0, 0);
+    setRange(0.0, 1.0);
+    setTooltip("Monitor Volume (Click to toggle)");
+}
+
+void Control::VolumeKnob::mouseDown(const juce::MouseEvent& e) {
+    Slider::mouseDown(e);
+    wasDragged = false;
+}
+
+void Control::VolumeKnob::mouseDrag(const juce::MouseEvent& e) {
+    Slider::mouseDrag(e);
+    if (e.mouseWasDraggedSinceMouseDown()) {
+        wasDragged = true;
+    }
+}
+
+void Control::VolumeKnob::mouseUp(const juce::MouseEvent& e) {
+    Slider::mouseUp(e);
+    if (!wasDragged) {
+        setValue(getValue() > 0.0 ? 0.0 : 1.0, juce::sendNotificationSync);
+    }
 }
 
 Control::Control(PitchengaAudioProcessor& proc)
@@ -97,9 +115,9 @@ Control::Control(PitchengaAudioProcessor& proc)
         processor.settings.isShowForrest = toggleForrest.getToggleState();
     };
 
-    setupToggleButton(toggleEar, processor.settings.isEarEnabled);
-    toggleEar.onClick = [this] {
-        processor.settings.isEarEnabled = toggleEar.getToggleState();
+    sliderEar.setValue(processor.settings.earVolume, juce::NotificationType::dontSendNotification);
+    sliderEar.onValueChange = [this] {
+        processor.settings.earVolume = static_cast<float>(sliderEar.getValue());
     };
 
     setupToggleButton(toggleCapture, processor.settings.isCaptureEnabled);
@@ -312,7 +330,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(toggleRoll);
     addAndMakeVisible(toggleIsFreezeRoll);
 
-    addAndMakeVisible(toggleEar);
+    addAndMakeVisible(sliderEar);
 
     addAndMakeVisible(toggleTweak);
     addAndMakeVisible(comboPresets);
@@ -463,7 +481,7 @@ void Control::updateVisibilityFromState() {
     toggleSmoke.setToggleState(processor.settings.isShowSmoke, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
-    toggleEar.setToggleState(processor.settings.isEarEnabled, juce::NotificationType::dontSendNotification);
+    sliderEar.setValue(processor.settings.earVolume, juce::NotificationType::dontSendNotification);
     toggleCapture.setToggleState(processor.settings.isCaptureEnabled, juce::NotificationType::dontSendNotification);
     toggleTweak.setToggleState(processor.settings.isShowTweakPanel, juce::NotificationType::dontSendNotification);
 
@@ -474,7 +492,7 @@ void Control::updateButtonStates() {
     const bool isStandalone = processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone;
     buttonPlugs.setVisible(isStandalone);
     buttonPlug.setVisible(isStandalone);
-    toggleEar.setVisible(isStandalone);
+    sliderEar.setVisible(isStandalone);
     toggleCapture.setVisible(isStandalone);
 
     const bool rollActive = processor.settings.isShowRoll;
@@ -543,7 +561,10 @@ void Control::resized() {
     positionButton(toggleEye, topRow);
     positionButton(toggleRoll, topRow);
 
-    positionButton(toggleEar, topRow);
+    if (sliderEar.isVisible()) {
+        const int sliderWidth = rowHeight + 10;
+        sliderEar.setBounds(topRow.removeFromLeft(sliderWidth).reduced(2));
+    }
 
     // Position save, presets and tweak from the right
     // buttonSave first from right makes it the rightmost
@@ -656,7 +677,7 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isRollHorizontal", isRollHorizontal);
     xml.setAttribute("isLayoutHorizontal", isLayoutHorizontal);
 
-    xml.setAttribute("isEarEnabled", isEarEnabled);
+    xml.setAttribute("earVolume", earVolume);
     xml.setAttribute("isCaptureEnabled", isCaptureEnabled);
     xml.setAttribute("isShowTweakPanel", isShowTweakPanel);
 
@@ -697,7 +718,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isRollHorizontal = xml.getBoolAttribute("isRollHorizontal", isRollHorizontal);
     isLayoutHorizontal = xml.getBoolAttribute("isLayoutHorizontal", isLayoutHorizontal);
 
-    isEarEnabled = xml.getBoolAttribute("isEarEnabled", isEarEnabled);
+    earVolume = static_cast<float>(xml.getDoubleAttribute("earVolume", earVolume));
     isCaptureEnabled = xml.getBoolAttribute("isCaptureEnabled", isCaptureEnabled);
     isShowTweakPanel = xml.getBoolAttribute("isShowTweakPanel", isShowTweakPanel);
 

@@ -10,6 +10,16 @@ class PitchengaAudioProcessor;
 class Control : public juce::Component,
     juce::Timer {
 public:
+    class VolumeKnob : public juce::Slider {
+    public:
+        VolumeKnob();
+        void mouseDown(const juce::MouseEvent& e) override;
+        void mouseDrag(const juce::MouseEvent& e) override;
+        void mouseUp(const juce::MouseEvent& e) override;
+    private:
+        bool wasDragged = false;
+    };
+
     // Data model for UI settings.
     // Handles its own XML parsing, but lives in the Processor to survive window closures.
     struct Settings {
@@ -28,7 +38,7 @@ public:
         bool isRollHorizontal = false;
         bool isLayoutHorizontal = false;
 
-        bool isEarEnabled = false;
+        float earVolume = 0.0f;
         bool isCaptureEnabled = false;
         bool isShowTweakPanel = false;
 
@@ -89,7 +99,7 @@ private:
     juce::TextButton toggleSmoke{"Smoke"};
     juce::TextButton toggleForrest{"Forest"};
 
-    juce::TextButton toggleEar{"Ear"};
+    VolumeKnob sliderEar;
     juce::TextButton toggleCapture{"Capture"};
     juce::TextButton buttonPlugs{"Plugs"};
     juce::TextButton buttonPlug{"Plug"};

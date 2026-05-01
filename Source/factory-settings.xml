@@ -12,7 +12,7 @@
     isShowSmoke="1"
     isRollHorizontal="1"
     isLayoutHorizontal="0"
-    isEarEnabled="0"
+    earVolume="0.0"
     isCaptureEnabled="0"
     isShowTweakPanel="0"
     isExternalPluginWindowOpen="0"
