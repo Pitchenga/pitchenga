@@ -110,3 +110,9 @@ target_compile_definitions(Pitchenga PRIVATE CMAKE_BUILD_PROFILE=$<CONFIG>)
 
 # Make generated timestamp header available to the build
 target_include_directories(Pitchenga PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+
+juce_add_binary_data(PitchengaData
+        SOURCES
+        Source/factory-settings.xml)
+
+target_link_libraries(Pitchenga PRIVATE PitchengaData)

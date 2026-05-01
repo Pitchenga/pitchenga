@@ -118,7 +118,7 @@ namespace sevagh {
             fftEngine.perform(fftBuffer.data(), fftBuffer.data(), true);
 
             // Square Sum m[k]
-            std::vector<float> squareSums(static_cast<size_t>(actualSize), 0.0f);
+            std::vector squareSums(static_cast<size_t>(actualSize), 0.0f);
             float totalSumSquares = 0.0f;
             for (size_t i = 0; i < static_cast<size_t>(actualSize); ++i) {
                 const float val = static_cast<float>(audioBuffer[i]);

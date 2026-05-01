@@ -1,6 +1,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "Util.h"
+#include "BinaryData.h"
 #include <stdexcept>
 
 PitchengaAudioProcessor::PitchengaAudioProcessor()
@@ -53,10 +54,8 @@ void PitchengaAudioProcessor::loadDefaultSettings() {
         }
     }
 
-    // Fallback to the factory setting in the Source directory
-    const juce::File factoryDefaultFile(juce::File(__FILE__).getSiblingFile("factory-settings.xml"));
-
-    if (auto xml = juce::XmlDocument::parse(factoryDefaultFile)) {
+    // Fallback to the factory setting bundled as binary data
+    if (auto xml = juce::XmlDocument::parse(juce::String::createStringFromData(BinaryData::factorysettings_xml, BinaryData::factorysettings_xmlSize))) {
         settings.loadFromXml(*xml);
     }
 }

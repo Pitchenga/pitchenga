@@ -1,6 +1,7 @@
 #include "Control.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "../PluginProcessor.h"
+#include "BinaryData.h"
 
 struct Control::PluginListListener : juce::ChangeListener {
     explicit PluginListListener(Control& c) : owner(c) {}
@@ -33,7 +34,7 @@ Control::VolumeKnob::VolumeKnob() {
 
 void Control::VolumeKnob::paint(juce::Graphics& graphics) {
     auto bounds = getLocalBounds().toFloat();
-    
+
     const float radius = std::min(bounds.getWidth(), bounds.getHeight()) * 0.5f - 2.0f;
     const float centerX = bounds.getCentreX();
     const float centerY = bounds.getCentreY();
@@ -221,10 +222,12 @@ Control::Control(PitchengaAudioProcessor& proc)
 
         if (id == 1) {
             newPresetName = "";
-            const juce::File factoryDefaultFile(
-                juce::File(__FILE__).getParentDirectory().getParentDirectory().getChildFile("factory-settings.xml")
+            xml = juce::XmlDocument::parse(
+                juce::String::createStringFromData(
+                    BinaryData::factorysettings_xml,
+                    BinaryData::factorysettings_xmlSize
+                )
             );
-            xml = juce::XmlDocument::parse(factoryDefaultFile);
             if (xml != nullptr) xml->setTagName(getSettingsTagName());
         } else if (id == 2) {
             const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).
@@ -236,10 +239,12 @@ Control::Control(PitchengaAudioProcessor& proc)
                 xml = juce::XmlDocument::parse(newPresetFile);
             } else {
                 // Fallback to factory if missing, but keep User Default context for Saving
-                const juce::File factoryDefaultFile(
-                    juce::File(__FILE__).getParentDirectory().getParentDirectory().getChildFile("factory-settings.xml")
+                xml = juce::XmlDocument::parse(
+                    juce::String::createStringFromData(
+                        BinaryData::factorysettings_xml,
+                        BinaryData::factorysettings_xmlSize
+                    )
                 );
-                xml = juce::XmlDocument::parse(factoryDefaultFile);
                 if (xml != nullptr) xml->setTagName(getSettingsTagName());
             }
         } else if (id > 3) {
@@ -313,11 +318,13 @@ Control::Control(PitchengaAudioProcessor& proc)
             "Save",
             "Cancel",
             nullptr,
-            juce::ModalCallbackFunction::create([this](int result) {
-                if (result != 0) {
-                    saveCurrentPreset();
+            juce::ModalCallbackFunction::create(
+                [this](int result) {
+                    if (result != 0) {
+                        saveCurrentPreset();
+                    }
                 }
-            })
+            )
         );
     };
 
@@ -387,11 +394,13 @@ Control::Control(PitchengaAudioProcessor& proc)
             "Delete",
             "Cancel",
             nullptr,
-            juce::ModalCallbackFunction::create([this](int result) {
-                if (result != 0) {
-                    deleteCurrentPreset();
+            juce::ModalCallbackFunction::create(
+                [this](int result) {
+                    if (result != 0) {
+                        deleteCurrentPreset();
+                    }
                 }
-            })
+            )
         );
     };
 
@@ -449,7 +458,7 @@ void Control::showPlugsMenu() {
     auto types = list.getTypes();
 
     int id = 4;
-    for (auto && type : types) {
+    for (auto&& type : types) {
         if (type.isInstrument) {
             menu.addItem(id, type.name);
         }
@@ -537,7 +546,10 @@ void Control::updateVisibilityFromState() {
     toggleRoll.setToggleState(processor.settings.isShowRoll, juce::NotificationType::dontSendNotification);
     toggleEye.setToggleState(processor.settings.isShowEye, juce::NotificationType::dontSendNotification);
     toggleNeedle.setToggleState(processor.settings.isShowNeedle, juce::NotificationType::dontSendNotification);
-    toggleLayoutPivot.setToggleState(processor.settings.isLayoutHorizontal, juce::NotificationType::dontSendNotification);
+    toggleLayoutPivot.setToggleState(
+        processor.settings.isLayoutHorizontal,
+        juce::NotificationType::dontSendNotification
+    );
     toggleIsFreezeRoll.setToggleState(processor.settings.isFreezeRoll, juce::NotificationType::dontSendNotification);
 
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
