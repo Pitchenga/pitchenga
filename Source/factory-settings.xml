@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PITCHENGA
-    uiWidth="601"
-    uiHeight="951"
+    uiWidth="602"
+    uiHeight="967"
     isShowRoll="1"
     isShowEye="1"
     isShowNeedle="1"
     isUseRollStft="1"
     isFreezeRoll="0"
-    isShowStrobe="0"
+    isShowStrobe="1"
     isShowForrest="0"
     isShowSmoke="1"
     isRollHorizontal="1"

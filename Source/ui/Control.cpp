@@ -597,7 +597,7 @@ void Control::resized() {
     positionButton(toggleRoll, topRow);
 
     if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
-        const int sliderWidth = rowHeight + 10 + 36;
+        const int sliderWidth = rowHeight + 10 + 44;
         sliderEar.setBounds(topRow.removeFromLeft(sliderWidth).reduced(2));
     }
 
@@ -765,16 +765,6 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     externalPluginStateBase64 = {};
     if (auto* stateXmlElement = xml.getChildByName("ExternalPluginState")) {
         externalPluginStateBase64 = stateXmlElement->getStringAttribute("base64");
-    }
-
-    isExternalPluginWindowOpen = xml.getBoolAttribute("isExternalPluginWindowOpen", isExternalPluginWindowOpen);
-
-    splitRatio = static_cast<float>(xml.getDoubleAttribute("splitRatio", splitRatio));
-    currentPresetName = xml.getStringAttribute("currentPresetName", currentPresetName);
-
-    return true;
-}
-xternalPluginStateBase64 = stateXmlElement->getStringAttribute("base64");
     }
 
     isExternalPluginWindowOpen = xml.getBoolAttribute("isExternalPluginWindowOpen", isExternalPluginWindowOpen);
