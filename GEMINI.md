@@ -4,25 +4,6 @@ Pitchenga is a real-time music visualization application and audio plugin.
 
 ## STRICT SCOPE MANDATE - CRITICAL
 
-### MANDATORY PRE-FLIGHT CHECK
-
-Before invoking the `replace` or `write_file` tools, you MUST output a `<pre_flight>` block in your text response to
-evaluate your own actions (response output only - do NOT write it to a file). If you fail to do this, the session will
-be terminated.
-
-<pre_flight>
-
-1. File: [File path you intend to modify]
-2. Scoped: Was this file explicitly requested by the user? (Yes/No)
-3. Unscoped Justification: If No, why is this strictly necessary for the literal request?
-4. Revert Check: Does this intended change restore code I previously wrote that is currently missing from the disk?
-   (Yes/No)
-5. Variable Name Check: Are all newly introduced variables fully descriptive words (no abbreviations like ctx, g, val, cx, db)? (Yes/No)
-
--> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
-
-</pre_flight>
-
 ### CRITICAL RULES
 
 - CRITICAL NO-REVERT POLICY: Do NOT revert user's changes. Do NOT re-apply your changes that were deleted by the user.
@@ -46,9 +27,27 @@ be terminated.
 - CRITICAL: Prefer separate functions to long code blocks with a comment.
 - CRITICAL: Use strict camel-case for acronyms, e.g. "variableSqlRdbmsDao" - Good, "ClassSqlRdbmsDao" - Good, rather
   than "SQLRDBMSDAO" - BAD.
-- CRITICAL: Do not shorten words, e.g. "horizontal" - GOOD, "horiz" - BAD; "context" - GOOD, "ctx" - BAD;
-  "value" - GOOD, "val" - BAD.
-- 
+- CRITICAL: Do not shorten words, e.g. "horizontal" - GOOD, "horiz" - BAD; "context" - GOOD, "ctx" - bad.
+
+### MANDATORY PRE-FLIGHT CHECK
+
+Before invoking the `replace` or `write_file` tools, you MUST output a `<pre_flight>` block in your text response to
+evaluate your own actions (response output only - do NOT write it to a file). If you fail to do this, the session will
+be terminated.
+
+<pre_flight>
+
+1. File: [File path you intend to modify]
+2. Scoped: Was this file explicitly requested by the user? (Yes/No)
+3. Unscoped Justification: If No, why is this strictly necessary for the literal request?
+4. Revert Check: Does this intended change restore code I previously wrote that is currently missing from the disk?
+   (Yes/No)
+5. Guidelines check: Do all changes follow the CRITICAL RULES? (Yes/No)
+
+-> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
+
+</pre_flight>
+
 
 ## 0. Non-negotiables
 

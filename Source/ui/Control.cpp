@@ -612,23 +612,18 @@ void Control::resized() {
     positionButton(toggleRoll, topRow);
 
     if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
-        // Layout constants
-        const int buttonPadding = 10;
-        const int gapBetweenKnobAndText = 4;
+        // 1. Layout the circular knob (square, matching rowHeight)
+        knobEar.setBounds(topRow.removeFromLeft(rowHeight).reduced(2));
         
-        // Calculate a fixed width for text allocation based on the widest possible string ("-inf")
-        // This ensures the layout is stable and doesn't "jump" when the volume changes.
-        const float textAllocationWidth = juce::GlyphArrangement::getStringWidth(volumeLabel.getFont(), "-inf");
+        // 2. Add a small gap between the knob and the text
+        topRow.removeFromLeft(4);
         
-        // Total width is the circular dial (rowHeight wide) + padding + gap + text
-        const int knobTotalWidth = rowHeight + buttonPadding + gapBetweenKnobAndText + static_cast<int>(std::ceil(textAllocationWidth));
+        // 3. Layout the label independently with a fixed width based on the maximum string length
+        // to ensure the rest of the UI doesn't "jump" when the volume changes.
+        const float maxTextWidth = juce::GlyphArrangement::getStringWidth(volumeLabel.getFont(), "-inf");
+        const int fixedLabelWidth = static_cast<int>(std::ceil(maxTextWidth)) + 2; // +2px buffer for safety
         
-        knobEar.setBounds(topRow.removeFromLeft(knobTotalWidth).reduced(2));
-        
-        // The volumeLabel sits inside the right-hand portion of knobEar's allocated space
-        auto labelBounds = knobEar.getBounds();
-        labelBounds.removeFromLeft(rowHeight + buttonPadding + gapBetweenKnobAndText);
-        volumeLabel.setBounds(labelBounds);
+        volumeLabel.setBounds(topRow.removeFromLeft(fixedLabelWidth));
     }
 
     // Position save, presets and tweak from the right
