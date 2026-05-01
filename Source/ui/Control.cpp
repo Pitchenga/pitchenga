@@ -613,13 +613,13 @@ void Control::resized() {
     positionButton(toggleRoll, topRow);
 
     if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
-        // 1. Layout the circular knob (square, matching rowHeight)
+        // Layout the circular knob (square, matching rowHeight)
         knobEar.setBounds(topRow.removeFromLeft(rowHeight).reduced(2));
         
-        // 2. Add a small gap between the knob and the text
+        // Add a small gap between the knob and the text
         topRow.removeFromLeft(1);
         
-        // 3. Layout the label independently with a fixed width based on the maximum string length
+        // Layout the label independently with a fixed width based on the maximum string length
         // to ensure the rest of the UI doesn't "jump" when the volume changes.
         const float maxTextWidth = juce::GlyphArrangement::getStringWidth(volumeLabel.getFont(), "-00.0");
         const int fixedLabelWidth = static_cast<int>(std::ceil(maxTextWidth));
