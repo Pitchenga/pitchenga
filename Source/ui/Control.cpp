@@ -71,7 +71,7 @@ void Control::VolumeKnob::paint(juce::Graphics& g) {
     // Text
     g.setColour(val > 0.0f ? juce::Colours::white : juce::Colours::grey);
     g.setFont(juce::FontOptions(13.0f).withStyle("Bold"));
-    
+
     juce::String text;
     if (val <= 0.0001f) {
         text = "-inf";
@@ -80,7 +80,7 @@ void Control::VolumeKnob::paint(juce::Graphics& g) {
         if (db > -0.1f) db = 0.0f;
         text = juce::String(db, 1);
     }
-    
+
     g.drawText(text, bounds, juce::Justification::centredLeft, false);
 }
 
