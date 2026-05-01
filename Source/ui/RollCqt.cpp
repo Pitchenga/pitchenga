@@ -266,6 +266,7 @@ void RollCqt::paintForrest(juce::Graphics& graphics) const {
     const float barWidth = static_cast<float>(width) / static_cast<float>(currentTotalBins);
     const float chromaFactor = 12.0f / static_cast<float>(currentBinsPerOctave);
 
+    int binCounter = 0;
     for (int i = 0; i < currentTotalBins; ++i) {
         if (i >= static_cast<int>(displayMagnitudes.size())) break;
 
@@ -276,7 +277,7 @@ void RollCqt::paintForrest(juce::Graphics& graphics) const {
         );
         const auto barHeight = static_cast<float>(normalizedMagnitude) * plotHeight;
 
-        const float chroma = static_cast<float>(i % currentBinsPerOctave) * chromaFactor;
+        const float chroma = static_cast<float>(binCounter) * chromaFactor;
 
         const juce::Colour color = Tone::getContinuousColor(chroma);
         graphics.setColour(color);
@@ -287,6 +288,8 @@ void RollCqt::paintForrest(juce::Graphics& graphics) const {
             barWidth + 0.5f,
             barHeight
         );
+
+        if (++binCounter >= currentBinsPerOctave) binCounter = 0;
     }
 }
 
@@ -323,9 +326,10 @@ void RollCqt::pumpSmoke() {
     const float barWidth = static_cast<float>(width) / static_cast<float>(totalBins);
     const float chromaFactor = 12.0f / static_cast<float>(binsPerOctave);
 
+    int binCounter = 0;
     for (int i = 0; i < totalBins; ++i) {
         if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > smokeThreshold) {
-            const float chroma = static_cast<float>(i % binsPerOctave) * chromaFactor;
+            const float chroma = static_cast<float>(binCounter) * chromaFactor;
             const juce::Colour baseColor = Tone::getContinuousColor(chroma);
             constexpr float undimmingGain = 1.1f;
             const juce::Colour color = juce::Colours::black.interpolatedWith(
@@ -341,6 +345,7 @@ void RollCqt::pumpSmoke() {
                 smokeSpeedPxPerFrame
             );
         }
+        if (++binCounter >= binsPerOctave) binCounter = 0;
     }
 
     repaint();
