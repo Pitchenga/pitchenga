@@ -28,7 +28,7 @@ Control::VolumeKnob::VolumeKnob() {
     setSliderStyle(RotaryHorizontalVerticalDrag);
     setTextBoxStyle(NoTextBox, false, 0, 0);
     setRange(0.0, 1.0);
-    setTooltip("Monitor Volume (Click to toggle)");
+    SettableTooltipClient::setTooltip("Monitor Volume (Click to toggle)");
 }
 
 void Control::VolumeKnob::paint(juce::Graphics& g) {
@@ -37,7 +37,7 @@ void Control::VolumeKnob::paint(juce::Graphics& g) {
     const float cx = bounds.getCentreX();
     const float cy = bounds.getCentreY();
 
-    const float val = static_cast<float>(getValue());
+    const auto val = static_cast<float>(getValue());
 
     // Background
     g.setColour(juce::Colours::black.withAlpha(0.4f));
@@ -208,7 +208,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                 if (xml != nullptr) xml->setTagName(getSettingsTagName());
             }
         } else if (id > 3) {
-            const size_t index = static_cast<size_t>(id - 4);
+            const auto index = static_cast<size_t>(id - 4);
             if (index < presets.size()) {
                 newPresetFile = presets[index];
                 newPresetName = newPresetFile.getFileNameWithoutExtension();
@@ -411,9 +411,9 @@ void Control::showPlugsMenu() {
     auto types = list.getTypes();
 
     int id = 4;
-    for (int i = 0; i < types.size(); ++i) {
-        if (types[i].isInstrument) {
-            menu.addItem(id, types[i].name);
+    for (auto && type : types) {
+        if (type.isInstrument) {
+            menu.addItem(id, type.name);
         }
         id++;
     }
@@ -597,7 +597,7 @@ void Control::resized() {
     positionButton(toggleRoll, topRow);
 
     if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
-        const int sliderWidth = rowHeight + 10;
+        const int sliderWidth = rowHeight + 10 + 36;
         sliderEar.setBounds(topRow.removeFromLeft(sliderWidth).reduced(2));
     }
 
@@ -765,6 +765,16 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     externalPluginStateBase64 = {};
     if (auto* stateXmlElement = xml.getChildByName("ExternalPluginState")) {
         externalPluginStateBase64 = stateXmlElement->getStringAttribute("base64");
+    }
+
+    isExternalPluginWindowOpen = xml.getBoolAttribute("isExternalPluginWindowOpen", isExternalPluginWindowOpen);
+
+    splitRatio = static_cast<float>(xml.getDoubleAttribute("splitRatio", splitRatio));
+    currentPresetName = xml.getStringAttribute("currentPresetName", currentPresetName);
+
+    return true;
+}
+xternalPluginStateBase64 = stateXmlElement->getStringAttribute("base64");
     }
 
     isExternalPluginWindowOpen = xml.getBoolAttribute("isExternalPluginWindowOpen", isExternalPluginWindowOpen);
