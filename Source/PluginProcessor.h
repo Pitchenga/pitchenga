@@ -12,8 +12,8 @@ class FastButterworth {
     std::array<float, 7> inputSamples{0.0f};
     std::array<float, 7> outputSamples{0.0f};
     static constexpr float gainInv = 1.0f / 33.79723001f;
-    const std::array<float, 7> inCoeffs = {1.0f, 6.0f, 15.0f, 20.0f, 15.0f, 6.0f, 1.0f};
-    const std::array<float, 7> outCoeffs = {-0.0017509260f, 0.0f, -0.1141994251f, 0.0f, -0.7776959619f, 0.0f, 0.0f};
+    static constexpr std::array<float, 7> inCoeffs = {1.0f, 6.0f, 15.0f, 20.0f, 15.0f, 6.0f, 1.0f};
+    static constexpr std::array<float, 7> outCoeffs = {-0.0017509260f, 0.0f, -0.1141994251f, 0.0f, -0.7776959619f, 0.0f, 0.0f};
 
 public:
     float processSample(const float signal) {
