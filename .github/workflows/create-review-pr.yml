@@ -16,4 +16,4 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
               run: |
-                  gh pr create --base production --head dev --title "review" --body "Automated PR from dev to production." || echo "PR already exists or could not be created"
+                  gh pr create --base production --head dev --title "Production review" --body "Automated PR from dev to production." || echo "PR already exists or could not be created"
