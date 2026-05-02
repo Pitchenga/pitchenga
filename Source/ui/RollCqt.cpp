@@ -217,7 +217,7 @@ void RollCqt::paintLabel(
         );
         graphics.drawText(
             name,
-            juce::Rectangle(rotX, rotY, maxTextWidth, labelHeight),
+            juce::Rectangle<float>(rotX, rotY, maxTextWidth, labelHeight),
             juce::Justification::centredLeft,
             false
         );
