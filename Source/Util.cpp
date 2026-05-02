@@ -6,11 +6,13 @@ bool Util::debugLogEnabled = true;
 
 juce::String Util::startTimestamp = getTimestamp();
 
-juce::File Util::logFile = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-    .getChildFile("pitchenga")
+juce::File Util::getApplicationDirectory() {
+    return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
+}
+
+juce::File Util::logFile = getApplicationDirectory()
     .getChildFile("logs")
     .getChildFile("pitchenga-" + startTimestamp + ".log");
-
 
 [[maybe_unused]] static struct UtilInitializer {
     UtilInitializer() {

@@ -13,8 +13,7 @@ PitchengaAudioProcessor::PitchengaAudioProcessor()
     juce::addDefaultFormatsToManager(formatManager);
 
     // Load plugin list
-    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-        .getChildFile("Pitchenga");
+    const auto appDataDir = Util::getApplicationDirectory();
     const auto pluginListFile = appDataDir.getChildFile("plugins.xml");
     if (pluginListFile.existsAsFile()) {
         if (auto xml = juce::XmlDocument::parse(pluginListFile)) {
@@ -30,8 +29,7 @@ PitchengaAudioProcessor::~PitchengaAudioProcessor() {
     unloadPluginInstance(plugin);
 
     // Save plugin list
-    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-        .getChildFile("Pitchenga");
+    const auto appDataDir = Util::getApplicationDirectory();
     const auto pluginListFile = appDataDir.getChildFile("plugins.xml");
     if (auto xml = knownPluginList.createXml()) {
         xml->writeTo(pluginListFile);
@@ -40,10 +38,9 @@ PitchengaAudioProcessor::~PitchengaAudioProcessor() {
 
 void PitchengaAudioProcessor::loadDefaultSettings() {
     // Attempt to load user-default.xml from the "presets" sub-folder
-    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-        .getChildFile("Pitchenga");
-    const auto presetsDir = appDataDir.getChildFile("presets");
-    const auto userDefaultFile = presetsDir.getChildFile("user-default.xml");
+    const auto appDataDir = Util::getApplicationDirectory();
+    const auto presetsDir = appDataDir.getChildFile(Control::presetsDirectoryName);
+    const auto userDefaultFile = presetsDir.getChildFile(Control::userDefaultPresetFileName);
 
     if (userDefaultFile.existsAsFile()) {
         if (auto xml = juce::XmlDocument::parse(userDefaultFile)) {
