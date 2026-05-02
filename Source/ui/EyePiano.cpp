@@ -19,14 +19,18 @@ void EyePiano::resized() {
     lanes.clear();
     for (int i = 0; i < 12; ++i) {
         bool isAccidental = (i == 1 || i == 3 || i == 6 || i == 8 || i == 10);
-        lanes.push_back({i, isAccidental, static_cast<float>(i) * laneWidth, laneWidth, Tone::chromaticScale[i].color});
+        lanes.push_back({i, isAccidental, static_cast<float>(i) * laneWidth, laneWidth, Tone::chromaticScale[static_cast<size_t>(i)].color});
     }
 }
 
 void EyePiano::paint(juce::Graphics& g) {
     const float h = static_cast<float>(getHeight());
     const float w = static_cast<float>(getWidth());
+    const float laneWidth = w / 12.0f;
     const float binWidth = w / static_cast<float>(totalFoldedBins);
+    
+    // Offset to center bin 0 on the first pitch center line
+    const float offset = (laneWidth * 0.5f) - (binWidth * 0.5f);
 
     // 1. Paint the "Frame" (Vertical lines at center of pitches, staggered)
     for (const auto& lane : lanes) {
@@ -48,15 +52,20 @@ void EyePiano::paint(juce::Graphics& g) {
 
     // 2. Paint the bins (Spectral data)
     for (int i = 0; i < totalFoldedBins; ++i) {
-        const float magnitude = static_cast<float>(smoothedOctaveBins[i]);
+        const float magnitude = static_cast<float>(smoothedOctaveBins[static_cast<size_t>(i)]);
         if (magnitude <= 0.001f) continue;
 
-        const int semitone = i / binsPerSemitone;
         const float chroma = static_cast<float>(i) / static_cast<float>(binsPerSemitone);
-        const bool isAccidental = (semitone == 1 || semitone == 3 || semitone == 6 || semitone == 8 || semitone == 10);
+        
+        float x = static_cast<float>(i) * binWidth + offset;
+        if (x >= w) x -= w;
+        if (x < 0.0f) x += w;
 
-        const float x = static_cast<float>(i) * binWidth;
-        const float barMaxHeight = isAccidental ? h * 0.7f : h;
+        // Determine height based on whether the bin falls into an accidental lane
+        const int laneIndex = juce::jlimit(0, 11, static_cast<int>(std::floor(x / laneWidth)));
+        const bool isAccidentalLane = (laneIndex == 1 || laneIndex == 3 || laneIndex == 6 || laneIndex == 8 || laneIndex == 10);
+
+        const float barMaxHeight = isAccidentalLane ? h * 0.7f : h;
         const float barHeight = barMaxHeight * magnitude;
         
         // Draw from bottom up
