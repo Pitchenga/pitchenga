@@ -3,6 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <functional>
+#include <atomic>
 
 // Forward declare the processor to avoid circular includes
 class PitchengaAudioProcessor;
@@ -27,11 +28,11 @@ public:
         int lastUiWidth = 601;
         int lastUiHeight = 951;
 
-        bool isShowRoll = true;
-        bool isShowEye = true;
-        bool isShowNeedle = true;
+        std::atomic<bool> isShowRoll = true;
+        std::atomic<bool> isShowEye = true;
+        std::atomic<bool> isShowNeedle = true;
 
-        bool isUseRollStft = true;
+        std::atomic<bool> isUseRollStft = true;
         bool isFreezeRoll = false;
         bool isShowStrobe = true;
         bool isShowSmoke = true;
@@ -39,11 +40,11 @@ public:
         bool isRollHorizontal = false;
         bool isLayoutHorizontal = false;
 
-        float earVolumeLeft = 0.0f;
-        float earVolumeRight = 0.0f;
-        bool isCaptureEnabled = false;
+        std::atomic<float> earVolumeLeft = 0.0f;
+        std::atomic<float> earVolumeRight = 0.0f;
+        std::atomic<bool> isCaptureEnabled = false;
         bool isShowTweakPanel = false;
-        bool isRawMode = false;
+        std::atomic<bool> isRawMode = false;
 
         juce::String externalPluginDescriptionXml;
         juce::String externalPluginStateBase64;
