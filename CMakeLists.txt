@@ -46,7 +46,8 @@ juce_add_plugin(Pitchenga
 if (TARGET Pitchenga_AU)
     add_custom_command(TARGET Pitchenga_AU POST_BUILD
             COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSScreenCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist\" || true"
-            COMMENT "Removing screen capture usage description from AU plist")
+            COMMENT "Removing screen capture usage description from AU plist"
+            VERBATIM)
 endif()
 
 # Tell CMake which C++ files to compile
@@ -65,8 +66,6 @@ set(PITCHENGA_SOURCES
         Source/ui/Needle.cpp
         Source/ui/Eye.h
         Source/ui/Eye.cpp
-        Source/ui/EyePiano.h
-        Source/ui/EyePiano.cpp
         Source/ui/RollStft.h
         Source/ui/RollStft.cpp
         Source/ui/RollCqt.h
