@@ -71,16 +71,14 @@
                 }
                 
                 if (isNonInterleaved) {
-                    for (int i = 0; i < numSamples; ++i) {
-                        float sum = 0.0f;
-                        for (int ch = 0; ch < numChannels; ++ch) {
-                            const float* channelData = static_cast<const float*>(audioBufferList.mBuffers[ch].mData);
-                            if (channelData != nullptr) {
-                                sum += channelData[i];
-                            }
+                    juce::FloatVectorOperations::clear(monoDownmix.data(), numSamples);
+                    for (int ch = 0; ch < numChannels; ++ch) {
+                        const float* channelData = static_cast<const float*>(audioBufferList.mBuffers[ch].mData);
+                        if (channelData != nullptr) {
+                            juce::FloatVectorOperations::add(monoDownmix.data(), channelData, numSamples);
                         }
-                        monoDownmix[static_cast<size_t>(i)] = sum / static_cast<float>(numChannels);
                     }
+                    juce::FloatVectorOperations::multiply(monoDownmix.data(), 1.0f / static_cast<float>(numChannels), numSamples);
                 } else {
                     const float* audioData = static_cast<const float*>(audioBufferList.mBuffers[0].mData);
                     for (int i = 0; i < numSamples; ++i) {
