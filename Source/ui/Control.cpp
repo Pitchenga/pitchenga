@@ -235,7 +235,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         juce::String newPresetName;
 
         if (id == factoryDefaultPresetId) {
-            newPresetName = "";
+            newPresetName = "Factory Default";
             xml = juce::XmlDocument::parse(
                 juce::String::createStringFromData(
                     BinaryData::factorysettings_xml,
@@ -333,10 +333,14 @@ Control::Control(PitchengaAudioProcessor& proc)
             return;
         }
 
+        auto presetName = comboPresets.getText();
+        if (presetName == "Factory Default") {
+            presetName = "User Default";
+        }
         juce::AlertWindow::showOkCancelBox(
             juce::MessageBoxIconType::QuestionIcon,
             saveConfirmTitle,
-            saveConfirmMessage.replace("{NAME}", comboPresets.getText()),
+            saveConfirmMessage.replace("{NAME}", presetName),
             "Save",
             "Cancel",
             nullptr,
@@ -618,7 +622,7 @@ void Control::updateButtonStates() {
     // Disable Save and Delete buttons for Factory Default (ID 1) and nothing selected (ID 0)
     const int selectedId = comboPresets.getSelectedId();
     buttonLoad.setEnabled(selectedId > nonePresetId);
-    buttonSave.setEnabled(selectedId > factoryDefaultPresetId);
+    buttonSave.setEnabled(selectedId > nonePresetId);
     buttonDelete.setEnabled(selectedId > factoryDefaultPresetId);
 
     resized();
