@@ -27,38 +27,53 @@ Pitchenga is a real-time music visualization application and audio plugin.
 - CRITICAL: Prefer separate functions to long code blocks with a comment.
 - CRITICAL: Use strict camel-case for acronyms, e.g. "SqlRdbmsDao sqlRdbmsDao" - Good; "SQLRDBMSDAO" - BAD.
 - CRITICAL: Do not shorten words, e.g. "horizontal" - GOOD, "horiz" - BAD; "context" - GOOD, "ctx" - bad.
+- CRITICAL: When printing out code blocks in text output for me, do NOT add line numbers.
 
 ### MANDATORY PRE-FLIGHT CHECK
 
-Before invoking the `replace` or `write_file` tools, you MUST output a `<pre_flight>` block in your text response to
-evaluate your own actions (response output only - do NOT write it to a file). If you fail to do this, the session will
-be terminated.
+Before invoking the `replace` or `write_file` tools, you MUST output a `<pre_flight>` block.
+(Response output only - do NOT write it to a file.)
+If you fail to recognize a revert or rule violation, you will be terminated.
 
 <pre_flight>
 
-1. File: [File path you intend to modify]
-2. Scoped: Was this file explicitly requested by the user? (Yes/No)
-3. Unscoped Justification: If No, why is this strictly necessary for the literal request?
-4. Revert Check: Does this intended change restore code I previously wrote that is currently missing from the disk?
-   (Yes/No)
-5. Rules check: Does any of the changes violate any of the CRITICAL RULES? (Yes/No)
+1. File: [Path]
+2. Current Code on Disk (Evidence):
 
--> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
+```
+[Paste read_file output here]
+```
 
-</pre_flight>
+3. Proposed Code:
 
+```
+[The exact literal string you are passing to the tool]
+```
+
+4. Revert Audit: Compare the snippets above. Does 'Current Code' contain logic, naming, or comments missing from
+   'Proposed Code'?
+   -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
+
+5. Rules Audit: Does 'Proposed Code' violate any of the CRITICAL RULES above?
+   -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
+
+6. Scope Audit: Does 'Proposed Code' contain any changes that are not related to the user's CURRENT request?
+   -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
+
+7. Decision: [PROCEED or ABORT]
+   </pre_flight>
 
 ## 0. Non-negotiables
 
 These rules override everything else in this file when in conflict:
 
 - **Disagree when you disagree.** If the user's premise is wrong, say so before doing the work. Agreeing with false
-   premises to be polite is the single worst failure mode in coding agents.
+  premises to be polite is the single worst failure mode in coding agents.
 - **Never fabricate.** Not file paths, not commit hashes, not API names, not test results, not library functions. If
-   you don't know, read the file, run the command, or say "I don't know, let me check."
+  you don't know, read the file, run the command, or say "I don't know, let me check."
 - **Stop when confused.** If the task has two plausible interpretations, ask. Do not pick silently and proceed.
 - **Touch only what you must.** Every changed line must trace directly to the user's request. No drive-by refactors,
-   fixing bugs, reformatting, or cleanups.
+  fixing bugs, reformatting, or cleanups.
 - **Only requested changes.** No features beyond what was asked.
 
 ---
