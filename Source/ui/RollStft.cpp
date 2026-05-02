@@ -215,7 +215,8 @@ void RollStft::paintForrest(juce::Graphics& graphics) const {
         if (xPos >= 0.0f && xPos <= static_cast<float>(width)) {
             // Configurable razor-sharp stems for the Forrest
             float stemWidthPixels = 5.0f;
-            if (enableDynamicStemWidth) {
+            const bool doDynamicStem = enableDynamicStemWidth && !processor.settings.isRawMode;
+            if (doDynamicStem) {
                 const float nextX = frequencyToX(peak.frequencyHz + peak.bandwidthHz, static_cast<float>(width));
                 // +1.0f forces deliberate sub-pixel overlap to completely kill rendering gaps
                 stemWidthPixels = std::max(1.0f, nextX - xPos + 1.0f);
@@ -273,7 +274,7 @@ void RollStft::pumpSmoke() {
     const float binResHz = sr / 32768.0f;
     const float fWidth = static_cast<float>(width);
     const float midiRangeInv = 1.0f / (maxMidiNote - minMidiNote);
-    const bool doDynamicStem = enableDynamicStemWidth;
+    const bool doDynamicStem = enableDynamicStemWidth && !processor.settings.isRawMode;
 
     // Extreme Math Optimization: Pre-calculate the derivative of the MIDI scale
     // to bypass calling std::log2 multiple times per peak.
