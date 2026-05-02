@@ -7,11 +7,21 @@
 #import <CoreMedia/CoreMedia.h>
 #import <AVFoundation/AVFoundation.h>
 
-@interface DesktopAudioCaptureDelegate : NSObject <SCStreamOutput>
+@interface DesktopAudioCaptureDelegate : NSObject <SCStreamOutput> {
+    std::vector<float> monoDownmix;
+}
 @property (nonatomic, assign) DesktopAudioCapture* owner;
 @end
 
 @implementation DesktopAudioCaptureDelegate
+
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        monoDownmix.reserve(65536); // Pre-allocate to prevent real-time heap allocation
+    }
+    return self;
+}
 
 - (void)stream:(SCStream *)stream didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer ofType:(SCStreamOutputType)type {
     if (type != SCStreamOutputTypeAudio) return;
@@ -45,7 +55,6 @@
                 self.owner->pushAudio(audioData, numSamples);
             } else {
                 // Downmix to mono
-                thread_local std::vector<float> monoDownmix;
                 if (monoDownmix.size() < static_cast<size_t>(numSamples)) {
                     monoDownmix.resize(static_cast<size_t>(numSamples));
                 }
