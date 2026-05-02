@@ -63,6 +63,7 @@ public:
     explicit Control(PitchengaAudioProcessor& proc);
     ~Control() override;
 
+    void timerCallback() override;
     void resized() override;
     void updateVisibilityFromState();
     void refreshPresets();
@@ -79,7 +80,6 @@ private:
     static inline const juce::String deleteConfirmTitle = "Delete Preset";
     static inline const juce::String deleteConfirmMessage = "Are you sure you want to delete preset '{NAME}'?";
 
-    void timerCallback() override;
     void saveCurrentPreset();
     void deleteCurrentPreset();
     static void setupToggleButton(juce::TextButton& button, bool initialState);
