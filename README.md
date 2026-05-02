@@ -26,7 +26,12 @@ A custom internal routing matrix allows you to blend any live audio input — su
 Pre-built binaries are provided in the Releases section.
 
 - **macOS:** Available as a Standalone `.app`, Audio Unit (AU), and VST3. 
-> Note: The current releases are not yet signed with an Apple Developer certificate. You will need to right-click and select "Open" to bypass Gatekeeper on the first launch.
+> **Important macOS Note:** The current releases are not yet signed with an Apple Developer certificate. When you download the `.zip` file from the internet, macOS adds a "quarantine" flag. Because the app is ad-hoc signed, Gatekeeper will misleadingly state that the app is "damaged and should be moved to the trash".
+> To fix this, you must clear the quarantine flag using Terminal before opening:
+> ```bash
+> xattr -cr /path/to/extracted/Pitchenga.app
+> xattr -cr /path/to/extracted/Pitchenga.component
+> ```
 - **Windows:** Available as a Standalone `.exe` and VST3.
 
 ### Licenses and Acknowledgments
