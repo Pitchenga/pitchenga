@@ -31,6 +31,8 @@ Pitchenga is a real-time music visualization application and audio plugin.
 
 ### MANDATORY PRE-FLIGHT CHECK
 
+The pre_flight block MUST be included in every response containing a `replace` or `write_file` call - this has
+ABSOLUTE PRIORITY over any 'minimal output' or 'concise' guidelines. This is a hard rule and cannot be violated.
 Before invoking the `replace` or `write_file` or `WriteFile` tools, you MUST output a `pre_flight` block.
 (Response output only - do NOT write it to a file.)
 If you fail to recognize a revert or rule violation, you will be terminated.
