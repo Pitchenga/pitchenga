@@ -1,6 +1,7 @@
 #include "Control.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "../PluginProcessor.h"
+#include "../Util.h"
 #include "BinaryData.h"
 
 struct Control::PluginListListener : juce::ChangeListener {
@@ -139,25 +140,25 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
-    toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Letter" : "Solfege");
+    toggleLetter.setButtonText(processor.settings.isLetterNotation ? labelLetter : labelSolfege);
     toggleLetter.onClick = [this] {
         processor.settings.isLetterNotation = !processor.settings.isLetterNotation;
-        toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Letter" : "Solfege");
+        toggleLetter.setButtonText(processor.settings.isLetterNotation ? labelLetter : labelSolfege);
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
+    toggleRollType.setButtonText(processor.settings.isUseRollStft ? labelStft : labelCqt);
     toggleRollType.onClick = [this] {
         processor.settings.isUseRollStft = !processor.settings.isUseRollStft;
-        toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
+        toggleRollType.setButtonText(processor.settings.isUseRollStft ? labelStft : labelCqt);
         updateButtonStates();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? "Flip" : "Flop");
+    toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? labelFlip : labelFlop);
     toggleFlipRoll.onClick = [this] {
         processor.settings.isFlipRollHorizontal = !processor.settings.isFlipRollHorizontal;
-        toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? "Flip" : "Flop");
+        toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? labelFlip : labelFlop);
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -215,27 +216,28 @@ Control::Control(PitchengaAudioProcessor& proc)
         }
     };
 
-    buttonPlugs.setButtonText("Plugs");
+    buttonPlugs.setButtonText(labelPlugs);
     buttonPlugs.onClick = [this] {
         showPlugsMenu();
     };
 
-    buttonPlug.setButtonText("Plug");
+    buttonPlug.setButtonText(labelPlug);
     buttonPlug.onClick = [this] {
         processor.showExternalPluginEditor();
     };
 
-    buttonLoad.setButtonText("Load");
+    buttonLoad.setButtonText(labelLoad);
     buttonLoad.onClick = [this] {
         const int id = comboPresets.getSelectedId();
-        if (id == 0) return;
+        if (id == nonePresetId) return;
 
         std::unique_ptr<juce::XmlElement> xml;
         juce::File newPresetFile;
         juce::String newPresetName;
 
-        if (id == factoryPresetId) {
-            newPresetName = "";
+        if (id == factoryDefaultPresetId) {
+            newPresetFile = juce::File();
+            newPresetName = factoryDefaultPresetName;
             xml = juce::XmlDocument::parse(
                 juce::String::createStringFromData(
                     BinaryData::factorysettings_xml,
@@ -244,10 +246,9 @@ Control::Control(PitchengaAudioProcessor& proc)
             );
             if (xml != nullptr) xml->setTagName(getSettingsTagName());
         } else if (id == userDefaultPresetId) {
-            const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).
-                getChildFile("Pitchenga");
-            newPresetFile = appDataDir.getChildFile("presets").getChildFile("user-default.xml");
-            newPresetName = "User Default";
+            const auto appDataDir = Util::getApplicationDirectory();
+            newPresetFile = appDataDir.getChildFile(presetsDirectoryName).getChildFile(userDefaultPresetFileName);
+            newPresetName = userDefaultPresetName;
 
             if (newPresetFile.existsAsFile()) {
                 xml = juce::XmlDocument::parse(newPresetFile);
@@ -285,7 +286,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
-    comboPresets.setTextWhenNothingSelected("Presets...");
+    comboPresets.setTextWhenNothingSelected(presetsComboTextWhenNothingSelected);
     comboPresets.onChange = [this] {
         updateButtonStates();
     };
@@ -295,14 +296,13 @@ Control::Control(PitchengaAudioProcessor& proc)
     // Restore selection by name
     if (processor.settings.currentPresetName.isNotEmpty()) {
         const auto presetName = processor.settings.currentPresetName;
-        if (presetName == "User Default") {
+        if (presetName == userDefaultPresetName) {
             comboPresets.setSelectedId(userDefaultPresetId, juce::NotificationType::dontSendNotification);
-            const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).
-                getChildFile("Pitchenga");
-            const auto presetsDir = appDataDir.getChildFile("presets");
-            currentPresetFile = presetsDir.getChildFile("user-default.xml");
-        } else if (presetName == "Factory Default") {
-            comboPresets.setSelectedId(factoryPresetId, juce::NotificationType::dontSendNotification);
+            const auto appDataDir = Util::getApplicationDirectory();
+            const auto presetsDir = appDataDir.getChildFile(presetsDirectoryName);
+            currentPresetFile = presetsDir.getChildFile(userDefaultPresetFileName);
+        } else if (presetName == factoryDefaultPresetName) {
+            comboPresets.setSelectedId(factoryDefaultPresetId, juce::NotificationType::dontSendNotification);
             currentPresetFile = juce::File();
         } else {
             for (size_t i = 0; i < presets.size(); ++i) {
@@ -327,17 +327,21 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
-    buttonSave.setButtonText("Save");
+    buttonSave.setButtonText(labelSave);
     buttonSave.onClick = [this] {
         if (currentPresetFile == juce::File()) {
             return;
         }
 
+        auto presetName = comboPresets.getText();
+        if (presetName == factoryDefaultPresetName) {
+            presetName = userDefaultPresetName;
+        }
         juce::AlertWindow::showOkCancelBox(
             juce::MessageBoxIconType::QuestionIcon,
             saveConfirmTitle,
-            saveConfirmMessage.replace("{NAME}", comboPresets.getText()),
-            "Save",
+            saveConfirmMessage.replace("{NAME}", presetName),
+            labelSave,
             "Cancel",
             nullptr,
             juce::ModalCallbackFunction::create(
@@ -350,23 +354,22 @@ Control::Control(PitchengaAudioProcessor& proc)
         );
     };
 
-    buttonSaveAs.setButtonText("Save As");
+    buttonSaveAs.setButtonText(labelSaveAs);
     buttonSaveAs.onClick = [this] {
         const juce::String currentName = comboPresets.getText();
         juce::String suggestedName = currentName;
 
         if (currentName == ""
-            || currentName == "Presets..."
-            || currentName == "Factory Default"
-            || currentName == "User Default"
+            || currentName == presetsComboTextWhenNothingSelected
+            || currentName == factoryDefaultPresetName
+            || currentName == userDefaultPresetName
         ) {
-            suggestedName = "user-default";
+            suggestedName = userDefaultPresetFileName;
         }
 
         chooser = std::make_unique<juce::FileChooser>(
             "Select where to save the settings...",
-            juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga").
-            getChildFile("presets").getChildFile(suggestedName),
+            Util::getApplicationDirectory().getChildFile(presetsDirectoryName).getChildFile(suggestedName),
             "*.xml"
         );
 
@@ -403,7 +406,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         );
     };
 
-    buttonDelete.setButtonText("Delete");
+    buttonDelete.setButtonText(labelDelete);
     buttonDelete.onClick = [this] {
         if (currentPresetFile == juce::File()) {
             return;
@@ -413,7 +416,7 @@ Control::Control(PitchengaAudioProcessor& proc)
             juce::MessageBoxIconType::QuestionIcon,
             deleteConfirmTitle,
             deleteConfirmMessage.replace("{NAME}", comboPresets.getText()),
-            "Delete",
+            labelDelete,
             "Cancel",
             nullptr,
             juce::ModalCallbackFunction::create(
@@ -527,8 +530,8 @@ void Control::saveCurrentPreset() {
     if (currentPresetFile.getParentDirectory().createDirectory() && xml.writeTo(currentPresetFile)) {
         refreshPresets();
         // Explicitly force text update for transitions like Factory -> User Default
-        if (currentPresetFile.getFileName() == "user-default.xml") {
-            comboPresets.setText("User Default", juce::NotificationType::dontSendNotification);
+        if (currentPresetFile.getFileName() == userDefaultPresetFileName) {
+            comboPresets.setText(userDefaultPresetName, juce::NotificationType::dontSendNotification);
         } else {
             comboPresets.setText(
                 currentPresetFile.getFileNameWithoutExtension(),
@@ -551,7 +554,7 @@ void Control::deleteCurrentPreset() {
         if (currentPresetFile.deleteFile()) {
             currentPresetFile = juce::File();
             processor.settings.currentPresetName = "";
-            comboPresets.setSelectedId(factoryPresetId, juce::NotificationType::sendNotification);
+            comboPresets.setSelectedId(factoryDefaultPresetId, juce::NotificationType::sendNotification);
             refreshPresets();
         }
     }
@@ -576,11 +579,11 @@ void Control::updateVisibilityFromState() {
     );
     toggleIsFreezeRoll.setToggleState(processor.settings.isFreezeRoll, juce::NotificationType::dontSendNotification);
 
-    toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
-    toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? "Flip" : "Flop");
+    toggleRollType.setButtonText(processor.settings.isUseRollStft ? labelStft : labelCqt);
+    toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? labelFlip : labelFlop);
     toggleStrobe.setToggleState(processor.settings.isShowStrobe, juce::NotificationType::dontSendNotification);
     toggleRaw.setToggleState(processor.settings.isRawMode, juce::NotificationType::dontSendNotification);
-    toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Letter" : "Solfege");
+    toggleLetter.setButtonText(processor.settings.isLetterNotation ? labelLetter : labelSolfege);
     toggleSmoke.setToggleState(processor.settings.isShowSmoke, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
@@ -617,9 +620,9 @@ void Control::updateButtonStates() {
 
     // Disable Save and Delete buttons for Factory Default (ID 1) and nothing selected (ID 0)
     const int selectedId = comboPresets.getSelectedId();
-    buttonLoad.setEnabled(selectedId > 0);
-    buttonSave.setEnabled(selectedId > factoryPresetId);
-    buttonDelete.setEnabled(selectedId > factoryPresetId);
+    buttonLoad.setEnabled(selectedId > nonePresetId);
+    buttonSave.setEnabled(selectedId > nonePresetId);
+    buttonDelete.setEnabled(selectedId > factoryDefaultPresetId);
 
     resized();
 }
@@ -656,11 +659,11 @@ void Control::resized() {
         if (!button.isVisible()) return;
         float textWidth = juce::GlyphArrangement::getStringWidth(font, button.getButtonText());
         if (&button == &toggleRollType) {
-            textWidth = juce::GlyphArrangement::getStringWidth(font, "STFT");
+            textWidth = juce::GlyphArrangement::getStringWidth(font, labelStft);
         } else if (&button == &toggleFlipRoll) {
-            textWidth = juce::GlyphArrangement::getStringWidth(font, "Flop");
+            textWidth = juce::GlyphArrangement::getStringWidth(font, labelFlop);
         } else if (&button == &toggleLetter) {
-            textWidth = juce::GlyphArrangement::getStringWidth(font, "Solfege");
+            textWidth = juce::GlyphArrangement::getStringWidth(font, labelSolfege);
         }
         const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 8;
         button.setBounds(container.removeFromRight(buttonWidth));
@@ -720,17 +723,16 @@ void Control::resized() {
 
 void Control::refreshPresets() {
     comboPresets.clear(juce::NotificationType::dontSendNotification);
-    comboPresets.addItem("Factory Default", factoryPresetId);
+    comboPresets.addItem(factoryDefaultPresetName, factoryDefaultPresetId);
 
     // User Default is always available now, falling back to Factory if file is missing
-    comboPresets.addItem("User Default", userDefaultPresetId);
+    comboPresets.addItem(userDefaultPresetName, userDefaultPresetId);
 
     comboPresets.addSeparator();
 
     presets.clear();
-    const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-        .getChildFile("Pitchenga");
-    const auto presetsDir = appDataDir.getChildFile("presets");
+    const auto appDataDir = Util::getApplicationDirectory();
+    const auto presetsDir = appDataDir.getChildFile(presetsDirectoryName);
     if (presetsDir.exists()) {
         juce::Array<juce::File> files;
         presetsDir.findChildFiles(files, juce::File::findFiles, false, "*.xml");
@@ -738,7 +740,7 @@ void Control::refreshPresets() {
         int id = customPresetsStartId;
         for (auto& file : files) {
             // Exclude user-default.xml from the general list as it has its own item
-            if (file.getFileName() != "user-default.xml") {
+            if (file.getFileName() != userDefaultPresetFileName) {
                 comboPresets.addItem(file.getFileNameWithoutExtension(), id++);
                 presets.push_back(file);
             }
@@ -749,9 +751,9 @@ void Control::refreshPresets() {
     // Maintain current selection text if applicable
     if (currentPresetFile.existsAsFile()) {
         const auto activeFileName = currentPresetFile.getFileName();
-        if (activeFileName == "user-default.xml") {
+        if (activeFileName == userDefaultPresetFileName) {
             comboPresets.setSelectedId(userDefaultPresetId, juce::NotificationType::dontSendNotification);
-            comboPresets.setText("User Default", juce::NotificationType::dontSendNotification);
+            comboPresets.setText(userDefaultPresetName, juce::NotificationType::dontSendNotification);
         } else {
             // Find by filename
             const auto activeNameNoExt = currentPresetFile.getFileNameWithoutExtension();

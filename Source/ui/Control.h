@@ -76,13 +76,45 @@ public:
     // Callback so the Editor knows when the user clicked a toggle
     std::function<void()> onVisibilityChanged;
 
+    static inline const juce::String presetsDirectoryName = "presets";
+    static inline const juce::String userDefaultPresetFileName = "user-default.xml";
+
 private:
     static inline const juce::String saveConfirmTitle = "Save Preset";
-    static inline const juce::String saveConfirmMessage = "Are you sure you want to overwrite preset '{NAME}'?";
+    static inline const juce::String saveConfirmMessage = "Are you sure you want to save preset '{NAME}'?";
     static inline const juce::String deleteConfirmTitle = "Delete Preset";
     static inline const juce::String deleteConfirmMessage = "Are you sure you want to delete preset '{NAME}'?";
 
-    static constexpr int factoryPresetId = 1;
+    static inline const juce::String labelNeedle = "Needle";
+    static inline const juce::String labelEye = "Eye";
+    static inline const juce::String labelRoll = "Roll";
+    static inline const juce::String labelStrobe = "Strobe";
+    static inline const juce::String labelRaw = "Raw";
+    static inline const juce::String labelLetter = "Letter";
+    static inline const juce::String labelSolfege = "Solfege";
+    static inline const juce::String labelStft = "STFT";
+    static inline const juce::String labelCqt = "CQT";
+    static inline const juce::String labelFlip = "Flip";
+    static inline const juce::String labelFlop = "Flop";
+    static inline const juce::String labelFreeze = "Freeze";
+    static inline const juce::String labelPivot = "Pivot";
+    static inline const juce::String labelSmoke = "Smoke";
+    static inline const juce::String labelForest = "Forest";
+    static inline const juce::String labelCapture = "Capture";
+    static inline const juce::String labelPlugs = "Plugs";
+    static inline const juce::String labelPlug = "Plug";
+    static inline const juce::String labelTweak = "Tweak";
+    static inline const juce::String labelLoad = "Load";
+    static inline const juce::String labelSave = "Save";
+    static inline const juce::String labelSaveAs = "Save As";
+    static inline const juce::String labelDelete = "Delete";
+
+    static inline const juce::String userDefaultPresetName = "User Default";
+    static inline const juce::String factoryDefaultPresetName = "Factory Default";
+    static inline const juce::String presetsComboTextWhenNothingSelected = "Presets...";
+
+    static constexpr int nonePresetId = 0;
+    static constexpr int factoryDefaultPresetId = 1;
     static constexpr int userDefaultPresetId = 2;
     // 3 is separator
     static constexpr int customPresetsStartId = 4;
@@ -98,38 +130,38 @@ private:
     std::unique_ptr<PluginListListener> listListener;
     bool isRescanning = false;
 
-    juce::TextButton toggleNeedle{"Needle"};
-    juce::TextButton toggleEye{"Eye"};
-    juce::TextButton toggleRoll{"Roll"};
-    juce::TextButton toggleStrobe{"Strobe"};
-    juce::TextButton toggleRaw{"Raw"};
-    juce::TextButton toggleLetter{"Letter"};
-    juce::TextButton toggleRollType{"STFT"};
-    juce::TextButton toggleFlipRoll{"Flip"};
-    juce::TextButton toggleIsFreezeRoll{"Freeze"};
-    juce::TextButton toggleLayoutPivot{"Pivot"};
-    juce::TextButton toggleSmoke{"Smoke"};
-    juce::TextButton toggleForrest{"Forest"};
+    juce::TextButton toggleNeedle{labelNeedle};
+    juce::TextButton toggleEye{labelEye};
+    juce::TextButton toggleRoll{labelRoll};
+    juce::TextButton toggleStrobe{labelStrobe};
+    juce::TextButton toggleRaw{labelRaw};
+    juce::TextButton toggleLetter{labelLetter};
+    juce::TextButton toggleRollType{labelStft};
+    juce::TextButton toggleFlipRoll{labelFlip};
+    juce::TextButton toggleIsFreezeRoll{labelFreeze};
+    juce::TextButton toggleLayoutPivot{labelPivot};
+    juce::TextButton toggleSmoke{labelSmoke};
+    juce::TextButton toggleForrest{labelForest};
 
     VolumeKnob knobEarLeft;
     VolumeKnob knobEarRight;
     juce::Label volumeLabelLeft;
     juce::Label volumeLabelRight;
-    juce::TextButton toggleCapture{"Capture"};
-    juce::TextButton buttonPlugs{"Plugs"};
-    juce::TextButton buttonPlug{"Plug"};
+    juce::TextButton toggleCapture{labelCapture};
+    juce::TextButton buttonPlugs{labelPlugs};
+    juce::TextButton buttonPlug{labelPlug};
 
     juce::Label buildTimestampLabel;
 
-    juce::TextButton toggleTweak{"Tweak"};
+    juce::TextButton toggleTweak{labelTweak};
     juce::Component tweakPanel;
-    juce::ComboBox comboPresets{"Presets"};
+    juce::ComboBox comboPresets{presetsComboTextWhenNothingSelected};
     std::vector<juce::File> presets;
     juce::File currentPresetFile;
-    juce::TextButton buttonLoad{"Load"};
-    juce::TextButton buttonSave{"Save"};
-    juce::TextButton buttonSaveAs{"Save As"};
-    juce::TextButton buttonDelete{"Delete"};
+    juce::TextButton buttonLoad{labelLoad};
+    juce::TextButton buttonSave{labelSave};
+    juce::TextButton buttonSaveAs{labelSaveAs};
+    juce::TextButton buttonDelete{labelDelete};
 
     std::unique_ptr<juce::FileChooser> chooser;
 

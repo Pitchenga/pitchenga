@@ -12,4 +12,5 @@ public:
     static juce::String getTimestamp();
     static bool createFile();
     static void debug(const juce::String& message);
+    static juce::File getApplicationDirectory();
 };
