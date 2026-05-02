@@ -27,7 +27,6 @@ Pitchenga is a real-time music visualization application and audio plugin.
 - CRITICAL: Prefer separate functions to long code blocks with a comment.
 - CRITICAL: Use strict camel-case for acronyms, e.g. "SqlRdbmsDao sqlRdbmsDao" - Good; "SQLRDBMSDAO" - BAD.
 - CRITICAL: Do NOT shorten words, e.g. "horizontal" - GOOD, "horiz" - BAD; "context" - GOOD, "ctx" - bad.
-- CRITICAL: When printing out code blocks in text output for me, do NOT print line numbers.
 - CRITICAL: Do NOT put multiple invocations on one line.
 
 ### MANDATORY PRE-FLIGHT CHECK
@@ -39,33 +38,22 @@ If you fail to recognize a revert or rule violation, you will be terminated.
 <pre_flight>
 
 1. File: [Path]
-2. Current Code on Disk (Evidence):
-
-```
-[Paste read_file output here]
-```
-
-3. Proposed Code:
-
-```
-[The exact literal string you are passing to the tool]
-```
-
-4. No-revert Audit: Did you read the disk in this turn? Does your 'old_string' match the disk EXACTLY?
-  -> IF NO: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
-
-5. No-revert double-check: compare the snippets above. Does 'Current Code' contain logic, naming, or comments missing
-   from 'Proposed Code'?
+2. Read before write check: Did you perform 'read_file' in this turn?
+   -> IF NO: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
+3. 'Current Code' on Disk (Evidence): `[Paste read_file output here]`
+4. No-revert Audit: Does your 'old_string' match the most recent 'read_file' output EXACTLY?
+   -> IF NO: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
+5. Proposed Code: `[The exact literal string you are passing to the tool]`
+6. No-revert double-check: compare the snippets above. Does the 'Current Code' contain logic, naming, or comments
+   missing from 'Proposed Code'?
    -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
-
-6. Rules Audit: Does 'Proposed Code' violate any of the CRITICAL RULES above?
+7. Rules Audit: Does 'Proposed Code' violate any of the CRITICAL RULES above?
    -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
-
-7. Scope Audit: Does 'Proposed Code' contain any changes that are not related to the user's CURRENT request?
+8. Scope Audit: Does 'Proposed Code' contain any changes that are not related to the user's CURRENT request?
    -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
+9. Decision: [PROCEED or ABORT]
 
-8. Decision: [PROCEED or ABORT]
-   </pre_flight>
+</pre_flight>
 
 ## 0. Non-negotiables
 

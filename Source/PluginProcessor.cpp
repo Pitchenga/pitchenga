@@ -180,14 +180,15 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     if (availableSamples > 0) {
         const int samplesToRead = std::min(availableSamples, numSamples);
         int startIndex1, blockSize1, startIndex2, blockSize2;
+        
         desktopCapture.getFifo().prepareToRead(samplesToRead, startIndex1, blockSize1, startIndex2, blockSize2);
 
         if (blockSize1 > 0) {
-            juce::FloatVectorOperations::add(monoData, desktopCapture.getBuffer().data() + startIndex1, blockSize1);
+            juce::FloatVectorOperations::add(monoData, desktopCapture.getBuffer().data() + static_cast<size_t>(startIndex1), blockSize1);
         }
 
         if (blockSize2 > 0) {
-            juce::FloatVectorOperations::add(monoData + blockSize1, desktopCapture.getBuffer().data() + startIndex2, blockSize2);
+            juce::FloatVectorOperations::add(monoData + blockSize1, desktopCapture.getBuffer().data() + static_cast<size_t>(startIndex2), blockSize2);
         }
         
         desktopCapture.getFifo().finishedRead(samplesToRead);
