@@ -76,6 +76,9 @@ void Math::setupStft() {
 }
 
 void Math::processStft() {
+    stft.isEnablePeakExtraction = !processor.settings.isRawMode;
+    stft.isEnablePsychoacousticTilt = !processor.settings.isRawMode;
+    stft.isEnableTailKiller = !processor.settings.isRawMode;
     stft.processFrame(rawAudioHistoryBuffer);
     currentRollPeaks = stft.getPeaks();
 }

@@ -22,7 +22,7 @@ void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
 }
 
 void RollStft::resized() {
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -59,7 +59,7 @@ void RollStft::paint(juce::Graphics& graphics) {
 
     const int physicalWidth = getWidth();
     const int physicalHeight = getHeight();
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? physicalHeight : physicalWidth;
     const int logicalHeight = isHorizontal ? physicalWidth : physicalHeight;
     const float labelAreaHeight = getLabelAreaHeight();
@@ -90,7 +90,7 @@ void RollStft::paint(juce::Graphics& graphics) {
 }
 
 void RollStft::buildFrame() {
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
     if (logicalWidth <= 0 || logicalHeight <= 0) return;
@@ -98,13 +98,44 @@ void RollStft::buildFrame() {
     // Create a transparent image (the 'true' flag clears it to zero alpha)
     cachedFrame = juce::Image(juce::Image::ARGB, logicalWidth, logicalHeight, true);
     juce::Graphics graphics(cachedFrame);
-    paintFrame(graphics);
-}
 
-juce::String RollStft::getNoteName(const int midiNote) {
-    int chroma = Common::fast_mod12(midiNote);
-    const int octave = midiNote / 12 - 1;
-    return Tone::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
+    const auto totalHeight = static_cast<float>(logicalHeight);
+    const float labelAreaHeight = getLabelAreaHeight();
+    const float plotHeight = std::max(1.0f, totalHeight - labelAreaHeight);
+    const juce::Font labelFont = Common::getLabelFont();
+    graphics.setFont(labelFont);
+    const float labelHeight = labelFont.getHeight();
+    const float maxTextWidth = juce::GlyphArrangement::getStringWidth(labelFont, "Ww8");
+    const int startMidi = static_cast<int>(ceil(minMidiNote));
+    const int endMidi = static_cast<int>(floor(maxMidiNote));
+    for (int midiNote = startMidi; midiNote <= endMidi; ++midiNote) {
+        const int chroma = Common::fast_mod12(midiNote);
+
+        // fixme: move to Tone
+        // Identify standard "black" keys
+        const bool isBlackKey = chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10;
+
+        const float hz = 440.0f * pow(2.0f, (static_cast<float>(midiNote) - 69.0f) / 12.0f);
+        const float targetCenter = frequencyToX(hz, static_cast<float>(logicalWidth));
+
+        constexpr float startY = 0.0f;
+        const float endY = plotHeight;
+
+        const juce::Colour baseColor = Tone::chromaticScale[static_cast<size_t>(chroma)].color;
+        const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.3f);
+        graphics.setColour(gridColor);
+
+        if (isBlackKey) {
+            constexpr float dashLengths[] = {4.0f, 4.0f};
+            graphics.drawDashedLine(juce::Line<float>(targetCenter, startY, targetCenter, endY), dashLengths, 2, 1.0f);
+        } else {
+            graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
+        }
+
+        if (processor.settings.isShowRollLabels()) {
+            paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, totalHeight, baseColor, processor.settings.isFlipRollHorizontal);
+        }
+    }
 }
 
 void RollStft::paintLabel(
@@ -116,13 +147,13 @@ void RollStft::paintLabel(
     const float startY,
     const juce::Colour baseColor,
     const bool isHorizontal
-) {
+) const {
     if (midiNote == minMidiNote || midiNote == maxMidiNote) {
         // Not drawing a half label
         return;
     }
 
-    const juce::String name = getNoteName(midiNote);
+    const juce::String name = Tone::getNoteName(midiNote, processor.settings.isLetterNotation);
 
     graphics.setColour(baseColor);
     graphics.saveState();
@@ -135,7 +166,7 @@ void RollStft::paintLabel(
         );
         graphics.drawText(
             name,
-            juce::Rectangle<float>(rotX, rotY, maxTextWidth, labelHeight),
+            juce::Rectangle(rotX, rotY, maxTextWidth, labelHeight),
             juce::Justification::centredLeft,
             false
         );
@@ -145,7 +176,7 @@ void RollStft::paintLabel(
         );
         graphics.drawText(
             name,
-            juce::Rectangle<float>(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
+            juce::Rectangle(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
             juce::Justification::centredLeft,
             false
         );
@@ -155,7 +186,7 @@ void RollStft::paintLabel(
 }
 
 void RollStft::paintFrame(juce::Graphics& graphics) const {
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -196,13 +227,13 @@ void RollStft::paintFrame(juce::Graphics& graphics) const {
         }
 
         if (processor.settings.isShowRollLabels()) {
-            paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, totalHeight, baseColor, processor.settings.isRollHorizontal);
+            paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, totalHeight, baseColor, processor.settings.isFlipRollHorizontal);
         }
     }
 }
 
 void RollStft::paintForrest(juce::Graphics& graphics) const {
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -215,7 +246,8 @@ void RollStft::paintForrest(juce::Graphics& graphics) const {
         if (xPos >= 0.0f && xPos <= static_cast<float>(width)) {
             // Configurable razor-sharp stems for the Forrest
             float stemWidthPixels = 5.0f;
-            if (enableDynamicStemWidth) {
+            const bool doDynamicStem = enableDynamicStemWidth && !processor.settings.isRawMode;
+            if (doDynamicStem) {
                 const float nextX = frequencyToX(peak.frequencyHz + peak.bandwidthHz, static_cast<float>(width));
                 // +1.0f forces deliberate sub-pixel overlap to completely kill rendering gaps
                 stemWidthPixels = std::max(1.0f, nextX - xPos + 1.0f);
@@ -246,7 +278,7 @@ void RollStft::pumpSmoke() {
         return;
     }
 
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -273,7 +305,7 @@ void RollStft::pumpSmoke() {
     const float binResHz = sr / 32768.0f;
     const float fWidth = static_cast<float>(width);
     const float midiRangeInv = 1.0f / (maxMidiNote - minMidiNote);
-    const bool doDynamicStem = enableDynamicStemWidth;
+    const bool doDynamicStem = enableDynamicStemWidth && !processor.settings.isRawMode;
 
     // Extreme Math Optimization: Pre-calculate the derivative of the MIDI scale
     // to bypass calling std::log2 multiple times per peak.
@@ -322,7 +354,7 @@ void RollStft::pumpSmoke() {
 void RollStft::paintSmoke(const juce::Graphics& graphics) const {
     if (!smokeImage.isValid()) return;
 
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
     const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));

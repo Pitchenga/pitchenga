@@ -24,8 +24,7 @@ private:
     void buildFrame();
     void paintFrame(juce::Graphics& graphics) const;
 
-    static juce::String getNoteName(int midiNote);
-    static void paintLabel(
+    void paintLabel(
         juce::Graphics& graphics,
         float labelHeight,
         float maxTextWidth,
@@ -34,7 +33,7 @@ private:
         float startY,
         juce::Colour baseColor,
         bool isHorizontal
-    );
+    ) const;
 
     //fixme: Implement speed
     const float smokeSpeedPxPerFrame = 1.0f;

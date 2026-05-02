@@ -143,7 +143,7 @@ private:
     juce::AudioBuffer<float> pluginOutputBuffer;
     juce::AudioBuffer<float> micBuffer;
     
-    DesktopAudioCapture desktopCapture;
+    DesktopAudioCapture desktopAudioCapture;
     std::vector<float> desktopAudioBuffer;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PitchengaAudioProcessor)

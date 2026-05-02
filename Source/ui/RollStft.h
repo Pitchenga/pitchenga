@@ -37,13 +37,12 @@ private:
 
     void buildFrame();
     void paintFrame(juce::Graphics& graphics) const;
-    static void paintLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, int midiNote, float targetCenter, float startY, juce::Colour baseColor, bool isHorizontal);
+    void paintLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, int midiNote, float targetCenter, float startY, juce::Colour baseColor, bool isHorizontal) const;
     void pumpSmoke();
     void paintSmoke(const juce::Graphics& graphics) const;
     void paintForrest(juce::Graphics& graphics) const;
 
     float getLabelAreaHeight() const;
-    static juce::String getNoteName(int midiNote);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RollStft)
 };

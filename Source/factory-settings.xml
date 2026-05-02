@@ -10,12 +10,14 @@
     isShowStrobe="1"
     isShowForrest="0"
     isShowSmoke="1"
-    isRollHorizontal="1"
+    isFlipRollHorizontal="1"
     isLayoutHorizontal="0"
     earVolumeLeft="0.0"
     earVolumeRight="0.0"
     isCaptureEnabled="0"
     isShowTweakPanel="0"
+    isRawMode="0"
+    isLetterNotation="0"
     isExternalPluginWindowOpen="0"
     splitRatio="0.3130223751068115">
 </PITCHENGA>

@@ -88,8 +88,8 @@ void PitchengaAudioProcessor::prepareToPlay(const double sampleRate, const int s
         plugin->prepareToPlay(sampleRate, samplesPerBlock);
     }
 
-    if (settings.isCaptureEnabled) {
-        desktopCapture.start(sampleRate);
+    if (settings.isCaptureEnabled && wrapperType == wrapperType_Standalone) {
+        desktopAudioCapture.start(sampleRate);
     }
     
     desktopAudioBuffer.assign(bufferSize, 0.0f);
@@ -167,17 +167,26 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     }
 
     // Stream D: Desktop Audio Capture
-    const int available = desktopCapture.getFifo().getNumReady();
+    int available = desktopAudioCapture.getFifo().getNumReady();
+
+    // Catch up if we are falling behind to avoid latency. 
+    // We use a large threshold (16384 samples ~370ms) to allow for jitter.
+    if (available > 16384) {
+        const int toSkip = available - numSamples;
+        desktopAudioCapture.getFifo().finishedRead(toSkip);
+        available = numSamples;
+    }
+
     if (available > 0) {
         const int samplesToRead = std::min(available, numSamples);
-        const auto scope = desktopCapture.getFifo().read(samplesToRead);
+        const auto scope = desktopAudioCapture.getFifo().read(samplesToRead);
 
         if (scope.blockSize1 > 0) {
-            juce::FloatVectorOperations::add(monoData, desktopCapture.getBuffer().data() + scope.startIndex1, scope.blockSize1);
+            juce::FloatVectorOperations::add(monoData, desktopAudioCapture.getBuffer().data() + scope.startIndex1, scope.blockSize1);
         }
 
         if (scope.blockSize2 > 0) {
-            juce::FloatVectorOperations::add(monoData + scope.blockSize1, desktopCapture.getBuffer().data() + scope.startIndex2, scope.blockSize2);
+            juce::FloatVectorOperations::add(monoData + scope.blockSize1, desktopAudioCapture.getBuffer().data() + scope.startIndex2, scope.blockSize2);
         }
     }
 
@@ -186,8 +195,10 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 
     // Instrument always goes to speakers
     if (numInstOutputChannels > 0) {
+        int sourceChannel = 0;
         for (int ch = 0; ch < totalNumOutputChannels; ++ch) {
-            buffer.addFrom(ch, 0, pluginOutputBuffer, ch % numInstOutputChannels, 0, numSamples);
+            buffer.addFrom(ch, 0, pluginOutputBuffer, sourceChannel, 0, numSamples);
+            if (++sourceChannel >= numInstOutputChannels) sourceChannel = 0;
         }
     }
 
@@ -196,14 +207,17 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     if (numMicInputChannels > 0) {
         if (wrapperType == wrapperType_Standalone) {
             if (settings.earVolumeLeft > 0.0f && totalNumOutputChannels > 0) {
-                buffer.addFrom(0, 0, micBuffer, 0 % numMicInputChannels, 0, numSamples, settings.earVolumeLeft);
+                buffer.addFrom(0, 0, micBuffer, 0, 0, numSamples, settings.earVolumeLeft);
             }
             if (settings.earVolumeRight > 0.0f && totalNumOutputChannels > 1) {
-                buffer.addFrom(1, 0, micBuffer, 1 % numMicInputChannels, 0, numSamples, settings.earVolumeRight);
+                const int sourceChannel = 1 >= numMicInputChannels ? 0 : 1;
+                buffer.addFrom(1, 0, micBuffer, sourceChannel, 0, numSamples, settings.earVolumeRight);
             }
         } else {
-            for (int ch = 0; ch < totalNumOutputChannels; ++ch) {
-                buffer.addFrom(ch, 0, micBuffer, ch % numMicInputChannels, 0, numSamples, 1.0f);
+            int sourceChannel = 0;
+            for (int channel = 0; channel < totalNumOutputChannels; ++channel) {
+                buffer.addFrom(channel, 0, micBuffer, sourceChannel, 0, numSamples, 1.0f);
+                if (++sourceChannel >= numMicInputChannels) sourceChannel = 0;
             }
         }
     }
@@ -361,11 +375,13 @@ void PitchengaAudioProcessor::showExternalPluginEditor() {
 }
 
 void PitchengaAudioProcessor::startDesktopCapture() {
-    desktopCapture.start(getSampleRate());
+    if (wrapperType == wrapperType_Standalone) {
+        desktopAudioCapture.start(getSampleRate());
+    }
 }
 
 void PitchengaAudioProcessor::stopDesktopCapture() {
-    desktopCapture.stop();
+    desktopAudioCapture.stop();
 }
 
 juce::AudioProcessorEditor* PitchengaAudioProcessor::createExternalPluginEditor() {

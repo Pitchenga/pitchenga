@@ -1,10 +1,10 @@
 #include "Eye.h"
 #include <cmath>
 #include <algorithm>
-
+#include "../PluginProcessor.h"
 #include "../Tone.h"
 
-Eye::Eye() {
+Eye::Eye(PitchengaAudioProcessor& proc) : processor(proc) {
     smoothedOctaveBins.resize(totalFoldedBins, 0.0);
 }
 
@@ -16,41 +16,12 @@ void Eye::updateResults(const std::vector<double>& results) {
 }
 
 juce::Colour Eye::calculateColor(const float velocity, const float toneRatio) {
-    //fixme: Simplify with getContinuousColor(), unify coloring logic
-    float wrappedRatio = Common::fast_fmod12(toneRatio);
-
-    const int toneNumber = static_cast<int>(std::floor(wrappedRatio));
-    const float diff = wrappedRatio - static_cast<float>(toneNumber);
-
-    // NO MODULO NEEDED.
-    // wrappedRatio is strictly [0.0, 12.0), so toneNumber is strictly 0 to 11.
-    const int currentIdx = toneNumber;
-    const juce::Colour toneColor = Tone::chromaticScale[static_cast<size_t>(currentIdx)].color;
-
-    // --- Port of getGuessAndPitchinessColor & transposePitch ---
-    juce::Colour guessColor;
-    if (std::abs(diff) < 1e-5f) {
-        guessColor = toneColor;
-    } else {
-        // Transpose -1 or +1 step depending on diff direction
-        int pitchyIdx = diff < 0 ? currentIdx - 1 : currentIdx + 1;
-        
-        // NO MODULO NEEDED.
-        // It only moves by exactly 1 step, so a simple bounds check wraps it perfectly.
-        if (pitchyIdx < 0) pitchyIdx = 11;
-        else if (pitchyIdx > 11) pitchyIdx = 0;
-
-        const juce::Colour pitchyColor = Tone::chromaticScale[static_cast<size_t>(pitchyIdx)].color;
-
-        // Simple approximation of the ordinal pitchinessDiff logic
-        const float pitchinessDiff = std::abs(diff);
-        guessColor = toneColor.interpolatedWith(pitchyColor, pitchinessDiff);
-    }
+    const juce::Colour continuousColor = Tone::getContinuousColor(toneRatio);
 
     float colorVelocity = 0.3f + velocity * 1.2f;
     if (colorVelocity > 1.0f) colorVelocity = 1.0f;
 
-    return juce::Colours::black.interpolatedWith(guessColor, colorVelocity);
+    return juce::Colours::black.interpolatedWith(continuousColor, colorVelocity);
 }
 
 void Eye::paint(juce::Graphics& g) {
@@ -124,16 +95,16 @@ void Eye::paintLabel(
     const int i,
     const float sin,
     const float cos
-) {
+) const {
     const float rLabel = baseRadius * startRadius;
     const float initialX = center.x + rLabel * cos;
     const float initialY = center.y + rLabel * sin;
-    const juce::String name = Tone::chromaticScale[static_cast<size_t>(i)].toneName;
 
     graphics.setFont(juce::FontOptions(baseRadius * 0.15f).withStyle("Bold"));
     const auto labelColor = calculateColor(0.1f, static_cast<float>(i));
     graphics.setColour(labelColor);
 
+    const juce::String name = Tone::getToneName(i, processor.settings.isLetterNotation);
     juce::GlyphArrangement arrangement;
     arrangement.addLineOfText(graphics.getCurrentFont(), name, 0.0f, 0.0f);
     arrangement.justifyGlyphs(

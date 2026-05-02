@@ -3,6 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <functional>
+#include <atomic>
 
 // Forward declare the processor to avoid circular includes
 class PitchengaAudioProcessor;
@@ -13,10 +14,10 @@ public:
     class VolumeKnob : public juce::Slider {
     public:
         VolumeKnob();
-        void paint(juce::Graphics& g) override;
-        void mouseDown(const juce::MouseEvent& e) override;
-        void mouseDrag(const juce::MouseEvent& e) override;
-        void mouseUp(const juce::MouseEvent& e) override;
+        void paint(juce::Graphics& graphics) override;
+        void mouseDown(const juce::MouseEvent& event) override;
+        void mouseDrag(const juce::MouseEvent& event) override;
+        void mouseUp(const juce::MouseEvent& event) override;
     private:
         bool wasDragged = false;
     };
@@ -27,22 +28,24 @@ public:
         int lastUiWidth = 601;
         int lastUiHeight = 951;
 
-        bool isShowRoll = true;
-        bool isShowEye = true;
-        bool isShowNeedle = true;
+        std::atomic<bool> isShowRoll = true;
+        std::atomic<bool> isShowEye = true;
+        std::atomic<bool> isShowNeedle = true;
 
-        bool isUseRollStft = true;
+        std::atomic<bool> isUseRollStft = true;
         bool isFreezeRoll = false;
         bool isShowStrobe = true;
         bool isShowSmoke = true;
         bool isShowForrest = false;
-        bool isRollHorizontal = false;
+        bool isFlipRollHorizontal = false;
         bool isLayoutHorizontal = false;
 
-        float earVolumeLeft = 0.0f;
-        float earVolumeRight = 0.0f;
-        bool isCaptureEnabled = false;
+        std::atomic<float> earVolumeLeft = 0.0f;
+        std::atomic<float> earVolumeRight = 0.0f;
+        std::atomic<bool> isCaptureEnabled = false;
         bool isShowTweakPanel = false;
+        std::atomic<bool> isRawMode = false;
+        std::atomic<bool> isLetterNotation = false;
 
         juce::String externalPluginDescriptionXml;
         juce::String externalPluginStateBase64;
@@ -52,7 +55,7 @@ public:
         juce::String currentPresetName;
 
         [[nodiscard]] bool isShowRollLabels() const {
-            return isRollHorizontal || !(!isShowEye && isShowRoll && isShowNeedle);
+            return isFlipRollHorizontal || !(!isShowEye && isShowRoll && isShowNeedle);
         }
 
         [[nodiscard]] juce::XmlElement createXml() const;
@@ -62,6 +65,7 @@ public:
     explicit Control(PitchengaAudioProcessor& proc);
     ~Control() override;
 
+    void timerCallback() override;
     void resized() override;
     void updateVisibilityFromState();
     void refreshPresets();
@@ -78,7 +82,11 @@ private:
     static inline const juce::String deleteConfirmTitle = "Delete Preset";
     static inline const juce::String deleteConfirmMessage = "Are you sure you want to delete preset '{NAME}'?";
 
-    void timerCallback() override;
+    static constexpr int factoryPresetId = 1;
+    static constexpr int userDefaultPresetId = 2;
+    // 3 is separator
+    static constexpr int customPresetsStartId = 4;
+
     void saveCurrentPreset();
     void deleteCurrentPreset();
     static void setupToggleButton(juce::TextButton& button, bool initialState);
@@ -94,8 +102,10 @@ private:
     juce::TextButton toggleEye{"Eye"};
     juce::TextButton toggleRoll{"Roll"};
     juce::TextButton toggleStrobe{"Strobe"};
+    juce::TextButton toggleRaw{"Raw"};
+    juce::TextButton toggleLetter{"Letter"};
     juce::TextButton toggleRollType{"STFT"};
-    juce::TextButton toggleOrientation{"Flip"};
+    juce::TextButton toggleFlipRoll{"Flip"};
     juce::TextButton toggleIsFreezeRoll{"Freeze"};
     juce::TextButton toggleLayoutPivot{"Pivot"};
     juce::TextButton toggleSmoke{"Smoke"};
@@ -116,6 +126,7 @@ private:
     juce::ComboBox comboPresets{"Presets"};
     std::vector<juce::File> presets;
     juce::File currentPresetFile;
+    juce::TextButton buttonLoad{"Load"};
     juce::TextButton buttonSave{"Save"};
     juce::TextButton buttonSaveAs{"Save As"};
     juce::TextButton buttonDelete{"Delete"};

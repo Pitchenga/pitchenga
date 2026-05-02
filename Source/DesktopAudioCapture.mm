@@ -1,8 +1,11 @@
+#include "DesktopAudioCapture.h"
+#include "Util.h"
+
+#if PITCHENGA_USE_SCREEN_CAPTURE
+
 #import <ScreenCaptureKit/ScreenCaptureKit.h>
 #import <CoreMedia/CoreMedia.h>
 #import <AVFoundation/AVFoundation.h>
-#include "DesktopAudioCapture.h"
-#include "Util.h"
 
 @interface DesktopAudioCaptureDelegate : NSObject <SCStreamOutput>
 @property (nonatomic, assign) DesktopAudioCapture* owner;
@@ -30,11 +33,30 @@
     if (status != noErr) return;
 
     if (audioBufferList.mNumberBuffers > 0) {
-        const float* audioData = static_cast<const float*>(audioBufferList.mBuffers[0].mData);
-        const int numSamples = static_cast<int>(audioBufferList.mBuffers[0].mDataByteSize / sizeof(float));
+        CMFormatDescriptionRef formatDesc = CMSampleBufferGetFormatDescription(sampleBuffer);
+        const AudioStreamBasicDescription* asbd = CMAudioFormatDescriptionGetStreamBasicDescription(formatDesc);
         
+        const float* audioData = static_cast<const float*>(audioBufferList.mBuffers[0].mData);
+        int numChannels = (asbd != nullptr) ? static_cast<int>(asbd->mChannelsPerFrame) : 1;
+        int numSamples = static_cast<int>(audioBufferList.mBuffers[0].mDataByteSize / (sizeof(float) * numChannels));
+
         if (self.owner && audioData != nullptr) {
-            self.owner->pushAudio(audioData, numSamples);
+            if (numChannels == 1) {
+                self.owner->pushAudio(audioData, numSamples);
+            } else {
+                // Downmix to mono
+                thread_local std::vector<float> monoDownmix;
+                monoDownmix.assign(numSamples, 0.0f);
+                
+                for (int i = 0; i < numSamples; ++i) {
+                    float sum = 0.0f;
+                    for (int ch = 0; ch < numChannels; ++ch) {
+                        sum += audioData[i * numChannels + ch];
+                    }
+                    monoDownmix[i] = sum / static_cast<float>(numChannels);
+                }
+                self.owner->pushAudio(monoDownmix.data(), numSamples);
+            }
         }
     }
     
@@ -55,7 +77,9 @@ DesktopAudioCapture::DesktopAudioCapture() : impl(std::make_unique<Impl>()) {
     ringBuffer.assign(ringBufferSize, 0.0f);
     impl->delegate = [[DesktopAudioCaptureDelegate alloc] init];
     impl->delegate.owner = this;
-    impl->queue = dispatch_queue_create("com.pitchenga.desktopcapture", DISPATCH_QUEUE_SERIAL);
+    
+    dispatch_queue_attr_t attrribute = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_USER_INTERACTIVE, 0);
+    impl->queue = dispatch_queue_create("com.pitchenga.desktopcapture", attrribute);
 }
 
 DesktopAudioCapture::~DesktopAudioCapture() {
@@ -129,3 +153,19 @@ void DesktopAudioCapture::pushAudio(const float* data, int numSamples) {
         std::copy(data + scope.blockSize1, data + scope.blockSize1 + scope.blockSize2, ringBuffer.begin() + scope.startIndex2);
     }
 }
+
+#else
+
+struct DesktopAudioCapture::Impl {};
+
+DesktopAudioCapture::DesktopAudioCapture() : impl(std::make_unique<Impl>()) {}
+
+DesktopAudioCapture::~DesktopAudioCapture() {}
+
+void DesktopAudioCapture::start(double) {}
+
+void DesktopAudioCapture::stop() {}
+
+void DesktopAudioCapture::pushAudio(const float*, int) {}
+
+#endif

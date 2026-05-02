@@ -17,6 +17,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     processor(p),
     worker(p),
     needle(p),
+    eye(p),
     rollStft(p),
     rollCqt(p),
     splitter(p),
@@ -41,9 +42,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
 
     addAndMakeVisible(control);
     control.onVisibilityChanged = [this] {
-        rollStft.resized();
-        rollCqt.resized();
-        resized();
+        updateVisibilityFromState();
     };
 
     addAndMakeVisible(splitter);
@@ -160,6 +159,12 @@ void PitchengaAudioProcessorEditor::paint(juce::Graphics& g) {
 
 void PitchengaAudioProcessorEditor::updateVisibilityFromState() {
     control.updateVisibilityFromState();
+    
+    needle.resized();
+    eye.resized();
+    rollStft.resized();
+    rollCqt.resized();
+    
     resized();
 }
 

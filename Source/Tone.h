@@ -47,4 +47,16 @@ public:
         }
         return result;
     }
+
+    static juce::String getToneName(const int index, const bool isLetterNotation) {
+        return isLetterNotation
+                   ? chromaticScale[static_cast<size_t>(index)].letterNotation
+                   : chromaticScale[static_cast<size_t>(index)].toneName;
+    }
+
+    static juce::String getNoteName(const int midiNote, const bool isLetterNotation) {
+        const int chroma = Common::fast_mod12(midiNote);
+        const int octave = midiNote / 12 - 1;
+        return getToneName(chroma, isLetterNotation) + juce::String(octave);
+    }
 };

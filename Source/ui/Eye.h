@@ -4,18 +4,21 @@
 #include <vector>
 #include <array>
 
+// Forward declare the processor to avoid circular includes
+class PitchengaAudioProcessor;
+
 class Eye : public juce::Component {
 public:
     static constexpr int semitonesPerOctave = 12;
     static constexpr int binsPerSemitone = 9;
     static constexpr int totalFoldedBins = binsPerSemitone * semitonesPerOctave;
 
-    Eye();
+    explicit Eye(PitchengaAudioProcessor& proc);
 
     void updateResults(const std::vector<double>& results);
 
     void paint(juce::Graphics& g) override;
-    static void paintLabel(
+    void paintLabel(
         juce::Graphics& graphics,
         juce::Point<float> center,
         float baseRadius,
@@ -23,7 +26,7 @@ public:
         int i,
         float sin,
         float cos
-    );
+    ) const;
     void resized() override;
     static juce::Colour calculateColor(float velocity, float toneRatio);
 
@@ -31,6 +34,8 @@ private:
     void paintFrame(juce::Graphics& graphics) const;
     void paintFrame();
     void paintBins();
+
+    PitchengaAudioProcessor& processor;
 
     std::vector<double> smoothedOctaveBins;
     std::array<juce::Path, totalFoldedBins> segmentPaths;

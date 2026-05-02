@@ -43,25 +43,26 @@ namespace sevagh {
                 }
             }
 
-            static int logCounter = 0;
-            if (++logCounter % 100 == 0) {
-                float rms = 0.0f;
-                for (auto v : audioBuffer) rms += static_cast<float>(v * v);
-                rms = std::sqrt(rms / static_cast<float>(audioBuffer.size()));
-
-                juce::String nsdfStart;
-                for (int i = 0; i < std::min(10, actualSize); ++i) nsdfStart += juce::String(
-                    nsdfBuffer[static_cast<size_t>(i)]
-                ) + " ";
-
-                // Util::debug(
-                //     "PitchDetector - RMS=" + juce::String(rms) +
-                //     ", highestAmplitude=" + juce::String(highestAmplitude) +
-                //     ", maxPositions=" + juce::String(maxPositions.size()) +
-                //     ", estimates=" + juce::String(estimates.size()) +
-                //     ", nsdf[0..9]=" + nsdfStart
-                // );
-            }
+            // static int logCounter = 0;
+            // if (++logCounter >= 100) {
+            //     logCounter = 0;
+            //     float rms = 0.0f;
+            //     for (auto v : audioBuffer) rms += static_cast<float>(v * v);
+            //     rms = std::sqrt(rms / static_cast<float>(audioBuffer.size()));
+            //
+            //     juce::String nsdfStart;
+            //     for (int i = 0; i < std::min(10, actualSize); ++i) nsdfStart += juce::String(
+            //         nsdfBuffer[static_cast<size_t>(i)]
+            //     ) + " ";
+            //
+            //     Util::debug(
+            //         "PitchDetector - RMS=" + juce::String(rms) +
+            //         ", highestAmplitude=" + juce::String(highestAmplitude) +
+            //         ", maxPositions=" + juce::String(maxPositions.size()) +
+            //         ", estimates=" + juce::String(estimates.size()) +
+            //         ", nsdf[0..9]=" + nsdfStart
+            //     );
+            // }
 
             if (estimates.empty()) {
                 return static_cast<T>(-1.0);

@@ -68,7 +68,7 @@ void RollCqt::updateResults(const std::vector<double>& results) {
 }
 
 void RollCqt::resized() {
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -96,7 +96,7 @@ void RollCqt::paint(juce::Graphics& graphics) {
 
     const int physicalWidth = getWidth();
     const int physicalHeight = getHeight();
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? physicalHeight : physicalWidth;
     const int logicalHeight = isHorizontal ? physicalWidth : physicalHeight;
     const float labelAreaHeight = getLabelAreaHeight();
@@ -132,7 +132,7 @@ void RollCqt::paint(juce::Graphics& graphics) {
 }
 
 void RollCqt::buildFrame() {
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
     if (logicalWidth <= 0 || logicalHeight <= 0) return;
@@ -142,13 +142,49 @@ void RollCqt::buildFrame() {
     // Create a transparent image (the 'true' flag clears it to zero alpha)
     cachedFrame = juce::Image(juce::Image::ARGB, logicalWidth, logicalHeight, true);
     juce::Graphics graphics(cachedFrame);
-    paintFrame(graphics);
-}
+    int totalOctaves = currentTotalBins / currentBinsPerOctave;
+    if (totalOctaves <= 0) totalOctaves = PitchengaAudioProcessor::numOctaves;
+    const int totalSemitones = totalOctaves * 12;
+    if (totalSemitones <= 0) return;
+    // The exact pixel width of one single CQT bin
+    const float barWidth = static_cast<float>(logicalWidth) / static_cast<float>(currentTotalBins);
+    const auto totalHeight = static_cast<float>(logicalHeight);
+    const float labelAreaHeight = getLabelAreaHeight();
+    const float plotHeight = std::max(1.0f, totalHeight - labelAreaHeight);
+    const juce::Font labelFont = Common::getLabelFont();
+    graphics.setFont(labelFont);
+    const float labelHeight = labelFont.getHeight();
+    const float maxTextWidth = juce::GlyphArrangement::getStringWidth(labelFont, "Ww8");
+    for (int i = 0; i < totalSemitones; ++i) {
+        const int chroma = Common::fast_mod12(i);
 
-juce::String RollCqt::getNoteName(const int midiNote) {
-    int chroma = Common::fast_mod12(midiNote);
-    const int octave = midiNote / 12 - 1;
-    return Tone::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
+        //fixme: move to ToneName
+        // Identify standard "black" keys
+        const bool isBlackKey = chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10;
+
+        // Find the exact pitch bin index for this semitone
+        const float binIndex = static_cast<float>(i) * (static_cast<float>(currentBinsPerOctave) / 12.0f);
+
+        // Find the visual center of that specific pitch bin
+        const float targetCenter = binIndex * barWidth + barWidth * 0.5f;
+
+        const float startY = 0.0f;
+        const float endY = plotHeight;
+
+        const juce::Colour baseColor = Tone::chromaticScale[static_cast<size_t>(chroma)].color;
+        const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.3f);
+        graphics.setColour(gridColor);
+
+        if (isBlackKey) {
+            const float dashLengths[] = {4.0f, 4.0f};
+            graphics.drawDashedLine(juce::Line(targetCenter, startY, targetCenter, endY), dashLengths, 2, 1.0f);
+        } else {
+            graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
+        }
+
+        //fixme: Unify range and hide labels when adjacent to tuner
+        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor, processor.settings.isFlipRollHorizontal);
+    }
 }
 
 void RollCqt::paintLabel(
@@ -160,7 +196,7 @@ void RollCqt::paintLabel(
     const float startY,
     const juce::Colour baseColor,
     const bool isHorizontal
-) {
+) const {
     if (binIndex == 0) {
         // Not drawing a half label
         return;
@@ -168,7 +204,7 @@ void RollCqt::paintLabel(
     constexpr int startMidiNote = 12;
     const int midiNote = binIndex + startMidiNote;
 
-    const juce::String name = getNoteName(midiNote);
+    const juce::String name = Tone::getNoteName(midiNote, processor.settings.isLetterNotation);
 
     graphics.setColour(baseColor);
     graphics.saveState();
@@ -181,7 +217,7 @@ void RollCqt::paintLabel(
         );
         graphics.drawText(
             name,
-            juce::Rectangle<float>(rotX, rotY, maxTextWidth, labelHeight),
+            juce::Rectangle(rotX, rotY, maxTextWidth, labelHeight),
             juce::Justification::centredLeft,
             false
         );
@@ -191,7 +227,7 @@ void RollCqt::paintLabel(
         );
         graphics.drawText(
             name,
-            juce::Rectangle<float>(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
+            juce::Rectangle(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
             juce::Justification::centredLeft,
             false
         );
@@ -201,7 +237,7 @@ void RollCqt::paintLabel(
 }
 
 void RollCqt::paintFrame(juce::Graphics& graphics) const {
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -245,18 +281,18 @@ void RollCqt::paintFrame(juce::Graphics& graphics) const {
 
         if (isBlackKey) {
             const float dashLengths[] = {4.0f, 4.0f};
-            graphics.drawDashedLine(juce::Line<float>(targetCenter, startY, targetCenter, endY), dashLengths, 2, 1.0f);
+            graphics.drawDashedLine(juce::Line(targetCenter, startY, targetCenter, endY), dashLengths, 2, 1.0f);
         } else {
             graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
         }
 
         //fixme: Unify range and hide labels when adjacent to tuner
-        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor, processor.settings.isRollHorizontal);
+        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor, processor.settings.isFlipRollHorizontal);
     }
 }
 
 void RollCqt::paintForrest(juce::Graphics& graphics) const {
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -266,6 +302,7 @@ void RollCqt::paintForrest(juce::Graphics& graphics) const {
     const float barWidth = static_cast<float>(width) / static_cast<float>(currentTotalBins);
     const float chromaFactor = 12.0f / static_cast<float>(currentBinsPerOctave);
 
+    int binCounter = 0;
     for (int i = 0; i < currentTotalBins; ++i) {
         if (i >= static_cast<int>(displayMagnitudes.size())) break;
 
@@ -276,7 +313,7 @@ void RollCqt::paintForrest(juce::Graphics& graphics) const {
         );
         const auto barHeight = static_cast<float>(normalizedMagnitude) * plotHeight;
 
-        const float chroma = static_cast<float>(i % currentBinsPerOctave) * chromaFactor;
+        const float chroma = static_cast<float>(binCounter) * chromaFactor;
 
         const juce::Colour color = Tone::getContinuousColor(chroma);
         graphics.setColour(color);
@@ -287,6 +324,8 @@ void RollCqt::paintForrest(juce::Graphics& graphics) const {
             barWidth + 0.5f,
             barHeight
         );
+
+        if (++binCounter >= currentBinsPerOctave) binCounter = 0;
     }
 }
 
@@ -295,7 +334,7 @@ void RollCqt::pumpSmoke() {
         return;
     }
 
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -323,9 +362,10 @@ void RollCqt::pumpSmoke() {
     const float barWidth = static_cast<float>(width) / static_cast<float>(totalBins);
     const float chromaFactor = 12.0f / static_cast<float>(binsPerOctave);
 
+    int binCounter = 0;
     for (int i = 0; i < totalBins; ++i) {
         if (const double magnitude = displayMagnitudes[static_cast<size_t>(i)]; magnitude > smokeThreshold) {
-            const float chroma = static_cast<float>(i % binsPerOctave) * chromaFactor;
+            const float chroma = static_cast<float>(binCounter) * chromaFactor;
             const juce::Colour baseColor = Tone::getContinuousColor(chroma);
             constexpr float undimmingGain = 1.1f;
             const juce::Colour color = juce::Colours::black.interpolatedWith(
@@ -341,6 +381,7 @@ void RollCqt::pumpSmoke() {
                 smokeSpeedPxPerFrame
             );
         }
+        if (++binCounter >= binsPerOctave) binCounter = 0;
     }
 
     repaint();
@@ -349,7 +390,7 @@ void RollCqt::pumpSmoke() {
 void RollCqt::paintSmoke(const juce::Graphics& graphics) const {
     if (!smokeImage.isValid()) return;
 
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
     const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));

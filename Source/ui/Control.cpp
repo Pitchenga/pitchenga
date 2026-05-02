@@ -4,7 +4,7 @@
 #include "BinaryData.h"
 
 struct Control::PluginListListener : juce::ChangeListener {
-    explicit PluginListListener(Control& c) : owner(c) {}
+    explicit PluginListListener(Control& ownerControl) : owner(ownerControl) {}
 
     void changeListenerCallback(juce::ChangeBroadcaster*) override {
         if (owner.isRescanning) {
@@ -68,20 +68,20 @@ void Control::VolumeKnob::paint(juce::Graphics& graphics) {
     graphics.drawLine(centerX, centerY, pointerX, pointerY, 2.0f);
 }
 
-void Control::VolumeKnob::mouseDown(const juce::MouseEvent& e) {
-    Slider::mouseDown(e);
+void Control::VolumeKnob::mouseDown(const juce::MouseEvent& event) {
+    Slider::mouseDown(event);
     wasDragged = false;
 }
 
-void Control::VolumeKnob::mouseDrag(const juce::MouseEvent& e) {
-    Slider::mouseDrag(e);
-    if (e.mouseWasDraggedSinceMouseDown()) {
+void Control::VolumeKnob::mouseDrag(const juce::MouseEvent& event) {
+    Slider::mouseDrag(event);
+    if (event.mouseWasDraggedSinceMouseDown()) {
         wasDragged = true;
     }
 }
 
-void Control::VolumeKnob::mouseUp(const juce::MouseEvent& e) {
-    Slider::mouseUp(e);
+void Control::VolumeKnob::mouseUp(const juce::MouseEvent& event) {
+    Slider::mouseUp(event);
     if (!wasDragged) {
         setValue(getValue() > 0.0 ? 0.0 : 1.0, juce::sendNotificationSync);
     }
@@ -133,17 +133,31 @@ Control::Control(PitchengaAudioProcessor& proc)
         processor.settings.isShowStrobe = toggleStrobe.getToggleState();
     };
 
+    setupToggleButton(toggleRaw, processor.settings.isRawMode);
+    toggleRaw.onClick = [this] {
+        processor.settings.isRawMode = toggleRaw.getToggleState();
+        updateButtonStates();
+    };
+
+    toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Letter" : "Solfege");
+    toggleLetter.onClick = [this] {
+        processor.settings.isLetterNotation = !processor.settings.isLetterNotation;
+        toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Letter" : "Solfege");
+        if (onVisibilityChanged) onVisibilityChanged();
+    };
+
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
     toggleRollType.onClick = [this] {
         processor.settings.isUseRollStft = !processor.settings.isUseRollStft;
         toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
+        updateButtonStates();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flip" : "Flop");
-    toggleOrientation.onClick = [this] {
-        processor.settings.isRollHorizontal = !processor.settings.isRollHorizontal;
-        toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flip" : "Flop");
+    toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? "Flip" : "Flop");
+    toggleFlipRoll.onClick = [this] {
+        processor.settings.isFlipRollHorizontal = !processor.settings.isFlipRollHorizontal;
+        toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? "Flip" : "Flop");
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -162,7 +176,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     volumeLabelRight.setColour(juce::Label::textColourId, juce::Colours::white);
     volumeLabelRight.setBorderSize(juce::BorderSize(0));
 
-    auto updateVolumeLabel = [](juce::Slider& knob, juce::Label& label) {
+    auto updateVolumeLabel = [](const juce::Slider& knob, juce::Label& label) {
         const auto currentVolume = static_cast<float>(knob.getValue());
         juce::String volumeText;
         if (currentVolume <= 0.0001f) {
@@ -211,8 +225,8 @@ Control::Control(PitchengaAudioProcessor& proc)
         processor.showExternalPluginEditor();
     };
 
-    comboPresets.setTextWhenNothingSelected("Presets...");
-    comboPresets.onChange = [this] {
+    buttonLoad.setButtonText("Load");
+    buttonLoad.onClick = [this] {
         const int id = comboPresets.getSelectedId();
         if (id == 0) return;
 
@@ -220,7 +234,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         juce::File newPresetFile;
         juce::String newPresetName;
 
-        if (id == 1) {
+        if (id == factoryPresetId) {
             newPresetName = "";
             xml = juce::XmlDocument::parse(
                 juce::String::createStringFromData(
@@ -229,7 +243,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                 )
             );
             if (xml != nullptr) xml->setTagName(getSettingsTagName());
-        } else if (id == 2) {
+        } else if (id == userDefaultPresetId) {
             const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).
                 getChildFile("Pitchenga");
             newPresetFile = appDataDir.getChildFile("presets").getChildFile("user-default.xml");
@@ -247,8 +261,8 @@ Control::Control(PitchengaAudioProcessor& proc)
                 );
                 if (xml != nullptr) xml->setTagName(getSettingsTagName());
             }
-        } else if (id > 3) {
-            const auto index = static_cast<size_t>(id - 4);
+        } else if (id >= customPresetsStartId) {
+            const auto index = static_cast<size_t>(id - customPresetsStartId);
             if (index < presets.size()) {
                 newPresetFile = presets[index];
                 newPresetName = newPresetFile.getFileNameWithoutExtension();
@@ -271,25 +285,33 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
+    comboPresets.setTextWhenNothingSelected("Presets...");
+    comboPresets.onChange = [this] {
+        updateButtonStates();
+    };
+
     refreshPresets();
 
     // Restore selection by name
     if (processor.settings.currentPresetName.isNotEmpty()) {
         const auto presetName = processor.settings.currentPresetName;
         if (presetName == "User Default") {
-            comboPresets.setSelectedId(2, juce::NotificationType::dontSendNotification);
+            comboPresets.setSelectedId(userDefaultPresetId, juce::NotificationType::dontSendNotification);
             const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).
                 getChildFile("Pitchenga");
             const auto presetsDir = appDataDir.getChildFile("presets");
             currentPresetFile = presetsDir.getChildFile("user-default.xml");
         } else if (presetName == "Factory Default") {
-            comboPresets.setSelectedId(1, juce::NotificationType::dontSendNotification);
+            comboPresets.setSelectedId(factoryPresetId, juce::NotificationType::dontSendNotification);
             currentPresetFile = juce::File();
         } else {
             for (size_t i = 0; i < presets.size(); ++i) {
                 if (presets[i].getFileNameWithoutExtension() == presetName) {
                     // Item IDs for general presets start at 4
-                    comboPresets.setSelectedId(static_cast<int>(i) + 4, juce::NotificationType::dontSendNotification);
+                    comboPresets.setSelectedId(
+                        static_cast<int>(i) + customPresetsStartId,
+                        juce::NotificationType::dontSendNotification
+                    );
                     currentPresetFile = presets[i];
                     break;
                 }
@@ -416,7 +438,7 @@ Control::Control(PitchengaAudioProcessor& proc)
 
     addAndMakeVisible(toggleTweak);
     addAndMakeVisible(comboPresets);
-    addAndMakeVisible(buttonSave);
+    addAndMakeVisible(buttonLoad);
 
     addAndMakeVisible(tweakPanel);
     tweakPanel.addAndMakeVisible(buttonPlugs);
@@ -424,20 +446,22 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(toggleCapture);
     tweakPanel.addAndMakeVisible(toggleLayoutPivot);
     tweakPanel.addAndMakeVisible(toggleStrobe);
+    tweakPanel.addAndMakeVisible(toggleRaw);
     tweakPanel.addAndMakeVisible(toggleRollType);
-    tweakPanel.addAndMakeVisible(toggleOrientation);
+    tweakPanel.addAndMakeVisible(toggleFlipRoll);
     tweakPanel.addAndMakeVisible(toggleSmoke);
     tweakPanel.addAndMakeVisible(toggleForrest);
+    tweakPanel.addAndMakeVisible(toggleLetter);
+    tweakPanel.addAndMakeVisible(buttonSave);
     tweakPanel.addAndMakeVisible(buttonSaveAs);
     tweakPanel.addAndMakeVisible(buttonDelete);
 
 #include "build_timestamp.h"
-
-    buildTimestampLabel.setText(BUILD_TIMESTAMP, juce::NotificationType::dontSendNotification);
+    buildTimestampLabel.setText(juce::String("Build ") + BUILD_TIMESTAMP, juce::NotificationType::dontSendNotification);
     buildTimestampLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
     buildTimestampLabel.setFont(juce::FontOptions(13.0f));
     buildTimestampLabel.setJustificationType(juce::Justification::centredLeft);
-    addAndMakeVisible(buildTimestampLabel);
+    tweakPanel.addAndMakeVisible(buildTimestampLabel);
 
     updateButtonStates();
 }
@@ -522,12 +546,12 @@ void Control::saveCurrentPreset() {
 
 void Control::deleteCurrentPreset() {
     const int selectedId = comboPresets.getSelectedId();
-    if (selectedId >= 2) {
+    if (selectedId >= userDefaultPresetId) {
         // Delete User Default and flip to Factory Default
         if (currentPresetFile.deleteFile()) {
             currentPresetFile = juce::File();
             processor.settings.currentPresetName = "";
-            comboPresets.setSelectedId(1, juce::NotificationType::sendNotification);
+            comboPresets.setSelectedId(factoryPresetId, juce::NotificationType::sendNotification);
             refreshPresets();
         }
     }
@@ -553,8 +577,10 @@ void Control::updateVisibilityFromState() {
     toggleIsFreezeRoll.setToggleState(processor.settings.isFreezeRoll, juce::NotificationType::dontSendNotification);
 
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
-    toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flip" : "Flop");
+    toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? "Flip" : "Flop");
     toggleStrobe.setToggleState(processor.settings.isShowStrobe, juce::NotificationType::dontSendNotification);
+    toggleRaw.setToggleState(processor.settings.isRawMode, juce::NotificationType::dontSendNotification);
+    toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Letter" : "Solfege");
     toggleSmoke.setToggleState(processor.settings.isShowSmoke, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
@@ -577,9 +603,11 @@ void Control::updateButtonStates() {
     const bool rollActive = processor.settings.isShowRoll;
     toggleIsFreezeRoll.setVisible(rollActive);
     toggleRollType.setVisible(rollActive);
+    toggleRaw.setVisible(rollActive);
+    toggleRaw.setEnabled(processor.settings.isUseRollStft);
     toggleStrobe.setVisible(processor.settings.isShowNeedle);
     toggleLayoutPivot.setEnabled(rollActive && processor.settings.isShowEye);
-    toggleOrientation.setVisible(rollActive);
+    toggleFlipRoll.setVisible(rollActive);
     toggleSmoke.setVisible(rollActive);
     toggleForrest.setVisible(rollActive);
 
@@ -589,8 +617,9 @@ void Control::updateButtonStates() {
 
     // Disable Save and Delete buttons for Factory Default (ID 1) and nothing selected (ID 0)
     const int selectedId = comboPresets.getSelectedId();
-    buttonSave.setEnabled(selectedId > 1);
-    buttonDelete.setEnabled(selectedId != 1 && selectedId != 0);
+    buttonLoad.setEnabled(selectedId > 0);
+    buttonSave.setEnabled(selectedId > factoryPresetId);
+    buttonDelete.setEnabled(selectedId > factoryPresetId);
 
     resized();
 }
@@ -610,7 +639,7 @@ void Control::resized() {
     const juce::Font font = juce::FontOptions(15.0f).withStyle("Bold");
 
     // Calculate row height
-    int rowHeight = static_cast<int>(font.getHeight() + 8.0f);
+    const int rowHeight = static_cast<int>(font.getHeight() + 8.0f);
 
     // Create the top row
     auto topRow = bounds.removeFromTop(rowHeight);
@@ -619,21 +648,22 @@ void Control::resized() {
     auto positionButton = [&](juce::TextButton& button, juce::Rectangle<int>& container) {
         if (!button.isVisible()) return;
         const float textWidth = juce::GlyphArrangement::getStringWidth(font, button.getButtonText());
-        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 16; // 16px horizontal padding
-        button.setBounds(container.removeFromLeft(buttonWidth).reduced(2));
+        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 8;
+        button.setBounds(container.removeFromLeft(buttonWidth));
     };
 
     auto positionButtonRight = [&](juce::TextButton& button, juce::Rectangle<int>& container) {
         if (!button.isVisible()) return;
         float textWidth = juce::GlyphArrangement::getStringWidth(font, button.getButtonText());
         if (&button == &toggleRollType) {
-            textWidth = juce::jmax(
-                juce::GlyphArrangement::getStringWidth(font, "STFT"),
-                juce::GlyphArrangement::getStringWidth(font, "CQT")
-            );
+            textWidth = juce::GlyphArrangement::getStringWidth(font, "STFT");
+        } else if (&button == &toggleFlipRoll) {
+            textWidth = juce::GlyphArrangement::getStringWidth(font, "Flop");
+        } else if (&button == &toggleLetter) {
+            textWidth = juce::GlyphArrangement::getStringWidth(font, "Solfege");
         }
-        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 16; // 16px horizontal padding
-        button.setBounds(container.removeFromRight(buttonWidth).reduced(2));
+        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 8;
+        button.setBounds(container.removeFromRight(buttonWidth));
     };
 
     positionButton(toggleNeedle, topRow);
@@ -642,31 +672,24 @@ void Control::resized() {
 
     if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
         // Layout the circular knobs (square, matching rowHeight)
-        knobEarLeft.setBounds(topRow.removeFromLeft(rowHeight).reduced(2));
+        knobEarLeft.setBounds(topRow.removeFromLeft(rowHeight));
 
         // Layout the label independently with a fixed width based on the maximum string length
         const float maxTextWidth = juce::GlyphArrangement::getStringWidth(volumeLabelLeft.getFont(), "-00.0");
         const int fixedLabelWidth = static_cast<int>(std::ceil(maxTextWidth));
         volumeLabelLeft.setBounds(topRow.removeFromLeft(fixedLabelWidth));
 
-        // Add a small gap between left and right controls
-        topRow.removeFromLeft(1);
-
-        knobEarRight.setBounds(topRow.removeFromLeft(rowHeight).reduced(2));
+        knobEarRight.setBounds(topRow.removeFromLeft(rowHeight));
         volumeLabelRight.setBounds(topRow.removeFromLeft(fixedLabelWidth));
     }
 
-    // Position save, presets and tweak from the right
-    // buttonSave first from right makes it the rightmost
-    positionButtonRight(buttonSave, topRow);
-    const int comboWidth = 140;
-    comboPresets.setBounds(topRow.removeFromRight(comboWidth).reduced(2));
+    // Position presets and tweak from the right
+    positionButtonRight(buttonLoad, topRow);
+    constexpr int comboWidth = 140;
+    comboPresets.setBounds(topRow.removeFromRight(comboWidth));
     positionButtonRight(toggleTweak, topRow);
 
     positionButtonRight(toggleIsFreezeRoll, topRow);
-
-    topRow.removeFromRight(8);
-    buildTimestampLabel.setBounds(topRow);
 
     if (processor.settings.isShowTweakPanel) {
         tweakPanel.setBounds(bounds); // Use the entire remaining bounds (the bottom row)
@@ -676,25 +699,31 @@ void Control::resized() {
         positionButton(buttonPlug, panelBounds);
         positionButton(toggleCapture, panelBounds);
 
+        positionButtonRight(buttonSave, panelBounds);
         positionButtonRight(buttonSaveAs, panelBounds);
         positionButtonRight(buttonDelete, panelBounds);
 
         positionButtonRight(toggleForrest, panelBounds);
         positionButtonRight(toggleSmoke, panelBounds);
-        positionButtonRight(toggleOrientation, panelBounds);
+        positionButtonRight(toggleFlipRoll, panelBounds);
         positionButtonRight(toggleRollType, panelBounds);
+        positionButtonRight(toggleRaw, panelBounds);
 
         positionButtonRight(toggleStrobe, panelBounds);
         positionButtonRight(toggleLayoutPivot, panelBounds);
+        positionButtonRight(toggleLetter, panelBounds);
+
+        panelBounds.removeFromRight(8);
+        buildTimestampLabel.setBounds(panelBounds);
     }
 }
 
 void Control::refreshPresets() {
     comboPresets.clear(juce::NotificationType::dontSendNotification);
-    comboPresets.addItem("Factory Default", 1);
+    comboPresets.addItem("Factory Default", factoryPresetId);
 
     // User Default is always available now, falling back to Factory if file is missing
-    comboPresets.addItem("User Default", 2);
+    comboPresets.addItem("User Default", userDefaultPresetId);
 
     comboPresets.addSeparator();
 
@@ -706,7 +735,7 @@ void Control::refreshPresets() {
         juce::Array<juce::File> files;
         presetsDir.findChildFiles(files, juce::File::findFiles, false, "*.xml");
 
-        int id = 4;
+        int id = customPresetsStartId;
         for (auto& file : files) {
             // Exclude user-default.xml from the general list as it has its own item
             if (file.getFileName() != "user-default.xml") {
@@ -721,7 +750,7 @@ void Control::refreshPresets() {
     if (currentPresetFile.existsAsFile()) {
         const auto activeFileName = currentPresetFile.getFileName();
         if (activeFileName == "user-default.xml") {
-            comboPresets.setSelectedId(2, juce::NotificationType::dontSendNotification);
+            comboPresets.setSelectedId(userDefaultPresetId, juce::NotificationType::dontSendNotification);
             comboPresets.setText("User Default", juce::NotificationType::dontSendNotification);
         } else {
             // Find by filename
@@ -729,7 +758,10 @@ void Control::refreshPresets() {
             bool found = false;
             for (size_t i = 0; i < presets.size(); ++i) {
                 if (presets[i].getFileNameWithoutExtension() == activeNameNoExt) {
-                    comboPresets.setSelectedId(static_cast<int>(i) + 4, juce::NotificationType::dontSendNotification);
+                    comboPresets.setSelectedId(
+                        static_cast<int>(i) + customPresetsStartId,
+                        juce::NotificationType::dontSendNotification
+                    );
                     found = true;
                     break;
                 }
@@ -758,13 +790,15 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isShowStrobe", isShowStrobe);
     xml.setAttribute("isShowForrest", isShowForrest);
     xml.setAttribute("isShowSmoke", isShowSmoke);
-    xml.setAttribute("isRollHorizontal", isRollHorizontal);
+    xml.setAttribute("isFlipRollHorizontal", isFlipRollHorizontal);
     xml.setAttribute("isLayoutHorizontal", isLayoutHorizontal);
 
     xml.setAttribute("earVolumeLeft", earVolumeLeft);
     xml.setAttribute("earVolumeRight", earVolumeRight);
     xml.setAttribute("isCaptureEnabled", isCaptureEnabled);
     xml.setAttribute("isShowTweakPanel", isShowTweakPanel);
+    xml.setAttribute("isRawMode", isRawMode);
+    xml.setAttribute("isLetterNotation", isLetterNotation);
 
     if (externalPluginDescriptionXml.isNotEmpty()) {
         xml.createNewChildElement("ExternalPluginDescription")->addTextElement(externalPluginDescriptionXml);
@@ -800,13 +834,15 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isShowStrobe = xml.getBoolAttribute("isShowStrobe", isShowStrobe);
     isShowForrest = xml.getBoolAttribute("isShowForrest", isShowForrest);
     isShowSmoke = xml.getBoolAttribute("isShowSmoke", isShowSmoke);
-    isRollHorizontal = xml.getBoolAttribute("isRollHorizontal", isRollHorizontal);
+    isFlipRollHorizontal = xml.getBoolAttribute("isFlipRollHorizontal", isFlipRollHorizontal);
     isLayoutHorizontal = xml.getBoolAttribute("isLayoutHorizontal", isLayoutHorizontal);
 
     earVolumeLeft = static_cast<float>(xml.getDoubleAttribute("earVolumeLeft", earVolumeLeft));
     earVolumeRight = static_cast<float>(xml.getDoubleAttribute("earVolumeRight", earVolumeRight));
     isCaptureEnabled = xml.getBoolAttribute("isCaptureEnabled", isCaptureEnabled);
     isShowTweakPanel = xml.getBoolAttribute("isShowTweakPanel", isShowTweakPanel);
+    isRawMode = xml.getBoolAttribute("isRawMode", isRawMode);
+    isLetterNotation = xml.getBoolAttribute("isLetterNotation", isLetterNotation);
 
     externalPluginDescriptionXml = {};
     if (auto* descriptionXmlElement = xml.getChildByName("ExternalPluginDescription")) {
@@ -819,7 +855,6 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     }
 
     isExternalPluginWindowOpen = xml.getBoolAttribute("isExternalPluginWindowOpen", isExternalPluginWindowOpen);
-
     splitRatio = static_cast<float>(xml.getDoubleAttribute("splitRatio", splitRatio));
     currentPresetName = xml.getStringAttribute("currentPresetName", currentPresetName);
 

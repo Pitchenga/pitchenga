@@ -59,14 +59,8 @@ float Needle::freqToMidi(const float freq) {
     return 69.0f + 12.0f * std::log2(freq / 440.0f);
 }
 
-juce::String Needle::getNoteName(const int midiNote) {
-    int chroma = Common::fast_mod12(midiNote);
-    const int octave = midiNote / 12 - 1;
-    return Tone::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
-}
-
-void Needle::paintLabel(juce::Graphics& graphics, const int midiNote, const float x, const float stripY) {
-    const juce::String name = getNoteName(midiNote);
+void Needle::paintLabel(juce::Graphics& graphics, const int midiNote, const float x, const float stripY) const {
+    const juce::String name = Tone::getNoteName(midiNote, processor.settings.isLetterNotation);
     graphics.saveState();
 
     const float labelWidth = Common::getLabelWidth();
