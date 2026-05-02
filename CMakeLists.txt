@@ -28,7 +28,7 @@ juce_add_plugin(Pitchenga
         # Plugin metadata
         PLUGIN_MANUFACTURER_CODE "Ptng"  # Exactly 4 chars
         PLUGIN_CODE "Ptng"               # Exactly 4 chars
-        FORMATS AU Standalone            # The magic dual-compile flag
+        FORMATS AU VST3 Standalone       # The magic dual-compile flag
         PRODUCT_NAME "Pitchenga"
         ICON_BIG "Source/Assets/pitchenga-white.png"
         ICON_SMALL "Source/Assets/pitchenga-white.png"
@@ -124,13 +124,20 @@ if (APPLE)
         target_sources(Pitchenga_AU PRIVATE Source/DesktopAudioCapture.mm)
         target_compile_definitions(Pitchenga_AU PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
     endif()
+
+    if (TARGET Pitchenga_VST3)
+        target_sources(Pitchenga_VST3 PRIVATE Source/DesktopAudioCapture.mm)
+        target_compile_definitions(Pitchenga_VST3 PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
+    endif()
 else()
     target_sources(Pitchenga PRIVATE Source/DesktopAudioCapture.cpp)
 endif()
 
 target_compile_features(Pitchenga PUBLIC cxx_std_20)
 
-target_compile_definitions(Pitchenga PRIVATE CMAKE_BUILD_PROFILE=$<CONFIG>)
+target_compile_definitions(Pitchenga PRIVATE
+    CMAKE_BUILD_PROFILE=$<CONFIG>
+    JUCE_VST3_CAN_REPLACE_VST2=0)
 
 # Make generated timestamp header available to the build
 target_include_directories(Pitchenga PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
