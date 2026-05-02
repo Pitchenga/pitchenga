@@ -37,7 +37,7 @@ public:
         bool isShowStrobe = true;
         bool isShowSmoke = true;
         bool isShowForrest = false;
-        bool isRollHorizontal = false;
+        bool isFlipRollHorizontal = false;
         bool isLayoutHorizontal = false;
 
         std::atomic<float> earVolumeLeft = 0.0f;
@@ -55,7 +55,7 @@ public:
         juce::String currentPresetName;
 
         [[nodiscard]] bool isShowRollLabels() const {
-            return isRollHorizontal || !(!isShowEye && isShowRoll && isShowNeedle);
+            return isFlipRollHorizontal || !(!isShowEye && isShowRoll && isShowNeedle);
         }
 
         [[nodiscard]] juce::XmlElement createXml() const;
@@ -100,7 +100,7 @@ private:
     juce::TextButton toggleRaw{"Raw"};
     juce::TextButton toggleLetter{"Letter"};
     juce::TextButton toggleRollType{"STFT"};
-    juce::TextButton toggleOrientation{"Flip"};
+    juce::TextButton toggleFlipRoll{"Flip"};
     juce::TextButton toggleIsFreezeRoll{"Freeze"};
     juce::TextButton toggleLayoutPivot{"Pivot"};
     juce::TextButton toggleSmoke{"Smoke"};

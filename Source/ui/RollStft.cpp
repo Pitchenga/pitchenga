@@ -22,7 +22,7 @@ void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
 }
 
 void RollStft::resized() {
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -59,7 +59,7 @@ void RollStft::paint(juce::Graphics& graphics) {
 
     const int physicalWidth = getWidth();
     const int physicalHeight = getHeight();
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? physicalHeight : physicalWidth;
     const int logicalHeight = isHorizontal ? physicalWidth : physicalHeight;
     const float labelAreaHeight = getLabelAreaHeight();
@@ -90,7 +90,7 @@ void RollStft::paint(juce::Graphics& graphics) {
 }
 
 void RollStft::buildFrame() {
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
     if (logicalWidth <= 0 || logicalHeight <= 0) return;
@@ -149,7 +149,7 @@ void RollStft::paintLabel(
 }
 
 void RollStft::paintFrame(juce::Graphics& graphics) const {
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -190,13 +190,13 @@ void RollStft::paintFrame(juce::Graphics& graphics) const {
         }
 
         if (processor.settings.isShowRollLabels()) {
-            paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, totalHeight, baseColor, processor.settings.isRollHorizontal);
+            paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, totalHeight, baseColor, processor.settings.isFlipRollHorizontal);
         }
     }
 }
 
 void RollStft::paintForrest(juce::Graphics& graphics) const {
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -241,7 +241,7 @@ void RollStft::pumpSmoke() {
         return;
     }
 
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
@@ -317,7 +317,7 @@ void RollStft::pumpSmoke() {
 void RollStft::paintSmoke(const juce::Graphics& graphics) const {
     if (!smokeImage.isValid()) return;
 
-    const bool isHorizontal = processor.settings.isRollHorizontal;
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
 
     const int height = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));

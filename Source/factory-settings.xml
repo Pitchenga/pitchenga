@@ -10,7 +10,7 @@
     isShowStrobe="1"
     isShowForrest="0"
     isShowSmoke="1"
-    isRollHorizontal="1"
+    isFlipRollHorizontal="1"
     isLayoutHorizontal="0"
     earVolumeLeft="0.0"
     earVolumeRight="0.0"

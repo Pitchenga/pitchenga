@@ -154,10 +154,10 @@ Control::Control(PitchengaAudioProcessor& proc)
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flip" : "Flop");
-    toggleOrientation.onClick = [this] {
-        processor.settings.isRollHorizontal = !processor.settings.isRollHorizontal;
-        toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flip" : "Flop");
+    toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? "Flip" : "Flop");
+    toggleFlipRoll.onClick = [this] {
+        processor.settings.isFlipRollHorizontal = !processor.settings.isFlipRollHorizontal;
+        toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? "Flip" : "Flop");
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -176,7 +176,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     volumeLabelRight.setColour(juce::Label::textColourId, juce::Colours::white);
     volumeLabelRight.setBorderSize(juce::BorderSize(0));
 
-    auto updateVolumeLabel = [](juce::Slider& knob, juce::Label& label) {
+    auto updateVolumeLabel = [](const juce::Slider& knob, juce::Label& label) {
         const auto currentVolume = static_cast<float>(knob.getValue());
         juce::String volumeText;
         if (currentVolume <= 0.0001f) {
@@ -440,7 +440,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(toggleStrobe);
     tweakPanel.addAndMakeVisible(toggleRaw);
     tweakPanel.addAndMakeVisible(toggleRollType);
-    tweakPanel.addAndMakeVisible(toggleOrientation);
+    tweakPanel.addAndMakeVisible(toggleFlipRoll);
     tweakPanel.addAndMakeVisible(toggleSmoke);
     tweakPanel.addAndMakeVisible(toggleForrest);
     tweakPanel.addAndMakeVisible(toggleLetter);
@@ -569,7 +569,7 @@ void Control::updateVisibilityFromState() {
     toggleIsFreezeRoll.setToggleState(processor.settings.isFreezeRoll, juce::NotificationType::dontSendNotification);
 
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
-    toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flip" : "Flop");
+    toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? "Flip" : "Flop");
     toggleStrobe.setToggleState(processor.settings.isShowStrobe, juce::NotificationType::dontSendNotification);
     toggleRaw.setToggleState(processor.settings.isRawMode, juce::NotificationType::dontSendNotification);
     toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Letter" : "Solfege");
@@ -599,7 +599,7 @@ void Control::updateButtonStates() {
     toggleRaw.setEnabled(processor.settings.isUseRollStft);
     toggleStrobe.setVisible(processor.settings.isShowNeedle);
     toggleLayoutPivot.setEnabled(rollActive && processor.settings.isShowEye);
-    toggleOrientation.setVisible(rollActive);
+    toggleFlipRoll.setVisible(rollActive);
     toggleSmoke.setVisible(rollActive);
     toggleForrest.setVisible(rollActive);
 
@@ -648,7 +648,7 @@ void Control::resized() {
         float textWidth = juce::GlyphArrangement::getStringWidth(font, button.getButtonText());
         if (&button == &toggleRollType) {
             textWidth = juce::GlyphArrangement::getStringWidth(font, "STFT");
-        } else if (&button == &toggleOrientation) {
+        } else if (&button == &toggleFlipRoll) {
             textWidth = juce::GlyphArrangement::getStringWidth(font, "Flop");
         } else if (&button == &toggleLetter) {
             textWidth = juce::GlyphArrangement::getStringWidth(font, "Solfege");
@@ -699,7 +699,7 @@ void Control::resized() {
 
         positionButtonRight(toggleForrest, panelBounds);
         positionButtonRight(toggleSmoke, panelBounds);
-        positionButtonRight(toggleOrientation, panelBounds);
+        positionButtonRight(toggleFlipRoll, panelBounds);
         positionButtonRight(toggleRollType, panelBounds);
         positionButtonRight(toggleRaw, panelBounds);
 
@@ -778,7 +778,7 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isShowStrobe", isShowStrobe);
     xml.setAttribute("isShowForrest", isShowForrest);
     xml.setAttribute("isShowSmoke", isShowSmoke);
-    xml.setAttribute("isRollHorizontal", isRollHorizontal);
+    xml.setAttribute("isFlipRollHorizontal", isFlipRollHorizontal);
     xml.setAttribute("isLayoutHorizontal", isLayoutHorizontal);
 
     xml.setAttribute("earVolumeLeft", earVolumeLeft);
@@ -822,7 +822,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isShowStrobe = xml.getBoolAttribute("isShowStrobe", isShowStrobe);
     isShowForrest = xml.getBoolAttribute("isShowForrest", isShowForrest);
     isShowSmoke = xml.getBoolAttribute("isShowSmoke", isShowSmoke);
-    isRollHorizontal = xml.getBoolAttribute("isRollHorizontal", isRollHorizontal);
+    isFlipRollHorizontal = xml.getBoolAttribute("isFlipRollHorizontal", isFlipRollHorizontal);
     isLayoutHorizontal = xml.getBoolAttribute("isLayoutHorizontal", isLayoutHorizontal);
 
     earVolumeLeft = static_cast<float>(xml.getDoubleAttribute("earVolumeLeft", earVolumeLeft));
