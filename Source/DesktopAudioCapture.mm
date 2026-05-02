@@ -80,8 +80,8 @@ DesktopAudioCapture::DesktopAudioCapture() : impl(std::make_unique<Impl>()) {
     impl->delegate = [[DesktopAudioCaptureDelegate alloc] init];
     impl->delegate.owner = this;
     
-    dispatch_queue_attr_t attrribute = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_USER_INTERACTIVE, 0);
-    impl->queue = dispatch_queue_create("com.pitchenga.desktopcapture", attrribute);
+    dispatch_queue_attr_t attribute = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_USER_INTERACTIVE, 0);
+    impl->queue = dispatch_queue_create("com.pitchenga.desktopcapture", attribute);
 }
 
 DesktopAudioCapture::~DesktopAudioCapture() {
