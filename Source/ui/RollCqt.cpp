@@ -145,12 +145,6 @@ void RollCqt::buildFrame() {
     paintFrame(graphics);
 }
 
-juce::String RollCqt::getNoteName(const int midiNote) const {
-    int chroma = Common::fast_mod12(midiNote);
-    const int octave = midiNote / 12 - 1;
-    return Tone::getToneName(chroma, processor.settings.isLetterNotation) + juce::String(octave);
-}
-
 void RollCqt::paintLabel(
     juce::Graphics& graphics,
     const float labelHeight,
@@ -168,7 +162,7 @@ void RollCqt::paintLabel(
     constexpr int startMidiNote = 12;
     const int midiNote = binIndex + startMidiNote;
 
-    const juce::String name = getNoteName(midiNote);
+    const juce::String name = Tone::getNoteName(midiNote, processor.settings.isLetterNotation);
 
     graphics.setColour(baseColor);
     graphics.saveState();

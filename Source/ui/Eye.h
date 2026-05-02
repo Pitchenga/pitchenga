@@ -20,16 +20,15 @@ public:
     void rebuildFrame() { paintFrame(); repaint(); }
 
     void paint(juce::Graphics& g) override;
-    static void paintLabel(
+    void paintLabel(
         juce::Graphics& graphics,
         juce::Point<float> center,
         float baseRadius,
         float startRadius,
         int i,
         float sin,
-        float cos,
-        const juce::String& name
-    );
+        float cos
+    ) const;
     void resized() override;
     static juce::Colour calculateColor(float velocity, float toneRatio);
 

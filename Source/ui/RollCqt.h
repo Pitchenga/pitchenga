@@ -26,7 +26,6 @@ private:
     void buildFrame();
     void paintFrame(juce::Graphics& graphics) const;
 
-    juce::String getNoteName(int midiNote) const;
     void paintLabel(
         juce::Graphics& graphics,
         float labelHeight,

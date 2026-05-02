@@ -45,7 +45,6 @@ private:
     void paintForrest(juce::Graphics& graphics) const;
 
     float getLabelAreaHeight() const;
-    juce::String getNoteName(int midiNote) const;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RollStft)
 };

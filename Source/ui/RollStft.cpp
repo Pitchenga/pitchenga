@@ -101,12 +101,6 @@ void RollStft::buildFrame() {
     paintFrame(graphics);
 }
 
-juce::String RollStft::getNoteName(const int midiNote) const {
-    const int chroma = Common::fast_mod12(midiNote);
-    const int octave = midiNote / 12 - 1;
-    return Tone::getToneName(chroma, processor.settings.isLetterNotation) + juce::String(octave);
-}
-
 void RollStft::paintLabel(
     juce::Graphics& graphics,
     const float labelHeight,
@@ -122,7 +116,7 @@ void RollStft::paintLabel(
         return;
     }
 
-    const juce::String name = getNoteName(midiNote);
+    const juce::String name = Tone::getNoteName(midiNote, processor.settings.isLetterNotation);
 
     graphics.setColour(baseColor);
     graphics.saveState();

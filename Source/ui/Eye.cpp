@@ -94,9 +94,8 @@ void Eye::paintLabel(
     const float startRadius,
     const int i,
     const float sin,
-    const float cos,
-    const juce::String& name
-) {
+    const float cos
+) const {
     const float rLabel = baseRadius * startRadius;
     const float initialX = center.x + rLabel * cos;
     const float initialY = center.y + rLabel * sin;
@@ -105,6 +104,7 @@ void Eye::paintLabel(
     const auto labelColor = calculateColor(0.1f, static_cast<float>(i));
     graphics.setColour(labelColor);
 
+    const juce::String name = Tone::getToneName(i, processor.settings.isLetterNotation);
     juce::GlyphArrangement arrangement;
     arrangement.addLineOfText(graphics.getCurrentFont(), name, 0.0f, 0.0f);
     arrangement.justifyGlyphs(
@@ -173,8 +173,7 @@ void Eye::paintFrame(juce::Graphics& graphics) const {
         );
 
         constexpr float labelStartRadius = 0.83f;
-        const juce::String name = Tone::getToneName(i, processor.settings.isLetterNotation);
-        paintLabel(graphics, center, outerRadius, labelStartRadius, i, sin, cos, name);
+        paintLabel(graphics, center, outerRadius, labelStartRadius, i, sin, cos);
     }
 }
 
