@@ -170,7 +170,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     micLabel.setText(mic, juce::NotificationType::dontSendNotification);
     micLabel.setFont(juce::FontOptions(13.0f).withStyle("Bold"));
     micLabel.setJustificationType(juce::Justification::centredLeft);
-    micLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+    micLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
     micLabel.setBorderSize(juce::BorderSize(0));
 
     volumeLabelLeft.setFont(juce::FontOptions(13.0f).withStyle("Bold"));
@@ -682,6 +682,8 @@ void Control::resized() {
     positionButton(toggleRoll, topRow);
 
     if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
+        topRow.removeFromLeft(6);
+
         // Layout the "Mic" label
         const float micTextWidth = juce::GlyphArrangement::getStringWidth(micLabel.getFont(), mic);
         const int micWidth = static_cast<int>(std::ceil(micTextWidth)) + 4;
