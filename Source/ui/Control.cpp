@@ -335,12 +335,8 @@ Control::Control(PitchengaAudioProcessor& proc)
 
     buttonSave.setButtonText(save);
     buttonSave.onClick = [this] {
-        if (currentPresetFile == juce::File()) {
-            return;
-        }
-
         auto presetName = comboPresets.getText();
-        if (presetName == factoryDefaultPresetName) {
+        if (presetName == factoryDefaultPresetName || currentPresetFile == juce::File()) {
             presetName = userDefaultPresetName;
         }
         juce::AlertWindow::showOkCancelBox(
@@ -351,8 +347,11 @@ Control::Control(PitchengaAudioProcessor& proc)
             "Cancel",
             nullptr,
             juce::ModalCallbackFunction::create(
-                [this](int result) {
+                [this, presetName](int result) {
                     if (result != 0) {
+                        if (presetName == userDefaultPresetName) {
+                            currentPresetFile = Util::getApplicationDirectory().getChildFile(presetsDirectoryName).getChildFile(userDefaultPresetFileName);
+                        }
                         saveCurrentPreset();
                     }
                 }
