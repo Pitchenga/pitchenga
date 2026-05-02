@@ -630,21 +630,20 @@ void Control::resized() {
     auto positionButton = [&](juce::TextButton& button, juce::Rectangle<int>& container) {
         if (!button.isVisible()) return;
         const float textWidth = juce::GlyphArrangement::getStringWidth(font, button.getButtonText());
-        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 16; // 16px horizontal padding
-        button.setBounds(container.removeFromLeft(buttonWidth).reduced(2));
+        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 8;
+        button.setBounds(container.removeFromLeft(buttonWidth));
     };
 
     auto positionButtonRight = [&](juce::TextButton& button, juce::Rectangle<int>& container) {
         if (!button.isVisible()) return;
         float textWidth = juce::GlyphArrangement::getStringWidth(font, button.getButtonText());
         if (&button == &toggleRollType) {
-            textWidth = juce::jmax(
-                juce::GlyphArrangement::getStringWidth(font, "STFT"),
-                juce::GlyphArrangement::getStringWidth(font, "CQT")
-            );
+            textWidth = juce::GlyphArrangement::getStringWidth(font, "STFT");
+        } else if (&button == &toggleOrientation) {
+            textWidth = juce::GlyphArrangement::getStringWidth(font, "Flip");
         }
-        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 16; // 16px horizontal padding
-        button.setBounds(container.removeFromRight(buttonWidth).reduced(2));
+        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 8;
+        button.setBounds(container.removeFromRight(buttonWidth));
     };
 
     positionButton(toggleNeedle, topRow);
@@ -653,25 +652,22 @@ void Control::resized() {
 
     if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
         // Layout the circular knobs (square, matching rowHeight)
-        knobEarLeft.setBounds(topRow.removeFromLeft(rowHeight).reduced(2));
+        knobEarLeft.setBounds(topRow.removeFromLeft(rowHeight));
 
         // Layout the label independently with a fixed width based on the maximum string length
         const float maxTextWidth = juce::GlyphArrangement::getStringWidth(volumeLabelLeft.getFont(), "-00.0");
         const int fixedLabelWidth = static_cast<int>(std::ceil(maxTextWidth));
         volumeLabelLeft.setBounds(topRow.removeFromLeft(fixedLabelWidth));
 
-        // Add a small gap between left and right controls
-        topRow.removeFromLeft(1);
-
-        knobEarRight.setBounds(topRow.removeFromLeft(rowHeight).reduced(2));
+        knobEarRight.setBounds(topRow.removeFromLeft(rowHeight));
         volumeLabelRight.setBounds(topRow.removeFromLeft(fixedLabelWidth));
     }
 
     // Position save, presets and tweak from the right
     // buttonSave first from right makes it the rightmost
     positionButtonRight(buttonSave, topRow);
-    const int comboWidth = 140;
-    comboPresets.setBounds(topRow.removeFromRight(comboWidth).reduced(2));
+    constexpr int comboWidth = 140;
+    comboPresets.setBounds(topRow.removeFromRight(comboWidth));
     positionButtonRight(toggleTweak, topRow);
 
     positionButtonRight(toggleIsFreezeRoll, topRow);
