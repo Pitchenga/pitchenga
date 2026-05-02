@@ -43,6 +43,7 @@ public:
         float earVolumeRight = 0.0f;
         bool isCaptureEnabled = false;
         bool isShowTweakPanel = false;
+        bool isRawMode = false;
 
         juce::String externalPluginDescriptionXml;
         juce::String externalPluginStateBase64;
@@ -94,6 +95,7 @@ private:
     juce::TextButton toggleEye{"Eye"};
     juce::TextButton toggleRoll{"Roll"};
     juce::TextButton toggleStrobe{"Strobe"};
+    juce::TextButton toggleRaw{"Raw"};
     juce::TextButton toggleRollType{"STFT"};
     juce::TextButton toggleOrientation{"Flip"};
     juce::TextButton toggleIsFreezeRoll{"Freeze"};

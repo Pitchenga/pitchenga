@@ -133,10 +133,17 @@ Control::Control(PitchengaAudioProcessor& proc)
         processor.settings.isShowStrobe = toggleStrobe.getToggleState();
     };
 
+    setupToggleButton(toggleRaw, processor.settings.isRawMode);
+    toggleRaw.onClick = [this] {
+        processor.settings.isRawMode = toggleRaw.getToggleState();
+        updateButtonStates();
+    };
+
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
     toggleRollType.onClick = [this] {
         processor.settings.isUseRollStft = !processor.settings.isUseRollStft;
         toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
+        updateButtonStates();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -424,6 +431,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(toggleCapture);
     tweakPanel.addAndMakeVisible(toggleLayoutPivot);
     tweakPanel.addAndMakeVisible(toggleStrobe);
+    tweakPanel.addAndMakeVisible(toggleRaw);
     tweakPanel.addAndMakeVisible(toggleRollType);
     tweakPanel.addAndMakeVisible(toggleOrientation);
     tweakPanel.addAndMakeVisible(toggleSmoke);
@@ -555,6 +563,7 @@ void Control::updateVisibilityFromState() {
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
     toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flip" : "Flop");
     toggleStrobe.setToggleState(processor.settings.isShowStrobe, juce::NotificationType::dontSendNotification);
+    toggleRaw.setToggleState(processor.settings.isRawMode, juce::NotificationType::dontSendNotification);
     toggleSmoke.setToggleState(processor.settings.isShowSmoke, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
@@ -577,6 +586,8 @@ void Control::updateButtonStates() {
     const bool rollActive = processor.settings.isShowRoll;
     toggleIsFreezeRoll.setVisible(rollActive);
     toggleRollType.setVisible(rollActive);
+    toggleRaw.setVisible(rollActive);
+    toggleRaw.setEnabled(processor.settings.isUseRollStft);
     toggleStrobe.setVisible(processor.settings.isShowNeedle);
     toggleLayoutPivot.setEnabled(rollActive && processor.settings.isShowEye);
     toggleOrientation.setVisible(rollActive);
@@ -683,6 +694,7 @@ void Control::resized() {
         positionButtonRight(toggleSmoke, panelBounds);
         positionButtonRight(toggleOrientation, panelBounds);
         positionButtonRight(toggleRollType, panelBounds);
+        positionButtonRight(toggleRaw, panelBounds);
 
         positionButtonRight(toggleStrobe, panelBounds);
         positionButtonRight(toggleLayoutPivot, panelBounds);
@@ -765,6 +777,7 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("earVolumeRight", earVolumeRight);
     xml.setAttribute("isCaptureEnabled", isCaptureEnabled);
     xml.setAttribute("isShowTweakPanel", isShowTweakPanel);
+    xml.setAttribute("isRawMode", isRawMode);
 
     if (externalPluginDescriptionXml.isNotEmpty()) {
         xml.createNewChildElement("ExternalPluginDescription")->addTextElement(externalPluginDescriptionXml);
@@ -807,6 +820,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     earVolumeRight = static_cast<float>(xml.getDoubleAttribute("earVolumeRight", earVolumeRight));
     isCaptureEnabled = xml.getBoolAttribute("isCaptureEnabled", isCaptureEnabled);
     isShowTweakPanel = xml.getBoolAttribute("isShowTweakPanel", isShowTweakPanel);
+    isRawMode = xml.getBoolAttribute("isRawMode", isRawMode);
 
     externalPluginDescriptionXml = {};
     if (auto* descriptionXmlElement = xml.getChildByName("ExternalPluginDescription")) {
