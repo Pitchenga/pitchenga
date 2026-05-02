@@ -6,6 +6,7 @@
 #include "math/Math.h"
 #include "ui/Needle.h"
 #include "ui/Eye.h"
+#include "ui/EyePiano.h"
 #include "ui/RollStft.h"
 #include "ui/RollCqt.h"
 #include "ui/Control.h"
@@ -37,7 +38,7 @@ private:
     Math worker;
 
     Needle needle;
-    Eye eye;
+    EyePiano eye;
     RollStft rollStft;
     RollCqt rollCqt;
     Splitter splitter;

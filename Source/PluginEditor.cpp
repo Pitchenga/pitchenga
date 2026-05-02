@@ -49,7 +49,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     addAndMakeVisible(splitter);
     splitter.onDragged = [this] { resized(); };
 
-    eyeBuffer.resize(Eye::totalFoldedBins, 0.0);
+    eyeBuffer.resize(EyePiano::totalFoldedBins, 0.0);
     rollCqtBuffer.resize(PitchengaAudioProcessor::numOctaves * 12);
 
     setResizable(true, true);
