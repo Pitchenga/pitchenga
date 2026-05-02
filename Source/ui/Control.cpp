@@ -640,7 +640,7 @@ void Control::resized() {
         if (&button == &toggleRollType) {
             textWidth = juce::GlyphArrangement::getStringWidth(font, "STFT");
         } else if (&button == &toggleOrientation) {
-            textWidth = juce::GlyphArrangement::getStringWidth(font, "Flip");
+            textWidth = juce::GlyphArrangement::getStringWidth(font, "Flop");
         }
         const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 8;
         button.setBounds(container.removeFromRight(buttonWidth));
