@@ -121,6 +121,7 @@ private:
     juce::ComboBox comboPresets{"Presets"};
     std::vector<juce::File> presets;
     juce::File currentPresetFile;
+    juce::TextButton buttonLoad{"Load"};
     juce::TextButton buttonSave{"Save"};
     juce::TextButton buttonSaveAs{"Save As"};
     juce::TextButton buttonDelete{"Delete"};

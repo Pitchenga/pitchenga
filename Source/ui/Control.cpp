@@ -225,8 +225,8 @@ Control::Control(PitchengaAudioProcessor& proc)
         processor.showExternalPluginEditor();
     };
 
-    comboPresets.setTextWhenNothingSelected("Presets...");
-    comboPresets.onChange = [this] {
+    buttonLoad.setButtonText("Load");
+    buttonLoad.onClick = [this] {
         const int id = comboPresets.getSelectedId();
         if (id == 0) return;
 
@@ -282,6 +282,11 @@ Control::Control(PitchengaAudioProcessor& proc)
             comboPresets.setText(newPresetName, juce::NotificationType::dontSendNotification);
         }
 
+        updateButtonStates();
+    };
+
+    comboPresets.setTextWhenNothingSelected("Presets...");
+    comboPresets.onChange = [this] {
         updateButtonStates();
     };
 
@@ -430,7 +435,7 @@ Control::Control(PitchengaAudioProcessor& proc)
 
     addAndMakeVisible(toggleTweak);
     addAndMakeVisible(comboPresets);
-    addAndMakeVisible(buttonSave);
+    addAndMakeVisible(buttonLoad);
 
     addAndMakeVisible(tweakPanel);
     tweakPanel.addAndMakeVisible(buttonPlugs);
@@ -444,6 +449,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(toggleSmoke);
     tweakPanel.addAndMakeVisible(toggleForrest);
     tweakPanel.addAndMakeVisible(toggleLetter);
+    tweakPanel.addAndMakeVisible(buttonSave);
     tweakPanel.addAndMakeVisible(buttonSaveAs);
     tweakPanel.addAndMakeVisible(buttonDelete);
 
@@ -608,8 +614,9 @@ void Control::updateButtonStates() {
 
     // Disable Save and Delete buttons for Factory Default (ID 1) and nothing selected (ID 0)
     const int selectedId = comboPresets.getSelectedId();
+    buttonLoad.setEnabled(selectedId > 0);
     buttonSave.setEnabled(selectedId > 1);
-    buttonDelete.setEnabled(selectedId != 1 && selectedId != 0);
+    buttonDelete.setEnabled(selectedId > 1);
 
     resized();
 }
@@ -673,9 +680,8 @@ void Control::resized() {
         volumeLabelRight.setBounds(topRow.removeFromLeft(fixedLabelWidth));
     }
 
-    // Position save, presets and tweak from the right
-    // buttonSave first from right makes it the rightmost
-    positionButtonRight(buttonSave, topRow);
+    // Position presets and tweak from the right
+    positionButtonRight(buttonLoad, topRow);
     constexpr int comboWidth = 140;
     comboPresets.setBounds(topRow.removeFromRight(comboWidth));
     positionButtonRight(toggleTweak, topRow);
@@ -690,6 +696,7 @@ void Control::resized() {
         positionButton(buttonPlug, panelBounds);
         positionButton(toggleCapture, panelBounds);
 
+        positionButtonRight(buttonSave, panelBounds);
         positionButtonRight(buttonSaveAs, panelBounds);
         positionButtonRight(buttonDelete, panelBounds);
 
