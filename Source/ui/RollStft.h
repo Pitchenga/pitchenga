@@ -11,8 +11,6 @@ public:
 
     void updateResults(const std::vector<SpectralPeak>& peaks);
 
-    void rebuildFrame() { buildFrame(); repaint(); }
-
     void paint(juce::Graphics& graphics) override;
     void resized() override;
 

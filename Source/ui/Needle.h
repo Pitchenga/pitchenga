@@ -11,8 +11,6 @@ public:
     void setPitchFrequency(float frequencyHz);
     void setRange(float minMidiNote, float maxMidiNote);
 
-    void rebuildFrame() { buildFrame(); repaint(); }
-
     void paint(juce::Graphics& graphics) override;
     void resized() override;
     void paintStrobeOverlay(juce::Graphics& graphics, float stripY, int width) const;

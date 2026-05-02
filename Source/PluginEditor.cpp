@@ -160,10 +160,10 @@ void PitchengaAudioProcessorEditor::paint(juce::Graphics& g) {
 void PitchengaAudioProcessorEditor::updateVisibilityFromState() {
     control.updateVisibilityFromState();
     
-    needle.rebuildFrame();
-    eye.rebuildFrame();
-    rollStft.rebuildFrame();
-    rollCqt.rebuildFrame();
+    needle.resized();
+    eye.resized();
+    rollStft.resized();
+    rollCqt.resized();
     
     resized();
 }

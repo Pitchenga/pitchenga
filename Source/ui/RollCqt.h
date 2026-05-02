@@ -15,8 +15,6 @@ public:
     void updateResults(const std::vector<double>& results);
     void paintForrest(juce::Graphics& graphics) const;
 
-    void rebuildFrame() { buildFrame(); repaint(); }
-
     void setEngine(const Cqt* e) { engine = e; }
     static constexpr int getPreferredHeight() { return 619; }
 

@@ -17,8 +17,6 @@ public:
 
     void updateResults(const std::vector<double>& results);
 
-    void rebuildFrame() { paintFrame(); repaint(); }
-
     void paint(juce::Graphics& g) override;
     void paintLabel(
         juce::Graphics& graphics,
