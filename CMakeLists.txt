@@ -65,6 +65,8 @@ set(PITCHENGA_SOURCES
         Source/ui/Needle.cpp
         Source/ui/Eye.h
         Source/ui/Eye.cpp
+        Source/ui/EyePiano.h
+        Source/ui/EyePiano.cpp
         Source/ui/RollStft.h
         Source/ui/RollStft.cpp
         Source/ui/RollCqt.h
