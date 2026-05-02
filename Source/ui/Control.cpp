@@ -228,13 +228,13 @@ Control::Control(PitchengaAudioProcessor& proc)
     buttonLoad.setButtonText("Load");
     buttonLoad.onClick = [this] {
         const int id = comboPresets.getSelectedId();
-        if (id == 0) return;
+        if (id == nonePresetId) return;
 
         std::unique_ptr<juce::XmlElement> xml;
         juce::File newPresetFile;
         juce::String newPresetName;
 
-        if (id == factoryPresetId) {
+        if (id == factoryDefaultPresetId) {
             newPresetName = "";
             xml = juce::XmlDocument::parse(
                 juce::String::createStringFromData(
@@ -302,7 +302,7 @@ Control::Control(PitchengaAudioProcessor& proc)
             const auto presetsDir = appDataDir.getChildFile("presets");
             currentPresetFile = presetsDir.getChildFile("user-default.xml");
         } else if (presetName == "Factory Default") {
-            comboPresets.setSelectedId(factoryPresetId, juce::NotificationType::dontSendNotification);
+            comboPresets.setSelectedId(factoryDefaultPresetId, juce::NotificationType::dontSendNotification);
             currentPresetFile = juce::File();
         } else {
             for (size_t i = 0; i < presets.size(); ++i) {
@@ -551,7 +551,7 @@ void Control::deleteCurrentPreset() {
         if (currentPresetFile.deleteFile()) {
             currentPresetFile = juce::File();
             processor.settings.currentPresetName = "";
-            comboPresets.setSelectedId(factoryPresetId, juce::NotificationType::sendNotification);
+            comboPresets.setSelectedId(factoryDefaultPresetId, juce::NotificationType::sendNotification);
             refreshPresets();
         }
     }
@@ -617,9 +617,9 @@ void Control::updateButtonStates() {
 
     // Disable Save and Delete buttons for Factory Default (ID 1) and nothing selected (ID 0)
     const int selectedId = comboPresets.getSelectedId();
-    buttonLoad.setEnabled(selectedId > 0);
-    buttonSave.setEnabled(selectedId > factoryPresetId);
-    buttonDelete.setEnabled(selectedId > factoryPresetId);
+    buttonLoad.setEnabled(selectedId > nonePresetId);
+    buttonSave.setEnabled(selectedId > factoryDefaultPresetId);
+    buttonDelete.setEnabled(selectedId > factoryDefaultPresetId);
 
     resized();
 }
@@ -720,7 +720,7 @@ void Control::resized() {
 
 void Control::refreshPresets() {
     comboPresets.clear(juce::NotificationType::dontSendNotification);
-    comboPresets.addItem("Factory Default", factoryPresetId);
+    comboPresets.addItem("Factory Default", factoryDefaultPresetId);
 
     // User Default is always available now, falling back to Factory if file is missing
     comboPresets.addItem("User Default", userDefaultPresetId);
