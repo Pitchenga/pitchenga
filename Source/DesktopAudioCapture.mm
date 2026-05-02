@@ -9,6 +9,7 @@
 
 @interface DesktopAudioCaptureDelegate : NSObject <SCStreamOutput> {
     std::vector<float> monoDownmix;
+    std::vector<char> bufferListStorage;
 }
 @property (nonatomic, assign) DesktopAudioCapture* owner;
 @end
@@ -19,6 +20,7 @@
     self = [super init];
     if (self) {
         monoDownmix.reserve(65536); // Pre-allocate to prevent real-time heap allocation
+        bufferListStorage.resize(4096); // Pre-allocate enough space for typical AudioBufferList
     }
     return self;
 }
@@ -39,11 +41,12 @@
     );
 
     if (status != noErr || sizeNeeded == 0) {
-        Util::debug("Failed to get size for AudioBufferList, status: " + juce::String(status));
         return;
     }
 
-    std::vector<char> bufferListStorage(sizeNeeded);
+    if (bufferListStorage.size() < sizeNeeded) {
+        bufferListStorage.resize(sizeNeeded);
+    }
     AudioBufferList* audioBufferList = reinterpret_cast<AudioBufferList*>(bufferListStorage.data());
     
     CMBlockBufferRef blockBuffer = nullptr;
@@ -59,7 +62,6 @@
     );
 
     if (status != noErr) {
-        Util::debug("CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer failed with status: " + juce::String(status));
         return;
     }
 
