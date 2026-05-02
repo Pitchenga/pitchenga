@@ -26,43 +26,64 @@
 - (void)stream:(SCStream *)stream didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer ofType:(SCStreamOutputType)type {
     if (type != SCStreamOutputTypeAudio) return;
 
-    CMBlockBufferRef blockBuffer = nullptr;
-    AudioBufferList audioBufferList;
-    
+    size_t sizeNeeded = 0;
     OSStatus status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
         sampleBuffer, 
+        &sizeNeeded, 
         nullptr, 
-        &audioBufferList, 
-        sizeof(audioBufferList),
+        0,
+        nullptr, 
+        nullptr, 
+        kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment, 
+        nullptr
+    );
+
+    if (status != noErr || sizeNeeded == 0) {
+        Util::debug("Failed to get size for AudioBufferList, status: " + juce::String(status));
+        return;
+    }
+
+    std::vector<char> bufferListStorage(sizeNeeded);
+    AudioBufferList* audioBufferList = reinterpret_cast<AudioBufferList*>(bufferListStorage.data());
+    
+    CMBlockBufferRef blockBuffer = nullptr;
+    status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
+        sampleBuffer, 
+        nullptr, 
+        audioBufferList, 
+        sizeNeeded,
         nullptr, 
         nullptr, 
         kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment, 
         &blockBuffer
     );
 
-    if (status != noErr) return;
+    if (status != noErr) {
+        Util::debug("CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer failed with status: " + juce::String(status));
+        return;
+    }
 
-    if (audioBufferList.mNumberBuffers > 0) {
+    if (audioBufferList->mNumberBuffers > 0) {
         CMFormatDescriptionRef formatDesc = CMSampleBufferGetFormatDescription(sampleBuffer);
         const AudioStreamBasicDescription* asbd = CMAudioFormatDescriptionGetStreamBasicDescription(formatDesc);
         
-        bool isNonInterleaved = (asbd != nullptr) ? (asbd->mFormatFlags & kAudioFormatFlagIsNonInterleaved) != 0 : (audioBufferList.mNumberBuffers > 1);
+        bool isNonInterleaved = (asbd != nullptr) ? (asbd->mFormatFlags & kAudioFormatFlagIsNonInterleaved) != 0 : (audioBufferList->mNumberBuffers > 1);
         int numChannels = (asbd != nullptr && asbd->mChannelsPerFrame > 0) ? static_cast<int>(asbd->mChannelsPerFrame) : 1;
         
-        if (isNonInterleaved && static_cast<int>(audioBufferList.mNumberBuffers) < numChannels) {
-            numChannels = static_cast<int>(audioBufferList.mNumberBuffers);
+        if (isNonInterleaved && static_cast<int>(audioBufferList->mNumberBuffers) < numChannels) {
+            numChannels = static_cast<int>(audioBufferList->mNumberBuffers);
         }
         
         int numSamples = 0;
         if (isNonInterleaved) {
-            numSamples = static_cast<int>(audioBufferList.mBuffers[0].mDataByteSize / sizeof(float));
+            numSamples = static_cast<int>(audioBufferList->mBuffers[0].mDataByteSize / sizeof(float));
         } else {
-            numSamples = static_cast<int>(audioBufferList.mBuffers[0].mDataByteSize / (sizeof(float) * static_cast<size_t>(numChannels)));
+            numSamples = static_cast<int>(audioBufferList->mBuffers[0].mDataByteSize / (sizeof(float) * static_cast<size_t>(numChannels)));
         }
 
-        if (self.owner && audioBufferList.mBuffers[0].mData != nullptr) {
+        if (self.owner && audioBufferList->mBuffers[0].mData != nullptr) {
             if (numChannels == 1) {
-                const float* audioData = static_cast<const float*>(audioBufferList.mBuffers[0].mData);
+                const float* audioData = static_cast<const float*>(audioBufferList->mBuffers[0].mData);
                 self.owner->pushAudio(audioData, numSamples);
             } else {
                 // Downmix to mono
@@ -73,14 +94,14 @@
                 if (isNonInterleaved) {
                     juce::FloatVectorOperations::clear(monoDownmix.data(), numSamples);
                     for (int ch = 0; ch < numChannels; ++ch) {
-                        const float* channelData = static_cast<const float*>(audioBufferList.mBuffers[ch].mData);
+                        const float* channelData = static_cast<const float*>(audioBufferList->mBuffers[ch].mData);
                         if (channelData != nullptr) {
                             juce::FloatVectorOperations::add(monoDownmix.data(), channelData, numSamples);
                         }
                     }
                     juce::FloatVectorOperations::multiply(monoDownmix.data(), 1.0f / static_cast<float>(numChannels), numSamples);
                 } else {
-                    const float* audioData = static_cast<const float*>(audioBufferList.mBuffers[0].mData);
+                    const float* audioData = static_cast<const float*>(audioBufferList->mBuffers[0].mData);
                     for (int i = 0; i < numSamples; ++i) {
                         float sum = 0.0f;
                         for (int ch = 0; ch < numChannels; ++ch) {
@@ -142,7 +163,7 @@ void DesktopAudioCapture::start(double sampleRate) {
         config.capturesAudio = YES;
         config.excludesCurrentProcessAudio = YES;
         config.sampleRate = static_cast<NSInteger>(sampleRate);
-        config.channelCount = 1;
+        config.channelCount = 2;
         config.queueDepth = 3; // Low latency
         
         impl->stream = [[SCStream alloc] initWithFilter:filter configuration:config delegate:nil];

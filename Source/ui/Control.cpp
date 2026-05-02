@@ -3,6 +3,7 @@
 #include "../PluginProcessor.h"
 #include "../Util.h"
 #include "BinaryData.h"
+#include "version.h"
 
 struct Control::PluginListListener : juce::ChangeListener {
     explicit PluginListListener(Control& ownerControl) : owner(ownerControl) {}
@@ -470,7 +471,6 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(buttonSaveAs);
     tweakPanel.addAndMakeVisible(buttonDelete);
 
-#include "version.h"
     buildTimestampLabel.setText(juce::String("Build ") + VERSION, juce::NotificationType::dontSendNotification);
     buildTimestampLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
     buildTimestampLabel.setFont(juce::FontOptions(13.0f));
