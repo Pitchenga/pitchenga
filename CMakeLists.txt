@@ -90,14 +90,14 @@ set(PITCHENGA_SOURCES
 
 # Generate a build timestamp
 add_custom_command(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/build_timestamp.h
-        COMMAND ${CMAKE_COMMAND} -DOUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/build_timestamp.h -P ${CMAKE_CURRENT_SOURCE_DIR}/generate_timestamp.cmake
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version.h
+        COMMAND ${CMAKE_COMMAND} -DOUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/version.h -P ${CMAKE_CURRENT_SOURCE_DIR}/version.cmake
         DEPENDS ${PITCHENGA_SOURCES}
 )
 
 target_sources(Pitchenga PRIVATE
         ${PITCHENGA_SOURCES}
-        ${CMAKE_CURRENT_BINARY_DIR}/build_timestamp.h
+        ${CMAKE_CURRENT_BINARY_DIR}/version.h
 )
 
 # Link the libraries
