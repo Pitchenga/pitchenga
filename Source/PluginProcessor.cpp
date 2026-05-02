@@ -167,31 +167,18 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     }
 
     // Stream D: Desktop Audio Capture
-    int availableSamples = desktopCapture.getFifo().getNumReady();
+    const int available = desktopCapture.getFifo().getNumReady();
+    if (available > 0) {
+        const int samplesToRead = std::min(available, numSamples);
+        const auto scope = desktopCapture.getFifo().read(samplesToRead);
 
-    // Catch-up logic: if the buffer is falling behind (more than 2 blocks), 
-    // skip old samples to maintain real-time synchronization.
-    if (availableSamples > numSamples * 2) {
-        const int samplesToSkip = availableSamples - numSamples;
-        desktopCapture.getFifo().finishedRead(samplesToSkip);
-        availableSamples = numSamples;
-    }
-
-    if (availableSamples > 0) {
-        const int samplesToRead = std::min(availableSamples, numSamples);
-        int startIndex1, blockSize1, startIndex2, blockSize2;
-        
-        desktopCapture.getFifo().prepareToRead(samplesToRead, startIndex1, blockSize1, startIndex2, blockSize2);
-
-        if (blockSize1 > 0) {
-            juce::FloatVectorOperations::add(monoData, desktopCapture.getBuffer().data() + static_cast<size_t>(startIndex1), blockSize1);
+        if (scope.blockSize1 > 0) {
+            juce::FloatVectorOperations::add(monoData, desktopCapture.getBuffer().data() + scope.startIndex1, scope.blockSize1);
         }
 
-        if (blockSize2 > 0) {
-            juce::FloatVectorOperations::add(monoData + blockSize1, desktopCapture.getBuffer().data() + static_cast<size_t>(startIndex2), blockSize2);
+        if (scope.blockSize2 > 0) {
+            juce::FloatVectorOperations::add(monoData + scope.blockSize1, desktopCapture.getBuffer().data() + scope.startIndex2, scope.blockSize2);
         }
-        
-        desktopCapture.getFifo().finishedRead(samplesToRead);
     }
 
     // Stream E: The Speaker Output
