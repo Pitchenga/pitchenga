@@ -4,7 +4,7 @@
 #include "BinaryData.h"
 
 struct Control::PluginListListener : juce::ChangeListener {
-    explicit PluginListListener(Control& c) : owner(c) {}
+    explicit PluginListListener(Control& ownerControl) : owner(ownerControl) {}
 
     void changeListenerCallback(juce::ChangeBroadcaster*) override {
         if (owner.isRescanning) {
@@ -68,20 +68,20 @@ void Control::VolumeKnob::paint(juce::Graphics& graphics) {
     graphics.drawLine(centerX, centerY, pointerX, pointerY, 2.0f);
 }
 
-void Control::VolumeKnob::mouseDown(const juce::MouseEvent& e) {
-    Slider::mouseDown(e);
+void Control::VolumeKnob::mouseDown(const juce::MouseEvent& event) {
+    Slider::mouseDown(event);
     wasDragged = false;
 }
 
-void Control::VolumeKnob::mouseDrag(const juce::MouseEvent& e) {
-    Slider::mouseDrag(e);
-    if (e.mouseWasDraggedSinceMouseDown()) {
+void Control::VolumeKnob::mouseDrag(const juce::MouseEvent& event) {
+    Slider::mouseDrag(event);
+    if (event.mouseWasDraggedSinceMouseDown()) {
         wasDragged = true;
     }
 }
 
-void Control::VolumeKnob::mouseUp(const juce::MouseEvent& e) {
-    Slider::mouseUp(e);
+void Control::VolumeKnob::mouseUp(const juce::MouseEvent& event) {
+    Slider::mouseUp(event);
     if (!wasDragged) {
         setValue(getValue() > 0.0 ? 0.0 : 1.0, juce::sendNotificationSync);
     }

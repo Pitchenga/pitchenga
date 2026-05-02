@@ -33,11 +33,28 @@
     if (status != noErr) return;
 
     if (audioBufferList.mNumberBuffers > 0) {
-        const float* audioData = static_cast<const float*>(audioBufferList.mBuffers[0].mData);
-        const int numSamples = static_cast<int>(audioBufferList.mBuffers[0].mDataByteSize / sizeof(float));
+        const float* rawAudioData = static_cast<const float*>(audioBufferList.mBuffers[0].mData);
+        const int totalFloatCount = static_cast<int>(audioBufferList.mBuffers[0].mDataByteSize / sizeof(float));
+        const int channelCount = static_cast<int>(audioBufferList.mBuffers[0].mNumberChannels);
         
-        if (self.owner && audioData != nullptr) {
-            self.owner->pushAudio(audioData, numSamples);
+        if (self.owner && rawAudioData != nullptr && totalFloatCount > 0) {
+            if (channelCount > 1) {
+                // Interleaved stereo/multi-channel to mono mixdown
+                const int frameCount = totalFloatCount / channelCount;
+                std::vector<float> monoMixBuffer;
+                monoMixBuffer.reserve(static_cast<size_t>(frameCount));
+                
+                for (int i = 0; i < frameCount; ++i) {
+                    float channelSum = 0.0f;
+                    for (int ch = 0; ch < channelCount; ++ch) {
+                        channelSum += rawAudioData[i * channelCount + ch];
+                    }
+                    monoMixBuffer.push_back(channelSum / static_cast<float>(channelCount));
+                }
+                self.owner->pushAudio(monoMixBuffer.data(), frameCount);
+            } else {
+                self.owner->pushAudio(rawAudioData, totalFloatCount);
+            }
         }
     }
     

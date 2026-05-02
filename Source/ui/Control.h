@@ -14,10 +14,10 @@ public:
     class VolumeKnob : public juce::Slider {
     public:
         VolumeKnob();
-        void paint(juce::Graphics& g) override;
-        void mouseDown(const juce::MouseEvent& e) override;
-        void mouseDrag(const juce::MouseEvent& e) override;
-        void mouseUp(const juce::MouseEvent& e) override;
+        void paint(juce::Graphics& graphics) override;
+        void mouseDown(const juce::MouseEvent& event) override;
+        void mouseDrag(const juce::MouseEvent& event) override;
+        void mouseUp(const juce::MouseEvent& event) override;
     private:
         bool wasDragged = false;
     };
