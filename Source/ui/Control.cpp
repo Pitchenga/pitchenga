@@ -339,6 +339,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         if (presetName == factoryDefaultPresetName || currentPresetFile == juce::File()) {
             presetName = userDefaultPresetName;
         }
+        juce::Component::SafePointer<Control> safeThis (this);
         juce::AlertWindow::showOkCancelBox(
             juce::MessageBoxIconType::QuestionIcon,
             saveConfirmTitle,
@@ -347,12 +348,12 @@ Control::Control(PitchengaAudioProcessor& proc)
             "Cancel",
             nullptr,
             juce::ModalCallbackFunction::create(
-                [this, presetName](int result) {
-                    if (result != 0) {
-                        if (presetName == userDefaultPresetName) {
-                            currentPresetFile = Util::getApplicationDirectory().getChildFile(presetsDirectoryName).getChildFile(userDefaultPresetFileName);
+                [safeThis, presetName](int result) {
+                    if (result != 0 && safeThis != nullptr) {
+                        if (presetName == safeThis->userDefaultPresetName) {
+                            safeThis->currentPresetFile = Util::getApplicationDirectory().getChildFile(safeThis->presetsDirectoryName).getChildFile(safeThis->userDefaultPresetFileName);
                         }
-                        saveCurrentPreset();
+                        safeThis->saveCurrentPreset();
                     }
                 }
             )
@@ -381,24 +382,25 @@ Control::Control(PitchengaAudioProcessor& proc)
         auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
             juce::FileBrowserComponent::warnAboutOverwriting;
 
+        juce::Component::SafePointer<Control> safeThis (this);
         chooser->launchAsync(
             flags,
-            [this](const juce::FileChooser& fc) {
+            [safeThis](const juce::FileChooser& fc) {
                 auto result = fc.getResult();
-                if (result != juce::File()) {
+                if (result != juce::File() && safeThis != nullptr) {
                     if (result.getFileExtension() != ".xml") {
                         result = result.withFileExtension(".xml");
                     }
 
                     juce::MemoryBlock dummy;
-                    processor.getStateInformation(dummy);
+                    safeThis->processor.getStateInformation(dummy);
 
-                    const juce::XmlElement xml = processor.settings.createXml();
+                    const juce::XmlElement xml = safeThis->processor.settings.createXml();
                     if (result.getParentDirectory().createDirectory() && xml.writeTo(result)) {
-                        currentPresetFile = result;
-                        processor.settings.currentPresetName = result.getFileNameWithoutExtension();
-                        refreshPresets();
-                        updateButtonStates();
+                        safeThis->currentPresetFile = result;
+                        safeThis->processor.settings.currentPresetName = result.getFileNameWithoutExtension();
+                        safeThis->refreshPresets();
+                        safeThis->updateButtonStates();
                     } else {
                         juce::AlertWindow::showMessageBoxAsync(
                             juce::MessageBoxIconType::WarningIcon,
@@ -417,6 +419,7 @@ Control::Control(PitchengaAudioProcessor& proc)
             return;
         }
 
+        juce::Component::SafePointer<Control> safeThis (this);
         juce::AlertWindow::showOkCancelBox(
             juce::MessageBoxIconType::QuestionIcon,
             deleteConfirmTitle,
@@ -425,9 +428,9 @@ Control::Control(PitchengaAudioProcessor& proc)
             "Cancel",
             nullptr,
             juce::ModalCallbackFunction::create(
-                [this](int result) {
-                    if (result != 0) {
-                        deleteCurrentPreset();
+                [safeThis](int result) {
+                    if (result != 0 && safeThis != nullptr) {
+                        safeThis->deleteCurrentPreset();
                     }
                 }
             )
