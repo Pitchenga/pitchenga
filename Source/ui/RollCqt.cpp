@@ -142,7 +142,49 @@ void RollCqt::buildFrame() {
     // Create a transparent image (the 'true' flag clears it to zero alpha)
     cachedFrame = juce::Image(juce::Image::ARGB, logicalWidth, logicalHeight, true);
     juce::Graphics graphics(cachedFrame);
-    paintFrame(graphics);
+    int totalOctaves = currentTotalBins / currentBinsPerOctave;
+    if (totalOctaves <= 0) totalOctaves = PitchengaAudioProcessor::numOctaves;
+    const int totalSemitones = totalOctaves * 12;
+    if (totalSemitones <= 0) return;
+    // The exact pixel width of one single CQT bin
+    const float barWidth = static_cast<float>(logicalWidth) / static_cast<float>(currentTotalBins);
+    const auto totalHeight = static_cast<float>(logicalHeight);
+    const float labelAreaHeight = getLabelAreaHeight();
+    const float plotHeight = std::max(1.0f, totalHeight - labelAreaHeight);
+    const juce::Font labelFont = Common::getLabelFont();
+    graphics.setFont(labelFont);
+    const float labelHeight = labelFont.getHeight();
+    const float maxTextWidth = juce::GlyphArrangement::getStringWidth(labelFont, "Ww8");
+    for (int i = 0; i < totalSemitones; ++i) {
+        const int chroma = Common::fast_mod12(i);
+
+        //fixme: move to ToneName
+        // Identify standard "black" keys
+        const bool isBlackKey = chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10;
+
+        // Find the exact pitch bin index for this semitone
+        const float binIndex = static_cast<float>(i) * (static_cast<float>(currentBinsPerOctave) / 12.0f);
+
+        // Find the visual center of that specific pitch bin
+        const float targetCenter = binIndex * barWidth + barWidth * 0.5f;
+
+        const float startY = 0.0f;
+        const float endY = plotHeight;
+
+        const juce::Colour baseColor = Tone::chromaticScale[static_cast<size_t>(chroma)].color;
+        const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.3f);
+        graphics.setColour(gridColor);
+
+        if (isBlackKey) {
+            const float dashLengths[] = {4.0f, 4.0f};
+            graphics.drawDashedLine(juce::Line(targetCenter, startY, targetCenter, endY), dashLengths, 2, 1.0f);
+        } else {
+            graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
+        }
+
+        //fixme: Unify range and hide labels when adjacent to tuner
+        paintLabel(graphics, labelHeight, maxTextWidth, i, targetCenter, totalHeight, baseColor, processor.settings.isFlipRollHorizontal);
+    }
 }
 
 void RollCqt::paintLabel(
