@@ -121,22 +121,6 @@ void DesktopAudioCapture::stop() {
     }
 }
 
-#else
-
-struct DesktopAudioCapture::Impl {};
-
-DesktopAudioCapture::DesktopAudioCapture() : impl(std::make_unique<Impl>()) {
-    ringBuffer.assign(ringBufferSize, 0.0f);
-}
-
-DesktopAudioCapture::~DesktopAudioCapture() {}
-
-void DesktopAudioCapture::start(double) {}
-
-void DesktopAudioCapture::stop() {}
-
-#endif
-
 void DesktopAudioCapture::pushAudio(const float* data, int numSamples) {
     const auto scope = fifo.write(numSamples);
 
@@ -148,3 +132,19 @@ void DesktopAudioCapture::pushAudio(const float* data, int numSamples) {
         std::copy(data + scope.blockSize1, data + scope.blockSize1 + scope.blockSize2, ringBuffer.begin() + scope.startIndex2);
     }
 }
+
+#else
+
+struct DesktopAudioCapture::Impl {};
+
+DesktopAudioCapture::DesktopAudioCapture() : impl(std::make_unique<Impl>()) {}
+
+DesktopAudioCapture::~DesktopAudioCapture() {}
+
+void DesktopAudioCapture::start(double) {}
+
+void DesktopAudioCapture::stop() {}
+
+void DesktopAudioCapture::pushAudio(const float*, int) {}
+
+#endif
