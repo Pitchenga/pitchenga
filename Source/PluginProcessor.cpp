@@ -167,7 +167,16 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     }
 
     // Stream D: Desktop Audio Capture
-    const int available = desktopAudioCapture.getFifo().getNumReady();
+    int available = desktopAudioCapture.getFifo().getNumReady();
+
+    // Catch up if we are falling behind to avoid latency. 
+    // We use a large threshold (16384 samples ~370ms) to allow for jitter.
+    if (available > 16384) {
+        const int toSkip = available - numSamples;
+        desktopAudioCapture.getFifo().finishedRead(toSkip);
+        available = numSamples;
+    }
+
     if (available > 0) {
         const int samplesToRead = std::min(available, numSamples);
         const auto scope = desktopAudioCapture.getFifo().read(samplesToRead);
