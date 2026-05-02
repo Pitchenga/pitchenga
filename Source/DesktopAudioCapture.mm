@@ -46,12 +46,23 @@
         CMFormatDescriptionRef formatDesc = CMSampleBufferGetFormatDescription(sampleBuffer);
         const AudioStreamBasicDescription* asbd = CMAudioFormatDescriptionGetStreamBasicDescription(formatDesc);
         
-        const float* audioData = static_cast<const float*>(audioBufferList.mBuffers[0].mData);
+        bool isNonInterleaved = (asbd != nullptr) ? (asbd->mFormatFlags & kAudioFormatFlagIsNonInterleaved) != 0 : (audioBufferList.mNumberBuffers > 1);
         int numChannels = (asbd != nullptr && asbd->mChannelsPerFrame > 0) ? static_cast<int>(asbd->mChannelsPerFrame) : 1;
-        int numSamples = static_cast<int>(audioBufferList.mBuffers[0].mDataByteSize / (sizeof(float) * numChannels));
+        
+        if (isNonInterleaved && static_cast<int>(audioBufferList.mNumberBuffers) < numChannels) {
+            numChannels = static_cast<int>(audioBufferList.mNumberBuffers);
+        }
+        
+        int numSamples = 0;
+        if (isNonInterleaved) {
+            numSamples = static_cast<int>(audioBufferList.mBuffers[0].mDataByteSize / sizeof(float));
+        } else {
+            numSamples = static_cast<int>(audioBufferList.mBuffers[0].mDataByteSize / (sizeof(float) * static_cast<size_t>(numChannels)));
+        }
 
-        if (self.owner && audioData != nullptr) {
+        if (self.owner && audioBufferList.mBuffers[0].mData != nullptr) {
             if (numChannels == 1) {
+                const float* audioData = static_cast<const float*>(audioBufferList.mBuffers[0].mData);
                 self.owner->pushAudio(audioData, numSamples);
             } else {
                 // Downmix to mono
@@ -59,12 +70,26 @@
                     monoDownmix.resize(static_cast<size_t>(numSamples));
                 }
                 
-                for (int i = 0; i < numSamples; ++i) {
-                    float sum = 0.0f;
-                    for (int ch = 0; ch < numChannels; ++ch) {
-                        sum += audioData[i * numChannels + ch];
+                if (isNonInterleaved) {
+                    for (int i = 0; i < numSamples; ++i) {
+                        float sum = 0.0f;
+                        for (int ch = 0; ch < numChannels; ++ch) {
+                            const float* channelData = static_cast<const float*>(audioBufferList.mBuffers[ch].mData);
+                            if (channelData != nullptr) {
+                                sum += channelData[i];
+                            }
+                        }
+                        monoDownmix[static_cast<size_t>(i)] = sum / static_cast<float>(numChannels);
                     }
-                    monoDownmix[i] = sum / static_cast<float>(numChannels);
+                } else {
+                    const float* audioData = static_cast<const float*>(audioBufferList.mBuffers[0].mData);
+                    for (int i = 0; i < numSamples; ++i) {
+                        float sum = 0.0f;
+                        for (int ch = 0; ch < numChannels; ++ch) {
+                            sum += audioData[i * numChannels + ch];
+                        }
+                        monoDownmix[static_cast<size_t>(i)] = sum / static_cast<float>(numChannels);
+                    }
                 }
                 self.owner->pushAudio(monoDownmix.data(), numSamples);
             }
