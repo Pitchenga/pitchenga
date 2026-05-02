@@ -44,7 +44,7 @@ juce_add_plugin(Pitchenga
         PLIST_TO_MERGE "<plist><dict><key>NSScreenCaptureUsageDescription</key><string>Pitchenga needs screen capture access to visualize your desktop audio.</string></dict></plist>")
 
 add_custom_command(TARGET Pitchenga_AU POST_BUILD
-        COMMAND /usr/libexec/PlistBuddy -c "Delete :NSScreenCaptureUsageDescription" "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist"
+        COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSScreenCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist\" || true"
         COMMENT "Removing screen capture usage description from AU plist")
 
 # Tell CMake which C++ files to compile
