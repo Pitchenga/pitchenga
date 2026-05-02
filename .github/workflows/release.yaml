@@ -33,7 +33,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           cd build/Pitchenga_artefacts/Release
-          zip -r ../../../Pitchenga-macOS.zip ./*
+          zip -ry ../../../Pitchenga-macOS.zip ./*
 
       - name: Zip Artifacts (Windows)
         if: runner.os == 'Windows'
