@@ -2,9 +2,9 @@
 
 **See your sound: the "perfect pitch" superpower for mere mortals.**
 
-- Pitchenga is a high-precision, real-time harmonic visualizer. Designed to take the guesswork out of intonation, transcription, and sound design, it acts as a bionic ear — giving you artificial chromesthesia that tells you exactly what is happening in your audio.
+- Pitchenga is a high-precision, real-time harmonic visualizer - AU/VST plugin and standalone app. Designed to take the guesswork out of intonation, transcription, and sound design, it acts as a bionic ear — giving you artificial chromesthesia that tells you exactly what is happening in your audio.
 - Whether you are checking your vocal pitch, tuning a tricky synth patch, or transcribing a dense chord progression, Pitchenga provides razor-sharp visual clarity.
-- [Watch Pitchenga in action on YouTube](//fixme)
+- [Watch Pitchenga in action on YouTube](https://www.youtube.com/watch?v=oEOlSGb62Hw)
 
 ### Core Features
 
@@ -23,7 +23,7 @@ A custom internal routing matrix allows you to blend any live audio input — su
 
 ### Downloads & Installation
 
-Pre-built binaries are provided in the [Releases](//fixme) section.
+Pre-built binaries are provided in the Releases section.
 
 - **macOS:** Available as a Standalone `.app`, Audio Unit (AU), and VST3. 
 > Note: The current releases are not yet signed with an Apple Developer certificate. You will need to right-click and select "Open" to bypass Gatekeeper on the first launch.
