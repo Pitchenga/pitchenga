@@ -101,10 +101,10 @@ void RollStft::buildFrame() {
     paintFrame(graphics);
 }
 
-juce::String RollStft::getNoteName(const int midiNote) {
-    int chroma = Common::fast_mod12(midiNote);
+juce::String RollStft::getNoteName(const int midiNote) const {
+    const int chroma = Common::fast_mod12(midiNote);
     const int octave = midiNote / 12 - 1;
-    return Tone::chromaticScale[static_cast<size_t>(chroma)].toneName + juce::String(octave);
+    return Tone::getToneName(chroma, processor.settings.isLetterNotation) + juce::String(octave);
 }
 
 void RollStft::paintLabel(
@@ -116,7 +116,7 @@ void RollStft::paintLabel(
     const float startY,
     const juce::Colour baseColor,
     const bool isHorizontal
-) {
+) const {
     if (midiNote == minMidiNote || midiNote == maxMidiNote) {
         // Not drawing a half label
         return;
@@ -135,7 +135,7 @@ void RollStft::paintLabel(
         );
         graphics.drawText(
             name,
-            juce::Rectangle<float>(rotX, rotY, maxTextWidth, labelHeight),
+            juce::Rectangle(rotX, rotY, maxTextWidth, labelHeight),
             juce::Justification::centredLeft,
             false
         );
@@ -145,7 +145,7 @@ void RollStft::paintLabel(
         );
         graphics.drawText(
             name,
-            juce::Rectangle<float>(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
+            juce::Rectangle(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
             juce::Justification::centredLeft,
             false
         );

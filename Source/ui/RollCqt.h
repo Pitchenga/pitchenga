@@ -15,6 +15,8 @@ public:
     void updateResults(const std::vector<double>& results);
     void paintForrest(juce::Graphics& graphics) const;
 
+    void rebuildFrame() { buildFrame(); repaint(); }
+
     void setEngine(const Cqt* e) { engine = e; }
     static constexpr int getPreferredHeight() { return 619; }
 
@@ -24,8 +26,8 @@ private:
     void buildFrame();
     void paintFrame(juce::Graphics& graphics) const;
 
-    static juce::String getNoteName(int midiNote);
-    static void paintLabel(
+    juce::String getNoteName(int midiNote) const;
+    void paintLabel(
         juce::Graphics& graphics,
         float labelHeight,
         float maxTextWidth,
@@ -34,7 +36,7 @@ private:
         float startY,
         juce::Colour baseColor,
         bool isHorizontal
-    );
+    ) const;
 
     //fixme: Implement speed
     const float smokeSpeedPxPerFrame = 1.0f;

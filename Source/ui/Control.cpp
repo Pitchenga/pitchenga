@@ -139,10 +139,10 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
-    toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Solfege" : "Letter");
+    toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Letter" : "Solfege");
     toggleLetter.onClick = [this] {
         processor.settings.isLetterNotation = !processor.settings.isLetterNotation;
-        toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Solfege" : "Letter");
+        toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Letter" : "Solfege");
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -572,7 +572,7 @@ void Control::updateVisibilityFromState() {
     toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flip" : "Flop");
     toggleStrobe.setToggleState(processor.settings.isShowStrobe, juce::NotificationType::dontSendNotification);
     toggleRaw.setToggleState(processor.settings.isRawMode, juce::NotificationType::dontSendNotification);
-    toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Solfege" : "Letter");
+    toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Letter" : "Solfege");
     toggleSmoke.setToggleState(processor.settings.isShowSmoke, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
