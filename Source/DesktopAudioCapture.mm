@@ -46,7 +46,9 @@
             } else {
                 // Downmix to mono
                 thread_local std::vector<float> monoDownmix;
-                monoDownmix.assign(numSamples, 0.0f);
+                if (monoDownmix.size() < static_cast<size_t>(numSamples)) {
+                    monoDownmix.resize(static_cast<size_t>(numSamples));
+                }
                 
                 for (int i = 0; i < numSamples; ++i) {
                     float sum = 0.0f;
