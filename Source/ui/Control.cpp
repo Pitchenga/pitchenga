@@ -411,7 +411,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         );
     };
 
-    buttonDelete.setButtonText(delet);
+    buttonDelete.setButtonText(deletePreset);
     buttonDelete.onClick = [this] {
         if (currentPresetFile == juce::File()) {
             return;
@@ -421,7 +421,7 @@ Control::Control(PitchengaAudioProcessor& proc)
             juce::MessageBoxIconType::QuestionIcon,
             deleteConfirmTitle,
             deleteConfirmMessage.replace("{NAME}", comboPresets.getText()),
-            delet,
+            deletePreset,
             "Cancel",
             nullptr,
             juce::ModalCallbackFunction::create(

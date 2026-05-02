@@ -108,7 +108,7 @@ private:
     static inline const juce::String load = "Load";
     static inline const juce::String save = "Save";
     static inline const juce::String saveAs = "Save As";
-    static inline const juce::String delet = "Delete";
+    static inline const juce::String deletePreset = "Delete";
 
     static inline const juce::String userDefaultPresetName = "User Default";
     static inline const juce::String factoryDefaultPresetName = "Factory Default";
@@ -163,7 +163,7 @@ private:
     juce::TextButton buttonLoad{load};
     juce::TextButton buttonSave{save};
     juce::TextButton buttonSaveAs{saveAs};
-    juce::TextButton buttonDelete{delet};
+    juce::TextButton buttonDelete{deletePreset};
 
     std::unique_ptr<juce::FileChooser> chooser;
 

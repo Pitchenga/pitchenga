@@ -37,7 +37,7 @@
         const AudioStreamBasicDescription* asbd = CMAudioFormatDescriptionGetStreamBasicDescription(formatDesc);
         
         const float* audioData = static_cast<const float*>(audioBufferList.mBuffers[0].mData);
-        int numChannels = (asbd != nullptr) ? static_cast<int>(asbd->mChannelsPerFrame) : 1;
+        int numChannels = (asbd != nullptr && asbd->mChannelsPerFrame > 0) ? static_cast<int>(asbd->mChannelsPerFrame) : 1;
         int numSamples = static_cast<int>(audioBufferList.mBuffers[0].mDataByteSize / (sizeof(float) * numChannels));
 
         if (self.owner && audioData != nullptr) {
