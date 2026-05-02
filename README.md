@@ -25,7 +25,7 @@ A custom internal routing matrix allows you to blend any live audio input — su
 
 Pre-built binaries are provided in the Releases section.
 
-- **macOS:** Available as a Standalone `.app`, Audio Unit (AU), and VST3. 
+- **macOS:** Available as a Standalone `.app`, Audio Unit (AU Component), and VST3. 
 > **Important macOS Note:** The current releases are not yet signed with an Apple Developer certificate. When you download the `.zip` file from the internet, macOS adds a "quarantine" flag. Because the app is ad-hoc signed, Gatekeeper will misleadingly state that the app is "damaged and should be moved to the trash".
 > To fix this, you must clear the quarantine flag using Terminal after unpacking the zip:
 > ```bash
@@ -36,10 +36,12 @@ Pre-built binaries are provided in the Releases section.
 > **Installation:**
 > Move the unzipped files to their correct folders:
 > ```bash
-> sudo mv ~/Downloads/Pitchenga-macOS/Standalone/Pitchenga.app ~/Applications/
-> sudo mv ~/Downloads/Pitchenga-macOS/AU/Pitchenga.component ~/Library/Audio/Plug-Ins/Components/
+> mv ~/Downloads/Pitchenga-macOS/Standalone/Pitchenga.app ~/Applications/
+> mv ~/Downloads/Pitchenga-macOS/AU/Pitchenga.component ~/Library/Audio/Plug-Ins/Components/
 > ```
 - **Windows:** Available as a Standalone `.exe` and VST3.
+> **Installation:**
+> - Move the `Pitchenga.vst3` folder to: `C:\Program Files\Common Files\VST3\`
 
 ### Licenses and Acknowledgments
 
