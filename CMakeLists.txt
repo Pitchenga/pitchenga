@@ -43,9 +43,11 @@ juce_add_plugin(Pitchenga
         PLUGINHOST_VST3 TRUE
         PLIST_TO_MERGE "<plist><dict><key>NSScreenCaptureUsageDescription</key><string>Pitchenga needs screen capture access to visualize your desktop audio.</string></dict></plist>")
 
-add_custom_command(TARGET Pitchenga_AU POST_BUILD
-        COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSScreenCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist\" || true"
-        COMMENT "Removing screen capture usage description from AU plist")
+#if (TARGET Pitchenga_AU)
+    add_custom_command(TARGET Pitchenga_AU POST_BUILD
+            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSScreenCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist\" || true"
+            COMMENT "Removing screen capture usage description from AU plist")
+#endif()
 
 # Tell CMake which C++ files to compile
 set(PITCHENGA_SOURCES
@@ -106,12 +108,16 @@ target_link_libraries(Pitchenga PRIVATE
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags)
 
-target_link_libraries(Pitchenga_Standalone PRIVATE "-framework ScreenCaptureKit")
-target_sources(Pitchenga_Standalone PRIVATE Source/DesktopAudioCapture.mm)
-target_compile_definitions(Pitchenga_Standalone PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=1)
+#if (TARGET Pitchenga_Standalone)
+    target_link_libraries(Pitchenga_Standalone PRIVATE "-framework ScreenCaptureKit")
+    target_sources(Pitchenga_Standalone PRIVATE Source/DesktopAudioCapture.mm)
+    target_compile_definitions(Pitchenga_Standalone PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=1)
+#endif()
 
-target_sources(Pitchenga_AU PRIVATE Source/DesktopAudioCapture.mm)
-target_compile_definitions(Pitchenga_AU PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
+#if (TARGET Pitchenga_AU)
+    target_sources(Pitchenga_AU PRIVATE Source/DesktopAudioCapture.mm)
+    target_compile_definitions(Pitchenga_AU PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
+#endif()
 
 target_compile_features(Pitchenga PUBLIC cxx_std_20)
 
