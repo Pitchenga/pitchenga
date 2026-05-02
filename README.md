@@ -13,6 +13,7 @@
 - **Surgical Note Isolation:** Standard spectrograms often blur adjacent notes together or crush quieter harmonics. Pitchenga utilizes a custom Topographic Prominence Extraction (Difference-of-Gaussians) to surgically isolate notes. If you play a dense chord or two adjacent semitones, both are drawn with distinct clarity.
 - **Versatile Analyzer:** Pitchenga easily doubles as a traditional spectrum analyzer. Simply bypass the custom harmonic sculpting to view the raw, unprocessed audio data exactly like in standard studio tools.
 - **Precision Strobe Tuner:** Dial in your instruments with microscopic accuracy. The built-in strobe tuning interface provides immediate, highly sensitive visual feedback for perfect intonation and fast microtonal adjustments.
+- **Desktop Audio Capture (macOS):** Seamlessly intercept your system audio to instantly visualize tracks played directly from your browser or media player.
 
 ### Standalone Instrument Support
 
