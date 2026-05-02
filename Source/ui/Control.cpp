@@ -3,6 +3,7 @@
 #include "../PluginProcessor.h"
 #include "../Util.h"
 #include "BinaryData.h"
+#include "version.h"
 
 struct Control::PluginListListener : juce::ChangeListener {
     explicit PluginListListener(Control& ownerControl) : owner(ownerControl) {}
@@ -335,14 +336,11 @@ Control::Control(PitchengaAudioProcessor& proc)
 
     buttonSave.setButtonText(save);
     buttonSave.onClick = [this] {
-        if (currentPresetFile == juce::File()) {
-            return;
-        }
-
         auto presetName = comboPresets.getText();
-        if (presetName == factoryDefaultPresetName) {
+        if (presetName == factoryDefaultPresetName || currentPresetFile == juce::File()) {
             presetName = userDefaultPresetName;
         }
+        juce::Component::SafePointer<Control> safeThis(this);
         juce::AlertWindow::showOkCancelBox(
             juce::MessageBoxIconType::QuestionIcon,
             saveConfirmTitle,
@@ -351,9 +349,14 @@ Control::Control(PitchengaAudioProcessor& proc)
             "Cancel",
             nullptr,
             juce::ModalCallbackFunction::create(
-                [this](int result) {
-                    if (result != 0) {
-                        saveCurrentPreset();
+                [safeThis, presetName](int result) {
+                    if (result != 0 && safeThis != nullptr) {
+                        if (presetName == safeThis->userDefaultPresetName) {
+                            safeThis->currentPresetFile = Util::getApplicationDirectory()
+                                .getChildFile(safeThis->presetsDirectoryName)
+                                .getChildFile(safeThis->userDefaultPresetFileName);
+                        }
+                        safeThis->saveCurrentPreset();
                     }
                 }
             )
@@ -382,24 +385,25 @@ Control::Control(PitchengaAudioProcessor& proc)
         auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
             juce::FileBrowserComponent::warnAboutOverwriting;
 
+        juce::Component::SafePointer<Control> safeThis(this);
         chooser->launchAsync(
             flags,
-            [this](const juce::FileChooser& fc) {
+            [safeThis](const juce::FileChooser& fc) {
                 auto result = fc.getResult();
-                if (result != juce::File()) {
+                if (result != juce::File() && safeThis != nullptr) {
                     if (result.getFileExtension() != ".xml") {
                         result = result.withFileExtension(".xml");
                     }
 
                     juce::MemoryBlock dummy;
-                    processor.getStateInformation(dummy);
+                    safeThis->processor.getStateInformation(dummy);
 
-                    const juce::XmlElement xml = processor.settings.createXml();
+                    const juce::XmlElement xml = safeThis->processor.settings.createXml();
                     if (result.getParentDirectory().createDirectory() && xml.writeTo(result)) {
-                        currentPresetFile = result;
-                        processor.settings.currentPresetName = result.getFileNameWithoutExtension();
-                        refreshPresets();
-                        updateButtonStates();
+                        safeThis->currentPresetFile = result;
+                        safeThis->processor.settings.currentPresetName = result.getFileNameWithoutExtension();
+                        safeThis->refreshPresets();
+                        safeThis->updateButtonStates();
                     } else {
                         juce::AlertWindow::showMessageBoxAsync(
                             juce::MessageBoxIconType::WarningIcon,
@@ -412,23 +416,24 @@ Control::Control(PitchengaAudioProcessor& proc)
         );
     };
 
-    buttonDelete.setButtonText(delet);
+    buttonDelete.setButtonText(deletePreset);
     buttonDelete.onClick = [this] {
         if (currentPresetFile == juce::File()) {
             return;
         }
 
+        juce::Component::SafePointer<Control> safeThis(this);
         juce::AlertWindow::showOkCancelBox(
             juce::MessageBoxIconType::QuestionIcon,
             deleteConfirmTitle,
             deleteConfirmMessage.replace("{NAME}", comboPresets.getText()),
-            delet,
+            deletePreset,
             "Cancel",
             nullptr,
             juce::ModalCallbackFunction::create(
-                [this](int result) {
-                    if (result != 0) {
-                        deleteCurrentPreset();
+                [safeThis](int result) {
+                    if (result != 0 && safeThis != nullptr) {
+                        safeThis->deleteCurrentPreset();
                     }
                 }
             )
@@ -466,8 +471,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(buttonSaveAs);
     tweakPanel.addAndMakeVisible(buttonDelete);
 
-#include "build_timestamp.h"
-    buildTimestampLabel.setText(juce::String("Build ") + BUILD_TIMESTAMP, juce::NotificationType::dontSendNotification);
+    buildTimestampLabel.setText(juce::String("Build ") + VERSION, juce::NotificationType::dontSendNotification);
     buildTimestampLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
     buildTimestampLabel.setFont(juce::FontOptions(13.0f));
     buildTimestampLabel.setJustificationType(juce::Justification::centredLeft);

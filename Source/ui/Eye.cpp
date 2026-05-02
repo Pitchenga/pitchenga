@@ -4,7 +4,7 @@
 #include "../PluginProcessor.h"
 #include "../Tone.h"
 
-Eye::Eye(PitchengaAudioProcessor& proc) : processor(proc) {
+Eye::Eye(PitchengaAudioProcessor& processor) : processor(processor) {
     smoothedOctaveBins.resize(totalFoldedBins, 0.0);
 }
 
