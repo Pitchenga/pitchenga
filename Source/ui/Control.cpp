@@ -448,12 +448,11 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(buttonDelete);
 
 #include "build_timestamp.h"
-
-    buildTimestampLabel.setText(BUILD_TIMESTAMP, juce::NotificationType::dontSendNotification);
+    buildTimestampLabel.setText(juce::String("Build ") + BUILD_TIMESTAMP, juce::NotificationType::dontSendNotification);
     buildTimestampLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
     buildTimestampLabel.setFont(juce::FontOptions(13.0f));
     buildTimestampLabel.setJustificationType(juce::Justification::centredLeft);
-    addAndMakeVisible(buildTimestampLabel);
+    tweakPanel.addAndMakeVisible(buildTimestampLabel);
 
     updateButtonStates();
 }
@@ -683,9 +682,6 @@ void Control::resized() {
 
     positionButtonRight(toggleIsFreezeRoll, topRow);
 
-    topRow.removeFromRight(8);
-    buildTimestampLabel.setBounds(topRow);
-
     if (processor.settings.isShowTweakPanel) {
         tweakPanel.setBounds(bounds); // Use the entire remaining bounds (the bottom row)
 
@@ -706,6 +702,9 @@ void Control::resized() {
         positionButtonRight(toggleStrobe, panelBounds);
         positionButtonRight(toggleLayoutPivot, panelBounds);
         positionButtonRight(toggleLetter, panelBounds);
+
+        panelBounds.removeFromRight(8);
+        buildTimestampLabel.setBounds(panelBounds);
     }
 }
 
