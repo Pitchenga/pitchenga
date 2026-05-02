@@ -27,12 +27,12 @@ Pitchenga is a real-time music visualization application and audio plugin.
 - CRITICAL: Prefer separate functions to long code blocks with a comment.
 - CRITICAL: Use strict camel-case for acronyms, e.g. "SqlRdbmsDao sqlRdbmsDao" - Good; "SQLRDBMSDAO" - BAD.
 - CRITICAL: Do NOT shorten words, e.g. "horizontal" - GOOD, "horiz" - BAD; "context" - GOOD, "ctx" - bad.
-- CRITICAL: When printing out code blocks in text output for me, do NOT add line numbers.
+- CRITICAL: When printing out code blocks in text output for me, do NOT print line numbers.
 - CRITICAL: Do NOT put multiple invocations on one line.
 
 ### MANDATORY PRE-FLIGHT CHECK
 
-Before invoking the `replace` or `write_file` tools, you MUST output a `<pre_flight>` block.
+Before invoking the `replace` or `write_file` tools, you MUST output a `pre_flight` block.
 (Response output only - do NOT write it to a file.)
 If you fail to recognize a revert or rule violation, you will be terminated.
 
@@ -51,17 +51,20 @@ If you fail to recognize a revert or rule violation, you will be terminated.
 [The exact literal string you are passing to the tool]
 ```
 
-4. Revert Audit: Compare the snippets above. Does 'Current Code' contain logic, naming, or comments missing from
-   'Proposed Code'?
+4. No-revert Audit: Did you read the disk in this turn? Does your 'old_string' match the disk EXACTLY?
+  -> IF NO: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
+
+5. No-revert double-check: compare the snippets above. Does 'Current Code' contain logic, naming, or comments missing
+   from 'Proposed Code'?
    -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
 
-5. Rules Audit: Does 'Proposed Code' violate any of the CRITICAL RULES above?
+6. Rules Audit: Does 'Proposed Code' violate any of the CRITICAL RULES above?
    -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
 
-6. Scope Audit: Does 'Proposed Code' contain any changes that are not related to the user's CURRENT request?
+7. Scope Audit: Does 'Proposed Code' contain any changes that are not related to the user's CURRENT request?
    -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
 
-7. Decision: [PROCEED or ABORT]
+8. Decision: [PROCEED or ABORT]
    </pre_flight>
 
 ## 0. Non-negotiables
@@ -73,8 +76,8 @@ These rules override everything else in this file when in conflict:
 - **Never fabricate.** Not file paths, not commit hashes, not API names, not test results, not library functions. If
   you don't know, read the file, run the command, or say "I don't know, let me check."
 - **Stop when confused.** If the task has two plausible interpretations, ask. Do not pick silently and proceed.
-- **Touch only what you must.** Every changed line must trace directly to the user's request. No drive-by refactors,
-  fixing bugs, reformatting, or cleanups.
+- **Touch only what you must.** Every changed line must trace directly to the user's request.
+  NO drive-by refactors, NO fixing bugs, NO reformatting, NO cleanups.
 - **Only requested changes.** No features beyond what was asked.
 
 ---
