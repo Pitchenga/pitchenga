@@ -339,7 +339,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         if (presetName == factoryDefaultPresetName || currentPresetFile == juce::File()) {
             presetName = userDefaultPresetName;
         }
-        juce::Component::SafePointer<Control> safeThis (this);
+        SafePointer safeThis(this);
         juce::AlertWindow::showOkCancelBox(
             juce::MessageBoxIconType::QuestionIcon,
             saveConfirmTitle,
@@ -351,7 +351,9 @@ Control::Control(PitchengaAudioProcessor& proc)
                 [safeThis, presetName](int result) {
                     if (result != 0 && safeThis != nullptr) {
                         if (presetName == safeThis->userDefaultPresetName) {
-                            safeThis->currentPresetFile = Util::getApplicationDirectory().getChildFile(safeThis->presetsDirectoryName).getChildFile(safeThis->userDefaultPresetFileName);
+                            safeThis->currentPresetFile = Util::getApplicationDirectory()
+                                .getChildFile(safeThis->presetsDirectoryName)
+                                .getChildFile(safeThis->userDefaultPresetFileName);
                         }
                         safeThis->saveCurrentPreset();
                     }
@@ -382,7 +384,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
             juce::FileBrowserComponent::warnAboutOverwriting;
 
-        juce::Component::SafePointer<Control> safeThis (this);
+        juce::Component::SafePointer<Control> safeThis(this);
         chooser->launchAsync(
             flags,
             [safeThis](const juce::FileChooser& fc) {
@@ -419,7 +421,7 @@ Control::Control(PitchengaAudioProcessor& proc)
             return;
         }
 
-        juce::Component::SafePointer<Control> safeThis (this);
+        juce::Component::SafePointer<Control> safeThis(this);
         juce::AlertWindow::showOkCancelBox(
             juce::MessageBoxIconType::QuestionIcon,
             deleteConfirmTitle,
