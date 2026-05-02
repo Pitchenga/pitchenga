@@ -82,6 +82,11 @@ private:
     static inline const juce::String deleteConfirmTitle = "Delete Preset";
     static inline const juce::String deleteConfirmMessage = "Are you sure you want to delete preset '{NAME}'?";
 
+    static constexpr int factoryPresetId = 1;
+    static constexpr int userDefaultPresetId = 2;
+    // 3 is separator
+    static constexpr int customPresetsStartId = 4;
+
     void saveCurrentPreset();
     void deleteCurrentPreset();
     static void setupToggleButton(juce::TextButton& button, bool initialState);

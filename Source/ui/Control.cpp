@@ -234,7 +234,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         juce::File newPresetFile;
         juce::String newPresetName;
 
-        if (id == 1) {
+        if (id == factoryPresetId) {
             newPresetName = "";
             xml = juce::XmlDocument::parse(
                 juce::String::createStringFromData(
@@ -243,7 +243,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                 )
             );
             if (xml != nullptr) xml->setTagName(getSettingsTagName());
-        } else if (id == 2) {
+        } else if (id == userDefaultPresetId) {
             const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).
                 getChildFile("Pitchenga");
             newPresetFile = appDataDir.getChildFile("presets").getChildFile("user-default.xml");
@@ -261,8 +261,8 @@ Control::Control(PitchengaAudioProcessor& proc)
                 );
                 if (xml != nullptr) xml->setTagName(getSettingsTagName());
             }
-        } else if (id > 3) {
-            const auto index = static_cast<size_t>(id - 4);
+        } else if (id >= customPresetsStartId) {
+            const auto index = static_cast<size_t>(id - customPresetsStartId);
             if (index < presets.size()) {
                 newPresetFile = presets[index];
                 newPresetName = newPresetFile.getFileNameWithoutExtension();
@@ -296,19 +296,22 @@ Control::Control(PitchengaAudioProcessor& proc)
     if (processor.settings.currentPresetName.isNotEmpty()) {
         const auto presetName = processor.settings.currentPresetName;
         if (presetName == "User Default") {
-            comboPresets.setSelectedId(2, juce::NotificationType::dontSendNotification);
+            comboPresets.setSelectedId(userDefaultPresetId, juce::NotificationType::dontSendNotification);
             const auto appDataDir = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).
                 getChildFile("Pitchenga");
             const auto presetsDir = appDataDir.getChildFile("presets");
             currentPresetFile = presetsDir.getChildFile("user-default.xml");
         } else if (presetName == "Factory Default") {
-            comboPresets.setSelectedId(1, juce::NotificationType::dontSendNotification);
+            comboPresets.setSelectedId(factoryPresetId, juce::NotificationType::dontSendNotification);
             currentPresetFile = juce::File();
         } else {
             for (size_t i = 0; i < presets.size(); ++i) {
                 if (presets[i].getFileNameWithoutExtension() == presetName) {
                     // Item IDs for general presets start at 4
-                    comboPresets.setSelectedId(static_cast<int>(i) + 4, juce::NotificationType::dontSendNotification);
+                    comboPresets.setSelectedId(
+                        static_cast<int>(i) + customPresetsStartId,
+                        juce::NotificationType::dontSendNotification
+                    );
                     currentPresetFile = presets[i];
                     break;
                 }
@@ -543,12 +546,12 @@ void Control::saveCurrentPreset() {
 
 void Control::deleteCurrentPreset() {
     const int selectedId = comboPresets.getSelectedId();
-    if (selectedId >= 2) {
+    if (selectedId >= userDefaultPresetId) {
         // Delete User Default and flip to Factory Default
         if (currentPresetFile.deleteFile()) {
             currentPresetFile = juce::File();
             processor.settings.currentPresetName = "";
-            comboPresets.setSelectedId(1, juce::NotificationType::sendNotification);
+            comboPresets.setSelectedId(factoryPresetId, juce::NotificationType::sendNotification);
             refreshPresets();
         }
     }
@@ -615,8 +618,8 @@ void Control::updateButtonStates() {
     // Disable Save and Delete buttons for Factory Default (ID 1) and nothing selected (ID 0)
     const int selectedId = comboPresets.getSelectedId();
     buttonLoad.setEnabled(selectedId > 0);
-    buttonSave.setEnabled(selectedId > 1);
-    buttonDelete.setEnabled(selectedId > 1);
+    buttonSave.setEnabled(selectedId > factoryPresetId);
+    buttonDelete.setEnabled(selectedId > factoryPresetId);
 
     resized();
 }
@@ -717,10 +720,10 @@ void Control::resized() {
 
 void Control::refreshPresets() {
     comboPresets.clear(juce::NotificationType::dontSendNotification);
-    comboPresets.addItem("Factory Default", 1);
+    comboPresets.addItem("Factory Default", factoryPresetId);
 
     // User Default is always available now, falling back to Factory if file is missing
-    comboPresets.addItem("User Default", 2);
+    comboPresets.addItem("User Default", userDefaultPresetId);
 
     comboPresets.addSeparator();
 
@@ -732,7 +735,7 @@ void Control::refreshPresets() {
         juce::Array<juce::File> files;
         presetsDir.findChildFiles(files, juce::File::findFiles, false, "*.xml");
 
-        int id = 4;
+        int id = customPresetsStartId;
         for (auto& file : files) {
             // Exclude user-default.xml from the general list as it has its own item
             if (file.getFileName() != "user-default.xml") {
@@ -747,7 +750,7 @@ void Control::refreshPresets() {
     if (currentPresetFile.existsAsFile()) {
         const auto activeFileName = currentPresetFile.getFileName();
         if (activeFileName == "user-default.xml") {
-            comboPresets.setSelectedId(2, juce::NotificationType::dontSendNotification);
+            comboPresets.setSelectedId(userDefaultPresetId, juce::NotificationType::dontSendNotification);
             comboPresets.setText("User Default", juce::NotificationType::dontSendNotification);
         } else {
             // Find by filename
@@ -755,7 +758,10 @@ void Control::refreshPresets() {
             bool found = false;
             for (size_t i = 0; i < presets.size(); ++i) {
                 if (presets[i].getFileNameWithoutExtension() == activeNameNoExt) {
-                    comboPresets.setSelectedId(static_cast<int>(i) + 4, juce::NotificationType::dontSendNotification);
+                    comboPresets.setSelectedId(
+                        static_cast<int>(i) + customPresetsStartId,
+                        juce::NotificationType::dontSendNotification
+                    );
                     found = true;
                     break;
                 }
