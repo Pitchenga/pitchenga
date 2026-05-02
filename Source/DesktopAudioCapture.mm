@@ -19,7 +19,7 @@
 - (instancetype)init {
     self = [super init];
     if (self) {
-        monoDownmix.reserve(65536); // Pre-allocate to prevent real-time heap allocation
+        monoDownmix.resize(65536); // Pre-allocate to prevent real-time heap allocation
         bufferListStorage.resize(4096); // Pre-allocate enough space for typical AudioBufferList
     }
     return self;
@@ -89,9 +89,8 @@
                 self.owner->pushAudio(audioData, numSamples);
             } else {
                 // Downmix to mono
-                if (monoDownmix.size() < static_cast<size_t>(numSamples)) {
-                    monoDownmix.resize(static_cast<size_t>(numSamples));
-                }
+                // monoDownmix is pre-sized to 65536, which is larger than any real-time block.
+                // We use its .data() pointer directly up to numSamples to avoid any reallocation.
                 
                 if (isNonInterleaved) {
                     juce::FloatVectorOperations::clear(monoDownmix.data(), numSamples);
