@@ -176,7 +176,7 @@ void RollStft::paintLabel(
         );
         graphics.drawText(
             name,
-            juce::Rectangle(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
+            juce::Rectangle<float>(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
             juce::Justification::centredLeft,
             false
         );
