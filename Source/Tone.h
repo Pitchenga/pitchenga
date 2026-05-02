@@ -47,4 +47,10 @@ public:
         }
         return result;
     }
+
+    static juce::String getToneName(const int index, const bool isLetterNotation) {
+        return isLetterNotation
+                   ? chromaticScale[static_cast<size_t>(index)].letterNotation
+                   : chromaticScale[static_cast<size_t>(index)].toneName;
+    }
 };

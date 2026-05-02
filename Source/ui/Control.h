@@ -45,6 +45,7 @@ public:
         std::atomic<bool> isCaptureEnabled = false;
         bool isShowTweakPanel = false;
         std::atomic<bool> isRawMode = false;
+        std::atomic<bool> isLetterNotation = false;
 
         juce::String externalPluginDescriptionXml;
         juce::String externalPluginStateBase64;
@@ -97,6 +98,7 @@ private:
     juce::TextButton toggleRoll{"Roll"};
     juce::TextButton toggleStrobe{"Strobe"};
     juce::TextButton toggleRaw{"Raw"};
+    juce::TextButton toggleLetter{"Letter"};
     juce::TextButton toggleRollType{"STFT"};
     juce::TextButton toggleOrientation{"Flip"};
     juce::TextButton toggleIsFreezeRoll{"Freeze"};

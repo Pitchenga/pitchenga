@@ -139,6 +139,13 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
+    toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Solfege" : "Letter");
+    toggleLetter.onClick = [this] {
+        processor.settings.isLetterNotation = !processor.settings.isLetterNotation;
+        toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Solfege" : "Letter");
+        if (onVisibilityChanged) onVisibilityChanged();
+    };
+
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? "STFT" : "CQT");
     toggleRollType.onClick = [this] {
         processor.settings.isUseRollStft = !processor.settings.isUseRollStft;
@@ -436,6 +443,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(toggleOrientation);
     tweakPanel.addAndMakeVisible(toggleSmoke);
     tweakPanel.addAndMakeVisible(toggleForrest);
+    tweakPanel.addAndMakeVisible(toggleLetter);
     tweakPanel.addAndMakeVisible(buttonSaveAs);
     tweakPanel.addAndMakeVisible(buttonDelete);
 
@@ -564,6 +572,7 @@ void Control::updateVisibilityFromState() {
     toggleOrientation.setButtonText(processor.settings.isRollHorizontal ? "Flip" : "Flop");
     toggleStrobe.setToggleState(processor.settings.isShowStrobe, juce::NotificationType::dontSendNotification);
     toggleRaw.setToggleState(processor.settings.isRawMode, juce::NotificationType::dontSendNotification);
+    toggleLetter.setButtonText(processor.settings.isLetterNotation ? "Solfege" : "Letter");
     toggleSmoke.setToggleState(processor.settings.isShowSmoke, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
@@ -621,7 +630,7 @@ void Control::resized() {
     const juce::Font font = juce::FontOptions(15.0f).withStyle("Bold");
 
     // Calculate row height
-    int rowHeight = static_cast<int>(font.getHeight() + 8.0f);
+    const int rowHeight = static_cast<int>(font.getHeight() + 8.0f);
 
     // Create the top row
     auto topRow = bounds.removeFromTop(rowHeight);
@@ -641,6 +650,8 @@ void Control::resized() {
             textWidth = juce::GlyphArrangement::getStringWidth(font, "STFT");
         } else if (&button == &toggleOrientation) {
             textWidth = juce::GlyphArrangement::getStringWidth(font, "Flop");
+        } else if (&button == &toggleLetter) {
+            textWidth = juce::GlyphArrangement::getStringWidth(font, "Solfege");
         }
         const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 8;
         button.setBounds(container.removeFromRight(buttonWidth));
@@ -694,6 +705,7 @@ void Control::resized() {
 
         positionButtonRight(toggleStrobe, panelBounds);
         positionButtonRight(toggleLayoutPivot, panelBounds);
+        positionButtonRight(toggleLetter, panelBounds);
     }
 }
 
@@ -774,6 +786,7 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isCaptureEnabled", isCaptureEnabled);
     xml.setAttribute("isShowTweakPanel", isShowTweakPanel);
     xml.setAttribute("isRawMode", isRawMode);
+    xml.setAttribute("isLetterNotation", isLetterNotation);
 
     if (externalPluginDescriptionXml.isNotEmpty()) {
         xml.createNewChildElement("ExternalPluginDescription")->addTextElement(externalPluginDescriptionXml);
@@ -817,6 +830,7 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isCaptureEnabled = xml.getBoolAttribute("isCaptureEnabled", isCaptureEnabled);
     isShowTweakPanel = xml.getBoolAttribute("isShowTweakPanel", isShowTweakPanel);
     isRawMode = xml.getBoolAttribute("isRawMode", isRawMode);
+    isLetterNotation = xml.getBoolAttribute("isLetterNotation", isLetterNotation);
 
     externalPluginDescriptionXml = {};
     if (auto* descriptionXmlElement = xml.getChildByName("ExternalPluginDescription")) {
@@ -829,7 +843,6 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     }
 
     isExternalPluginWindowOpen = xml.getBoolAttribute("isExternalPluginWindowOpen", isExternalPluginWindowOpen);
-
     splitRatio = static_cast<float>(xml.getDoubleAttribute("splitRatio", splitRatio));
     currentPresetName = xml.getStringAttribute("currentPresetName", currentPresetName);
 

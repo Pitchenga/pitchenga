@@ -1,10 +1,10 @@
 #include "Eye.h"
 #include <cmath>
 #include <algorithm>
-
+#include "../PluginProcessor.h"
 #include "../Tone.h"
 
-Eye::Eye() {
+Eye::Eye(PitchengaAudioProcessor& proc) : processor(proc) {
     smoothedOctaveBins.resize(totalFoldedBins, 0.0);
 }
 
@@ -94,12 +94,12 @@ void Eye::paintLabel(
     const float startRadius,
     const int i,
     const float sin,
-    const float cos
+    const float cos,
+    const juce::String& name
 ) {
     const float rLabel = baseRadius * startRadius;
     const float initialX = center.x + rLabel * cos;
     const float initialY = center.y + rLabel * sin;
-    const juce::String name = Tone::chromaticScale[static_cast<size_t>(i)].toneName;
 
     graphics.setFont(juce::FontOptions(baseRadius * 0.15f).withStyle("Bold"));
     const auto labelColor = calculateColor(0.1f, static_cast<float>(i));
@@ -173,7 +173,8 @@ void Eye::paintFrame(juce::Graphics& graphics) const {
         );
 
         constexpr float labelStartRadius = 0.83f;
-        paintLabel(graphics, center, outerRadius, labelStartRadius, i, sin, cos);
+        const juce::String name = Tone::getToneName(i, processor.settings.isLetterNotation);
+        paintLabel(graphics, center, outerRadius, labelStartRadius, i, sin, cos, name);
     }
 }
 

@@ -27,8 +27,8 @@ public:
 private:
     void buildFrame();
     static float freqToMidi(float freq);
-    static juce::String getNoteName(int midiNote);
-    static void paintLabel(juce::Graphics& graphics, int midiNote, float x, float stripY);
+    juce::String getNoteName(int midiNote) const;
+    void paintLabel(juce::Graphics& graphics, int midiNote, float x, float stripY) const;
 
     // fixme: restore the Pitch enum and use Pitch references instead of hard-coded midi
     float minMidi = RollStft::minMidiNote;

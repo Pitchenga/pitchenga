@@ -17,6 +17,7 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     processor(p),
     worker(p),
     needle(p),
+    eye(p),
     rollStft(p),
     rollCqt(p),
     splitter(p),
