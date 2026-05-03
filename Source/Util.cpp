@@ -1,5 +1,4 @@
 #include "Util.h"
-#include "version.h"
 
 bool Util::debugLogEnabled = true;
 // bool Util::debugLogEnabled = false;
