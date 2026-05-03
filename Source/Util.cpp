@@ -1,4 +1,5 @@
 #include "Util.h"
+#include <mutex>
 
 bool Util::debugLogEnabled = true;
 // bool Util::debugLogEnabled = false;
@@ -16,37 +17,42 @@ juce::String Util::getTimestamp() {
     return time.formatted("%H.%M.%S") + "." + juce::String(time.getMilliseconds()).paddedLeft('0', 3);
 }
 
+static std::once_flag initFlag;
+
 void Util::init() {
-    if (startTimestamp.isNotEmpty()) {
-        return;
-    }
+    std::call_once(
+        initFlag,
+        []() {
+            startTimestamp = getTimestamp();
+            const auto logsDirectory = getApplicationDirectory()
+                .getChildFile("logs");
+            logFile = logsDirectory.getChildFile("pitchenga-" + startTimestamp + ".log");
 
-    startTimestamp = getTimestamp();
-    const auto logsDirectory = getApplicationDirectory().getChildFile("logs");
-    logFile = logsDirectory.getChildFile("pitchenga-" + startTimestamp + ".log");
 
-    if (logsDirectory.isDirectory()) {
-        const auto oneWeekAgo = juce::Time::getCurrentTime() - juce::RelativeTime::weeks(1);
-        juce::Array<juce::File> logFiles;
-        logsDirectory.findChildFiles(logFiles, juce::File::findFiles, false, "pitchenga-*.log");
-        for (const auto& file : logFiles) {
-            if (file.getLastModificationTime() < oneWeekAgo) {
-                bool deleted = file.deleteFile();
-                if (!deleted) {
-                    DBG("Failed deleting logFile=" + file.getFullPathName());
+            if (logsDirectory.isDirectory()) {
+                const auto oneWeekAgo = juce::Time::getCurrentTime() - juce::RelativeTime::weeks(1);
+                juce::Array<juce::File> logFiles;
+                logsDirectory.findChildFiles(logFiles, juce::File::findFiles, false, "pitchenga-*.log");
+                for (const auto& file : logFiles) {
+                    if (file.getLastModificationTime() < oneWeekAgo) {
+                        bool deleted = file.deleteFile();
+                        if (!deleted) {
+                            DBG("Failed deleting logFile=" + file.getFullPathName());
+                        }
+                    }
                 }
             }
-        }
-    }
 
 #if JUCE_DEBUG
-    if (debugLogEnabled && logFile.exists()) {
-        bool deleted = logFile.deleteFile();
-        if (!deleted) {
-            DBG("Failed deleting logFile=" + logFile.getFullPathName());
-        }
-    }
+            if (debugLogEnabled && logFile.exists()) {
+                bool deleted = logFile.deleteFile();
+                if (!deleted) {
+                    DBG("Failed deleting logFile=" + logFile.getFullPathName());
+                }
+            }
 #endif
+        }
+    );
 }
 
 void Util::debug(const juce::String& message) {
