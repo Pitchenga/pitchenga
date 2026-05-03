@@ -10,6 +10,7 @@ PitchengaAudioProcessor::PitchengaAudioProcessor()
         .withInput("Input", juce::AudioChannelSet::stereo(), true)
         .withOutput("Output", juce::AudioChannelSet::stereo(), true)
     ) {
+    Util::init();
     juce::addDefaultFormatsToManager(formatManager);
 
     // Load plugin list

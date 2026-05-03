@@ -3,21 +3,13 @@
 bool Util::debugLogEnabled = true;
 // bool Util::debugLogEnabled = false;
 
-juce::String Util::startTimestamp = getTimestamp();
+juce::String Util::startTimestamp;
 
 juce::File Util::getApplicationDirectory() {
     return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
 }
 
-juce::File Util::logFile = getApplicationDirectory()
-    .getChildFile("logs")
-    .getChildFile("pitchenga-" + startTimestamp + ".log");
-
-[[maybe_unused]] static struct UtilInitializer {
-    UtilInitializer() {
-        Util::init();
-    }
-} utilInitializer;
+juce::File Util::logFile;
 
 juce::String Util::getTimestamp() {
     const auto time = juce::Time::getCurrentTime();
@@ -25,6 +17,15 @@ juce::String Util::getTimestamp() {
 }
 
 void Util::init() {
+    if (startTimestamp.isNotEmpty()) {
+        return;
+    }
+
+    startTimestamp = getTimestamp();
+    logFile = getApplicationDirectory()
+        .getChildFile("logs")
+        .getChildFile("pitchenga-" + startTimestamp + ".log");
+
     const auto logsDirectory = getApplicationDirectory().getChildFile("logs");
     if (logsDirectory.isDirectory()) {
         const auto oneWeekAgo = juce::Time::getCurrentTime() - juce::RelativeTime::weeks(1);
