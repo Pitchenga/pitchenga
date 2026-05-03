@@ -40,6 +40,11 @@ Pre-built binaries are provided in the Releases section.
 > mv ~/Downloads/Pitchenga-macOS/AU/Pitchenga.component ~/Library/Audio/Plug-Ins/Components/
 > ```
 - **Windows:** Available as a Standalone `.exe` and VST3.
+> **Important Windows Note:** Because the software is not yet digitally signed, Windows Defender SmartScreen may block the application from running. 
+> To bypass this: click **"More info"** and then select **"Run anyway"**.
+> 
+> If you receive an error about **"MSVCP140.dll not found"**, you may need to install the [Microsoft Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe).
+> 
 > **Installation:**
 > - Move the `Pitchenga.vst3` folder to: `C:\Program Files\Common Files\VST3\`
 
