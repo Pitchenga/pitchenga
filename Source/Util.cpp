@@ -26,8 +26,22 @@ juce::String Util::getTimestamp() {
 }
 
 void Util::init() {
+    const auto logsDirectory = getApplicationDirectory().getChildFile("logs");
+    if (logsDirectory.isDirectory()) {
+        const auto oneWeekAgo = juce::Time::getCurrentTime() - juce::RelativeTime::weeks(1);
+        juce::Array<juce::File> logFiles;
+        logsDirectory.findChildFiles(logFiles, juce::File::findFiles, false, "pitchenga-*.log");
+        for (const auto& file : logFiles) {
+            if (file.getLastModificationTime() < oneWeekAgo) {
+                bool deleted = file.deleteFile();
+                if (!deleted) {
+                    DBG("Failed deleting logFile=" + file.getFullPathName());
+                }
+            }
+        }
+    }
+
 #if JUCE_DEBUG
-    //fixme: Clean-up old log files
     if (debugLogEnabled && logFile.exists()) {
         bool deleted = logFile.deleteFile();
         if (!deleted) {
