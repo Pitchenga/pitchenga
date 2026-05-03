@@ -30,13 +30,29 @@
     // 2048 bytes is enough for an AudioBufferList with over 100 channels.
     alignas(16) char bufferListStorage[2048];
     AudioBufferList* audioBufferList = reinterpret_cast<AudioBufferList*>(bufferListStorage);
-    CMBlockBufferRef blockBuffer = nullptr;
     
+    size_t sizeNeeded = 0;
     OSStatus status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
+        sampleBuffer, 
+        &sizeNeeded, 
+        nullptr, 
+        0,
+        nullptr, 
+        nullptr, 
+        kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment, 
+        nullptr
+    );
+
+    if (status != noErr || sizeNeeded == 0 || sizeNeeded > sizeof(bufferListStorage)) {
+        return;
+    }
+
+    CMBlockBufferRef blockBuffer = nullptr;
+    status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
         sampleBuffer, 
         nullptr, 
         audioBufferList, 
-        sizeof(bufferListStorage),
+        sizeNeeded,
         nullptr, 
         nullptr, 
         kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment, 
