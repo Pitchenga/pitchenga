@@ -37,14 +37,14 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -am "chore: bump version to ${{ env.VERSION }}"
+          git commit -am "chore: bump version to v${{ env.VERSION }}"
           
           # Push the commit back to the production branch
           git push origin production
           
           # Create and push the tag to trigger release.yaml
-          git tag "${{ env.VERSION }}"
-          git push origin "${{ env.VERSION }}"
+          git tag "v${{ env.VERSION }}"
+          git push origin "v${{ env.VERSION }}"
 
 #      - name: Cascade Merge to dev
 #        run: |
