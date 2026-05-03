@@ -56,7 +56,7 @@ if (TARGET Pitchenga_AU)
             VERBATIM)
 endif()
 
-if (TARGET Pitchenga_VST3)
+if (APPLE AND TARGET Pitchenga_VST3)
     add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
             COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSAudioCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_VST3>/Info.plist\" || true"
             COMMENT "Removing system audio capture usage description from VST3 plist"
