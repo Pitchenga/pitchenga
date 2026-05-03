@@ -175,8 +175,9 @@ For every task:
 
 ### Commands
 
-- Build - run after completing every request and check if it succeeds:
-  `cmake -B cmake-build-debug && cmake --build cmake-build-debug`
+- Build:
+  - Proper OS: `cmake -B cmake-build-debug && cmake --build cmake-build-debug`
+  - Windows: `Import-Module "C:/Program Files/Microsoft Visual Studio/18/Community/Common7/Tools/Microsoft.VisualStudio.DevShell.dll"; Enter-VsDevShell -VsInstallPath "C:/Program Files/Microsoft Visual Studio/18/Community" -Arch amd64; cmake -B cmake-build-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug; cmake --build cmake-build-debug --target Pitchenga_Standalone`
 - Run locally:
   `killall Pitchenga; ./cmake-build-debug/Pitchenga_artefacts/Debug/Standalone/Pitchenga.app/Contents/MacOS/Pitchenga`
 - Release build: `cmake -B cmake-build-release && cmake --build cmake-build-release`
