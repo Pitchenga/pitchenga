@@ -20,15 +20,13 @@ juce::String Util::getTimestamp() {
 static std::once_flag initFlag;
 
 void Util::init() {
-    std::call_once(
-        initFlag,
-        []() {
-            startTimestamp = getTimestamp();
-            const auto logsDirectory = getApplicationDirectory()
-                .getChildFile("logs");
-            logFile = logsDirectory.getChildFile("pitchenga-" + startTimestamp + ".log");
+    std::call_once(initFlag, []() {
+        startTimestamp = getTimestamp();
+        const auto logsDirectory = getApplicationDirectory().getChildFile("logs");
+        logFile = logsDirectory.getChildFile("pitchenga-" + startTimestamp + ".log");
 
-
+#if JUCE_DEBUG
+        juce::Thread::launch([logsDirectory]() {
             if (logsDirectory.isDirectory()) {
                 const auto oneWeekAgo = juce::Time::getCurrentTime() - juce::RelativeTime::weeks(1);
                 juce::Array<juce::File> logFiles;
@@ -42,17 +40,9 @@ void Util::init() {
                     }
                 }
             }
-
-#if JUCE_DEBUG
-            if (debugLogEnabled && logFile.exists()) {
-                bool deleted = logFile.deleteFile();
-                if (!deleted) {
-                    DBG("Failed deleting logFile=" + logFile.getFullPathName());
-                }
-            }
+        });
 #endif
-        }
-    );
+    });
 }
 
 void Util::debug(const juce::String& message) {
