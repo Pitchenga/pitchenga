@@ -44,3 +44,10 @@ jobs:
           # Create and push the tag to trigger release.yaml
           git tag "${{ env.VERSION }}"
           git push origin "${{ env.VERSION }}"
+
+      - name: Cascade Merge to dev
+        run: |
+          git fetch origin dev
+          git checkout dev
+          git merge production --no-edit
+          git push origin dev
