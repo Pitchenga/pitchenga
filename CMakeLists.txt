@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(Pitchenga VERSION 26.0503.183728)
+project(Pitchenga VERSION 1.0.0)
 
 # Force static linking of the MSVC runtime to prevent "MSVCP140.dll not found" errors on Windows
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
