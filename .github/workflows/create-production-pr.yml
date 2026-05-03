@@ -15,7 +15,7 @@ jobs:
             - name: Get version
               id: get_version
               run: |
-                VERSION=$(grep -m 1 "project(Pitchenga VERSION" CMakeLists.txt | sed 's/.*VERSION \(.*\))/\1/')
+                VERSION=$(date +'%y.%m%d.%H%M%S')
                 echo "version=$VERSION" >> $GITHUB_OUTPUT
 
             - name: Create Pull Request

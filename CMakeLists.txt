@@ -173,11 +173,19 @@ if (APPLE)
     if (TARGET Pitchenga_AU)
         target_sources(Pitchenga_AU PRIVATE Source/DesktopAudioCapture.mm)
         target_compile_definitions(Pitchenga_AU PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
+
+        add_custom_command(TARGET Pitchenga_AU POST_BUILD
+            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_AU>"
+            VERBATIM)
     endif()
 
     if (TARGET Pitchenga_VST3)
         target_sources(Pitchenga_VST3 PRIVATE Source/DesktopAudioCapture.mm)
         target_compile_definitions(Pitchenga_VST3 PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
+
+        add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
+            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_VST3>"
+            VERBATIM)
     endif()
 else()
     target_sources(Pitchenga PRIVATE Source/DesktopAudioCapture.cpp)
