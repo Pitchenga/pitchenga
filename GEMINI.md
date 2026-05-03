@@ -168,10 +168,10 @@ For every task:
 
 ### Commands
 
-- Install: `cmake -B cmake-build-debug`
-- Build - run after completing every request and check if it succeeds: `cmake --build cmake-build-debug`
+- Build - run after completing every request and check if it succeeds: `cmake -B cmake-build-debug && cmake --build cmake-build-debug`
 - Run locally:
   `killall Pitchenga; ./cmake-build-debug/Pitchenga_artefacts/Debug/Standalone/Pitchenga.app/Contents/MacOS/Pitchenga`
+- Release build: `cmake -B cmake-build-release && cmake --build cmake-build-release`
 
 ### Layout
 

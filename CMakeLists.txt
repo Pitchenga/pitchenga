@@ -46,12 +46,12 @@ juce_add_plugin(Pitchenga
         MICROPHONE_PERMISSION_ENABLED TRUE
         PLUGINHOST_AU TRUE
         PLUGINHOST_VST3 TRUE
-        PLIST_TO_MERGE "<plist><dict><key>NSScreenCaptureUsageDescription</key><string>Pitchenga needs screen capture access to visualize your desktop audio.</string></dict></plist>")
+        PLIST_TO_MERGE "<plist><dict><key>NSMicrophoneUsageDescription</key><string>Pitchenga needs microphone access to visualize audio.</string><key>NSAudioCaptureUsageDescription</key><string>Pitchenga needs system audio access to visualize your desktop audio.</string></dict></plist>")
 
 if (TARGET Pitchenga_AU)
     add_custom_command(TARGET Pitchenga_AU POST_BUILD
-            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSScreenCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist\" || true"
-            COMMENT "Removing screen capture usage description from AU plist"
+            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSAudioCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist\" || true"
+            COMMENT "Removing system audio capture usage description from AU plist"
             VERBATIM)
 endif()
 
@@ -121,21 +121,38 @@ if (APPLE)
     target_link_libraries(Pitchenga PRIVATE
             "-framework CoreMedia"
             "-framework AVFoundation")
+    set_target_properties(Pitchenga_Standalone PROPERTIES MACOSX_BUNDLE_GUI_IDENTIFIER "com.github.pitchenga.Pitchenga")
 
     if (TARGET Pitchenga_Standalone)
         target_link_libraries(Pitchenga_Standalone PRIVATE "-framework ScreenCaptureKit")
         target_sources(Pitchenga_Standalone PRIVATE Source/DesktopAudioCapture.mm)
         target_compile_definitions(Pitchenga_Standalone PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=1)
+
+        add_custom_command(TARGET Pitchenga_Standalone POST_BUILD
+            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" "$<TARGET_FILE_DIR:Pitchenga_Standalone>/../.."
+            COMMAND tccutil reset ScreenCapture com.github.pitchenga.Pitchenga || echo "Failed to reset TCC ScreenCapture permissions"
+            COMMENT "Force signing the Standalone app and resetting TCC ScreenCapture permissions"
+            VERBATIM)
     endif()
 
     if (TARGET Pitchenga_AU)
         target_sources(Pitchenga_AU PRIVATE Source/DesktopAudioCapture.mm)
         target_compile_definitions(Pitchenga_AU PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
+
+        add_custom_command(TARGET Pitchenga_AU POST_BUILD
+            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" "$<TARGET_FILE_DIR:Pitchenga_AU>/../.."
+            COMMENT "Force signing the AU plugin"
+            VERBATIM)
     endif()
 
     if (TARGET Pitchenga_VST3)
         target_sources(Pitchenga_VST3 PRIVATE Source/DesktopAudioCapture.mm)
         target_compile_definitions(Pitchenga_VST3 PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
+
+        add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
+            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" "$<TARGET_FILE_DIR:Pitchenga_VST3>/../.."
+            COMMENT "Force signing the VST3 plugin"
+            VERBATIM)
     endif()
 else()
     target_sources(Pitchenga PRIVATE Source/DesktopAudioCapture.cpp)
