@@ -12,8 +12,14 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v4
 
+            - name: Get version
+              id: get_version
+              run: |
+                VERSION=$(grep -m 1 "project(Pitchenga VERSION" CMakeLists.txt | sed 's/.*VERSION \(.*\))/\1/')
+                echo "version=$VERSION" >> $GITHUB_OUTPUT
+
             - name: Create Pull Request
               env:
                   GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
               run: |
-                  gh pr create --base review --head dev --title "Review" --body "Automated PR from dev to production." || echo "PR already exists or could not be created"
+                  gh pr create --base review --head dev --title "Review ${{ steps.get_version.outputs.version }}" --body "Automated PR from dev to production." || echo "PR already exists or could not be created"
