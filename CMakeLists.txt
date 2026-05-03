@@ -29,6 +29,7 @@ add_subdirectory(libs/eigen)
 # Define the exact plugin we are building
 juce_add_plugin(Pitchenga
         # Plugin metadata
+        COMPANY_NAME "Pitchenga"
         PLUGIN_MANUFACTURER_CODE "Ptng"  # Exactly 4 chars
         PLUGIN_CODE "Ptng"               # Exactly 4 chars
         FORMATS AU VST3 Standalone       # The magic dual-compile flag
