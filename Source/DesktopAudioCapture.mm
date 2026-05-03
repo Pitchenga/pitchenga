@@ -9,7 +9,6 @@
 
 @interface DesktopAudioCaptureDelegate : NSObject <SCStreamOutput> {
     std::vector<float> monoDownmix;
-    std::vector<char> bufferListStorage;
 }
 @property (nonatomic, assign) DesktopAudioCapture* owner;
 @end
@@ -20,7 +19,6 @@
     self = [super init];
     if (self) {
         monoDownmix.resize(65536); // Pre-allocate to prevent real-time heap allocation
-        bufferListStorage.resize(4096); // Pre-allocate enough space for typical AudioBufferList
     }
     return self;
 }
@@ -28,30 +26,17 @@
 - (void)stream:(SCStream *)stream didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer ofType:(SCStreamOutputType)type {
     if (type != SCStreamOutputTypeAudio) return;
 
-    size_t sizeNeeded = 0;
-    OSStatus status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
-        sampleBuffer, 
-        &sizeNeeded, 
-        nullptr, 
-        0,
-        nullptr, 
-        nullptr, 
-        kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment, 
-        nullptr
-    );
-
-    if (status != noErr || sizeNeeded == 0 || bufferListStorage.size() < sizeNeeded) {
-        return;
-    }
-
-    AudioBufferList* audioBufferList = reinterpret_cast<AudioBufferList*>(bufferListStorage.data());
-    
+    // Use a fixed-size stack buffer for the AudioBufferList to avoid heap allocation.
+    // 2048 bytes is enough for an AudioBufferList with over 100 channels.
+    alignas(16) char bufferListStorage[2048];
+    AudioBufferList* audioBufferList = reinterpret_cast<AudioBufferList*>(bufferListStorage);
     CMBlockBufferRef blockBuffer = nullptr;
-    status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
+    
+    OSStatus status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
         sampleBuffer, 
         nullptr, 
         audioBufferList, 
-        sizeNeeded,
+        sizeof(bufferListStorage),
         nullptr, 
         nullptr, 
         kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment, 
