@@ -144,7 +144,12 @@ DesktopAudioCapture::~DesktopAudioCapture() {
     impl->delegate.owner = nullptr;
 }
 
-bool DesktopAudioCapture::isSupported() { return true; }
+bool DesktopAudioCapture::isSupported() {
+    if (@available(macOS 12.3, *)) {
+        return true;
+    }
+    return false;
+}
 
 void DesktopAudioCapture::start(double sampleRate) {
     if (impl->stream) return;

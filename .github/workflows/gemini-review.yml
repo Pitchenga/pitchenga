@@ -3,6 +3,8 @@ on:
     pull_request:
 #        types: [opened, synchronize]
         types: [opened]
+        branches-ignore:
+            - production
 
 jobs:
     trigger-review:
