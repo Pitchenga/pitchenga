@@ -1,4 +1,4 @@
-name: Auto-Create PR from dev to review
+name: Auto-Create PR from dev to production
 on:
     push:
         branches:
@@ -16,4 +16,4 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
               run: |
-                  gh pr create --base review --head dev --title "Review" --body "Automated PR from dev to production." || echo "PR already exists or could not be created"
+                  gh pr create --base production --head dev --title "Production" --body "Automated PR from dev to production." || echo "PR already exists or could not be created"
