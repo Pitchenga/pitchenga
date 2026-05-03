@@ -160,15 +160,15 @@ void Cqt::transform(
     // juce::dsp::FFT::perform is documented as out-of-place. 
     // Passing the same buffer for input and output causes data corruption on some platforms/engines.
     fft->perform(
-        reinterpret_cast<const juce::dsp::Complex<float>*>(fftWorkspaceIn.data()),
-        reinterpret_cast<juce::dsp::Complex<float>*>(fftWorkspaceOut.data()),
+        fftWorkspaceIn.data(),
+        fftWorkspaceOut.data(),
         false
     );
 
     // Wrap the spectrum via Eigen Map. 
     // We explicitly use Eigen::Unaligned to safely handle std::vector's default allocation on Windows.
     const Eigen::Map<const Eigen::VectorXcf, Eigen::Unaligned> signalFft(
-        reinterpret_cast<const std::complex<float>*>(fftWorkspaceOut.data()), 
+        (fftWorkspaceOut.data()),
         signalBlockSize
     );
 

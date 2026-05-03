@@ -122,18 +122,19 @@ if (APPLE)
             "-framework CoreMedia"
             "-framework AVFoundation")
 
-    target_sources(Pitchenga PRIVATE Source/DesktopAudioCapture.mm)
-
     if (TARGET Pitchenga_Standalone)
         target_link_libraries(Pitchenga_Standalone PRIVATE "-framework ScreenCaptureKit")
+        target_sources(Pitchenga_Standalone PRIVATE Source/DesktopAudioCapture.mm)
         target_compile_definitions(Pitchenga_Standalone PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=1)
     endif()
 
     if (TARGET Pitchenga_AU)
+        target_sources(Pitchenga_AU PRIVATE Source/DesktopAudioCapture.mm)
         target_compile_definitions(Pitchenga_AU PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
     endif()
 
     if (TARGET Pitchenga_VST3)
+        target_sources(Pitchenga_VST3 PRIVATE Source/DesktopAudioCapture.mm)
         target_compile_definitions(Pitchenga_VST3 PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
     endif()
 else()
