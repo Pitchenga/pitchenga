@@ -27,8 +27,7 @@
     if (type != SCStreamOutputTypeAudio) return;
 
     // Use a fixed-size stack buffer for the AudioBufferList to avoid heap allocation.
-    // 2048 bytes is enough for an AudioBufferList with over 100 channels.
-    alignas(16) char bufferListStorage[2048];
+    alignas(16) char bufferListStorage[DesktopAudioCapture::maximumBufferListSize];
     AudioBufferList* audioBufferList = reinterpret_cast<AudioBufferList*>(bufferListStorage);
     
     size_t sizeNeeded = 0;
@@ -43,7 +42,7 @@
         nullptr
     );
 
-    if (status != noErr || sizeNeeded == 0 || sizeNeeded > sizeof(bufferListStorage)) {
+    if (status != noErr || sizeNeeded == 0 || sizeNeeded > DesktopAudioCapture::maximumBufferListSize) {
         return;
     }
 

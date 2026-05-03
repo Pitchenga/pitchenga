@@ -17,6 +17,8 @@ public:
 
     void pushAudio(const float* data, int numSamples);
 
+    static constexpr int maximumBufferListSize = 2048; // Space for AudioBufferList with > 100 channels
+
 private:
     struct Impl;
     std::unique_ptr<Impl> impl;
