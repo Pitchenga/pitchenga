@@ -9,7 +9,6 @@
 
 @interface DesktopAudioCaptureDelegate : NSObject <SCStreamOutput> {
     std::vector<float> monoDownmix;
-    std::vector<char> bufferListStorage;
 }
 @property (nonatomic, assign) DesktopAudioCapture* owner;
 @end
@@ -20,7 +19,6 @@
     self = [super init];
     if (self) {
         monoDownmix.resize(65536); // Pre-allocate to prevent real-time heap allocation
-        bufferListStorage.resize(4096); // Pre-allocate enough space for typical AudioBufferList
     }
     return self;
 }
@@ -28,6 +26,11 @@
 - (void)stream:(SCStream *)stream didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer ofType:(SCStreamOutputType)type {
     if (type != SCStreamOutputTypeAudio) return;
 
+    // Use a fixed-size stack buffer for the AudioBufferList to avoid heap allocation.
+    // 2048 bytes is enough for an AudioBufferList with over 100 channels.
+    alignas(16) char bufferListStorage[2048];
+    AudioBufferList* audioBufferList = reinterpret_cast<AudioBufferList*>(bufferListStorage);
+    
     size_t sizeNeeded = 0;
     OSStatus status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
         sampleBuffer, 
@@ -40,12 +43,10 @@
         nullptr
     );
 
-    if (status != noErr || sizeNeeded == 0 || bufferListStorage.size() < sizeNeeded) {
+    if (status != noErr || sizeNeeded == 0 || sizeNeeded > sizeof(bufferListStorage)) {
         return;
     }
 
-    AudioBufferList* audioBufferList = reinterpret_cast<AudioBufferList*>(bufferListStorage.data());
-    
     CMBlockBufferRef blockBuffer = nullptr;
     status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
         sampleBuffer, 
@@ -80,8 +81,8 @@
             numSamples = static_cast<int>(audioBufferList->mBuffers[0].mDataByteSize / (sizeof(float) * static_cast<size_t>(numChannels)));
         }
         
-        // Safety check to ensure we don't overflow the pre-allocated monoDownmix
-        numSamples = std::min(numSamples, static_cast<int>(monoDownmix.size()));
+        // Safety check to ensure we don't exceed our pre-allocated processing and ring buffers
+        numSamples = juce::jmin (numSamples, static_cast<int> (monoDownmix.size()));
 
         if (self.owner && audioBufferList->mBuffers[0].mData != nullptr) {
             if (numChannels == 1) {

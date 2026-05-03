@@ -29,9 +29,18 @@ Pitchenga is a real-time music visualization application and audio plugin.
 - CRITICAL: Do NOT shorten words, e.g. "horizontal" - GOOD, "horiz" - BAD; "context" - GOOD, "ctx" - bad.
 - CRITICAL: Do NOT put multiple invocations on one line.
 
+### STRICT ADHERENCE
+
+- **ZERO-CORRECTION POLICY:** You are forbidden from "improving" or "fixing" naming conventions, prefixes, or standard
+  library choices unless the user explicitly used the word "Fix" or "Change" regarding that specific string in the
+  current turn. Assume all "inconsistencies" you see on disk are functional requirements.
+- **PROTOCOL INTEGRITY:** If your evidence in Step 3 and Step 5 contradicts your answers in Steps 6 through 9 of the
+  pre-flight check, you have committed a Protocol Fraud. You must immediately stop, acknowledge the specific
+  contradiction, and ABORT the change.
+
 ### MANDATORY PRE-FLIGHT CHECK
 
-The pre_flight block MUST be included in every response containing a `replace` or `write_file` call - this has
+The `pre_flight` block MUST be included in every response containing a `replace` or `write_file` call - this has
 ABSOLUTE PRIORITY over any 'minimal output' or 'concise' guidelines. This is a hard rule and cannot be violated.
 Before invoking the `replace` or `write_file` or `WriteFile` tools, you MUST output a `pre_flight` block.
 (Response output only - do NOT write it to a file.)
@@ -42,13 +51,13 @@ If you fail to recognize a revert or rule violation, you will be terminated.
 1. File: [Path]
 2. Read before write check: Did you perform 'read_file' in this turn?
    -> IF NO: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
-3. 'Current Code' on Disk (Evidence): `[Paste read_file output here]`
+3. 'Current Code' on Disk (Evidence): `[Paste EXACT read_file output here]`
 4. No-revert Audit: Does your 'old_string' match the most recent 'read_file' output EXACTLY?
    -> IF NO: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
-5. Proposed Code: `[The exact literal string you are passing to the tool]`
-6. No-revert double-check: compare the snippets above. Does the 'Current Code' contain logic, naming, or comments
-   missing from 'Proposed Code'?
-   -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
+5. Proposed Code: `[The EXACT literal string you are passing to the tool]`
+6. Discrepancy List: List every single character or word that is in 'Current Code' (Step 3) but missing or changed in 
+   'Proposed Code' (Step 5). If there are any differences (including "helpful" additions), you MUST list them here.
+   If they were not explicitly requested in this turn, you MUST state "UNAUTHORIZED CHANGE" and ABORT.
 7. Rules Audit: Does 'Proposed Code' violate any of the CRITICAL RULES above?
    -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
 8. Scope Audit: Does 'Proposed Code' contain any changes that are not related to the user's CURRENT request?

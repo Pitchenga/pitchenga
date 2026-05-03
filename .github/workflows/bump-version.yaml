@@ -19,6 +19,7 @@ jobs:
         with:
           # Use PAT so that pushing the new tag triggers the release.yaml workflow
           token: ${{ secrets.JULES_AUTOMATION_PAT }}
+          fetch-depth: 0 # Fetch all history so merge works correctly
 
       - name: Generate Version
         id: gen_version
