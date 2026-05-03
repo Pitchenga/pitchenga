@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(Pitchenga VERSION 26.0502.235219)
+project(Pitchenga VERSION 26.0503.002610)
 
 # Auto-initialize Git submodules if they are missing
 find_package(Git QUIET)
