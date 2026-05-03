@@ -1,6 +1,6 @@
 # Pitchenga
 
-**See your sound: the "perfect pitch" superpower for mere mortals.**
+**See your sound: the perfect pitch superpower for mere mortals.**
 
 - Pitchenga is a high-precision, real-time harmonic visualizer - AU/VST plugin and standalone app. Designed to take the guesswork out of intonation, transcription, and sound design, it acts as a bionic ear — giving you artificial chromesthesia that tells you exactly what is happening in your audio.
 - Whether you are checking your vocal pitch, tuning a tricky synth patch, or transcribing a dense chord progression, Pitchenga provides razor-sharp visual clarity.
@@ -40,6 +40,11 @@ Pre-built binaries are provided in the Releases section.
 > mv ~/Downloads/Pitchenga-macOS/AU/Pitchenga.component ~/Library/Audio/Plug-Ins/Components/
 > ```
 - **Windows:** Available as a Standalone `.exe` and VST3.
+> **Important Windows Note:** Because the software is not yet digitally signed, Windows Defender SmartScreen may block the application from running. 
+> To bypass this: click **"More info"** and then select **"Run anyway"**.
+> 
+> If you receive an error about **"MSVCP140.dll not found"**, you may need to install the [Microsoft Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe).
+> 
 > **Installation:**
 > - Move the `Pitchenga.vst3` folder to: `C:\Program Files\Common Files\VST3\`
 
