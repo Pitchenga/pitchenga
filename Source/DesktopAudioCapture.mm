@@ -82,6 +82,9 @@
         } else {
             numSamples = static_cast<int>(audioBufferList->mBuffers[0].mDataByteSize / (sizeof(float) * static_cast<size_t>(numChannels)));
         }
+        
+        // Safety check to ensure we don't overflow the pre-allocated monoDownmix
+        numSamples = std::min(numSamples, static_cast<int>(monoDownmix.size()));
 
         if (self.owner && audioBufferList->mBuffers[0].mData != nullptr) {
             if (numChannels == 1) {
