@@ -1,6 +1,6 @@
 # Pitchenga
 
-**See your sound: the "perfect pitch" superpower for mere mortals.**
+**See your sound: the perfect pitch superpower for mere mortals.**
 
 - Pitchenga is a high-precision, real-time harmonic visualizer - AU/VST plugin and standalone app. Designed to take the guesswork out of intonation, transcription, and sound design, it acts as a bionic ear — giving you artificial chromesthesia that tells you exactly what is happening in your audio.
 - Whether you are checking your vocal pitch, tuning a tricky synth patch, or transcribing a dense chord progression, Pitchenga provides razor-sharp visual clarity.
