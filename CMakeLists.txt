@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(Pitchenga VERSION 26.0503.010848)
+project(Pitchenga VERSION 26.0503.102955)
 
 # Force static linking of the MSVC runtime to prevent "MSVCP140.dll not found" errors on Windows
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -33,8 +33,8 @@ juce_add_plugin(Pitchenga
         PLUGIN_CODE "Ptng"               # Exactly 4 chars
         FORMATS AU VST3 Standalone       # The magic dual-compile flag
         PRODUCT_NAME "Pitchenga"
-        ICON_BIG "Source/Assets/pitchenga-white.png"
-        ICON_SMALL "Source/Assets/pitchenga-white.png"
+        ICON_BIG "Source/Assets/pitchenga-squircle.png"
+        ICON_SMALL "Source/Assets/pitchenga-squircle.png"
 
         # Architecture rules
         IS_SYNTH FALSE                   # It's an effect/visualizer, not a synth generator
