@@ -44,14 +44,22 @@ juce_add_plugin(Pitchenga
         EDITOR_WANTS_KEYBOARD_FOCUS FALSE
         COPY_PLUGIN_AFTER_BUILD TRUE      # Automatically drops the AU into your Mac's plugin folder
         MICROPHONE_PERMISSION_ENABLED TRUE
+        MICROPHONE_PERMISSION_TEXT "Pitchenga needs microphone access to visualize your audio."
         PLUGINHOST_AU TRUE
         PLUGINHOST_VST3 TRUE
-        PLIST_TO_MERGE "<plist><dict><key>NSMicrophoneUsageDescription</key><string>Pitchenga needs microphone access to visualize audio.</string><key>NSAudioCaptureUsageDescription</key><string>Pitchenga needs system audio access to visualize your desktop audio.</string></dict></plist>")
+        PLIST_TO_MERGE "<plist><dict><key>NSAudioCaptureUsageDescription</key><string>Pitchenga needs system audio access to visualize your desktop audio.</string></dict></plist>")
 
 if (TARGET Pitchenga_AU)
     add_custom_command(TARGET Pitchenga_AU POST_BUILD
             COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSAudioCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist\" || true"
             COMMENT "Removing system audio capture usage description from AU plist"
+            VERBATIM)
+endif()
+
+if (TARGET Pitchenga_VST3)
+    add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
+            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSAudioCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_VST3>/Info.plist\" || true"
+            COMMENT "Removing system audio capture usage description from VST3 plist"
             VERBATIM)
 endif()
 
