@@ -144,6 +144,13 @@ DesktopAudioCapture::~DesktopAudioCapture() {
     impl->delegate.owner = nullptr;
 }
 
+bool DesktopAudioCapture::isSupported() {
+    if (@available(macOS 12.3, *)) {
+        return true;
+    }
+    return false;
+}
+
 void DesktopAudioCapture::start(double sampleRate) {
     if (impl->stream) return;
 
@@ -218,6 +225,8 @@ struct DesktopAudioCapture::Impl {};
 DesktopAudioCapture::DesktopAudioCapture() : impl(std::make_unique<Impl>()) {}
 
 DesktopAudioCapture::~DesktopAudioCapture() {}
+
+bool DesktopAudioCapture::isSupported() { return false; }
 
 void DesktopAudioCapture::start(double) {}
 

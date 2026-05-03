@@ -1,6 +1,7 @@
 #include "Control.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "../PluginProcessor.h"
+#include "../DesktopAudioCapture.h"
 #include "../Util.h"
 #include "BinaryData.h"
 #include "version.h"
@@ -613,7 +614,7 @@ void Control::updateButtonStates() {
     micLabel.setVisible(isStandalone);
     knobEarLeft.setVisible(isStandalone);
     knobEarRight.setVisible(isStandalone);
-    toggleCapture.setVisible(isStandalone);
+    toggleCapture.setVisible(isStandalone && DesktopAudioCapture::isSupported());
 
     const bool rollActive = processor.settings.isShowRoll;
     toggleIsFreezeRoll.setVisible(rollActive);

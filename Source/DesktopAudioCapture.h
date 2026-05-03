@@ -9,6 +9,8 @@ public:
     DesktopAudioCapture();
     ~DesktopAudioCapture();
 
+    static bool isSupported();
+
     void start(double sampleRate);
     void stop();
 
