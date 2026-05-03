@@ -10,6 +10,7 @@
 
 class Math : public juce::Thread {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     explicit Math(PitchengaAudioProcessor& proc);
     ~Math() override;
 

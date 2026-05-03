@@ -110,11 +110,10 @@ bool PitchengaAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts)
 }
 
 void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages) {
+    juce::ScopedNoDenormals noDenormals;
     const auto totalNumInputChannels = getTotalNumInputChannels();
     const auto totalNumOutputChannels = getTotalNumOutputChannels();
     const int numSamples = buffer.getNumSamples();
-
-    juce::ScopedNoDenormals noDenormals;
 
     if (numSamples <= 0) return;
 
