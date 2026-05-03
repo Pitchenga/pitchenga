@@ -472,7 +472,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(buttonSaveAs);
     tweakPanel.addAndMakeVisible(buttonDelete);
 
-    buildTimestampLabel.setText(juce::String("Build ") + VERSION, juce::NotificationType::dontSendNotification);
+    buildTimestampLabel.setText(VERSION, juce::NotificationType::dontSendNotification);
     buildTimestampLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
     buildTimestampLabel.setFont(juce::FontOptions(13.0f));
     buildTimestampLabel.setJustificationType(juce::Justification::centredLeft);

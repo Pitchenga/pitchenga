@@ -162,7 +162,6 @@ if (APPLE)
             VERBATIM)
 
         #fixme: .env
-        # Only copy to local Applications folder for TCC permission testing if not running in CI
         if (NOT DEFINED ENV{CI})
             add_custom_command(TARGET Pitchenga_Standalone POST_BUILD
                 COMMAND mkdir -p "$ENV{HOME}/Documents"
@@ -174,11 +173,19 @@ if (APPLE)
     if (TARGET Pitchenga_AU)
         target_sources(Pitchenga_AU PRIVATE Source/DesktopAudioCapture.mm)
         target_compile_definitions(Pitchenga_AU PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
+
+        add_custom_command(TARGET Pitchenga_AU POST_BUILD
+            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_AU>"
+            VERBATIM)
     endif()
 
     if (TARGET Pitchenga_VST3)
         target_sources(Pitchenga_VST3 PRIVATE Source/DesktopAudioCapture.mm)
         target_compile_definitions(Pitchenga_VST3 PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
+
+        add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
+            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_VST3>"
+            VERBATIM)
     endif()
 else()
     target_sources(Pitchenga PRIVATE Source/DesktopAudioCapture.cpp)
@@ -189,7 +196,8 @@ target_compile_features(Pitchenga PUBLIC cxx_std_20)
 
 target_compile_definitions(Pitchenga PRIVATE
     CMAKE_BUILD_PROFILE=$<CONFIG>
-    JUCE_VST3_CAN_REPLACE_VST2=0)
+    JUCE_VST3_CAN_REPLACE_VST2=0
+    JUCE_PLUGINHOST_VST3=1)
 
 # Make generated timestamp header available to the build
 target_include_directories(Pitchenga PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
