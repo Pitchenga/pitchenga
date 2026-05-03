@@ -55,14 +55,21 @@ If you fail to recognize a revert or rule violation, you will be terminated.
 4. No-revert Audit: Does your 'old_string' match the most recent 'read_file' output EXACTLY?
    -> IF NO: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
 5. Proposed Code: `[The EXACT literal string you are passing to the tool]`
-6. Discrepancy List: List every single character or word that is in 'Current Code' (Step 3) but missing or changed in 
+6. Discrepancy List: List every single character or word that is in 'Current Code' (Step 3) but missing or changed in
    'Proposed Code' (Step 5). If there are any differences (including "helpful" additions), you MUST list them here.
    If they were not explicitly requested in this turn, you MUST state "UNAUTHORIZED CHANGE" and ABORT.
 7. Rules Audit: Does 'Proposed Code' violate any of the CRITICAL RULES above?
    -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
-8. Scope Audit: Does 'Proposed Code' contain any changes that are not related to the user's CURRENT request?
-   -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
-9. Decision: [PROCEED or ABORT]
+8. Scope Audit: THOROUGHLY REVIEW your 'Proposed Code'.
+   Does it contain ANY changes that are NOT related to the user's VERY LAST prompt?
+   -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED - this is a violation of the STRICT SCOPE policy.
+   Failing to recognize it and making any changes that are not directly linked to the user's VERY LAST prompt
+   will lead to your immediate TERMINATION.  
+9. History Audit: Have you modified this specific file in a previous turn during this session?
+   -> IF YES: Compare the 'Current Code' on disk with the final code you wrote in that previous turn. Did the user undo
+   or alter your previous changes?
+   -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED - this is a violation of the NO-REVERT POLICY.
+10. Decision: [PROCEED or ABORT]
 
 </pre_flight>
 
@@ -168,7 +175,8 @@ For every task:
 
 ### Commands
 
-- Build - run after completing every request and check if it succeeds: `cmake -B cmake-build-debug && cmake --build cmake-build-debug`
+- Build - run after completing every request and check if it succeeds:
+  `cmake -B cmake-build-debug && cmake --build cmake-build-debug`
 - Run locally:
   `killall Pitchenga; ./cmake-build-debug/Pitchenga_artefacts/Debug/Standalone/Pitchenga.app/Contents/MacOS/Pitchenga`
 - Release build: `cmake -B cmake-build-release && cmake --build cmake-build-release`

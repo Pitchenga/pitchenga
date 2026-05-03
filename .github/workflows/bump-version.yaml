@@ -28,7 +28,7 @@ jobs:
           VERSION=$(date +'%y.%m%d.%H%M%S')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Update CMakeLists.txt
+      - name: Create and Push Tag
         run: |
           # Replace the project version line
           sed -i "s/project(Pitchenga VERSION .*)/project(Pitchenga VERSION ${{ env.VERSION }})/" CMakeLists.txt
