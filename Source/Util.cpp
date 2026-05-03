@@ -22,11 +22,9 @@ void Util::init() {
     }
 
     startTimestamp = getTimestamp();
-    logFile = getApplicationDirectory()
-        .getChildFile("logs")
-        .getChildFile("pitchenga-" + startTimestamp + ".log");
-
     const auto logsDirectory = getApplicationDirectory().getChildFile("logs");
+    logFile = logsDirectory.getChildFile("pitchenga-" + startTimestamp + ".log");
+
     if (logsDirectory.isDirectory()) {
         const auto oneWeekAgo = juce::Time::getCurrentTime() - juce::RelativeTime::weeks(1);
         juce::Array<juce::File> logFiles;
