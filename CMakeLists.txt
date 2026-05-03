@@ -46,12 +46,12 @@ juce_add_plugin(Pitchenga
         MICROPHONE_PERMISSION_ENABLED TRUE
         PLUGINHOST_AU TRUE
         PLUGINHOST_VST3 TRUE
-        PLIST_TO_MERGE "<plist><dict><key>NSScreenCaptureUsageDescription</key><string>Pitchenga needs screen capture access to visualize your desktop audio.</string></dict></plist>")
+        PLIST_TO_MERGE "<plist><dict><key>NSMicrophoneUsageDescription</key><string>Pitchenga needs microphone access to visualize audio.</string><key>NSAudioCaptureUsageDescription</key><string>Pitchenga needs system audio access to visualize your desktop audio.</string></dict></plist>")
 
 if (TARGET Pitchenga_AU)
     add_custom_command(TARGET Pitchenga_AU POST_BUILD
-            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSScreenCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist\" || true"
-            COMMENT "Removing screen capture usage description from AU plist"
+            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSAudioCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist\" || true"
+            COMMENT "Removing system audio capture usage description from AU plist"
             VERBATIM)
 endif()
 
