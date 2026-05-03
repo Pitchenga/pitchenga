@@ -40,13 +40,10 @@
         nullptr
     );
 
-    if (status != noErr || sizeNeeded == 0) {
+    if (status != noErr || sizeNeeded == 0 || bufferListStorage.size() < sizeNeeded) {
         return;
     }
 
-    if (bufferListStorage.size() < sizeNeeded) {
-        bufferListStorage.resize(sizeNeeded);
-    }
     AudioBufferList* audioBufferList = reinterpret_cast<AudioBufferList*>(bufferListStorage.data());
     
     CMBlockBufferRef blockBuffer = nullptr;
