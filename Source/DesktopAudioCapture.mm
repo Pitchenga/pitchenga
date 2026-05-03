@@ -148,7 +148,7 @@ bool DesktopAudioCapture::isSupported() {
     if (@available(macOS 12.3, *)) {
         return true;
     }
-    return true;
+    return false;
 }
 
 void DesktopAudioCapture::start(double sampleRate) {
