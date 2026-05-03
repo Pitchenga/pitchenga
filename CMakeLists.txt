@@ -162,7 +162,6 @@ if (APPLE)
             VERBATIM)
 
         #fixme: .env
-        # Only copy to local Applications folder for TCC permission testing if not running in CI
         if (NOT DEFINED ENV{CI})
             add_custom_command(TARGET Pitchenga_Standalone POST_BUILD
                 COMMAND mkdir -p "$ENV{HOME}/Documents"
