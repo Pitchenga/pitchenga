@@ -163,17 +163,6 @@ void DesktopAudioCapture::start(double sampleRate) {
         
         SCStreamConfiguration *config = [[SCStreamConfiguration alloc] init];
         config.capturesAudio = YES;
-        
-        // Use KVC to set capturesVideo to NO if it exists in the runtime (macOS 14.4+)
-        // even if it's not in the headers we are compiling against.
-        @try {
-            [config setValue:@NO forKey:@"capturesVideo"];
-        } @catch (NSException* e) {
-            // Property doesn't exist on this OS version
-        }
-
-        config.width = 0;
-        config.height = 0;
         config.excludesCurrentProcessAudio = YES;
         config.sampleRate = static_cast<NSInteger>(sampleRate);
         config.channelCount = 2;

@@ -29,6 +29,7 @@ add_subdirectory(libs/eigen)
 # Define the exact plugin we are building
 juce_add_plugin(Pitchenga
         # Plugin metadata
+        BUNDLE_ID "com.github.pitchenga.Pitchenga"
         PLUGIN_MANUFACTURER_CODE "Ptng"  # Exactly 4 chars
         PLUGIN_CODE "Ptng"               # Exactly 4 chars
         FORMATS AU VST3 Standalone       # The magic dual-compile flag
@@ -126,6 +127,12 @@ if (APPLE)
         target_link_libraries(Pitchenga_Standalone PRIVATE "-framework ScreenCaptureKit")
         target_sources(Pitchenga_Standalone PRIVATE Source/DesktopAudioCapture.mm)
         target_compile_definitions(Pitchenga_Standalone PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=1)
+
+        add_custom_command(TARGET Pitchenga_Standalone POST_BUILD
+            COMMAND /usr/bin/codesign --force --sign "Apple Development" --options runtime "$<TARGET_FILE_DIR:Pitchenga_Standalone>/../.."
+            COMMAND tccutil reset ScreenCapture com.github.pitchenga.Pitchenga || echo "Failed to reset TCC ScreenCapture permissions"
+            COMMENT "Force signing the Standalone app and resetting TCC ScreenCapture permissions"
+            VERBATIM)
     endif()
 
     if (TARGET Pitchenga_AU)
