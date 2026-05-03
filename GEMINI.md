@@ -68,7 +68,7 @@ If you fail to recognize a revert or rule violation, you will be terminated.
 9. History Audit: Have you modified this specific file in a previous turn during this session?
    -> IF YES: Compare the 'Current Code' on disk with the final code you wrote in that previous turn. Did the user undo
    or alter your previous changes?
-   -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED -tThis is a violation of the NO-REVERT POLICY.
+   -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED - this is a violation of the NO-REVERT POLICY.
 10. Decision: [PROCEED or ABORT]
 
 </pre_flight>
