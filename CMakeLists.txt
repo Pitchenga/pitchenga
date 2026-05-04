@@ -150,6 +150,12 @@ if (APPLE)
             "-framework CoreMedia"
             "-framework AVFoundation")
 
+    if (DEFINED ENV{CI})
+        set(MAC_SIGNING_IDENTITY "Developer ID Application")
+    else()
+        set(MAC_SIGNING_IDENTITY "Apple Development")
+    endif()
+
     if (TARGET Pitchenga_Standalone)
         target_link_libraries(Pitchenga_Standalone PRIVATE "-framework ScreenCaptureKit")
         target_sources(Pitchenga_Standalone PRIVATE Source/DesktopAudioCapture.mm)
@@ -157,7 +163,7 @@ if (APPLE)
 
         # Force signing the Standalone app with stable developer ID while preserving JUCE entitlements
         add_custom_command(TARGET Pitchenga_Standalone POST_BUILD
-            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_Standalone>"
+            COMMAND /usr/bin/codesign --force --deep --sign "${MAC_SIGNING_IDENTITY}" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_Standalone>"
             VERBATIM)
 
         # Load copy destination from .env if it exists
@@ -187,7 +193,7 @@ if (APPLE)
         target_compile_definitions(Pitchenga_AU PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
 
         add_custom_command(TARGET Pitchenga_AU POST_BUILD
-            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_AU>"
+            COMMAND /usr/bin/codesign --force --deep --sign "${MAC_SIGNING_IDENTITY}" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_AU>"
             VERBATIM)
     endif()
 
@@ -196,7 +202,7 @@ if (APPLE)
         target_compile_definitions(Pitchenga_VST3 PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
 
         add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
-            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_VST3>"
+            COMMAND /usr/bin/codesign --force --deep --sign "${MAC_SIGNING_IDENTITY}" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_VST3>"
             VERBATIM)
     endif()
 else()
@@ -206,9 +212,7 @@ endif()
 
 target_compile_features(Pitchenga PUBLIC cxx_std_20)
 
-target_compile_definitions(Pitchenga PUBLIC
-    JUCE_PLUGINHOST_VST3=1
-    JUCE_PLUGINHOST_AU=1)
+target_compile_definitions(Pitchenga PUBLIC)
 
 target_compile_definitions(Pitchenga PRIVATE
     CMAKE_BUILD_PROFILE=$<CONFIG>
