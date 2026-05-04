@@ -25,12 +25,24 @@ Pitchenga is a real-time music visualization application and audio plugin.
 - CRITICAL: Do not add "NEW" or to comments.
 - CRITICAL: Prefer named constants in header file rather than hard-coded values.
 - CRITICAL: Prefer separate functions to long code blocks with a comment.
-- CRITICAL: Use strict camel-case for acronyms, e.g. "SqlRdbmsDao sqlRdbmsDao" - Good; "SQLRDBMSDAO" - BAD.
+- CRITICAL: Use strict camel-case for acronyms in identifiers,
+  e.g. "SqlRdbmsDao sqlRdbmsDao" - Good; "SQLRDBMSDAO" - BAD.
 - CRITICAL: Do NOT shorten words, e.g. "horizontal" - GOOD, "horiz" - BAD; "context" - GOOD, "ctx" - bad.
-- CRITICAL: Do NOT put multiple invocations on one line.
+- CRITICAL: Do NOT put multiple statements on one line, i.e. no multiple ";" on single line.
+
+### STRICT ADHERENCE
+
+- **ZERO-CORRECTION POLICY:** You are forbidden from "improving" or "fixing" naming conventions, prefixes, or standard
+  library choices unless the user explicitly used the word "Fix" or "Change" regarding that specific string in the
+  current turn. Assume all "inconsistencies" you see on disk are functional requirements.
+- **PROTOCOL INTEGRITY:** If your evidence in Step 3 and Step 5 contradicts your answers in Steps 6 through 9 of the
+  pre-flight check, you have committed a Protocol Fraud. You must immediately stop, acknowledge the specific
+  contradiction, and ABORT the change.
 
 ### MANDATORY PRE-FLIGHT CHECK
 
+The `pre_flight` block MUST be included in every response containing a `replace` or `write_file` call - this has
+ABSOLUTE PRIORITY over any 'minimal output' or 'concise' guidelines. This is a hard rule and cannot be violated.
 Before invoking the `replace` or `write_file` or `WriteFile` tools, you MUST output a `pre_flight` block.
 (Response output only - do NOT write it to a file.)
 If you fail to recognize a revert or rule violation, you will be terminated.
@@ -40,18 +52,25 @@ If you fail to recognize a revert or rule violation, you will be terminated.
 1. File: [Path]
 2. Read before write check: Did you perform 'read_file' in this turn?
    -> IF NO: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
-3. 'Current Code' on Disk (Evidence): `[Paste read_file output here]`
+3. 'Current Code' on Disk (Evidence): `[Paste EXACT read_file output here]`
 4. No-revert Audit: Does your 'old_string' match the most recent 'read_file' output EXACTLY?
    -> IF NO: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
-5. Proposed Code: `[The exact literal string you are passing to the tool]`
-6. No-revert double-check: compare the snippets above. Does the 'Current Code' contain logic, naming, or comments
-   missing from 'Proposed Code'?
-   -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
+5. Proposed Code: `[The EXACT literal string you are passing to the tool]`
+6. Discrepancy List: List every single character or word that is in 'Current Code' (Step 3) but missing or changed in
+   'Proposed Code' (Step 5). If there are any differences (including "helpful" additions), you MUST list them here.
+   If they were not explicitly requested in this turn, you MUST state "UNAUTHORIZED CHANGE" and ABORT.
 7. Rules Audit: Does 'Proposed Code' violate any of the CRITICAL RULES above?
    -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
-8. Scope Audit: Does 'Proposed Code' contain any changes that are not related to the user's CURRENT request?
-   -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED.
-9. Decision: [PROCEED or ABORT]
+8. Scope Audit: THOROUGHLY REVIEW your 'Proposed Code'.
+   Does it contain ANY changes that are NOT related to the user's VERY LAST prompt?
+   -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED - this is a violation of the STRICT SCOPE policy.
+   Failing to recognize it and making any changes that are not directly linked to the user's VERY LAST prompt
+   will lead to your immediate TERMINATION.  
+9. History Audit: Have you modified this specific file in a previous turn during this session?
+   -> IF YES: Compare the 'Current Code' on disk with the final code you wrote in that previous turn. Did the user undo
+   or alter your previous changes?
+   -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED - this is a violation of the NO-REVERT POLICY.
+10. Decision: [PROCEED or ABORT]
 
 </pre_flight>
 
@@ -156,11 +175,13 @@ For every task:
 - Runtime / deployment target: Debug
 
 ### Commands
-
-- Install: `cmake -B cmake-build-debug`
-- Build - run after completing every request and check if it succeeds: `cmake --build cmake-build-debug`
+- Install:
+  `cmake -G Ninja -B cmake-build-debug`
+- Build - run after completing every request and check if it succeeds:
+  `cmake --build cmake-build-debug`
 - Run locally:
   `killall Pitchenga; ./cmake-build-debug/Pitchenga_artefacts/Debug/Standalone/Pitchenga.app/Contents/MacOS/Pitchenga`
+- Release build: `cmake -G Ninja -B cmake-build-release && cmake --build cmake-build-release`
 
 ### Layout
 

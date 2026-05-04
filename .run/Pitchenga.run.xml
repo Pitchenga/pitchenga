@@ -1,5 +1,10 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Pitchenga" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Pitchenga" TARGET_NAME="Pitchenga" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Pitchenga" RUN_TARGET_NAME="Pitchenga_Standalone">
+  <configuration default="false" name="Pitchenga" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Pitchenga" TARGET_NAME="Pitchenga" CONFIG_NAME="Release" RUN_TARGET_PROJECT_NAME="Pitchenga" RUN_TARGET_NAME="Pitchenga_Standalone">
+    <method v="2">
+      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+  <configuration default="false" name="Pitchenga" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Pitchenga" TARGET_NAME="Pitchenga" CONFIG_NAME="Debug">
     <method v="2">
       <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
     </method>

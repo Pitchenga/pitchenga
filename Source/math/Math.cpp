@@ -94,13 +94,14 @@ double Math::amplitudeToDbRescaled(const double amplitude) {
     constexpr double zeroAmplitudeDb = -90.30899869919436;
     constexpr double zeroAmplitudeDbInv = 1.0 / zeroAmplitudeDb;
 
-    if (amplitude <= 0.00003051757) return 0.0;
+    if (amplitude <= 0.00003051757 || std::isnan(amplitude) || std::isinf(amplitude)) return 0.0;
 
     const double decibels = 20.0 * std::log10(amplitude);
     return std::max(0.0, 1.0 - decibels * zeroAmplitudeDbInv);
 }
 
 void Math::run() {
+    juce::ScopedNoDenormals noDenormals;
     while (!threadShouldExit()) {
         updateSampleRate(processor.getSampleRate());
 

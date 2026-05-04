@@ -1,8 +1,10 @@
 #include "Control.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "../PluginProcessor.h"
+#include "../DesktopAudioCapture.h"
 #include "../Util.h"
 #include "BinaryData.h"
+#include "version.h"
 
 struct Control::PluginListListener : juce::ChangeListener {
     explicit PluginListListener(Control& ownerControl) : owner(ownerControl) {}
@@ -140,25 +142,25 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
-    toggleLetter.setButtonText(processor.settings.isLetterNotation ? labelLetter : labelSolfege);
+    toggleLetter.setButtonText(processor.settings.isLetterNotation ? letter : solfege);
     toggleLetter.onClick = [this] {
         processor.settings.isLetterNotation = !processor.settings.isLetterNotation;
-        toggleLetter.setButtonText(processor.settings.isLetterNotation ? labelLetter : labelSolfege);
+        toggleLetter.setButtonText(processor.settings.isLetterNotation ? letter : solfege);
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    toggleRollType.setButtonText(processor.settings.isUseRollStft ? labelStft : labelCqt);
+    toggleRollType.setButtonText(processor.settings.isUseRollStft ? stft : cqt);
     toggleRollType.onClick = [this] {
         processor.settings.isUseRollStft = !processor.settings.isUseRollStft;
-        toggleRollType.setButtonText(processor.settings.isUseRollStft ? labelStft : labelCqt);
+        toggleRollType.setButtonText(processor.settings.isUseRollStft ? stft : cqt);
         updateButtonStates();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
-    toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? labelFlip : labelFlop);
+    toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? flip : flop);
     toggleFlipRoll.onClick = [this] {
         processor.settings.isFlipRollHorizontal = !processor.settings.isFlipRollHorizontal;
-        toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? labelFlip : labelFlop);
+        toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? flip : flop);
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
@@ -166,6 +168,12 @@ Control::Control(PitchengaAudioProcessor& proc)
     toggleForrest.onClick = [this] {
         processor.settings.isShowForrest = toggleForrest.getToggleState();
     };
+
+    micLabel.setText(mic, juce::NotificationType::dontSendNotification);
+    micLabel.setFont(juce::FontOptions(13.0f).withStyle("Bold"));
+    micLabel.setJustificationType(juce::Justification::centredLeft);
+    micLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
+    micLabel.setBorderSize(juce::BorderSize(0));
 
     volumeLabelLeft.setFont(juce::FontOptions(13.0f).withStyle("Bold"));
     volumeLabelLeft.setJustificationType(juce::Justification::centredLeft);
@@ -216,17 +224,17 @@ Control::Control(PitchengaAudioProcessor& proc)
         }
     };
 
-    buttonPlugs.setButtonText(labelPlugs);
+    buttonPlugs.setButtonText(plugs);
     buttonPlugs.onClick = [this] {
         showPlugsMenu();
     };
 
-    buttonPlug.setButtonText(labelPlug);
+    buttonPlug.setButtonText(plug);
     buttonPlug.onClick = [this] {
         processor.showExternalPluginEditor();
     };
 
-    buttonLoad.setButtonText(labelLoad);
+    buttonLoad.setButtonText(load);
     buttonLoad.onClick = [this] {
         const int id = comboPresets.getSelectedId();
         if (id == nonePresetId) return;
@@ -327,34 +335,36 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
-    buttonSave.setButtonText(labelSave);
+    buttonSave.setButtonText(save);
     buttonSave.onClick = [this] {
-        if (currentPresetFile == juce::File()) {
-            return;
-        }
-
         auto presetName = comboPresets.getText();
-        if (presetName == factoryDefaultPresetName) {
+        if (presetName == factoryDefaultPresetName || currentPresetFile == juce::File()) {
             presetName = userDefaultPresetName;
         }
+        juce::Component::SafePointer<Control> safeThis(this);
         juce::AlertWindow::showOkCancelBox(
             juce::MessageBoxIconType::QuestionIcon,
             saveConfirmTitle,
             saveConfirmMessage.replace("{NAME}", presetName),
-            labelSave,
+            save,
             "Cancel",
             nullptr,
             juce::ModalCallbackFunction::create(
-                [this](int result) {
-                    if (result != 0) {
-                        saveCurrentPreset();
+                [safeThis, presetName](int result) {
+                    if (result != 0 && safeThis != nullptr) {
+                        if (presetName == safeThis->userDefaultPresetName) {
+                            safeThis->currentPresetFile = Util::getApplicationDirectory()
+                                .getChildFile(safeThis->presetsDirectoryName)
+                                .getChildFile(safeThis->userDefaultPresetFileName);
+                        }
+                        safeThis->saveCurrentPreset();
                     }
                 }
             )
         );
     };
 
-    buttonSaveAs.setButtonText(labelSaveAs);
+    buttonSaveAs.setButtonText(saveAs);
     buttonSaveAs.onClick = [this] {
         const juce::String currentName = comboPresets.getText();
         juce::String suggestedName = currentName;
@@ -376,24 +386,25 @@ Control::Control(PitchengaAudioProcessor& proc)
         auto flags = juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles |
             juce::FileBrowserComponent::warnAboutOverwriting;
 
+        juce::Component::SafePointer<Control> safeThis(this);
         chooser->launchAsync(
             flags,
-            [this](const juce::FileChooser& fc) {
+            [safeThis](const juce::FileChooser& fc) {
                 auto result = fc.getResult();
-                if (result != juce::File()) {
+                if (result != juce::File() && safeThis != nullptr) {
                     if (result.getFileExtension() != ".xml") {
                         result = result.withFileExtension(".xml");
                     }
 
                     juce::MemoryBlock dummy;
-                    processor.getStateInformation(dummy);
+                    safeThis->processor.getStateInformation(dummy);
 
-                    const juce::XmlElement xml = processor.settings.createXml();
+                    const juce::XmlElement xml = safeThis->processor.settings.createXml();
                     if (result.getParentDirectory().createDirectory() && xml.writeTo(result)) {
-                        currentPresetFile = result;
-                        processor.settings.currentPresetName = result.getFileNameWithoutExtension();
-                        refreshPresets();
-                        updateButtonStates();
+                        safeThis->currentPresetFile = result;
+                        safeThis->processor.settings.currentPresetName = result.getFileNameWithoutExtension();
+                        safeThis->refreshPresets();
+                        safeThis->updateButtonStates();
                     } else {
                         juce::AlertWindow::showMessageBoxAsync(
                             juce::MessageBoxIconType::WarningIcon,
@@ -406,23 +417,24 @@ Control::Control(PitchengaAudioProcessor& proc)
         );
     };
 
-    buttonDelete.setButtonText(labelDelete);
+    buttonDelete.setButtonText(deletePreset);
     buttonDelete.onClick = [this] {
         if (currentPresetFile == juce::File()) {
             return;
         }
 
+        juce::Component::SafePointer<Control> safeThis(this);
         juce::AlertWindow::showOkCancelBox(
             juce::MessageBoxIconType::QuestionIcon,
             deleteConfirmTitle,
             deleteConfirmMessage.replace("{NAME}", comboPresets.getText()),
-            labelDelete,
+            deletePreset,
             "Cancel",
             nullptr,
             juce::ModalCallbackFunction::create(
-                [this](int result) {
-                    if (result != 0) {
-                        deleteCurrentPreset();
+                [safeThis](int result) {
+                    if (result != 0 && safeThis != nullptr) {
+                        safeThis->deleteCurrentPreset();
                     }
                 }
             )
@@ -434,6 +446,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(toggleRoll);
     addAndMakeVisible(toggleIsFreezeRoll);
 
+    addAndMakeVisible(micLabel);
     addAndMakeVisible(knobEarLeft);
     addAndMakeVisible(knobEarRight);
     addAndMakeVisible(volumeLabelLeft);
@@ -459,8 +472,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(buttonSaveAs);
     tweakPanel.addAndMakeVisible(buttonDelete);
 
-#include "build_timestamp.h"
-    buildTimestampLabel.setText(juce::String("Build ") + BUILD_TIMESTAMP, juce::NotificationType::dontSendNotification);
+    buildTimestampLabel.setText(VERSION, juce::NotificationType::dontSendNotification);
     buildTimestampLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
     buildTimestampLabel.setFont(juce::FontOptions(13.0f));
     buildTimestampLabel.setJustificationType(juce::Justification::centredLeft);
@@ -579,11 +591,11 @@ void Control::updateVisibilityFromState() {
     );
     toggleIsFreezeRoll.setToggleState(processor.settings.isFreezeRoll, juce::NotificationType::dontSendNotification);
 
-    toggleRollType.setButtonText(processor.settings.isUseRollStft ? labelStft : labelCqt);
-    toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? labelFlip : labelFlop);
+    toggleRollType.setButtonText(processor.settings.isUseRollStft ? stft : cqt);
+    toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? flip : flop);
     toggleStrobe.setToggleState(processor.settings.isShowStrobe, juce::NotificationType::dontSendNotification);
     toggleRaw.setToggleState(processor.settings.isRawMode, juce::NotificationType::dontSendNotification);
-    toggleLetter.setButtonText(processor.settings.isLetterNotation ? labelLetter : labelSolfege);
+    toggleLetter.setButtonText(processor.settings.isLetterNotation ? letter : solfege);
     toggleSmoke.setToggleState(processor.settings.isShowSmoke, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
 
@@ -599,9 +611,10 @@ void Control::updateButtonStates() {
     const bool isStandalone = processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone;
     buttonPlugs.setVisible(isStandalone);
     buttonPlug.setVisible(isStandalone);
+    micLabel.setVisible(isStandalone);
     knobEarLeft.setVisible(isStandalone);
     knobEarRight.setVisible(isStandalone);
-    toggleCapture.setVisible(isStandalone);
+    toggleCapture.setVisible(isStandalone && DesktopAudioCapture::isSupported());
 
     const bool rollActive = processor.settings.isShowRoll;
     toggleIsFreezeRoll.setVisible(rollActive);
@@ -659,11 +672,11 @@ void Control::resized() {
         if (!button.isVisible()) return;
         float textWidth = juce::GlyphArrangement::getStringWidth(font, button.getButtonText());
         if (&button == &toggleRollType) {
-            textWidth = juce::GlyphArrangement::getStringWidth(font, labelStft);
+            textWidth = juce::GlyphArrangement::getStringWidth(font, stft);
         } else if (&button == &toggleFlipRoll) {
-            textWidth = juce::GlyphArrangement::getStringWidth(font, labelFlop);
+            textWidth = juce::GlyphArrangement::getStringWidth(font, flop);
         } else if (&button == &toggleLetter) {
-            textWidth = juce::GlyphArrangement::getStringWidth(font, labelSolfege);
+            textWidth = juce::GlyphArrangement::getStringWidth(font, solfege);
         }
         const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 8;
         button.setBounds(container.removeFromRight(buttonWidth));
@@ -674,6 +687,13 @@ void Control::resized() {
     positionButton(toggleRoll, topRow);
 
     if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
+        topRow.removeFromLeft(6);
+
+        // Layout the "Mic" label
+        const float micTextWidth = juce::GlyphArrangement::getStringWidth(micLabel.getFont(), mic);
+        const int micWidth = static_cast<int>(std::ceil(micTextWidth)) + 4;
+        micLabel.setBounds(topRow.removeFromLeft(micWidth));
+
         // Layout the circular knobs (square, matching rowHeight)
         knobEarLeft.setBounds(topRow.removeFromLeft(rowHeight));
 

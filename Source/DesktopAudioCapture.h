@@ -9,6 +9,8 @@ public:
     DesktopAudioCapture();
     ~DesktopAudioCapture();
 
+    static bool isSupported();
+
     void start(double sampleRate);
     void stop();
 
@@ -16,6 +18,8 @@ public:
     std::vector<float>& getBuffer() { return ringBuffer; }
 
     void pushAudio(const float* data, int numSamples);
+
+    static constexpr std::size_t maximumBufferListSize = 2048; // Space for AudioBufferList with > 100 channels
 
 private:
     struct Impl;

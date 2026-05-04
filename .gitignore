@@ -42,6 +42,7 @@
 
 *.log
 .idea
+.env
 .DS_Store
 
 build/

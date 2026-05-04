@@ -13,7 +13,7 @@ public:
     static constexpr int binsPerSemitone = 9;
     static constexpr int totalFoldedBins = binsPerSemitone * semitonesPerOctave;
 
-    explicit Eye(PitchengaAudioProcessor& proc);
+    explicit Eye(PitchengaAudioProcessor& processor);
 
     void updateResults(const std::vector<double>& results);
 

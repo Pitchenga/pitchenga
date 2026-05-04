@@ -9,6 +9,7 @@
 
 class Cqt {
 public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     struct Config {
         int octaves = 6;
         int kernelOctaves = 1;
@@ -56,7 +57,8 @@ private:
     std::unique_ptr<juce::dsp::FFT> fft;
 
     // Buffers for FFT
-    std::vector<std::complex<float>> fftWorkspace;
+    std::vector<std::complex<float>> fftWorkspaceIn;
+    std::vector<std::complex<float>> fftWorkspaceOut;
 
     void updateContext();
     void computeSpectralKernels();

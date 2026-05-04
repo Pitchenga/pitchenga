@@ -1,0 +1,54 @@
+name: Bump Version and Tag
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - production
+
+jobs:
+  bump:
+    name: Bump Version and Create Tag
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Use PAT so that pushing the new tag triggers the release.yaml workflow
+          token: ${{ secrets.JULES_AUTOMATION_PAT }}
+          fetch-depth: 0 # Fetch all history so merge works correctly
+
+      - name: Generate Version
+        id: gen_version
+        run: |
+          # Generate version based on version.cmake format: yy.mmdd.HHMMSS
+          VERSION=$(date +'%y.%m%d.%H%M%S')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Create and Push Tag
+        run: |
+          # Replace the project version line
+          sed -i "s/project(Pitchenga VERSION .*)/project(Pitchenga VERSION ${{ env.VERSION }})/" CMakeLists.txt
+
+      - name: Commit and Push Tag
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: bump version to v${{ env.VERSION }}"
+          
+          # Push the commit back to the production branch
+          git push origin production
+          
+          # Create and push the tag to trigger release.yaml
+          git tag "v${{ env.VERSION }}"
+          git push origin "v${{ env.VERSION }}"
+
+#      - name: Cascade Merge to main
+#        run: |
+#          git fetch origin main
+#          git checkout main
+#          git merge production --no-edit
+#          git push origin main

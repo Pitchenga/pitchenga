@@ -51,12 +51,13 @@ void Cqt::updateContext() {
     windowIntegral = calculateHammingIntegral();
 
     signalBlockSize = nextPowerOf2(bandWidth(firstKernelBin));
-    normalizationFactor = 2.0 / (static_cast<double>(signalBlockSize) * windowIntegral);
+    normalizationFactor = 2.0 / (std::max(1.0, static_cast<double>(signalBlockSize)) * windowIntegral);
 
-    int fftOrder = static_cast<int>(std::round(std::log2(signalBlockSize)));
+    const int fftOrder = static_cast<int>(std::round(std::log2(std::max(1, signalBlockSize))));
     fft = std::make_unique<juce::dsp::FFT>(fftOrder);
 
-    fftWorkspace.resize(static_cast<size_t>(signalBlockSize), {0.0f, 0.0f});
+    fftWorkspaceIn.assign(static_cast<size_t>(signalBlockSize), {0.0f, 0.0f});
+    fftWorkspaceOut.assign(static_cast<size_t>(signalBlockSize), {0.0f, 0.0f});
 }
 
 std::vector<std::complex<float>> Cqt::temporalKernel(const int kernelBinIndex) const {
@@ -148,21 +149,28 @@ void Cqt::transform(
     const std::vector<float>& timeDomainSignal,
     std::vector<std::complex<float>>& cqtSpectrumOut
 ) {
+    juce::ScopedNoDenormals noDenormals;
     if (timeDomainSignal.size() < static_cast<size_t>(signalBlockSize)) return;
 
     // Perform complex Forward FFT on input signal
     for (int i = 0; i < signalBlockSize; ++i) {
-        fftWorkspace[static_cast<size_t>(i)] = {timeDomainSignal[static_cast<size_t>(i)], 0.0f};
+        fftWorkspaceIn[static_cast<size_t>(i)] = {timeDomainSignal[static_cast<size_t>(i)], 0.0f};
     }
 
+    // juce::dsp::FFT::perform is documented as out-of-place. 
+    // Passing the same buffer for input and output causes data corruption on some platforms/engines.
     fft->perform(
-        reinterpret_cast<const std::complex<float>*>(fftWorkspace.data()),
-        reinterpret_cast<std::complex<float>*>(fftWorkspace.data()),
+        fftWorkspaceIn.data(),
+        fftWorkspaceOut.data(),
         false
     );
 
-    // Wrap the spectrum via Eigen Map
-    const Eigen::Map<const Eigen::VectorXcf> signalFft(fftWorkspace.data(), signalBlockSize);
+    // Wrap the spectrum via Eigen Map. 
+    // We explicitly use Eigen::Unaligned to safely handle std::vector's default allocation on Windows.
+    const Eigen::Map<const Eigen::VectorXcf, Eigen::Unaligned> signalFft(
+        (fftWorkspaceOut.data()),
+        signalBlockSize
+    );
 
     // Standard Complex Sparse Matrix * Vector Multiplication into pre-allocated result
     cqtRes.noalias() = spectralKernels * signalFft;

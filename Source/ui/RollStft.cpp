@@ -176,60 +176,13 @@ void RollStft::paintLabel(
         );
         graphics.drawText(
             name,
-            juce::Rectangle(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
+            juce::Rectangle<float>(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
             juce::Justification::centredLeft,
             false
         );
     }
 
     graphics.restoreState();
-}
-
-void RollStft::paintFrame(juce::Graphics& graphics) const {
-    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
-    const int logicalWidth = isHorizontal ? getHeight() : getWidth();
-    const int logicalHeight = isHorizontal ? getWidth() : getHeight();
-
-    const auto totalHeight = static_cast<float>(logicalHeight);
-    const float labelAreaHeight = getLabelAreaHeight();
-    const float plotHeight = std::max(1.0f, totalHeight - labelAreaHeight);
-
-    const juce::Font labelFont = Common::getLabelFont();
-    graphics.setFont(labelFont);
-    const float labelHeight = labelFont.getHeight();
-    const float maxTextWidth = juce::GlyphArrangement::getStringWidth(labelFont, "Ww8");
-
-    const int startMidi = static_cast<int>(std::ceil(minMidiNote));
-    const int endMidi = static_cast<int>(std::floor(maxMidiNote));
-
-    for (int midiNote = startMidi; midiNote <= endMidi; ++midiNote) {
-        const int chroma = Common::fast_mod12(midiNote);
-
-        // fixme: move to ToneName
-        // Identify standard "black" keys
-        const bool isBlackKey = chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10;
-
-        const float hz = 440.0f * std::pow(2.0f, (static_cast<float>(midiNote) - 69.0f) / 12.0f);
-        const float targetCenter = frequencyToX(hz, static_cast<float>(logicalWidth));
-
-        const float startY = 0.0f;
-        const float endY = plotHeight;
-
-        const juce::Colour baseColor = Tone::chromaticScale[static_cast<size_t>(chroma)].color;
-        const juce::Colour gridColor = juce::Colours::black.interpolatedWith(baseColor, 0.1f);
-        graphics.setColour(gridColor);
-
-        if (isBlackKey) {
-            const float dashLengths[] = {4.0f, 4.0f};
-            graphics.drawDashedLine(juce::Line<float>(targetCenter, startY, targetCenter, endY), dashLengths, 2, 1.0f);
-        } else {
-            graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
-        }
-
-        if (processor.settings.isShowRollLabels()) {
-            paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, totalHeight, baseColor, processor.settings.isFlipRollHorizontal);
-        }
-    }
 }
 
 void RollStft::paintForrest(juce::Graphics& graphics) const {
