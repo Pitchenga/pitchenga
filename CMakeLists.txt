@@ -28,9 +28,8 @@ add_subdirectory(libs/eigen)
 
 # Define the exact plugin we are building
 juce_add_plugin(Pitchenga
-        # fixme: Breaks screen recording permission
-#        COMPANY_NAME "Pitchenga"
-#        BUNDLE_ID "com.github.pitchenga.Pitchenga"
+        COMPANY_NAME "Pitchenga"
+        BUNDLE_ID "com.github.pitchenga.Pitchenga"
         PLUGIN_MANUFACTURER_CODE "Ptng"  # Exactly 4 chars
         PLUGIN_CODE "Ptng"               # Exactly 4 chars
         FORMATS AU VST3 Standalone       # The magic dual-compile flag
@@ -157,12 +156,13 @@ if (APPLE)
         target_compile_definitions(Pitchenga_Standalone PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=1)
 
         # Force signing the Standalone app with stable developer ID while preserving JUCE entitlements
-#        add_custom_command(TARGET Pitchenga_Standalone POST_BUILD
-#            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_Standalone>"
-#            VERBATIM)
+        add_custom_command(TARGET Pitchenga_Standalone POST_BUILD
+            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_Standalone>"
+            VERBATIM)
 
         # Load copy destination from .env if it exists
         if (NOT DEFINED ENV{CI})
+            set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ".env")
             if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.env")
                 file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/.env" ENV_STRINGS)
                 foreach(ENV_STRING ${ENV_STRINGS})
@@ -174,7 +174,9 @@ if (APPLE)
             if (COPY_APP_TO AND NOT COPY_APP_TO STREQUAL "")
                 add_custom_command(TARGET Pitchenga_Standalone POST_BUILD
                     COMMAND mkdir -p "${COPY_APP_TO}"
+                    COMMAND rm -rf "${COPY_APP_TO}/Pitchenga.app"
                     COMMAND cp -R "$<TARGET_BUNDLE_DIR:Pitchenga_Standalone>" "${COPY_APP_TO}/"
+                    COMMAND ${CMAKE_COMMAND} -E echo "Copied Pitchenga.app to ${COPY_APP_TO}"
                     VERBATIM)
             endif()
         endif()
@@ -184,18 +186,18 @@ if (APPLE)
         target_sources(Pitchenga_AU PRIVATE Source/DesktopAudioCapture.mm)
         target_compile_definitions(Pitchenga_AU PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
 
-#        add_custom_command(TARGET Pitchenga_AU POST_BUILD
-#            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_AU>"
-#            VERBATIM)
+        add_custom_command(TARGET Pitchenga_AU POST_BUILD
+            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_AU>"
+            VERBATIM)
     endif()
 
     if (TARGET Pitchenga_VST3)
         target_sources(Pitchenga_VST3 PRIVATE Source/DesktopAudioCapture.mm)
         target_compile_definitions(Pitchenga_VST3 PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
 
-#        add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
-#            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_VST3>"
-#            VERBATIM)
+        add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
+            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_VST3>"
+            VERBATIM)
     endif()
 else()
     target_sources(Pitchenga PRIVATE Source/DesktopAudioCapture.cpp)
