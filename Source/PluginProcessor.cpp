@@ -266,6 +266,8 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& description, bool forceOpenWindow) {
     if (wrapperType != wrapperType_Standalone) return;
 
+    Util::debug("Attempting to load plugin: " + description.name + " (" + description.fileOrIdentifier + ")");
+
     const double sampleRate = getSampleRate();
     const int blockSize = getBlockSize();
 
@@ -292,6 +294,7 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
     );
 
     if (instance != nullptr) {
+        Util::debug("Successfully loaded plugin: " + instance->getName());
         if (forceOpenWindow) {
             settings.isExternalPluginWindowOpen = true;
         }
@@ -323,7 +326,23 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
         }
     } else {
         suspendProcessing(false);
-        Util::debug("Failed loading plugin, error=" + error);
+        Util::debug("Failed loading plugin, name=" + description.name + ", error=" + error);
+
+        juce::MessageManager::callAsync([name = description.name, error] {
+            juce::String detailedError = "Failed to load plugin '" + name + "':\n\n" + error;
+
+            #if JUCE_ARM64
+             detailedError += "\n\nHost Architecture: ARM64\nNote: If this is an x64 plugin, it cannot be loaded directly by an ARM64 host on Windows.";
+            #elif JUCE_64BIT
+             detailedError += "\n\nHost Architecture: x64";
+            #endif
+
+            juce::AlertWindow::showMessageBoxAsync(
+                juce::MessageBoxIconType::WarningIcon,
+                "Plugin Load Error",
+                detailedError
+            );
+        });
     }
 }
 
