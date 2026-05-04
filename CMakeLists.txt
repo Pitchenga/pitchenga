@@ -174,7 +174,7 @@ if (APPLE)
             if (COPY_APP_TO AND NOT COPY_APP_TO STREQUAL "")
                 add_custom_command(TARGET Pitchenga_Standalone POST_BUILD
                     COMMAND mkdir -p "${COPY_APP_TO}"
-                    COMMAND rm -rf "${COPY_APP_TO}/Pitchenga.app"
+                    COMMAND ${CMAKE_COMMAND} -E rm -rf "${COPY_APP_TO}/Pitchenga.app"
                     COMMAND cp -R "$<TARGET_BUNDLE_DIR:Pitchenga_Standalone>" "${COPY_APP_TO}/"
                     COMMAND ${CMAKE_COMMAND} -E echo "Copied Pitchenga.app to ${COPY_APP_TO}"
                     VERBATIM)
