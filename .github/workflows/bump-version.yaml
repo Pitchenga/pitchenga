@@ -46,9 +46,9 @@ jobs:
           git tag "v${{ env.VERSION }}"
           git push origin "v${{ env.VERSION }}"
 
-#      - name: Cascade Merge to dev
+#      - name: Cascade Merge to main
 #        run: |
-#          git fetch origin dev
-#          git checkout dev
+#          git fetch origin main
+#          git checkout main
 #          git merge production --no-edit
-#          git push origin dev
+#          git push origin main
