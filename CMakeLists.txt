@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(Pitchenga VERSION 26.0503.221929)
+project(Pitchenga VERSION 0.0.0)
 
 # Force static linking of the MSVC runtime to prevent "MSVCP140.dll not found" errors on Windows
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -28,7 +28,6 @@ add_subdirectory(libs/eigen)
 
 # Define the exact plugin we are building
 juce_add_plugin(Pitchenga
-        # Plugin metadata
         COMPANY_NAME "Pitchenga"
         BUNDLE_ID "com.github.pitchenga.Pitchenga"
         PLUGIN_MANUFACTURER_CODE "Ptng"  # Exactly 4 chars
@@ -120,7 +119,7 @@ set(PITCHENGA_SOURCES
         Source/DesktopAudioCapture.h
 )
 
-if (PROJECT_VERSION STREQUAL "1.0.0")
+if (PROJECT_VERSION STREQUAL "0.0.0")
     # Generate dynamic timestamp for local dev on every build
     add_custom_command(
             OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version.h
@@ -161,12 +160,25 @@ if (APPLE)
             COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_Standalone>"
             VERBATIM)
 
-        #fixme: .env
+        # Load copy destination from .env if it exists
         if (NOT DEFINED ENV{CI})
-            add_custom_command(TARGET Pitchenga_Standalone POST_BUILD
-                COMMAND mkdir -p "$ENV{HOME}/Documents"
-                COMMAND cp -R "$<TARGET_BUNDLE_DIR:Pitchenga_Standalone>" "$ENV{HOME}/Documents/"
-                VERBATIM)
+            set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ".env")
+            if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.env")
+                file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/.env" ENV_STRINGS)
+                foreach(ENV_STRING ${ENV_STRINGS})
+                    if (ENV_STRING MATCHES "^COPY_APP_TO=(.*)$")
+                        string(CONFIGURE "${CMAKE_MATCH_1}" COPY_APP_TO)
+                    endif()
+                endforeach()
+            endif()
+            if (COPY_APP_TO AND NOT COPY_APP_TO STREQUAL "")
+                add_custom_command(TARGET Pitchenga_Standalone POST_BUILD
+                    COMMAND mkdir -p "${COPY_APP_TO}"
+                    COMMAND rm -rf "${COPY_APP_TO}/Pitchenga.app"
+                    COMMAND cp -R "$<TARGET_BUNDLE_DIR:Pitchenga_Standalone>" "${COPY_APP_TO}/"
+                    COMMAND ${CMAKE_COMMAND} -E echo "Copied Pitchenga.app to ${COPY_APP_TO}"
+                    VERBATIM)
+            endif()
         endif()
     endif()
 
@@ -194,10 +206,13 @@ endif()
 
 target_compile_features(Pitchenga PUBLIC cxx_std_20)
 
+target_compile_definitions(Pitchenga PUBLIC
+    JUCE_PLUGINHOST_VST3=1
+    JUCE_PLUGINHOST_AU=1)
+
 target_compile_definitions(Pitchenga PRIVATE
     CMAKE_BUILD_PROFILE=$<CONFIG>
-    JUCE_VST3_CAN_REPLACE_VST2=0
-    JUCE_PLUGINHOST_VST3=1)
+    JUCE_VST3_CAN_REPLACE_VST2=0)
 
 # Make generated timestamp header available to the build
 target_include_directories(Pitchenga PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
