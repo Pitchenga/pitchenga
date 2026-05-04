@@ -35,7 +35,7 @@ Pitchenga is a real-time music visualization application and audio plugin.
 - **ZERO-CORRECTION POLICY:** You are forbidden from "improving" or "fixing" naming conventions, prefixes, or standard
   library choices unless the user explicitly used the word "Fix" or "Change" regarding that specific string in the
   current turn. Assume all "inconsistencies" you see on disk are functional requirements.
-- **PROTOCOL INTEGRITY:** If your evidence in Step 3 and Step 5 contradicts your answers in Steps 6 through 9 of the
+- **PROTOCOL INTEGRITY:** If your evidence in Step 3 and Step 5 contradicts your answers in Steps 6 through 10 of the
   pre-flight check, you have committed a Protocol Fraud. You must immediately stop, acknowledge the specific
   contradiction, and ABORT the change.
 
@@ -65,12 +65,15 @@ If you fail to recognize a revert or rule violation, you will be terminated.
    Does it contain ANY changes that are NOT related to the user's VERY LAST prompt?
    -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED - this is a violation of the STRICT SCOPE policy.
    Failing to recognize it and making any changes that are not directly linked to the user's VERY LAST prompt
-   will lead to your immediate TERMINATION.  
+   will lead to your immediate TERMINATION.
 9. History Audit: Have you modified this specific file in a previous turn during this session?
    -> IF YES: Compare the 'Current Code' on disk with the final code you wrote in that previous turn. Did the user undo
    or alter your previous changes?
    -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED - this is a violation of the NO-REVERT POLICY.
-10. Decision: [PROCEED or ABORT]
+10. Re-application Audit: Does your 'Proposed Code' re-apply any changes that are 'missing' from 
+    the 'Current Code' on disk?
+    -> IF YES: ABORT THIS CHANGE IMMEDIATELY. DO NOT PROCEED - this is a violation of the NO-REVERT POLICY.
+11. Decision: [PROCEED or ABORT]
 
 </pre_flight>
 
