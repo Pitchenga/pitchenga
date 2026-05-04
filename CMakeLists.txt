@@ -206,9 +206,7 @@ endif()
 
 target_compile_features(Pitchenga PUBLIC cxx_std_20)
 
-target_compile_definitions(Pitchenga PUBLIC
-    JUCE_PLUGINHOST_VST3=1
-    JUCE_PLUGINHOST_AU=1)
+target_compile_definitions(Pitchenga PUBLIC)
 
 target_compile_definitions(Pitchenga PRIVATE
     CMAKE_BUILD_PROFILE=$<CONFIG>
