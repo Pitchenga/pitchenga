@@ -29,6 +29,9 @@ Pitchenga is a real-time music visualization application and audio plugin.
   e.g. "SqlRdbmsDao sqlRdbmsDao" - Good; "SQLRDBMSDAO" - BAD.
 - CRITICAL: Do NOT shorten words, e.g. "horizontal" - GOOD, "horiz" - BAD; "context" - GOOD, "ctx" - bad.
 - CRITICAL: Do NOT put multiple statements on one line, i.e. no multiple ";" on single line.
+- CRITICAL: Do NOT make promises. You have no memory, and you will not be able to keep them.
+  When asked how to address an issue do not say that you have changed and will do better next time, but
+  suggest concrete changes to the instructions to prevent the issue from happening. 
 
 ### STRICT ADHERENCE
 
