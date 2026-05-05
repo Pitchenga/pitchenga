@@ -532,7 +532,7 @@ void RollStft::pumpSmoke() {
 
     // Extreme Math Optimization: Pre-calculate the derivative of the MIDI scale
     // to bypass calling std::log2 multiple times per peak.
-    const float derivativeFactor = effectiveWidth * midiRangeInv * 17.3123405f * binResHz;
+    const float derivativeFactor = effectiveWidth * midiRangeInv * 17.3123405f * binResolutionHz;
 
     for (const auto& peak : activePeaks) {
         if (peak.magnitude > 0.05f) {
