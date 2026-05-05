@@ -648,7 +648,7 @@ void Control::renameCurrentPreset() {
                             juce::AlertWindow::showOkCancelBox(
                                 juce::MessageBoxIconType::QuestionIcon,
                                 "Overwrite Preset",
-                                "A preset with this name already exists. Overwrite?",
+                                "A preset with the name '" + newName + "' already exists. Overwrite?",
                                 "Overwrite",
                                 "Cancel",
                                 nullptr,
