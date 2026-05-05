@@ -46,14 +46,19 @@ float RollStft::getLabelAreaHeight() const {
     return totalHeight;
 }
 
+float RollStft::getDbAxisWidth() const {
+    if (!processor.settings.isRawMode) return 0.0f;
+    return 34.0f;
+}
+
 float RollStft::freqToMidi(float freq) {
     if (freq <= 0.0f) return 0.0f;
     return 69.0f + 12.0f * std::log2(freq / 440.0f);
 }
 
-float RollStft::frequencyToX(float frequencyHz, float width) {
+float RollStft::frequencyToX(float frequencyHz, float width, float xOffset) {
     const float midi = freqToMidi(frequencyHz);
-    return width * ((midi - minMidiNote) / (maxMidiNote - minMidiNote));
+    return xOffset + (width - xOffset) * ((midi - minMidiNote) / (maxMidiNote - minMidiNote));
 }
 
 void RollStft::paint(juce::Graphics& graphics) {
@@ -81,7 +86,8 @@ void RollStft::paint(juce::Graphics& graphics) {
 
     if (processor.settings.isShowSmoke) {
         graphics.saveState();
-        graphics.reduceClipRegion(0, 0, logicalWidth, plotHeight);
+        const float dbAxisWidth = getDbAxisWidth();
+        graphics.reduceClipRegion(static_cast<int>(dbAxisWidth), 0, logicalWidth - static_cast<int>(dbAxisWidth), plotHeight);
         paintSmoke(graphics);
         graphics.restoreState();
     }
@@ -105,6 +111,7 @@ void RollStft::buildFrame() {
 
     const auto totalHeight = static_cast<float>(logicalHeight);
     const float labelAreaHeight = getLabelAreaHeight();
+    const float dbAxisWidth = getDbAxisWidth();
     const float plotHeight = std::max(1.0f, totalHeight - labelAreaHeight);
     const juce::Font labelFont = Common::getLabelFont();
     graphics.setFont(labelFont);
@@ -120,7 +127,7 @@ void RollStft::buildFrame() {
         const bool isBlackKey = chroma == 1 || chroma == 3 || chroma == 6 || chroma == 8 || chroma == 10;
 
         const float hz = 440.0f * pow(2.0f, (static_cast<float>(midiNote) - 69.0f) / 12.0f);
-        const float targetCenter = frequencyToX(hz, static_cast<float>(logicalWidth));
+        const float targetCenter = frequencyToX(hz, static_cast<float>(logicalWidth), dbAxisWidth);
 
         constexpr float startY = 0.0f;
         const float endY = plotHeight;
@@ -146,7 +153,7 @@ void RollStft::buildFrame() {
         const float hzStartY = totalHeight - noteAreaHeight;
 
         for (float hz : hzValues) {
-            const float targetCenter = frequencyToX(hz, static_cast<float>(logicalWidth));
+            const float targetCenter = frequencyToX(hz, static_cast<float>(logicalWidth), dbAxisWidth);
             if (targetCenter < 0 || targetCenter > static_cast<float>(logicalWidth)) continue;
 
             juce::String labelText;
@@ -157,6 +164,22 @@ void RollStft::buildFrame() {
             }
 
             paintHzLabel(graphics, labelHeight, labelText, targetCenter, hzStartY, juce::Colours::grey);
+        }
+
+        // Add dB axis and grid
+        const std::vector<int> dbValues = {-60, -50, -40, -30, -20, -10, 0};
+        for (int db : dbValues) {
+            const float norm = (static_cast<float>(db) + 90.0f) / 90.0f;
+            const float y = plotHeight * (1.0f - norm);
+
+            // Grid line
+            graphics.setColour(juce::Colours::grey.withAlpha(0.2f));
+            graphics.drawLine(dbAxisWidth, y, static_cast<float>(logicalWidth), y, 1.0f);
+
+            // Label
+            graphics.setColour(juce::Colours::grey);
+            graphics.setFont(labelFont.withHeight(10.0f));
+            graphics.drawText(juce::String(db), 0, y - 5.0f, dbAxisWidth - 2.0f, 10.0f, juce::Justification::centredRight, false);
         }
     }
 }
@@ -221,16 +244,17 @@ void RollStft::paintForrest(juce::Graphics& graphics) const {
 
     const int width = logicalWidth;
     const float plotHeight = std::max(1.0f, static_cast<float>(logicalHeight) - getLabelAreaHeight());
+    const float dbAxisWidth = getDbAxisWidth();
 
     for (const auto& peak : activePeaks) {
-        const float xPos = frequencyToX(peak.frequencyHz, static_cast<float>(width));
+        const float xPos = frequencyToX(peak.frequencyHz, static_cast<float>(width), dbAxisWidth);
 
-        if (xPos >= 0.0f && xPos <= static_cast<float>(width)) {
+        if (xPos >= dbAxisWidth && xPos <= static_cast<float>(width)) {
             // Configurable razor-sharp stems for the Forrest
             float stemWidthPixels = 5.0f;
             const bool doDynamicStem = enableDynamicStemWidth && !processor.settings.isRawMode;
             if (doDynamicStem) {
-                const float nextX = frequencyToX(peak.frequencyHz + peak.bandwidthHz, static_cast<float>(width));
+                const float nextX = frequencyToX(peak.frequencyHz + peak.bandwidthHz, static_cast<float>(width), dbAxisWidth);
                 // +1.0f forces deliberate sub-pixel overlap to completely kill rendering gaps
                 stemWidthPixels = std::max(1.0f, nextX - xPos + 1.0f);
             }
@@ -286,12 +310,14 @@ void RollStft::pumpSmoke() {
     const float sr = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
     const float binResHz = sr / 32768.0f;
     const auto fWidth = static_cast<float>(width);
+    const float dbAxisWidth = getDbAxisWidth();
+    const float effectiveWidth = fWidth - dbAxisWidth;
     constexpr float midiRangeInv = 1.0f / (maxMidiNote - minMidiNote);
     const bool doDynamicStem = enableDynamicStemWidth && !processor.settings.isRawMode;
 
     // Extreme Math Optimization: Pre-calculate the derivative of the MIDI scale
     // to bypass calling std::log2 multiple times per peak.
-    const float derivativeFactor = fWidth * midiRangeInv * 17.3123405f * binResHz;
+    const float derivativeFactor = effectiveWidth * midiRangeInv * 17.3123405f * binResHz;
 
     for (const auto& peak : activePeaks) {
         if (peak.magnitude > 0.05f) {
@@ -299,10 +325,10 @@ void RollStft::pumpSmoke() {
 
             // Inline the math for the primary position calculation
             const float midi = 69.0f + 12.0f * std::log2(peak.frequencyHz / 440.0f);
-            const float xPos = fWidth * ((midi - minMidiNote) * midiRangeInv);
+            const float xPos = dbAxisWidth + effectiveWidth * ((midi - minMidiNote) * midiRangeInv);
 
             // Fast bounds culling
-            if (xPos >= -10.0f && xPos <= fWidth + 10.0f) {
+            if (xPos >= dbAxisWidth - 10.0f && xPos <= fWidth + 10.0f) {
                 // Configurable razor-sharp stems for the Smoke
                 float stemWidthPixels = 4.0f;
                 if (doDynamicStem) {

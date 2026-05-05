@@ -34,7 +34,7 @@ Pitchenga is a real-time music visualization application and audio plugin.
 
 - CRITICAL: Do not use numbers for steps in comments, as they quickly become outdated and hard to manage.
 - CRITICAL: Do not add "NEW" or to comments.
-- CRITICAL: Prefer separate functions to long code blocks with a comment.
+- CRITICAL: Extract separate logical functions rather than using long code blocks with a comment.
 - CRITICAL: Use strict camel-case for acronyms in identifiers,
   e.g. "SqlRdbmsDao sqlRdbmsDao" - Good; "SQLRDBMSDAO" - BAD.
 - CRITICAL: Do NOT shorten words, e.g. "horizontal" - GOOD, "horiz" - BAD; "context" - GOOD, "ctx" - bad.
@@ -42,4 +42,5 @@ Pitchenga is a real-time music visualization application and audio plugin.
 - CRITICAL: Always use descriptive names, except for "i" - index, "x"/"y" - coordinates, "e" - exception.
   E.g.: "g" - BAD, "graphics" - GOOD; "cx" - BAD, "centerX" - GOOD.
   This is a hard rule and cannot be violated.
+- CRITICAL: Do not hard-code widths and heights for visual components - always use their intrinsic sizes instead.
 - CRITICAL: Prefer named constants in header file rather than hard-coded values.
