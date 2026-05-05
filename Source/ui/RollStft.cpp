@@ -48,7 +48,8 @@ float RollStft::getLabelAreaHeight() const {
 
 float RollStft::getDbAxisWidth() const {
     if (!processor.settings.isRawMode) return 0.0f;
-    return 34.0f;
+    const juce::Font dbFont = Common::getLabelFont().withHeight(dbLabelFontSize);
+    return juce::GlyphArrangement::getStringWidth(dbFont, "-60") + dbLabelMarginRight + 4.0f;
 }
 
 float RollStft::freqToMidi(float freq) {
@@ -148,39 +149,42 @@ void RollStft::buildFrame() {
         }
     }
 
-    if (processor.settings.isRawMode) {
-        const float noteAreaHeight = processor.settings.isShowRollLabels() ? juce::GlyphArrangement::getStringWidth(labelFont, "Ww8") + 4.0f : 0.0f;
-        const float hzStartY = totalHeight - noteAreaHeight;
+    paintRawAxisLabels(graphics, plotHeight, static_cast<float>(logicalWidth));
+}
 
-        for (float hz : hzValues) {
-            const float targetCenter = frequencyToX(hz, static_cast<float>(logicalWidth), dbAxisWidth);
-            if (targetCenter < 0 || targetCenter > static_cast<float>(logicalWidth)) continue;
+void RollStft::paintRawAxisLabels(juce::Graphics& graphics, float plotHeight, float logicalWidth) {
+    if (!processor.settings.isRawMode) return;
 
-            juce::String labelText;
-            if (hz >= 1000.0f) {
-                labelText = juce::String(static_cast<int>(hz / 1000.0f)) + "k";
-            } else {
-                labelText = juce::String(static_cast<int>(hz));
-            }
+    const juce::Font labelFont = Common::getLabelFont();
+    const float labelHeight = labelFont.getHeight();
+    const float totalHeight = static_cast<float>(graphics.getClipBounds().getHeight());
+    const float dbAxisWidth = getDbAxisWidth();
 
-            paintHzLabel(graphics, labelHeight, labelText, targetCenter, hzStartY, juce::Colours::grey);
+    const float noteAreaHeight = processor.settings.isShowRollLabels() ? juce::GlyphArrangement::getStringWidth(labelFont, "Ww8") + 4.0f : 0.0f;
+    const float hzStartY = totalHeight - noteAreaHeight;
+
+    for (float hz : hzValues) {
+        const float targetCenter = frequencyToX(hz, logicalWidth, dbAxisWidth);
+        if (targetCenter < 0 || targetCenter > logicalWidth) continue;
+
+        juce::String labelText;
+        if (hz >= 1000.0f) {
+            labelText = juce::String(static_cast<int>(hz / 1000.0f)) + "k";
+        } else {
+            labelText = juce::String(static_cast<int>(hz));
         }
 
-        // Add dB axis and grid
-        const std::vector<int> dbValues = {-60, -50, -40, -30, -20, -10, 0};
-        for (int db : dbValues) {
-            const float norm = (static_cast<float>(db) + 90.0f) / 90.0f;
-            const float y = plotHeight * (1.0f - norm);
+        paintHzLabel(graphics, labelHeight, labelText, targetCenter, hzStartY, juce::Colours::grey);
+    }
 
-            // Grid line
-            graphics.setColour(juce::Colours::grey.withAlpha(0.2f));
-            graphics.drawLine(dbAxisWidth, y, static_cast<float>(logicalWidth), y, 1.0f);
+    // Add dB axis
+    graphics.setColour(juce::Colours::grey);
+    graphics.setFont(labelFont.withHeight(dbLabelFontSize));
+    for (int db : dbValues) {
+        const float norm = (static_cast<float>(db) + 90.0f) / 90.0f;
+        const float y = plotHeight * (1.0f - norm);
 
-            // Label
-            graphics.setColour(juce::Colours::grey);
-            graphics.setFont(labelFont.withHeight(10.0f));
-            graphics.drawText(juce::String(db), 0, y - 5.0f, dbAxisWidth - 2.0f, 10.0f, juce::Justification::centredRight, false);
-        }
+        graphics.drawText(juce::String(db), 0, y - dbLabelHeight * 0.5f, dbAxisWidth - dbLabelMarginRight, dbLabelHeight, juce::Justification::centredRight, false);
     }
 }
 
