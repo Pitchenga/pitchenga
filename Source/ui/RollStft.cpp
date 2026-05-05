@@ -7,6 +7,21 @@
 
 RollStft::RollStft(PitchengaAudioProcessor& proc) : processor(proc) {}
 
+void RollStft::mouseMove(const juce::MouseEvent& event) {
+    mousePosition = event.getPosition();
+    repaint();
+}
+
+void RollStft::mouseEnter(const juce::MouseEvent& event) {
+    mousePosition = event.getPosition();
+    repaint();
+}
+
+void RollStft::mouseExit(const juce::MouseEvent& event) {
+    mousePosition = {-1, -1};
+    repaint();
+}
+
 void RollStft::updateResults(const std::vector<SpectralPeak>& peaks) {
     if (!processor.settings.isUseRollStft
         || processor.settings.isFreezeRoll
@@ -95,6 +110,26 @@ void RollStft::paint(juce::Graphics& graphics) {
 
     if (!activePeaks.empty() && processor.settings.isShowForrest) {
         paintForrest(graphics);
+    }
+
+    // Draw crosshairs at mouse position
+    if (mousePosition.x >= 0 && mousePosition.y >= 0) {
+        juce::Point<float> logicalMouse;
+        if (isHorizontal) {
+            auto transform = juce::AffineTransform(0.0f, 1.0f, 0.0f, -1.0f, 0.0f, static_cast<float>(physicalHeight));
+            logicalMouse = mousePosition.toFloat().transformedBy(transform.inverted());
+        } else {
+            logicalMouse = mousePosition.toFloat();
+        }
+
+        const float dbAxisWidth = getDbAxisWidth();
+
+        if (logicalMouse.x >= dbAxisWidth && logicalMouse.x <= static_cast<float>(logicalWidth) &&
+            logicalMouse.y >= 0.0f && logicalMouse.y <= static_cast<float>(plotHeight)) {
+            graphics.setColour(juce::Colours::white.withAlpha(0.4f));
+            graphics.drawLine(dbAxisWidth, logicalMouse.y, static_cast<float>(logicalWidth), logicalMouse.y, 1.0f);
+            graphics.drawLine(logicalMouse.x, 0.0f, logicalMouse.x, static_cast<float>(plotHeight), 1.0f);
+        }
     }
 
     graphics.restoreState();
