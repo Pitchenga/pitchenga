@@ -105,7 +105,6 @@ private:
     static inline const juce::String plugs = "Plugs";
     static inline const juce::String plug = "Plug";
     static inline const juce::String tweak = "Tweak";
-    static inline const juce::String load = "Load";
     static inline const juce::String save = "Save";
     static inline const juce::String saveAs = "Save As";
     static inline const juce::String deletePreset = "Delete";
@@ -160,7 +159,6 @@ private:
     juce::ComboBox comboPresets{presetsComboTextWhenNothingSelected};
     std::vector<juce::File> presets;
     juce::File currentPresetFile;
-    juce::TextButton buttonLoad{load};
     juce::TextButton buttonSave{save};
     juce::TextButton buttonSaveAs{saveAs};
     juce::TextButton buttonDelete{deletePreset};
