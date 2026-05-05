@@ -156,7 +156,7 @@ void RollStft::buildFrame() {
                 labelText = juce::String(static_cast<int>(hz));
             }
 
-            paintHzLabel(graphics, labelHeight, labelText, targetCenter, hzStartY, juce::Colours::white.withAlpha(0.7f));
+            paintHzLabel(graphics, labelHeight, labelText, targetCenter, hzStartY, juce::Colours::grey);
         }
     }
 }

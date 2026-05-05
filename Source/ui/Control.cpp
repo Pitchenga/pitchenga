@@ -45,7 +45,7 @@ void Control::VolumeKnob::paint(juce::Graphics& graphics) {
     const auto currentVolume = static_cast<float>(getValue());
 
     // Background
-    graphics.setColour(juce::Colours::black.withAlpha(0.4f));
+    graphics.setColour(juce::Colours::black);
     graphics.fillEllipse(centerX - radius, centerY - radius, radius * 2.0f, radius * 2.0f);
 
     // Outline
@@ -59,7 +59,7 @@ void Control::VolumeKnob::paint(juce::Graphics& graphics) {
     if (currentVolume > 0.0f) {
         juce::Path volumeArc;
         volumeArc.addCentredArc(centerX, centerY, radius * 0.7f, radius * 0.7f, 0.0f, startAngle, endAngle, true);
-        graphics.setColour(juce::Colours::white.withAlpha(0.8f));
+        graphics.setColour(juce::Colours::white);
         graphics.strokePath(volumeArc, juce::PathStrokeType(2.0f, juce::PathStrokeType::curved));
     }
 
@@ -67,7 +67,7 @@ void Control::VolumeKnob::paint(juce::Graphics& graphics) {
     const float pointerX = centerX + std::sin(endAngle) * radius * 0.7f;
     const float pointerY = centerY - std::cos(endAngle) * radius * 0.7f;
 
-    graphics.setColour(currentVolume > 0.0f ? juce::Colours::white : juce::Colours::grey.withAlpha(0.5f));
+    graphics.setColour(currentVolume > 0.0f ? juce::Colours::white : juce::Colours::grey);
     graphics.drawLine(centerX, centerY, pointerX, pointerY, 2.0f);
 }
 
