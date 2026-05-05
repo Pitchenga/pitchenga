@@ -164,8 +164,8 @@ void RollStft::paintCrosshairs(
             const float midi = (logicalMouse.x - dbAxisWidth) / (static_cast<float>(logicalWidth) - dbAxisWidth) * (
                 maxMidiNote - minMidiNote) + minMidiNote;
             const float freq = 440.0f * std::pow(2.0f, (midi - 69.0f) / 12.0f);
-            const float normY = (static_cast<float>(plotHeight) - logicalMouse.y) / static_cast<float>(plotHeight);
-            const float dbValue = normY * 90.0f - 90.0f;
+            const float normalizedY = (static_cast<float>(plotHeight) - logicalMouse.y) / static_cast<float>(plotHeight);
+            const float dbValue = normalizedY * 90.0f - 90.0f;
 
             const int wholeMidi = static_cast<int>(std::round(midi));
             const int roundedCents = static_cast<int>(std::round((midi - static_cast<float>(wholeMidi)) * 100.0f));
