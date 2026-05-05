@@ -156,9 +156,19 @@ void RollStft::paintCrosshairs(
 
         if (logicalMouse.x >= dbAxisWidth && logicalMouse.x <= static_cast<float>(logicalWidth) &&
             logicalMouse.y >= 0.0f && logicalMouse.y <= static_cast<float>(plotHeight)) {
-            graphics.setColour(juce::Colours::white.withAlpha(0.4f));
-            graphics.drawLine(dbAxisWidth, logicalMouse.y, static_cast<float>(logicalWidth), logicalMouse.y, 1.0f);
-            graphics.drawLine(logicalMouse.x, 0.0f, logicalMouse.x, static_cast<float>(plotHeight), 1.0f);
+
+            // Draw crosshair lines using the correct transform
+            {
+                juce::Graphics::ScopedSaveState graphicsState(graphics);
+                if (isHorizontal) {
+                    graphics.addTransform(
+                        juce::AffineTransform(0.0f, 1.0f, 0.0f, -1.0f, 0.0f, static_cast<float>(physicalHeight))
+                    );
+                }
+                graphics.setColour(juce::Colours::white.withAlpha(0.4f));
+                graphics.drawLine(dbAxisWidth, logicalMouse.y, static_cast<float>(logicalWidth), logicalMouse.y, 1.0f);
+                graphics.drawLine(logicalMouse.x, 0.0f, logicalMouse.x, static_cast<float>(plotHeight), 1.0f);
+            }
 
             // Calculate tooltip values
             const float midi = (logicalMouse.x - dbAxisWidth) / (static_cast<float>(logicalWidth) - dbAxisWidth) * (
@@ -180,8 +190,6 @@ void RollStft::paintCrosshairs(
         }
     }
 
-    graphics.restoreState();
-
     if (shouldShowTooltip) {
         paintTooltip(graphics, physicalWidth, physicalHeight, tooltipLines);
     }
@@ -200,31 +208,34 @@ void RollStft::paint(juce::Graphics& graphics) {
     const float labelAreaHeight = getLabelAreaHeight();
     const int plotHeight = std::max(1, logicalHeight - static_cast<int>(labelAreaHeight));
 
-    graphics.saveState();
+    {
+        juce::Graphics::ScopedSaveState graphicsState(graphics);
 
-    if (isHorizontal) {
-        graphics.addTransform(juce::AffineTransform(0.0f, 1.0f, 0.0f, -1.0f, 0.0f, static_cast<float>(physicalHeight)));
-    }
+        if (isHorizontal) {
+            graphics.addTransform(
+                juce::AffineTransform(0.0f, 1.0f, 0.0f, -1.0f, 0.0f, static_cast<float>(physicalHeight))
+            );
+        }
 
-    if (cachedFrame.isValid()) {
-        graphics.drawImageAt(cachedFrame, 0, 0);
-    }
+        if (cachedFrame.isValid()) {
+            graphics.drawImageAt(cachedFrame, 0, 0);
+        }
 
-    if (processor.settings.isShowSmoke) {
-        graphics.saveState();
-        const float dbAxisWidth = getDbAxisWidth();
-        graphics.reduceClipRegion(
-            static_cast<int>(dbAxisWidth),
-            0,
-            logicalWidth - static_cast<int>(dbAxisWidth),
-            plotHeight
-        );
-        paintSmoke(graphics);
-        graphics.restoreState();
-    }
+        if (processor.settings.isShowSmoke) {
+            const float dbAxisWidth = getDbAxisWidth();
+            juce::Graphics::ScopedSaveState smokeGraphicsState(graphics);
+            graphics.reduceClipRegion(
+                static_cast<int>(dbAxisWidth),
+                0,
+                logicalWidth - static_cast<int>(dbAxisWidth),
+                plotHeight
+            );
+            paintSmoke(graphics);
+        }
 
-    if (!activePeaks.empty() && processor.settings.isShowForrest) {
-        paintForrest(graphics);
+        if (!activePeaks.empty() && processor.settings.isShowForrest) {
+            paintForrest(graphics);
+        }
     }
 
     paintCrosshairs(graphics, physicalWidth, physicalHeight, isHorizontal, logicalWidth, plotHeight);
@@ -333,7 +344,7 @@ void RollStft::paintDbAxis(
         const float y = plotHeight * (1.0f - norm);
 
         if (isHorizontal) {
-            graphics.saveState();
+            juce::Graphics::ScopedSaveState ss(graphics);
             const float cx = dbAxisWidth * 0.5f;
             graphics.addTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi, cx, y));
             // Rotate 90 CW around (cx, y) to keep text upright in the final view.
@@ -344,7 +355,6 @@ void RollStft::paintDbAxis(
                 juce::Justification::centred,
                 false
             );
-            graphics.restoreState();
         } else {
             graphics.drawText(
                 juce::String(db),
@@ -388,7 +398,7 @@ void RollStft::paintLabel(
     const juce::String name = Tone::getNoteName(midiNote, processor.settings.isLetterNotation);
 
     graphics.setColour(baseColor);
-    graphics.saveState();
+    juce::Graphics::ScopedSaveState graphicsState(graphics);
 
     if (isHorizontal) {
         const float rotX = targetCenter + labelHeight / 2.0f;
@@ -413,8 +423,6 @@ void RollStft::paintLabel(
             false
         );
     }
-
-    graphics.restoreState();
 }
 
 void RollStft::paintHzLabel(
