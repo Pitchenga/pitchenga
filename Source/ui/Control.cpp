@@ -621,7 +621,7 @@ void Control::renameCurrentPreset() {
                         juce::File newFile = safeThis->currentPresetFile.getSiblingFile(newName).withFileExtension(".xml");
 
                         auto doRename = [safeThis, newFile, newName]() {
-                            if (newFile.existsAsFile()) {
+                            if (newFile.existsAsFile() && newFile != safeThis->currentPresetFile) {
                                 if (!newFile.deleteFile()) {
                                     juce::AlertWindow::showMessageBoxAsync(
                                         juce::MessageBoxIconType::WarningIcon,
@@ -645,7 +645,7 @@ void Control::renameCurrentPreset() {
                             }
                         };
 
-                        if (newFile.existsAsFile()) {
+                        if (newFile.existsAsFile() && newFile != safeThis->currentPresetFile) {
                             juce::AlertWindow::showOkCancelBox(
                                 juce::MessageBoxIconType::QuestionIcon,
                                 "Overwrite Preset",
