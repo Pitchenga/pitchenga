@@ -20,17 +20,17 @@ void Splitter::mouseExit(const juce::MouseEvent&) {
     repaint();
 }
 
-void Splitter::paint(juce::Graphics& g) {
+void Splitter::paint(juce::Graphics& graphics) {
     if (isHovered) {
-        g.fillAll(juce::Colours::darkgrey);
+        graphics.fillAll(juce::Colours::darkgrey);
     } else {
-        g.fillAll(juce::Colours::black);
+        graphics.fillAll(juce::Colours::black);
     }
 }
 
-void Splitter::mouseDrag(const juce::MouseEvent& e) {
+void Splitter::mouseDrag(const juce::MouseEvent& event) {
     if (auto* parent = getParentComponent()) {
-        auto eventInParent = e.getEventRelativeTo(parent);
+        auto eventInParent = event.getEventRelativeTo(parent);
 
         if (processor.settings.isLayoutHorizontal) {
             const float availableWidth = static_cast<float>(parent->getWidth());
