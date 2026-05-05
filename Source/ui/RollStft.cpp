@@ -155,6 +155,7 @@ void RollStft::buildFrame() {
 void RollStft::paintRawAxisLabels(juce::Graphics& graphics, float plotHeight, float logicalWidth) {
     if (!processor.settings.isRawMode) return;
 
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const juce::Font labelFont = Common::getLabelFont();
     const float labelHeight = labelFont.getHeight();
     const float totalHeight = static_cast<float>(graphics.getClipBounds().getHeight());
@@ -184,7 +185,17 @@ void RollStft::paintRawAxisLabels(juce::Graphics& graphics, float plotHeight, fl
         const float norm = (static_cast<float>(db) + 90.0f) / 90.0f;
         const float y = plotHeight * (1.0f - norm);
 
-        graphics.drawText(juce::String(db), 0, y - dbLabelHeight * 0.5f, dbAxisWidth - dbLabelMarginRight, dbLabelHeight, juce::Justification::centredRight, false);
+        if (isHorizontal) {
+            graphics.saveState();
+            const float cx = dbAxisWidth * 0.5f;
+            graphics.addTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi, cx, y));
+            // Rotate 90 CW around (cx, y) to keep text upright in the final view.
+            // The box is centered on (cx, y) in rotated logical space.
+            graphics.drawText(juce::String(db), cx - dbLabelHeight, y - dbAxisWidth * 0.5f, dbLabelHeight * 2.0f, dbAxisWidth, juce::Justification::centred, false);
+            graphics.restoreState();
+        } else {
+            graphics.drawText(juce::String(db), 0, y - dbLabelHeight * 0.5f, dbAxisWidth - dbLabelMarginRight, dbLabelHeight, juce::Justification::centredRight, false);
+        }
     }
 }
 
