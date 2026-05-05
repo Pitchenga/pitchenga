@@ -142,12 +142,7 @@ void RollStft::buildFrame() {
     }
 
     if (processor.settings.isRawMode) {
-        static const std::vector<float> hzValues = {
-            40, 50, 60, 80, 100, 200, 300, 400, 500, 700, 1000, 1500, 2000, 3000, 4000
-        };
-
         const float noteAreaHeight = processor.settings.isShowRollLabels() ? juce::GlyphArrangement::getStringWidth(labelFont, "Ww8") + 4.0f : 0.0f;
-        const float hzAreaHeight = labelHeight + 4.0f;
         const float hzStartY = totalHeight - noteAreaHeight;
 
         for (float hz : hzValues) {
@@ -155,8 +150,8 @@ void RollStft::buildFrame() {
             if (targetCenter < 0 || targetCenter > static_cast<float>(logicalWidth)) continue;
 
             juce::String labelText;
-            if (hz >= 1000) {
-                labelText = juce::String(hz / 1000.0f, hz >= 10000 ? 0 : 1) + "k";
+            if (hz >= 1000.0f) {
+                labelText = juce::String(static_cast<int>(hz / 1000.0f)) + "k";
             } else {
                 labelText = juce::String(static_cast<int>(hz));
             }
