@@ -522,8 +522,8 @@ void RollStft::pumpSmoke() {
 
     juce::Graphics graphics(smokeImage);
 
-    const float sr = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
-    const float binResHz = sr / 32768.0f;
+    const float sampleRate = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
+    const float binResolutionHz = sampleRate / 32768.0f;
     const auto fWidth = static_cast<float>(width);
     const float dbAxisWidth = getDbAxisWidth();
     const float effectiveWidth = fWidth - dbAxisWidth;
