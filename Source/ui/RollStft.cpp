@@ -269,7 +269,7 @@ void RollStft::buildFrame() {
 
         if (isBlackKey) {
             constexpr float dashLengths[] = {4.0f, 4.0f};
-            graphics.drawDashedLine(juce::Line(targetCenter, startY, targetCenter, endY), dashLengths, 2, 1.0f);
+            graphics.drawDashedLine(juce::Line(targetCenter, startY, targetCenter, endY), dashLengths, juce::numElementsInArray(dashLengths), 1.0f);
         } else {
             graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
         }
