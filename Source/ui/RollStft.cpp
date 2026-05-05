@@ -174,16 +174,16 @@ void RollStft::paintCrosshairs(
             const float midi = (logicalMouse.x - dbAxisWidth) / (static_cast<float>(logicalWidth) - dbAxisWidth) * (
                 maxMidiNote - minMidiNote) + minMidiNote;
             const float freq = 440.0f * std::pow(2.0f, (midi - 69.0f) / 12.0f);
-            const float normY = (static_cast<float>(plotHeight) - logicalMouse.y) / static_cast<float>(plotHeight);
-            const float dbValue = normY * 90.0f - 90.0f;
+            const float normalizedY = (static_cast<float>(plotHeight) - logicalMouse.y) / static_cast<float>(plotHeight);
+            const float dbValue = normalizedY * 90.0f - 90.0f;
 
             const int wholeMidi = static_cast<int>(std::round(midi));
             const int roundedCents = static_cast<int>(std::round((midi - static_cast<float>(wholeMidi)) * 100.0f));
             const juce::String noteName = Tone::getNoteName(wholeMidi, processor.settings.isLetterNotation);
-            const juce::String centsStr = (roundedCents >= 0 ? "+" : "-") + juce::String(std::abs(roundedCents)).
+            const juce::String centsString = (roundedCents >= 0 ? "+" : "-") + juce::String(std::abs(roundedCents)).
                 paddedLeft('0', 2) + "c";
 
-            tooltipLines.add(noteName + " (" + centsStr + ")");
+            tooltipLines.add(noteName + " (" + centsString + ")");
             tooltipLines.add(juce::String(freq, 1) + " Hz");
             tooltipLines.add(juce::String(dbValue, 1) + " dB");
             shouldShowTooltip = true;
@@ -280,7 +280,7 @@ void RollStft::buildFrame() {
 
         if (isBlackKey) {
             constexpr float dashLengths[] = {4.0f, 4.0f};
-            graphics.drawDashedLine(juce::Line(targetCenter, startY, targetCenter, endY), dashLengths, 2, 1.0f);
+            graphics.drawDashedLine(juce::Line(targetCenter, startY, targetCenter, endY), dashLengths, juce::numElementsInArray(dashLengths), 1.0f);
         } else {
             graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
         }
