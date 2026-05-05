@@ -147,12 +147,13 @@ void RollStft::paint(juce::Graphics& graphics) {
             lines.add(juce::String(dbValue, 1) + " dB");
 
             const float tooltipPadding = 6.0f;
-            const float tooltipLineHeight = 14.0f;
+            const juce::Font tooltipFont(juce::FontOptions(12.0f));
+            const float tooltipLineHeight = std::ceil(tooltipFont.getHeight());
             float maxLineWidth = 0.0f;
-            const juce::Font tooltipFont(12.0f);
             for (const auto& line : lines) {
-                maxLineWidth = std::max(maxLineWidth, juce::GlyphArrangement::getStringWidth(tooltipFont, line));
+                maxLineWidth = std::max(maxLineWidth, tooltipFont.getStringWidthFloat(line));
             }
+            maxLineWidth = std::ceil(maxLineWidth + 2.0f); // Add safety margin
 
             const float tooltipWidth = maxLineWidth + tooltipPadding * 2.0f;
             const float tooltipHeight = static_cast<float>(lines.size()) * tooltipLineHeight + tooltipPadding * 2.0f;
@@ -184,7 +185,8 @@ void RollStft::paint(juce::Graphics& graphics) {
                                   tooltipY + tooltipPadding + static_cast<float>(i) * tooltipLineHeight, 
                                   maxLineWidth, 
                                   tooltipLineHeight, 
-                                  juce::Justification::centredLeft);
+                                  juce::Justification::centredLeft,
+                                  false);
             }
         }
     }
