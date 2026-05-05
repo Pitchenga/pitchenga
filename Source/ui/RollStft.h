@@ -38,6 +38,15 @@ private:
 
     static float freqToMidi(float freq);
     static float frequencyToX(float frequencyHz, float width, float xOffset);
+    void paintTooltip(juce::Graphics& graphics, int physicalWidth, int physicalHeight, juce::StringArray tooltipLines);
+    void paintCrosshairs(
+        juce::Graphics& graphics,
+        int physicalWidth,
+        int physicalHeight,
+        bool isHorizontal,
+        int logicalWidth,
+        int plotHeight
+    );
 
     void buildFrame();
     void paintLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, int midiNote, float targetCenter, float startY, juce::Colour baseColor, bool isHorizontal) const;

@@ -77,41 +77,52 @@ float RollStft::frequencyToX(float frequencyHz, float width, float xOffset) {
     return xOffset + (width - xOffset) * ((midi - minMidiNote) / (maxMidiNote - minMidiNote));
 }
 
-void RollStft::paint(juce::Graphics& graphics) {
-    if (!cachedFrame.isValid()) {
-        buildFrame();
+void RollStft::paintTooltip(juce::Graphics& graphics, const int physicalWidth, const int physicalHeight, juce::StringArray tooltipLines) {
+    const float tooltipPadding = 6.0f;
+    const juce::Font tooltipFont(juce::FontOptions(12.0f).withName(juce::Font::getDefaultMonospacedFontName()));
+    const float tooltipLineHeight = std::ceil(tooltipFont.getHeight());
+    float maxLineWidth = 0.0f;
+    for (const auto& line : tooltipLines) {
+        maxLineWidth = std::max(maxLineWidth, juce::GlyphArrangement::getStringWidth(tooltipFont, line));
+    }
+    maxLineWidth = std::ceil(maxLineWidth + 2.0f); // Add safety margin
+
+    const float tooltipWidth = maxLineWidth + tooltipPadding * 2.0f;
+    const float tooltipHeight = static_cast<float>(tooltipLines.size()) * tooltipLineHeight + tooltipPadding * 2.0f;
+
+    // Offset tooltip so it doesn't cover the crosshair intersection
+    float tooltipX = static_cast<float>(mousePosition.x) + 10.0f;
+    float tooltipY = static_cast<float>(mousePosition.y) + 10.0f;
+
+    // Flip tooltip if it goes off-screen
+    if (tooltipX + tooltipWidth > static_cast<float>(physicalWidth)) {
+        tooltipX = static_cast<float>(mousePosition.x) - tooltipWidth - 10.0f;
+    }
+    if (tooltipY + tooltipHeight > static_cast<float>(physicalHeight)) {
+        tooltipY = static_cast<float>(mousePosition.y) - tooltipHeight - 10.0f;
     }
 
-    const int physicalWidth = getWidth();
-    const int physicalHeight = getHeight();
-    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
-    const int logicalWidth = isHorizontal ? physicalHeight : physicalWidth;
-    const int logicalHeight = isHorizontal ? physicalWidth : physicalHeight;
-    const float labelAreaHeight = getLabelAreaHeight();
-    const int plotHeight = std::max(1, logicalHeight - static_cast<int>(labelAreaHeight));
+    // Background
+    graphics.setColour(juce::Colours::black.withAlpha(0.6f));
+    graphics.fillRoundedRectangle(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4.0f);
+    graphics.setColour(juce::Colours::white.withAlpha(0.2f));
+    graphics.drawRoundedRectangle(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4.0f, 1.0f);
 
-    graphics.saveState();
-
-    if (isHorizontal) {
-        graphics.addTransform(juce::AffineTransform(0.0f, 1.0f, 0.0f, -1.0f, 0.0f, static_cast<float>(physicalHeight)));
+    // Text
+    graphics.setColour(juce::Colours::white);
+    graphics.setFont(tooltipFont);
+    for (int i = 0; i < tooltipLines.size(); ++i) {
+        graphics.drawText(tooltipLines[i],
+            juce::Rectangle<float>(tooltipX + tooltipPadding,
+                tooltipY + tooltipPadding + static_cast<float>(i) * tooltipLineHeight,
+                maxLineWidth,
+                tooltipLineHeight),
+            juce::Justification::centredLeft,
+            false);
     }
+}
 
-    if (cachedFrame.isValid()) {
-        graphics.drawImageAt(cachedFrame, 0, 0);
-    }
-
-    if (processor.settings.isShowSmoke) {
-        graphics.saveState();
-        const float dbAxisWidth = getDbAxisWidth();
-        graphics.reduceClipRegion(static_cast<int>(dbAxisWidth), 0, logicalWidth - static_cast<int>(dbAxisWidth), plotHeight);
-        paintSmoke(graphics);
-        graphics.restoreState();
-    }
-
-    if (!activePeaks.empty() && processor.settings.isShowForrest) {
-        paintForrest(graphics);
-    }
-
+void RollStft::paintCrosshairs(juce::Graphics& graphics, const int physicalWidth, const int physicalHeight, const bool isHorizontal, const int logicalWidth, const int plotHeight) {
     juce::StringArray tooltipLines;
     bool shouldShowTooltip = false;
 
@@ -154,49 +165,46 @@ void RollStft::paint(juce::Graphics& graphics) {
     graphics.restoreState();
 
     if (shouldShowTooltip) {
-        const float tooltipPadding = 6.0f;
-        const juce::Font tooltipFont(juce::FontOptions(12.0f).withName(juce::Font::getDefaultMonospacedFontName()));
-        const float tooltipLineHeight = std::ceil(tooltipFont.getHeight());
-        float maxLineWidth = 0.0f;
-        for (const auto& line : tooltipLines) {
-            maxLineWidth = std::max(maxLineWidth, juce::GlyphArrangement::getStringWidth(tooltipFont, line));
-        }
-        maxLineWidth = std::ceil(maxLineWidth + 2.0f); // Add safety margin
-
-        const float tooltipWidth = maxLineWidth + tooltipPadding * 2.0f;
-        const float tooltipHeight = static_cast<float>(tooltipLines.size()) * tooltipLineHeight + tooltipPadding * 2.0f;
-
-        // Offset tooltip so it doesn't cover the crosshair intersection
-        float tooltipX = static_cast<float>(mousePosition.x) + 10.0f;
-        float tooltipY = static_cast<float>(mousePosition.y) + 10.0f;
-
-        // Flip tooltip if it goes off-screen
-        if (tooltipX + tooltipWidth > static_cast<float>(physicalWidth)) {
-            tooltipX = static_cast<float>(mousePosition.x) - tooltipWidth - 10.0f;
-        }
-        if (tooltipY + tooltipHeight > static_cast<float>(physicalHeight)) {
-            tooltipY = static_cast<float>(mousePosition.y) - tooltipHeight - 10.0f;
-        }
-
-        // Background
-        graphics.setColour(juce::Colours::black.withAlpha(0.6f));
-        graphics.fillRoundedRectangle(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4.0f);
-        graphics.setColour(juce::Colours::white.withAlpha(0.2f));
-        graphics.drawRoundedRectangle(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4.0f, 1.0f);
-
-        // Text
-        graphics.setColour(juce::Colours::white);
-        graphics.setFont(tooltipFont);
-        for (int i = 0; i < tooltipLines.size(); ++i) {
-            graphics.drawText(tooltipLines[i], 
-                              juce::Rectangle<float>(tooltipX + tooltipPadding, 
-                                                     tooltipY + tooltipPadding + static_cast<float>(i) * tooltipLineHeight, 
-                                                     maxLineWidth, 
-                                                     tooltipLineHeight), 
-                              juce::Justification::centredLeft,
-                              false);
-        }
+        paintTooltip(graphics, physicalWidth, physicalHeight, tooltipLines);
     }
+}
+
+void RollStft::paint(juce::Graphics& graphics) {
+    if (!cachedFrame.isValid()) {
+        buildFrame();
+    }
+
+    const int physicalWidth = getWidth();
+    const int physicalHeight = getHeight();
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
+    const int logicalWidth = isHorizontal ? physicalHeight : physicalWidth;
+    const int logicalHeight = isHorizontal ? physicalWidth : physicalHeight;
+    const float labelAreaHeight = getLabelAreaHeight();
+    const int plotHeight = std::max(1, logicalHeight - static_cast<int>(labelAreaHeight));
+
+    graphics.saveState();
+
+    if (isHorizontal) {
+        graphics.addTransform(juce::AffineTransform(0.0f, 1.0f, 0.0f, -1.0f, 0.0f, static_cast<float>(physicalHeight)));
+    }
+
+    if (cachedFrame.isValid()) {
+        graphics.drawImageAt(cachedFrame, 0, 0);
+    }
+
+    if (processor.settings.isShowSmoke) {
+        graphics.saveState();
+        const float dbAxisWidth = getDbAxisWidth();
+        graphics.reduceClipRegion(static_cast<int>(dbAxisWidth), 0, logicalWidth - static_cast<int>(dbAxisWidth), plotHeight);
+        paintSmoke(graphics);
+        graphics.restoreState();
+    }
+
+    if (!activePeaks.empty() && processor.settings.isShowForrest) {
+        paintForrest(graphics);
+    }
+
+    paintCrosshairs(graphics, physicalWidth, physicalHeight, isHorizontal, logicalWidth, plotHeight);
 }
 
 void RollStft::buildFrame() {
