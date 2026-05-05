@@ -239,7 +239,7 @@ void Stft::applyProgressiveSmoothing() {
     // Extreme math smoothing for treble to lock down jitter
     constexpr float trebleSmoothWeight = 0.04f;
 
-    const float unifiedBinResolution = static_cast<float>(currentSampleRate) / 32768.0f;
+    const float unifiedBinResolution = static_cast<float>(currentSampleRate) / static_cast<float>(stitchedSize * 2);
 
     for (int i = 0; i < stitchedSize; ++i) {
         const float freq = static_cast<float>(i) * unifiedBinResolution;
