@@ -239,7 +239,7 @@ void Stft::applyProgressiveSmoothing() {
     // Extreme math smoothing for treble to lock down jitter
     constexpr float trebleSmoothWeight = 0.04f;
 
-    const float unifiedBinResolution = static_cast<float>(currentSampleRate) / 65536.0f;
+    const float unifiedBinResolution = static_cast<float>(currentSampleRate) / 32768.0f;
 
     for (int i = 0; i < stitchedSize; ++i) {
         const float freq = static_cast<float>(i) * unifiedBinResolution;
@@ -356,7 +356,15 @@ void Stft::applyPsychoacousticTilt() {
 }
 
 void Stft::scaleForUi() {
-    constexpr float inputGain = 6.0f; // Window compensation and standard volume match
+    // Calibration Logic:
+    // Target: 0 dB FS sine wave = 1.0 linear magnitude (0 dB on UI scale).
+    // JUCE FFT returns bin magnitudes where peak = (Amplitude / 2) * (WindowSum / N_fft).
+    // Sum of Blackman-Harris coefficients is approx 0.35875 * windowSize.
+    // Our N_fft / windowSize ratio is constant 4.0 (zero-padding).
+    // To get Amplitude=1.0 from a 0dBFS sine:
+    // Magnitude_reported = (1/2) * (windowSize * 0.35875 / (4 * windowSize)) = 0.35875 / 8 = 0.04484.
+    // Necessary Makeup Gain = 1 / 0.04484 = 22.3.
+    constexpr float inputGain = 22.3f; 
     constexpr float zeroAmplitudeDb = -90.0f;
     constexpr float zeroAmplitudeDbInv = 1.0f / zeroAmplitudeDb;
     constexpr float gateThreshold = 0.4f;

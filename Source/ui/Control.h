@@ -108,6 +108,7 @@ private:
     static inline const juce::String save = "Save";
     static inline const juce::String saveAs = "Save As";
     static inline const juce::String deletePreset = "Delete";
+    static inline const juce::String rename = "Rename";
 
     static inline const juce::String userDefaultPresetName = "Default";
     static inline const juce::String factoryDefaultPresetName = "Factory";
@@ -121,6 +122,7 @@ private:
 
     void saveCurrentPreset();
     void deleteCurrentPreset();
+    void renameCurrentPreset();
     static void setupToggleButton(juce::TextButton& button, bool initialState);
     void updateButtonStates();
 
@@ -162,6 +164,7 @@ private:
     juce::TextButton buttonSave{save};
     juce::TextButton buttonSaveAs{saveAs};
     juce::TextButton buttonDelete{deletePreset};
+    juce::TextButton buttonRename{rename};
 
     std::unique_ptr<juce::FileChooser> chooser;
 
