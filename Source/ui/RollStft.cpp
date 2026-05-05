@@ -81,7 +81,7 @@ void RollStft::paintTooltip(
     juce::Graphics& graphics,
     const int physicalWidth,
     const int physicalHeight,
-    juce::StringArray tooltipLines
+    const juce::StringArray& tooltipLines
 ) {
     const float tooltipPadding = 6.0f;
     const juce::Font tooltipFont(juce::FontOptions(12.0f).withName(juce::Font::getDefaultMonospacedFontName()));
