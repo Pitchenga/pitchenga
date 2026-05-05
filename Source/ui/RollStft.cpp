@@ -527,9 +527,9 @@ void RollStft::pumpSmoke() {
 
     const float sampleRate = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
     const float binResolutionHz = sampleRate / 32768.0f;
-    const auto fWidth = static_cast<float>(width);
+    const auto widthFloat = static_cast<float>(width);
     const float dbAxisWidth = getDbAxisWidth();
-    const float effectiveWidth = fWidth - dbAxisWidth;
+    const float effectiveWidth = widthFloat - dbAxisWidth;
     constexpr float midiRangeInv = 1.0f / (maxMidiNote - minMidiNote);
     const bool doDynamicStem = enableDynamicStemWidth && !processor.settings.isRawMode;
 
@@ -546,7 +546,7 @@ void RollStft::pumpSmoke() {
             const float xPos = dbAxisWidth + effectiveWidth * ((midi - minMidiNote) * midiRangeInv);
 
             // Fast bounds culling
-            if (xPos >= dbAxisWidth - 10.0f && xPos <= fWidth + 10.0f) {
+            if (xPos >= dbAxisWidth - 10.0f && xPos <= widthFloat + 10.0f) {
                 // Configurable razor-sharp stems for the Smoke
                 float stemWidthPixels = 4.0f;
                 if (doDynamicStem) {
