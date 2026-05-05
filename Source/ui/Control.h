@@ -77,7 +77,7 @@ public:
     std::function<void()> onVisibilityChanged;
 
     static inline const juce::String presetsDirectoryName = "presets";
-    static inline const juce::String userDefaultPresetFileName = "user-default.xml";
+    static inline const juce::String userDefaultPresetFileName = "Default.xml";
 
 private:
     static inline const juce::String saveConfirmTitle = "Save Preset";
@@ -109,8 +109,8 @@ private:
     static inline const juce::String saveAs = "Save As";
     static inline const juce::String deletePreset = "Delete";
 
-    static inline const juce::String userDefaultPresetName = "User Default";
-    static inline const juce::String factoryDefaultPresetName = "Factory Default";
+    static inline const juce::String userDefaultPresetName = "Default";
+    static inline const juce::String factoryDefaultPresetName = "Factory";
     static inline const juce::String presetsComboTextWhenNothingSelected = "Presets...";
 
     static constexpr int nonePresetId = 0;

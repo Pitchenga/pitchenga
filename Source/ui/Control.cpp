@@ -142,24 +142,27 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
+    setupToggleButton(toggleLetter, !processor.settings.isLetterNotation);
     toggleLetter.setButtonText(processor.settings.isLetterNotation ? letter : solfege);
     toggleLetter.onClick = [this] {
-        processor.settings.isLetterNotation = !processor.settings.isLetterNotation;
+        processor.settings.isLetterNotation = !toggleLetter.getToggleState();
         toggleLetter.setButtonText(processor.settings.isLetterNotation ? letter : solfege);
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
+    setupToggleButton(toggleRollType, processor.settings.isUseRollStft);
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? stft : cqt);
     toggleRollType.onClick = [this] {
-        processor.settings.isUseRollStft = !processor.settings.isUseRollStft;
+        processor.settings.isUseRollStft = toggleRollType.getToggleState();
         toggleRollType.setButtonText(processor.settings.isUseRollStft ? stft : cqt);
         updateButtonStates();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
+    setupToggleButton(toggleFlipRoll, processor.settings.isFlipRollHorizontal);
     toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? flip : flop);
     toggleFlipRoll.onClick = [this] {
-        processor.settings.isFlipRollHorizontal = !processor.settings.isFlipRollHorizontal;
+        processor.settings.isFlipRollHorizontal = toggleFlipRoll.getToggleState();
         toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? flip : flop);
         if (onVisibilityChanged) onVisibilityChanged();
     };
@@ -295,6 +298,25 @@ Control::Control(PitchengaAudioProcessor& proc)
     };
 
     refreshPresets();
+
+    // Ensure Default.xml exists, create from factory if missing
+    const auto appDataDir = Util::getApplicationDirectory();
+    const auto presetsDir = appDataDir.getChildFile(presetsDirectoryName);
+    const auto defaultFile = presetsDir.getChildFile(userDefaultPresetFileName);
+    if (!defaultFile.existsAsFile()) {
+        const auto factoryXml = juce::XmlDocument::parse(
+            juce::String::createStringFromData(
+                BinaryData::factorysettings_xml,
+                BinaryData::factorysettings_xmlSize
+            )
+        );
+        if (factoryXml != nullptr) {
+            factoryXml->setTagName(getSettingsTagName());
+            if (presetsDir.createDirectory()) {
+                factoryXml->writeTo(defaultFile);
+            }
+        }
+    }
 
     // Restore selection by name
     if (processor.settings.currentPresetName.isNotEmpty()) {
@@ -586,10 +608,16 @@ void Control::updateVisibilityFromState() {
     );
     toggleIsFreezeRoll.setToggleState(processor.settings.isFreezeRoll, juce::NotificationType::dontSendNotification);
 
+    toggleRollType.setToggleState(processor.settings.isUseRollStft, juce::NotificationType::dontSendNotification);
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? stft : cqt);
+    toggleFlipRoll.setToggleState(
+        processor.settings.isFlipRollHorizontal,
+        juce::NotificationType::dontSendNotification
+    );
     toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? flip : flop);
     toggleStrobe.setToggleState(processor.settings.isShowStrobe, juce::NotificationType::dontSendNotification);
     toggleRaw.setToggleState(processor.settings.isRawMode, juce::NotificationType::dontSendNotification);
+    toggleLetter.setToggleState(!processor.settings.isLetterNotation, juce::NotificationType::dontSendNotification);
     toggleLetter.setButtonText(processor.settings.isLetterNotation ? letter : solfege);
     toggleSmoke.setToggleState(processor.settings.isShowSmoke, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
@@ -682,10 +710,11 @@ void Control::resized() {
     positionButton(toggleLayoutPivot, topRow);
 
     // Position presets and tweak from the right
-    positionButtonRight(buttonSave, topRow);
-    positionButtonRight(buttonSaveAs, topRow);
     constexpr int comboWidth = 140;
     comboPresets.setBounds(topRow.removeFromRight(comboWidth));
+    positionButtonRight(buttonSaveAs, topRow);
+    positionButtonRight(buttonSave, topRow);
+    topRow.removeFromRight(6);
     positionButtonRight(toggleTweak, topRow);
 
     positionButtonRight(toggleIsFreezeRoll, topRow);
@@ -719,6 +748,7 @@ void Control::resized() {
         }
 
         positionButtonRight(buttonDelete, panelBounds);
+        panelBounds.removeFromRight(6);
 
         positionButtonRight(toggleForrest, panelBounds);
         positionButtonRight(toggleSmoke, panelBounds);
