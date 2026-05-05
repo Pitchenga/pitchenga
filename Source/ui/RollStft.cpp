@@ -344,7 +344,7 @@ void RollStft::paintDbAxis(
         const float y = plotHeight * (1.0f - norm);
 
         if (isHorizontal) {
-            juce::Graphics::ScopedSaveState ss(graphics);
+            juce::Graphics::ScopedSaveState scopedState(graphics);
             const float cx = dbAxisWidth * 0.5f;
             graphics.addTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi, cx, y));
             // Rotate 90 CW around (cx, y) to keep text upright in the final view.
