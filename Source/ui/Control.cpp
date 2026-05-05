@@ -589,7 +589,6 @@ void Control::saveCurrentPreset() {
 void Control::deleteCurrentPreset() {
     const int selectedId = comboPresets.getSelectedId();
     if (selectedId >= customPresetsStartId) {
-        // Delete User Default and flip to Factory Default
         if (currentPresetFile.deleteFile()) {
             currentPresetFile = juce::File();
             processor.settings.currentPresetName = "";
