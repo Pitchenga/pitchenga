@@ -142,24 +142,27 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
+    setupToggleButton(toggleLetter, !processor.settings.isLetterNotation);
     toggleLetter.setButtonText(processor.settings.isLetterNotation ? letter : solfege);
     toggleLetter.onClick = [this] {
-        processor.settings.isLetterNotation = !processor.settings.isLetterNotation;
+        processor.settings.isLetterNotation = !toggleLetter.getToggleState();
         toggleLetter.setButtonText(processor.settings.isLetterNotation ? letter : solfege);
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
+    setupToggleButton(toggleRollType, processor.settings.isUseRollStft);
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? stft : cqt);
     toggleRollType.onClick = [this] {
-        processor.settings.isUseRollStft = !processor.settings.isUseRollStft;
+        processor.settings.isUseRollStft = toggleRollType.getToggleState();
         toggleRollType.setButtonText(processor.settings.isUseRollStft ? stft : cqt);
         updateButtonStates();
         if (onVisibilityChanged) onVisibilityChanged();
     };
 
+    setupToggleButton(toggleFlipRoll, processor.settings.isFlipRollHorizontal);
     toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? flip : flop);
     toggleFlipRoll.onClick = [this] {
-        processor.settings.isFlipRollHorizontal = !processor.settings.isFlipRollHorizontal;
+        processor.settings.isFlipRollHorizontal = toggleFlipRoll.getToggleState();
         toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? flip : flop);
         if (onVisibilityChanged) onVisibilityChanged();
     };
@@ -234,8 +237,8 @@ Control::Control(PitchengaAudioProcessor& proc)
         processor.showExternalPluginEditor();
     };
 
-    buttonLoad.setButtonText(load);
-    buttonLoad.onClick = [this] {
+    comboPresets.setTextWhenNothingSelected(presetsComboTextWhenNothingSelected);
+    comboPresets.onChange = [this] {
         const int id = comboPresets.getSelectedId();
         if (id == nonePresetId) return;
 
@@ -294,12 +297,26 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
-    comboPresets.setTextWhenNothingSelected(presetsComboTextWhenNothingSelected);
-    comboPresets.onChange = [this] {
-        updateButtonStates();
-    };
-
     refreshPresets();
+
+    // Ensure Default.xml exists, create from factory if missing
+    const auto appDataDir = Util::getApplicationDirectory();
+    const auto presetsDir = appDataDir.getChildFile(presetsDirectoryName);
+    const auto defaultFile = presetsDir.getChildFile(userDefaultPresetFileName);
+    if (!defaultFile.existsAsFile()) {
+        const auto factoryXml = juce::XmlDocument::parse(
+            juce::String::createStringFromData(
+                BinaryData::factorysettings_xml,
+                BinaryData::factorysettings_xmlSize
+            )
+        );
+        if (factoryXml != nullptr) {
+            factoryXml->setTagName(getSettingsTagName());
+            if (presetsDir.createDirectory()) {
+                factoryXml->writeTo(defaultFile);
+            }
+        }
+    }
 
     // Restore selection by name
     if (processor.settings.currentPresetName.isNotEmpty()) {
@@ -444,23 +461,25 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(toggleNeedle);
     addAndMakeVisible(toggleEye);
     addAndMakeVisible(toggleRoll);
+    addAndMakeVisible(toggleLayoutPivot);
     addAndMakeVisible(toggleIsFreezeRoll);
-
-    addAndMakeVisible(micLabel);
-    addAndMakeVisible(knobEarLeft);
-    addAndMakeVisible(knobEarRight);
-    addAndMakeVisible(volumeLabelLeft);
-    addAndMakeVisible(volumeLabelRight);
 
     addAndMakeVisible(toggleTweak);
     addAndMakeVisible(comboPresets);
-    addAndMakeVisible(buttonLoad);
+    addAndMakeVisible(buttonSave);
+    addAndMakeVisible(buttonSaveAs);
 
     addAndMakeVisible(tweakPanel);
     tweakPanel.addAndMakeVisible(buttonPlugs);
     tweakPanel.addAndMakeVisible(buttonPlug);
     tweakPanel.addAndMakeVisible(toggleCapture);
-    tweakPanel.addAndMakeVisible(toggleLayoutPivot);
+
+    tweakPanel.addAndMakeVisible(micLabel);
+    tweakPanel.addAndMakeVisible(knobEarLeft);
+    tweakPanel.addAndMakeVisible(knobEarRight);
+    tweakPanel.addAndMakeVisible(volumeLabelLeft);
+    tweakPanel.addAndMakeVisible(volumeLabelRight);
+
     tweakPanel.addAndMakeVisible(toggleStrobe);
     tweakPanel.addAndMakeVisible(toggleRaw);
     tweakPanel.addAndMakeVisible(toggleRollType);
@@ -468,8 +487,6 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(toggleSmoke);
     tweakPanel.addAndMakeVisible(toggleForrest);
     tweakPanel.addAndMakeVisible(toggleLetter);
-    tweakPanel.addAndMakeVisible(buttonSave);
-    tweakPanel.addAndMakeVisible(buttonSaveAs);
     tweakPanel.addAndMakeVisible(buttonDelete);
 
     buildTimestampLabel.setText(VERSION, juce::NotificationType::dontSendNotification);
@@ -591,10 +608,16 @@ void Control::updateVisibilityFromState() {
     );
     toggleIsFreezeRoll.setToggleState(processor.settings.isFreezeRoll, juce::NotificationType::dontSendNotification);
 
+    toggleRollType.setToggleState(processor.settings.isUseRollStft, juce::NotificationType::dontSendNotification);
     toggleRollType.setButtonText(processor.settings.isUseRollStft ? stft : cqt);
+    toggleFlipRoll.setToggleState(
+        processor.settings.isFlipRollHorizontal,
+        juce::NotificationType::dontSendNotification
+    );
     toggleFlipRoll.setButtonText(processor.settings.isFlipRollHorizontal ? flip : flop);
     toggleStrobe.setToggleState(processor.settings.isShowStrobe, juce::NotificationType::dontSendNotification);
     toggleRaw.setToggleState(processor.settings.isRawMode, juce::NotificationType::dontSendNotification);
+    toggleLetter.setToggleState(!processor.settings.isLetterNotation, juce::NotificationType::dontSendNotification);
     toggleLetter.setButtonText(processor.settings.isLetterNotation ? letter : solfege);
     toggleSmoke.setToggleState(processor.settings.isShowSmoke, juce::NotificationType::dontSendNotification);
     toggleForrest.setToggleState(processor.settings.isShowForrest, juce::NotificationType::dontSendNotification);
@@ -633,7 +656,6 @@ void Control::updateButtonStates() {
 
     // Disable Save and Delete buttons for Factory Default (ID 1) and nothing selected (ID 0)
     const int selectedId = comboPresets.getSelectedId();
-    buttonLoad.setEnabled(selectedId > nonePresetId);
     buttonSave.setEnabled(selectedId > nonePresetId);
     buttonDelete.setEnabled(selectedId > factoryDefaultPresetId);
 
@@ -685,31 +707,14 @@ void Control::resized() {
     positionButton(toggleNeedle, topRow);
     positionButton(toggleEye, topRow);
     positionButton(toggleRoll, topRow);
-
-    if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
-        topRow.removeFromLeft(6);
-
-        // Layout the "Mic" label
-        const float micTextWidth = juce::GlyphArrangement::getStringWidth(micLabel.getFont(), mic);
-        const int micWidth = static_cast<int>(std::ceil(micTextWidth)) + 4;
-        micLabel.setBounds(topRow.removeFromLeft(micWidth));
-
-        // Layout the circular knobs (square, matching rowHeight)
-        knobEarLeft.setBounds(topRow.removeFromLeft(rowHeight));
-
-        // Layout the label independently with a fixed width based on the maximum string length
-        const float maxTextWidth = juce::GlyphArrangement::getStringWidth(volumeLabelLeft.getFont(), "-00.0");
-        const int fixedLabelWidth = static_cast<int>(std::ceil(maxTextWidth));
-        volumeLabelLeft.setBounds(topRow.removeFromLeft(fixedLabelWidth));
-
-        knobEarRight.setBounds(topRow.removeFromLeft(rowHeight));
-        volumeLabelRight.setBounds(topRow.removeFromLeft(fixedLabelWidth));
-    }
+    positionButton(toggleLayoutPivot, topRow);
 
     // Position presets and tweak from the right
-    positionButtonRight(buttonLoad, topRow);
     constexpr int comboWidth = 140;
     comboPresets.setBounds(topRow.removeFromRight(comboWidth));
+    positionButtonRight(buttonSaveAs, topRow);
+    positionButtonRight(buttonSave, topRow);
+    topRow.removeFromRight(6);
     positionButtonRight(toggleTweak, topRow);
 
     positionButtonRight(toggleIsFreezeRoll, topRow);
@@ -722,9 +727,28 @@ void Control::resized() {
         positionButton(buttonPlug, panelBounds);
         positionButton(toggleCapture, panelBounds);
 
-        positionButtonRight(buttonSave, panelBounds);
-        positionButtonRight(buttonSaveAs, panelBounds);
+        if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
+            panelBounds.removeFromLeft(6);
+
+            // Layout the "Mic" label
+            const float micTextWidth = juce::GlyphArrangement::getStringWidth(micLabel.getFont(), mic);
+            const int micWidth = static_cast<int>(std::ceil(micTextWidth)) + 4;
+            micLabel.setBounds(panelBounds.removeFromLeft(micWidth));
+
+            // Layout the circular knobs (square, matching rowHeight)
+            knobEarLeft.setBounds(panelBounds.removeFromLeft(rowHeight));
+
+            // Layout the label independently with a fixed width based on the maximum string length
+            const float maxTextWidth = juce::GlyphArrangement::getStringWidth(volumeLabelLeft.getFont(), "-00.0");
+            const int fixedLabelWidth = static_cast<int>(std::ceil(maxTextWidth));
+            volumeLabelLeft.setBounds(panelBounds.removeFromLeft(fixedLabelWidth));
+
+            knobEarRight.setBounds(panelBounds.removeFromLeft(rowHeight));
+            volumeLabelRight.setBounds(panelBounds.removeFromLeft(fixedLabelWidth));
+        }
+
         positionButtonRight(buttonDelete, panelBounds);
+        panelBounds.removeFromRight(6);
 
         positionButtonRight(toggleForrest, panelBounds);
         positionButtonRight(toggleSmoke, panelBounds);
@@ -733,7 +757,6 @@ void Control::resized() {
         positionButtonRight(toggleRaw, panelBounds);
 
         positionButtonRight(toggleStrobe, panelBounds);
-        positionButtonRight(toggleLayoutPivot, panelBounds);
         positionButtonRight(toggleLetter, panelBounds);
 
         panelBounds.removeFromRight(8);
