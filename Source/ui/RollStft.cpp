@@ -170,10 +170,10 @@ void RollStft::paintCrosshairs(
             const int wholeMidi = static_cast<int>(std::round(midi));
             const int roundedCents = static_cast<int>(std::round((midi - static_cast<float>(wholeMidi)) * 100.0f));
             const juce::String noteName = Tone::getNoteName(wholeMidi, processor.settings.isLetterNotation);
-            const juce::String centsStr = (roundedCents >= 0 ? "+" : "-") + juce::String(std::abs(roundedCents)).
+            const juce::String centsString = (roundedCents >= 0 ? "+" : "-") + juce::String(std::abs(roundedCents)).
                 paddedLeft('0', 2) + "c";
 
-            tooltipLines.add(noteName + " (" + centsStr + ")");
+            tooltipLines.add(noteName + " (" + centsString + ")");
             tooltipLines.add(juce::String(freq, 1) + " Hz");
             tooltipLines.add(juce::String(dbValue, 1) + " dB");
             shouldShowTooltip = true;
