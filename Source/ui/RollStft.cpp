@@ -129,6 +129,63 @@ void RollStft::paint(juce::Graphics& graphics) {
             graphics.setColour(juce::Colours::white.withAlpha(0.4f));
             graphics.drawLine(dbAxisWidth, logicalMouse.y, static_cast<float>(logicalWidth), logicalMouse.y, 1.0f);
             graphics.drawLine(logicalMouse.x, 0.0f, logicalMouse.x, static_cast<float>(plotHeight), 1.0f);
+
+            // Calculate tooltip values
+            const float midi = (logicalMouse.x - dbAxisWidth) / (static_cast<float>(logicalWidth) - dbAxisWidth) * (maxMidiNote - minMidiNote) + minMidiNote;
+            const float freq = 440.0f * std::pow(2.0f, (midi - 69.0f) / 12.0f);
+            const float normY = (static_cast<float>(plotHeight) - logicalMouse.y) / static_cast<float>(plotHeight);
+            const float dbValue = normY * 90.0f - 90.0f;
+
+            const int wholeMidi = static_cast<int>(std::round(midi));
+            const float cents = (midi - static_cast<float>(wholeMidi)) * 100.0f;
+            const juce::String noteName = Tone::getNoteName(wholeMidi, processor.settings.isLetterNotation);
+            const juce::String centsStr = (cents >= 0 ? "+" : "") + juce::String(static_cast<int>(std::round(cents))) + "c";
+
+            juce::StringArray lines;
+            lines.add(noteName + " (" + centsStr + ")");
+            lines.add(juce::String(freq, 1) + " Hz");
+            lines.add(juce::String(dbValue, 1) + " dB");
+
+            const float tooltipPadding = 6.0f;
+            const float tooltipLineHeight = 14.0f;
+            float maxLineWidth = 0.0f;
+            const juce::Font tooltipFont(12.0f);
+            for (const auto& line : lines) {
+                maxLineWidth = std::max(maxLineWidth, juce::GlyphArrangement::getStringWidth(tooltipFont, line));
+            }
+
+            const float tooltipWidth = maxLineWidth + tooltipPadding * 2.0f;
+            const float tooltipHeight = static_cast<float>(lines.size()) * tooltipLineHeight + tooltipPadding * 2.0f;
+
+            // Offset tooltip so it doesn't cover the crosshair intersection
+            float tooltipX = logicalMouse.x + 10.0f;
+            float tooltipY = logicalMouse.y + 10.0f;
+
+            // Flip tooltip if it goes off-screen
+            if (tooltipX + tooltipWidth > static_cast<float>(logicalWidth)) {
+                tooltipX = logicalMouse.x - tooltipWidth - 10.0f;
+            }
+            if (tooltipY + tooltipHeight > static_cast<float>(plotHeight)) {
+                tooltipY = logicalMouse.y - tooltipHeight - 10.0f;
+            }
+
+            // Background
+            graphics.setColour(juce::Colours::black.withAlpha(0.6f));
+            graphics.fillRoundedRectangle(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4.0f);
+            graphics.setColour(juce::Colours::white.withAlpha(0.2f));
+            graphics.drawRoundedRectangle(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4.0f, 1.0f);
+
+            // Text
+            graphics.setColour(juce::Colours::white);
+            graphics.setFont(tooltipFont);
+            for (int i = 0; i < lines.size(); ++i) {
+                graphics.drawText(lines[i], 
+                                  tooltipX + tooltipPadding, 
+                                  tooltipY + tooltipPadding + static_cast<float>(i) * tooltipLineHeight, 
+                                  maxLineWidth, 
+                                  tooltipLineHeight, 
+                                  juce::Justification::centredLeft);
+            }
         }
     }
 
