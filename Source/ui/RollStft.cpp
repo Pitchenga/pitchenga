@@ -39,7 +39,11 @@ float RollStft::getLabelAreaHeight() const {
     if (!processor.settings.isShowRollLabels()) {
         return 0.0f;
     }
-    return juce::GlyphArrangement::getStringWidth(Common::getLabelFont(), "Ww8") + 4.0f;
+    float height = juce::GlyphArrangement::getStringWidth(Common::getLabelFont(), "Ww8") + 4.0f;
+    if (processor.settings.isRawMode) {
+        height *= 2.0f;
+    }
+    return height;
 }
 
 float RollStft::freqToMidi(float freq) {
@@ -133,7 +137,32 @@ void RollStft::buildFrame() {
         }
 
         if (processor.settings.isShowRollLabels()) {
-            paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, totalHeight, baseColor, processor.settings.isFlipRollHorizontal);
+            float labelStartY = totalHeight;
+            if (processor.settings.isRawMode) {
+                // If Raw mode is enabled, note labels should be slightly higher (away from the edge)
+                labelStartY -= maxTextWidth;
+            }
+            paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, labelStartY, baseColor, processor.settings.isFlipRollHorizontal);
+        }
+    }
+
+    if (processor.settings.isShowRollLabels() && processor.settings.isRawMode) {
+        static const std::vector<float> hzValues = {
+            40, 50, 60, 80, 100, 200, 300, 400, 500, 700, 1000, 1500
+        };
+
+        for (float hz : hzValues) {
+            const float targetCenter = frequencyToX(hz, static_cast<float>(logicalWidth));
+            if (targetCenter < 0 || targetCenter > logicalWidth) continue;
+
+            juce::String labelText;
+            if (hz >= 1000) {
+                labelText = juce::String(hz / 1000.0f, 1) + "k";
+            } else {
+                labelText = juce::String(static_cast<int>(hz));
+            }
+
+            paintHzLabel(graphics, labelHeight, maxTextWidth, labelText, targetCenter, totalHeight, juce::Colours::white.withAlpha(0.7f), processor.settings.isFlipRollHorizontal);
         }
     }
 }
@@ -154,8 +183,38 @@ void RollStft::paintLabel(
     }
 
     const juce::String name = Tone::getNoteName(midiNote, processor.settings.isLetterNotation);
+    paintTextLabel(graphics, labelHeight, maxTextWidth, name, targetCenter, startY, baseColor, isHorizontal);
+}
 
-    graphics.setColour(baseColor);
+void RollStft::paintHzLabel(
+    juce::Graphics& graphics,
+    const float labelHeight,
+    const float maxTextWidth,
+    const juce::String& text,
+    const float targetCenter,
+    const float startY,
+    const juce::Colour color,
+    const bool isHorizontal
+) const {
+    // Add a small tick for the Hz scale
+    graphics.setColour(color);
+    constexpr float tickSize = 4.0f;
+    graphics.drawLine(targetCenter, startY - maxTextWidth, targetCenter, startY - maxTextWidth + tickSize, 1.0f);
+
+    paintTextLabel(graphics, labelHeight, maxTextWidth, text, targetCenter, startY, color, isHorizontal);
+}
+
+void RollStft::paintTextLabel(
+    juce::Graphics& graphics,
+    const float labelHeight,
+    const float maxTextWidth,
+    const juce::String& text,
+    const float targetCenter,
+    const float startY,
+    const juce::Colour color,
+    const bool isHorizontal
+) const {
+    graphics.setColour(color);
     graphics.saveState();
 
     if (isHorizontal) {
@@ -165,7 +224,7 @@ void RollStft::paintLabel(
             juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi, rotX, rotY)
         );
         graphics.drawText(
-            name,
+            text,
             juce::Rectangle(rotX, rotY, maxTextWidth, labelHeight),
             juce::Justification::centredLeft,
             false
@@ -175,7 +234,7 @@ void RollStft::paintLabel(
             juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, targetCenter, startY - 2.0f)
         );
         graphics.drawText(
-            name,
+            text,
             juce::Rectangle<float>(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
             juce::Justification::centredLeft,
             false

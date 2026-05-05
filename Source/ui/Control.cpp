@@ -139,6 +139,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     setupToggleButton(toggleRaw, processor.settings.isRawMode);
     toggleRaw.onClick = [this] {
         processor.settings.isRawMode = toggleRaw.getToggleState();
+        if (onVisibilityChanged) onVisibilityChanged();
         updateButtonStates();
     };
 
@@ -587,7 +588,7 @@ void Control::saveCurrentPreset() {
 
 void Control::deleteCurrentPreset() {
     const int selectedId = comboPresets.getSelectedId();
-    if (selectedId >= userDefaultPresetId) {
+    if (selectedId >= customPresetsStartId) {
         // Delete User Default and flip to Factory Default
         if (currentPresetFile.deleteFile()) {
             currentPresetFile = juce::File();
