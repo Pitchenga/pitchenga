@@ -344,7 +344,7 @@ void RollStft::paintDbAxis(
         const float y = plotHeight * (1.0f - norm);
 
         if (isHorizontal) {
-            juce::Graphics::ScopedSaveState ss(graphics);
+            juce::Graphics::ScopedSaveState scopedState(graphics);
             const float cx = dbAxisWidth * 0.5f;
             graphics.addTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi, cx, y));
             // Rotate 90 CW around (cx, y) to keep text upright in the final view.
@@ -522,8 +522,8 @@ void RollStft::pumpSmoke() {
 
     juce::Graphics graphics(smokeImage);
 
-    const float sr = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
-    const float binResHz = sr / 32768.0f;
+    const float sampleRate = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
+    const float binResolutionHz = sampleRate / 32768.0f;
     const auto fWidth = static_cast<float>(width);
     const float dbAxisWidth = getDbAxisWidth();
     const float effectiveWidth = fWidth - dbAxisWidth;
