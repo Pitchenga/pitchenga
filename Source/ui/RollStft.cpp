@@ -137,9 +137,9 @@ void RollStft::paint(juce::Graphics& graphics) {
             const float dbValue = normY * 90.0f - 90.0f;
 
             const int wholeMidi = static_cast<int>(std::round(midi));
-            const float cents = (midi - static_cast<float>(wholeMidi)) * 100.0f;
+            const int roundedCents = static_cast<int>(std::round((midi - static_cast<float>(wholeMidi)) * 100.0f));
             const juce::String noteName = Tone::getNoteName(wholeMidi, processor.settings.isLetterNotation);
-            const juce::String centsStr = (cents >= 0 ? "+" : "") + juce::String(static_cast<int>(std::round(cents))) + "c";
+            const juce::String centsStr = (roundedCents >= 0 ? "+" : "-") + juce::String(std::abs(roundedCents)).paddedLeft('0', 2) + "c";
 
             juce::StringArray lines;
             lines.add(noteName + " (" + centsStr + ")");
