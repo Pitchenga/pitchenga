@@ -599,7 +599,7 @@ void Control::deleteCurrentPreset() {
 }
 
 void Control::renameCurrentPreset() {
-    auto* alert = new juce::AlertWindow(
+    auto alert = std::make_shared<juce::AlertWindow>(
         "Rename Preset",
         "Enter a new name for the preset:",
         juce::MessageBoxIconType::QuestionIcon
@@ -610,7 +610,8 @@ void Control::renameCurrentPreset() {
     alert->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
     juce::Component::SafePointer<Control> safeThis(this);
-    alert->enterModalState(
+    auto* rawAlert = alert.get();
+    rawAlert->enterModalState(
         true,
         juce::ModalCallbackFunction::create(
             [safeThis, alert](int result) {
@@ -663,7 +664,6 @@ void Control::renameCurrentPreset() {
                         }
                     }
                 }
-                delete alert;
             }
         )
     );

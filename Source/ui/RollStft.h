@@ -38,7 +38,7 @@ private:
 
     static float freqToMidi(float freq);
     static float frequencyToX(float frequencyHz, float width, float xOffset);
-    void paintTooltip(juce::Graphics& graphics, int physicalWidth, int physicalHeight, juce::StringArray tooltipLines);
+    void paintTooltip(juce::Graphics& graphics, int physicalWidth, int physicalHeight, const juce::StringArray& tooltipLines);
     void paintCrosshairs(
         juce::Graphics& graphics,
         int physicalWidth,
