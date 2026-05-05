@@ -92,6 +92,8 @@ private:
     void paintRawAxisLabels(juce::Graphics& graphics, float plotHeight, float logicalWidth);
 
     juce::Point<int> mousePosition{-1, -1};
+    juce::AffineTransform cachedHorizontalTransform;
+    juce::AffineTransform cachedHorizontalTransformInverted;
 
     static inline const std::vector<float> hzValues = {
         20.0f,

@@ -40,6 +40,10 @@ void RollStft::resized() {
     const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
+    const int physicalHeight = getHeight();
+
+    cachedHorizontalTransform = juce::AffineTransform(0.0f, 1.0f, 0.0f, -1.0f, 0.0f, static_cast<float>(physicalHeight));
+    cachedHorizontalTransformInverted = cachedHorizontalTransform.inverted();
 
     if (logicalWidth > 0 && logicalHeight > 0) {
         const int plotHeight = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
@@ -146,8 +150,7 @@ void RollStft::paintCrosshairs(
     if (mousePosition.x >= 0 && mousePosition.y >= 0) {
         juce::Point<float> logicalMouse;
         if (isHorizontal) {
-            auto transform = juce::AffineTransform(0.0f, 1.0f, 0.0f, -1.0f, 0.0f, static_cast<float>(physicalHeight));
-            logicalMouse = mousePosition.toFloat().transformedBy(transform.inverted());
+            logicalMouse = mousePosition.toFloat().transformedBy(cachedHorizontalTransformInverted);
         } else {
             logicalMouse = mousePosition.toFloat();
         }
@@ -162,7 +165,7 @@ void RollStft::paintCrosshairs(
                 juce::Graphics::ScopedSaveState graphicsState(graphics);
                 if (isHorizontal) {
                     graphics.addTransform(
-                        juce::AffineTransform(0.0f, 1.0f, 0.0f, -1.0f, 0.0f, static_cast<float>(physicalHeight))
+                        cachedHorizontalTransform
                     );
                 }
                 graphics.setColour(juce::Colours::white.withAlpha(0.4f));
@@ -213,7 +216,7 @@ void RollStft::paint(juce::Graphics& graphics) {
 
         if (isHorizontal) {
             graphics.addTransform(
-                juce::AffineTransform(0.0f, 1.0f, 0.0f, -1.0f, 0.0f, static_cast<float>(physicalHeight))
+                cachedHorizontalTransform
             );
         }
 
