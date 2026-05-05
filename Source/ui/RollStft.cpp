@@ -17,7 +17,7 @@ void RollStft::mouseEnter(const juce::MouseEvent& event) {
     repaint();
 }
 
-void RollStft::mouseExit(const juce::MouseEvent& event) {
+void RollStft::mouseExit(const juce::MouseEvent&) {
     mousePosition = {-1, -1};
     repaint();
 }
@@ -112,6 +112,9 @@ void RollStft::paint(juce::Graphics& graphics) {
         paintForrest(graphics);
     }
 
+    juce::StringArray tooltipLines;
+    bool shouldShowTooltip = false;
+
     // Draw crosshairs at mouse position
     if (mousePosition.x >= 0 && mousePosition.y >= 0) {
         juce::Point<float> logicalMouse;
@@ -141,57 +144,59 @@ void RollStft::paint(juce::Graphics& graphics) {
             const juce::String noteName = Tone::getNoteName(wholeMidi, processor.settings.isLetterNotation);
             const juce::String centsStr = (roundedCents >= 0 ? "+" : "-") + juce::String(std::abs(roundedCents)).paddedLeft('0', 2) + "c";
 
-            juce::StringArray lines;
-            lines.add(noteName + " (" + centsStr + ")");
-            lines.add(juce::String(freq, 1) + " Hz");
-            lines.add(juce::String(dbValue, 1) + " dB");
-
-            const float tooltipPadding = 6.0f;
-            const juce::Font tooltipFont(juce::FontOptions(12.0f));
-            const float tooltipLineHeight = std::ceil(tooltipFont.getHeight());
-            float maxLineWidth = 0.0f;
-            for (const auto& line : lines) {
-                maxLineWidth = std::max(maxLineWidth, tooltipFont.getStringWidthFloat(line));
-            }
-            maxLineWidth = std::ceil(maxLineWidth + 2.0f); // Add safety margin
-
-            const float tooltipWidth = maxLineWidth + tooltipPadding * 2.0f;
-            const float tooltipHeight = static_cast<float>(lines.size()) * tooltipLineHeight + tooltipPadding * 2.0f;
-
-            // Offset tooltip so it doesn't cover the crosshair intersection
-            float tooltipX = logicalMouse.x + 10.0f;
-            float tooltipY = logicalMouse.y + 10.0f;
-
-            // Flip tooltip if it goes off-screen
-            if (tooltipX + tooltipWidth > static_cast<float>(logicalWidth)) {
-                tooltipX = logicalMouse.x - tooltipWidth - 10.0f;
-            }
-            if (tooltipY + tooltipHeight > static_cast<float>(plotHeight)) {
-                tooltipY = logicalMouse.y - tooltipHeight - 10.0f;
-            }
-
-            // Background
-            graphics.setColour(juce::Colours::black.withAlpha(0.6f));
-            graphics.fillRoundedRectangle(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4.0f);
-            graphics.setColour(juce::Colours::white.withAlpha(0.2f));
-            graphics.drawRoundedRectangle(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4.0f, 1.0f);
-
-            // Text
-            graphics.setColour(juce::Colours::white);
-            graphics.setFont(tooltipFont);
-            for (int i = 0; i < lines.size(); ++i) {
-                graphics.drawText(lines[i], 
-                                  tooltipX + tooltipPadding, 
-                                  tooltipY + tooltipPadding + static_cast<float>(i) * tooltipLineHeight, 
-                                  maxLineWidth, 
-                                  tooltipLineHeight, 
-                                  juce::Justification::centredLeft,
-                                  false);
-            }
+            tooltipLines.add(noteName + " (" + centsStr + ")");
+            tooltipLines.add(juce::String(freq, 1) + " Hz");
+            tooltipLines.add(juce::String(dbValue, 1) + " dB");
+            shouldShowTooltip = true;
         }
     }
 
     graphics.restoreState();
+
+    if (shouldShowTooltip) {
+        const float tooltipPadding = 6.0f;
+        const juce::Font tooltipFont(juce::FontOptions(12.0f).withName(juce::Font::getDefaultMonospacedFontName()));
+        const float tooltipLineHeight = std::ceil(tooltipFont.getHeight());
+        float maxLineWidth = 0.0f;
+        for (const auto& line : tooltipLines) {
+            maxLineWidth = std::max(maxLineWidth, juce::GlyphArrangement::getStringWidth(tooltipFont, line));
+        }
+        maxLineWidth = std::ceil(maxLineWidth + 2.0f); // Add safety margin
+
+        const float tooltipWidth = maxLineWidth + tooltipPadding * 2.0f;
+        const float tooltipHeight = static_cast<float>(tooltipLines.size()) * tooltipLineHeight + tooltipPadding * 2.0f;
+
+        // Offset tooltip so it doesn't cover the crosshair intersection
+        float tooltipX = static_cast<float>(mousePosition.x) + 10.0f;
+        float tooltipY = static_cast<float>(mousePosition.y) + 10.0f;
+
+        // Flip tooltip if it goes off-screen
+        if (tooltipX + tooltipWidth > static_cast<float>(physicalWidth)) {
+            tooltipX = static_cast<float>(mousePosition.x) - tooltipWidth - 10.0f;
+        }
+        if (tooltipY + tooltipHeight > static_cast<float>(physicalHeight)) {
+            tooltipY = static_cast<float>(mousePosition.y) - tooltipHeight - 10.0f;
+        }
+
+        // Background
+        graphics.setColour(juce::Colours::black.withAlpha(0.6f));
+        graphics.fillRoundedRectangle(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4.0f);
+        graphics.setColour(juce::Colours::white.withAlpha(0.2f));
+        graphics.drawRoundedRectangle(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4.0f, 1.0f);
+
+        // Text
+        graphics.setColour(juce::Colours::white);
+        graphics.setFont(tooltipFont);
+        for (int i = 0; i < tooltipLines.size(); ++i) {
+            graphics.drawText(tooltipLines[i], 
+                              juce::Rectangle<float>(tooltipX + tooltipPadding, 
+                                                     tooltipY + tooltipPadding + static_cast<float>(i) * tooltipLineHeight, 
+                                                     maxLineWidth, 
+                                                     tooltipLineHeight), 
+                              juce::Justification::centredLeft,
+                              false);
+        }
+    }
 }
 
 void RollStft::buildFrame() {
@@ -285,10 +290,14 @@ void RollStft::paintRawAxisLabels(juce::Graphics& graphics, float plotHeight, fl
             graphics.addTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi, cx, y));
             // Rotate 90 CW around (cx, y) to keep text upright in the final view.
             // The box is centered on (cx, y) in rotated logical space.
-            graphics.drawText(juce::String(db), cx - dbLabelHeight, y - dbAxisWidth * 0.5f, dbLabelHeight * 2.0f, dbAxisWidth, juce::Justification::centred, false);
+            graphics.drawText(juce::String(db), 
+                              juce::Rectangle<float>(cx - dbLabelHeight, y - dbAxisWidth * 0.5f, dbLabelHeight * 2.0f, dbAxisWidth), 
+                              juce::Justification::centred, false);
             graphics.restoreState();
         } else {
-            graphics.drawText(juce::String(db), 0, y - dbLabelHeight * 0.5f, dbAxisWidth - dbLabelMarginRight, dbLabelHeight, juce::Justification::centredRight, false);
+            graphics.drawText(juce::String(db), 
+                              juce::Rectangle<float>(0.0f, y - dbLabelHeight * 0.5f, dbAxisWidth - dbLabelMarginRight, dbLabelHeight), 
+                              juce::Justification::centredRight, false);
         }
     }
 }
