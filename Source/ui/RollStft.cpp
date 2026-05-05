@@ -345,13 +345,13 @@ void RollStft::paintDbAxis(
 
         if (isHorizontal) {
             juce::Graphics::ScopedSaveState scopedState(graphics);
-            const float cx = dbAxisWidth * 0.5f;
-            graphics.addTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi, cx, y));
-            // Rotate 90 CW around (cx, y) to keep text upright in the final view.
-            // The box is centered on (cx, y) in rotated logical space.
+            const float centerX = dbAxisWidth * 0.5f;
+            graphics.addTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi, centerX, y));
+            // Rotate 90 CW around (centerX, y) to keep text upright in the final view.
+            // The box is centered on (centerX, y) in rotated logical space.
             graphics.drawText(
                 juce::String(db),
-                juce::Rectangle<float>(cx - dbLabelHeight, y - dbAxisWidth * 0.5f, dbLabelHeight * 2.0f, dbAxisWidth),
+                juce::Rectangle<float>(centerX - dbLabelHeight, y - dbAxisWidth * 0.5f, dbLabelHeight * 2.0f, dbAxisWidth),
                 juce::Justification::centred,
                 false
             );
