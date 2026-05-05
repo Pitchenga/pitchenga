@@ -36,9 +36,16 @@ private:
     static float frequencyToX(float frequencyHz, float width);
 
     void buildFrame();
-    void paintFrame(juce::Graphics& graphics) const;
     void paintLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, int midiNote, float targetCenter, float startY, juce::Colour baseColor, bool isHorizontal) const;
-    void paintHzLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, const juce::String& text, float targetCenter, float startY, juce::Colour color, bool isHorizontal) const;
+    static void paintHzLabel(
+        juce::Graphics& graphics,
+        float labelHeight,
+        const juce::String& text,
+        float targetCenter,
+        float
+        startY,
+        juce::Colour color
+    );
     void pumpSmoke();
     void paintSmoke(const juce::Graphics& graphics) const;
     void paintForrest(juce::Graphics& graphics) const;

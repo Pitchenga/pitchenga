@@ -131,7 +131,7 @@ void RollStft::buildFrame() {
 
         if (isBlackKey) {
             constexpr float dashLengths[] = {4.0f, 4.0f};
-            graphics.drawDashedLine(juce::Line<float>(targetCenter, startY, targetCenter, endY), dashLengths, 2, 1.0f);
+            graphics.drawDashedLine(juce::Line(targetCenter, startY, targetCenter, endY), dashLengths, 2, 1.0f);
         } else {
             graphics.drawLine(targetCenter, startY, targetCenter, endY, 1.0f);
         }
@@ -156,7 +156,7 @@ void RollStft::buildFrame() {
                 labelText = juce::String(static_cast<int>(hz));
             }
 
-            paintHzLabel(graphics, labelHeight, maxTextWidth, labelText, targetCenter, hzStartY, juce::Colours::white.withAlpha(0.7f), isHorizontal);
+            paintHzLabel(graphics, labelHeight, labelText, targetCenter, hzStartY, juce::Colours::white.withAlpha(0.7f));
         }
     }
 }
@@ -188,7 +188,7 @@ void RollStft::paintLabel(
         graphics.drawText(name, juce::Rectangle(rotX, rotY, maxTextWidth, labelHeight), juce::Justification::centredLeft, false);
     } else {
         graphics.addTransform(juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, targetCenter, startY - 2.0f));
-        graphics.drawText(name, juce::Rectangle<float>(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight), juce::Justification::centredLeft, false);
+        graphics.drawText(name, juce::Rectangle(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight), juce::Justification::centredLeft, false);
     }
 
     graphics.restoreState();
@@ -197,13 +197,11 @@ void RollStft::paintLabel(
 void RollStft::paintHzLabel(
     juce::Graphics& graphics,
     const float labelHeight,
-    const float /*maxTextWidth*/,
     const juce::String& text,
     const float targetCenter,
     const float startY,
-    const juce::Colour color,
-    const bool /*isHorizontal*/
-) const {
+    const juce::Colour color
+) {
     graphics.setColour(color);
 
     const float textWidth = juce::GlyphArrangement::getStringWidth(graphics.getCurrentFont(), text);
@@ -212,7 +210,7 @@ void RollStft::paintHzLabel(
     // In logical space, they are always horizontal and sit in a strip of height labelHeight.
     // Placement: Centered on targetCenter, anchored to the bottom of the strip (startY).
     graphics.drawText(text,
-        juce::Rectangle<float>(targetCenter - textWidth / 2.0f, startY - labelHeight, textWidth, labelHeight),
+        juce::Rectangle(targetCenter - textWidth / 2.0f, startY - labelHeight, textWidth, labelHeight),
         juce::Justification::centredBottom, false);
 }
 
@@ -287,8 +285,8 @@ void RollStft::pumpSmoke() {
 
     const float sr = processor.getSampleRate() > 0.0 ? static_cast<float>(processor.getSampleRate()) : 44100.0f;
     const float binResHz = sr / 32768.0f;
-    const float fWidth = static_cast<float>(width);
-    const float midiRangeInv = 1.0f / (maxMidiNote - minMidiNote);
+    const auto fWidth = static_cast<float>(width);
+    constexpr float midiRangeInv = 1.0f / (maxMidiNote - minMidiNote);
     const bool doDynamicStem = enableDynamicStemWidth && !processor.settings.isRawMode;
 
     // Extreme Math Optimization: Pre-calculate the derivative of the MIDI scale
