@@ -458,6 +458,14 @@ Control::Control(PitchengaAudioProcessor& proc)
         );
     };
 
+    buttonRename.setButtonText(rename);
+    buttonRename.onClick = [this] {
+        if (currentPresetFile == juce::File()) {
+            return;
+        }
+        renameCurrentPreset();
+    };
+
     addAndMakeVisible(toggleNeedle);
     addAndMakeVisible(toggleEye);
     addAndMakeVisible(toggleRoll);
@@ -488,6 +496,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(toggleForrest);
     tweakPanel.addAndMakeVisible(toggleLetter);
     tweakPanel.addAndMakeVisible(buttonDelete);
+    tweakPanel.addAndMakeVisible(buttonRename);
 
     buildTimestampLabel.setText(VERSION, juce::NotificationType::dontSendNotification);
     buildTimestampLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
@@ -589,6 +598,77 @@ void Control::deleteCurrentPreset() {
     }
 }
 
+void Control::renameCurrentPreset() {
+    auto* alert = new juce::AlertWindow(
+        "Rename Preset",
+        "Enter a new name for the preset:",
+        juce::MessageBoxIconType::QuestionIcon
+    );
+
+    alert->addTextEditor("name", currentPresetFile.getFileNameWithoutExtension(), "New name");
+    alert->addButton("Rename", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    alert->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    juce::Component::SafePointer<Control> safeThis(this);
+    alert->enterModalState(
+        true,
+        juce::ModalCallbackFunction::create(
+            [safeThis, alert](int result) {
+                if (result == 1 && safeThis != nullptr) {
+                    juce::String newName = alert->getTextEditorContents("name").trim();
+                    if (newName.isNotEmpty() && newName != safeThis->currentPresetFile.getFileNameWithoutExtension()) {
+                        juce::File newFile = safeThis->currentPresetFile.getSiblingFile(newName).withFileExtension(".xml");
+
+                        auto doRename = [safeThis, newFile, newName]() {
+                            if (newFile.existsAsFile()) {
+                                if (!newFile.deleteFile()) {
+                                    juce::AlertWindow::showMessageBoxAsync(
+                                        juce::MessageBoxIconType::WarningIcon,
+                                        "Error",
+                                        "Failed to overwrite existing preset."
+                                    );
+                                    return;
+                                }
+                            }
+                            if (safeThis->currentPresetFile.moveFileTo(newFile)) {
+                                safeThis->currentPresetFile = newFile;
+                                safeThis->processor.settings.currentPresetName = newName;
+                                safeThis->refreshPresets();
+                                safeThis->updateButtonStates();
+                            } else {
+                                juce::AlertWindow::showMessageBoxAsync(
+                                    juce::MessageBoxIconType::WarningIcon,
+                                    "Error",
+                                    "Failed to rename preset file."
+                                );
+                            }
+                        };
+
+                        if (newFile.existsAsFile()) {
+                            juce::AlertWindow::showOkCancelBox(
+                                juce::MessageBoxIconType::QuestionIcon,
+                                "Overwrite Preset",
+                                "A preset with this name already exists. Overwrite?",
+                                "Overwrite",
+                                "Cancel",
+                                nullptr,
+                                juce::ModalCallbackFunction::create([doRename](int overwriteResult) {
+                                    if (overwriteResult != 0) {
+                                        doRename();
+                                    }
+                                })
+                            );
+                        } else {
+                            doRename();
+                        }
+                    }
+                }
+                delete alert;
+            }
+        )
+    );
+}
+
 void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
     button.setClickingTogglesState(true);
     button.setToggleState(initialState, juce::NotificationType::dontSendNotification);
@@ -654,10 +734,11 @@ void Control::updateButtonStates() {
 
     tweakPanel.setVisible(processor.settings.isShowTweakPanel);
 
-    // Disable Save and Delete buttons for Factory Default (ID 1) and nothing selected (ID 0)
+    // Disable Save and Delete buttons for Factory (ID 1) and nothing selected (ID 0)
     const int selectedId = comboPresets.getSelectedId();
     buttonSave.setEnabled(selectedId > nonePresetId);
-    buttonDelete.setEnabled(selectedId > factoryDefaultPresetId);
+    buttonDelete.setEnabled(selectedId >= customPresetsStartId);
+    buttonRename.setEnabled(selectedId >= customPresetsStartId);
 
     resized();
 }
@@ -748,6 +829,7 @@ void Control::resized() {
         }
 
         positionButtonRight(buttonDelete, panelBounds);
+        positionButtonRight(buttonRename, panelBounds);
         panelBounds.removeFromRight(6);
 
         positionButtonRight(toggleForrest, panelBounds);
