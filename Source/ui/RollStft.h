@@ -39,7 +39,6 @@ private:
     void paintFrame(juce::Graphics& graphics) const;
     void paintLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, int midiNote, float targetCenter, float startY, juce::Colour baseColor, bool isHorizontal) const;
     void paintHzLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, const juce::String& text, float targetCenter, float startY, juce::Colour color, bool isHorizontal) const;
-    void paintTextLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, const juce::String& text, float targetCenter, float startY, juce::Colour color, bool isHorizontal) const;
     void pumpSmoke();
     void paintSmoke(const juce::Graphics& graphics) const;
     void paintForrest(juce::Graphics& graphics) const;

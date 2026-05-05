@@ -36,14 +36,11 @@ void RollStft::resized() {
 }
 
 float RollStft::getLabelAreaHeight() const {
-    if (!processor.settings.isShowRollLabels()) {
-        return 0.0f;
-    }
-    float height = juce::GlyphArrangement::getStringWidth(Common::getLabelFont(), "Ww8") + 4.0f;
-    if (processor.settings.isRawMode) {
-        height *= 2.0f;
-    }
-    return height;
+    const float labelAreaUnit = juce::GlyphArrangement::getStringWidth(Common::getLabelFont(), "Ww8") + 4.0f;
+    float totalHeight = 0.0f;
+    if (processor.settings.isShowRollLabels()) totalHeight += labelAreaUnit;
+    if (processor.settings.isRawMode) totalHeight += labelAreaUnit;
+    return totalHeight;
 }
 
 float RollStft::freqToMidi(float freq) {
@@ -72,7 +69,7 @@ void RollStft::paint(juce::Graphics& graphics) {
     graphics.saveState();
 
     if (isHorizontal) {
-        graphics.addTransform(juce::AffineTransform(0, 1, 0, -1, 0, physicalHeight));
+        graphics.addTransform(juce::AffineTransform(0.0f, 1.0f, 0.0f, -1.0f, 0.0f, static_cast<float>(physicalHeight)));
     }
 
     if (cachedFrame.isValid()) {
@@ -137,32 +134,30 @@ void RollStft::buildFrame() {
         }
 
         if (processor.settings.isShowRollLabels()) {
-            float labelStartY = totalHeight;
-            if (processor.settings.isRawMode) {
-                // If Raw mode is enabled, note labels should be slightly higher (away from the edge)
-                labelStartY -= maxTextWidth;
-            }
-            paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, labelStartY, baseColor, processor.settings.isFlipRollHorizontal);
+            paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, totalHeight, baseColor, isHorizontal);
         }
     }
 
-    if (processor.settings.isShowRollLabels() && processor.settings.isRawMode) {
+    if (processor.settings.isRawMode) {
         static const std::vector<float> hzValues = {
-            40, 50, 60, 80, 100, 200, 300, 400, 500, 700, 1000, 1500
+            40, 50, 60, 80, 100, 200, 300, 400, 500, 700, 1000, 1500, 2000, 3000, 4000
         };
+
+        const float labelAreaUnit = juce::GlyphArrangement::getStringWidth(labelFont, "Ww8") + 4.0f;
+        const float hzStartY = processor.settings.isShowRollLabels() ? totalHeight - labelAreaUnit : totalHeight;
 
         for (float hz : hzValues) {
             const float targetCenter = frequencyToX(hz, static_cast<float>(logicalWidth));
-            if (targetCenter < 0 || targetCenter > logicalWidth) continue;
+            if (targetCenter < 0 || targetCenter > static_cast<float>(logicalWidth)) continue;
 
             juce::String labelText;
             if (hz >= 1000) {
-                labelText = juce::String(hz / 1000.0f, 1) + "k";
+                labelText = juce::String(hz / 1000.0f, hz >= 10000 ? 0 : 1) + "k";
             } else {
                 labelText = juce::String(static_cast<int>(hz));
             }
 
-            paintHzLabel(graphics, labelHeight, maxTextWidth, labelText, targetCenter, totalHeight, juce::Colours::white.withAlpha(0.7f), processor.settings.isFlipRollHorizontal);
+            paintHzLabel(graphics, labelHeight, maxTextWidth, labelText, targetCenter, hzStartY, juce::Colours::white.withAlpha(0.7f), isHorizontal);
         }
     }
 }
@@ -183,7 +178,21 @@ void RollStft::paintLabel(
     }
 
     const juce::String name = Tone::getNoteName(midiNote, processor.settings.isLetterNotation);
-    paintTextLabel(graphics, labelHeight, maxTextWidth, name, targetCenter, startY, baseColor, isHorizontal);
+
+    graphics.setColour(baseColor);
+    graphics.saveState();
+
+    if (isHorizontal) {
+        const float rotX = targetCenter + labelHeight / 2.0f;
+        const float rotY = startY - maxTextWidth;
+        graphics.addTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi, rotX, rotY));
+        graphics.drawText(name, juce::Rectangle(rotX, rotY, maxTextWidth, labelHeight), juce::Justification::centredLeft, false);
+    } else {
+        graphics.addTransform(juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, targetCenter, startY - 2.0f));
+        graphics.drawText(name, juce::Rectangle<float>(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight), juce::Justification::centredLeft, false);
+    }
+
+    graphics.restoreState();
 }
 
 void RollStft::paintHzLabel(
@@ -196,52 +205,22 @@ void RollStft::paintHzLabel(
     const juce::Colour color,
     const bool isHorizontal
 ) const {
-    // Add a small tick for the Hz scale
     graphics.setColour(color);
-    constexpr float tickSize = 4.0f;
-    graphics.drawLine(targetCenter, startY - maxTextWidth, targetCenter, startY - maxTextWidth + tickSize, 1.0f);
 
-    paintTextLabel(graphics, labelHeight, maxTextWidth, text, targetCenter, startY, color, isHorizontal);
-}
-
-void RollStft::paintTextLabel(
-    juce::Graphics& graphics,
-    const float labelHeight,
-    const float maxTextWidth,
-    const juce::String& text,
-    const float targetCenter,
-    const float startY,
-    const juce::Colour color,
-    const bool isHorizontal
-) const {
-    graphics.setColour(color);
-    graphics.saveState();
-
+    // Hz labels use the new parallel orientation logic
     if (isHorizontal) {
-        const float rotX = targetCenter + labelHeight / 2.0f;
-        const float rotY = startY - maxTextWidth;
-        graphics.addTransform(
-            juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi, rotX, rotY)
-        );
-        graphics.drawText(
-            text,
-            juce::Rectangle(rotX, rotY, maxTextWidth, labelHeight),
-            juce::Justification::centredLeft,
-            false
-        );
+        // Frequency axis is Vertical (Logical X).
+        // Text along Logical X (rotation 0) will be Vertical in physical space.
+        graphics.drawText(text,
+            juce::Rectangle<float>(targetCenter - labelHeight / 2.0f, startY - maxTextWidth, labelHeight, maxTextWidth),
+            juce::Justification::centredBottom, false);
     } else {
-        graphics.addTransform(
-            juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, targetCenter, startY - 2.0f)
-        );
-        graphics.drawText(
-            text,
-            juce::Rectangle<float>(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
-            juce::Justification::centredLeft,
-            false
-        );
+        // Frequency axis is Horizontal (Logical X).
+        // Text along Logical X (rotation 0) will be Horizontal in physical space.
+        graphics.drawText(text,
+            juce::Rectangle<float>(targetCenter - 50.0f, startY - maxTextWidth, 100.0f, maxTextWidth),
+            juce::Justification::centredBottom, false);
     }
-
-    graphics.restoreState();
 }
 
 void RollStft::paintForrest(juce::Graphics& graphics) const {
