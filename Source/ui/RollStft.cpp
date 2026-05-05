@@ -36,10 +36,13 @@ void RollStft::resized() {
 }
 
 float RollStft::getLabelAreaHeight() const {
-    const float labelAreaUnit = juce::GlyphArrangement::getStringWidth(Common::getLabelFont(), "Ww8") + 4.0f;
+    const juce::Font font = Common::getLabelFont();
+    const float noteAreaHeight = juce::GlyphArrangement::getStringWidth(font, "Ww8") + 4.0f;
+    const float hzAreaHeight = font.getHeight() + 4.0f;
+
     float totalHeight = 0.0f;
-    if (processor.settings.isShowRollLabels()) totalHeight += labelAreaUnit;
-    if (processor.settings.isRawMode) totalHeight += labelAreaUnit;
+    if (processor.settings.isShowRollLabels()) totalHeight += noteAreaHeight;
+    if (processor.settings.isRawMode) totalHeight += hzAreaHeight;
     return totalHeight;
 }
 
@@ -143,8 +146,9 @@ void RollStft::buildFrame() {
             40, 50, 60, 80, 100, 200, 300, 400, 500, 700, 1000, 1500, 2000, 3000, 4000
         };
 
-        const float labelAreaUnit = juce::GlyphArrangement::getStringWidth(labelFont, "Ww8") + 4.0f;
-        const float hzStartY = processor.settings.isShowRollLabels() ? totalHeight - labelAreaUnit : totalHeight;
+        const float noteAreaHeight = processor.settings.isShowRollLabels() ? juce::GlyphArrangement::getStringWidth(labelFont, "Ww8") + 4.0f : 0.0f;
+        const float hzAreaHeight = labelHeight + 4.0f;
+        const float hzStartY = totalHeight - noteAreaHeight;
 
         for (float hz : hzValues) {
             const float targetCenter = frequencyToX(hz, static_cast<float>(logicalWidth));
@@ -198,29 +202,23 @@ void RollStft::paintLabel(
 void RollStft::paintHzLabel(
     juce::Graphics& graphics,
     const float labelHeight,
-    const float maxTextWidth,
+    const float /*maxTextWidth*/,
     const juce::String& text,
     const float targetCenter,
     const float startY,
     const juce::Colour color,
-    const bool isHorizontal
+    const bool /*isHorizontal*/
 ) const {
     graphics.setColour(color);
 
-    // Hz labels use the new parallel orientation logic
-    if (isHorizontal) {
-        // Frequency axis is Vertical (Logical X).
-        // Text along Logical X (rotation 0) will be Vertical in physical space.
-        graphics.drawText(text,
-            juce::Rectangle<float>(targetCenter - labelHeight / 2.0f, startY - maxTextWidth, labelHeight, maxTextWidth),
-            juce::Justification::centredBottom, false);
-    } else {
-        // Frequency axis is Horizontal (Logical X).
-        // Text along Logical X (rotation 0) will be Horizontal in physical space.
-        graphics.drawText(text,
-            juce::Rectangle<float>(targetCenter - 50.0f, startY - maxTextWidth, 100.0f, maxTextWidth),
-            juce::Justification::centredBottom, false);
-    }
+    const float textWidth = juce::GlyphArrangement::getStringWidth(graphics.getCurrentFont(), text);
+
+    // Hz labels are parallel to the frequency axis (Logical X).
+    // In logical space, they are always horizontal and sit in a strip of height labelHeight.
+    // Placement: Centered on targetCenter, anchored to the bottom of the strip (startY).
+    graphics.drawText(text,
+        juce::Rectangle<float>(targetCenter - textWidth / 2.0f, startY - labelHeight, textWidth, labelHeight),
+        juce::Justification::centredBottom, false);
 }
 
 void RollStft::paintForrest(juce::Graphics& graphics) const {
