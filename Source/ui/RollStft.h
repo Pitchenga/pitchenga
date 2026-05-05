@@ -49,6 +49,21 @@ private:
     );
 
     void buildFrame();
+    void paintHzAxis(
+        juce::Graphics& graphics,
+        float logicalWidth,
+        const juce::Font& labelFont,
+        float labelHeight,
+        float totalHeight,
+        float dbAxisWidth
+    ) const;
+    static void paintDbAxis(
+        juce::Graphics& graphics,
+        float plotHeight,
+        bool isHorizontal,
+        const juce::Font& labelFont,
+        float dbAxisWidth
+    );
     void paintLabel(juce::Graphics& graphics, float labelHeight, float maxTextWidth, int midiNote, float targetCenter, float startY, juce::Colour baseColor, bool isHorizontal) const;
     static void paintHzLabel(
         juce::Graphics& graphics,

@@ -77,7 +77,12 @@ float RollStft::frequencyToX(float frequencyHz, float width, float xOffset) {
     return xOffset + (width - xOffset) * ((midi - minMidiNote) / (maxMidiNote - minMidiNote));
 }
 
-void RollStft::paintTooltip(juce::Graphics& graphics, const int physicalWidth, const int physicalHeight, juce::StringArray tooltipLines) {
+void RollStft::paintTooltip(
+    juce::Graphics& graphics,
+    const int physicalWidth,
+    const int physicalHeight,
+    juce::StringArray tooltipLines
+) {
     const float tooltipPadding = 6.0f;
     const juce::Font tooltipFont(juce::FontOptions(12.0f).withName(juce::Font::getDefaultMonospacedFontName()));
     const float tooltipLineHeight = std::ceil(tooltipFont.getHeight());
@@ -112,17 +117,28 @@ void RollStft::paintTooltip(juce::Graphics& graphics, const int physicalWidth, c
     graphics.setColour(juce::Colours::white);
     graphics.setFont(tooltipFont);
     for (int i = 0; i < tooltipLines.size(); ++i) {
-        graphics.drawText(tooltipLines[i],
-            juce::Rectangle<float>(tooltipX + tooltipPadding,
+        graphics.drawText(
+            tooltipLines[i],
+            juce::Rectangle<float>(
+                tooltipX + tooltipPadding,
                 tooltipY + tooltipPadding + static_cast<float>(i) * tooltipLineHeight,
                 maxLineWidth,
-                tooltipLineHeight),
+                tooltipLineHeight
+            ),
             juce::Justification::centredLeft,
-            false);
+            false
+        );
     }
 }
 
-void RollStft::paintCrosshairs(juce::Graphics& graphics, const int physicalWidth, const int physicalHeight, const bool isHorizontal, const int logicalWidth, const int plotHeight) {
+void RollStft::paintCrosshairs(
+    juce::Graphics& graphics,
+    const int physicalWidth,
+    const int physicalHeight,
+    const bool isHorizontal,
+    const int logicalWidth,
+    const int plotHeight
+) {
     juce::StringArray tooltipLines;
     bool shouldShowTooltip = false;
 
@@ -145,7 +161,8 @@ void RollStft::paintCrosshairs(juce::Graphics& graphics, const int physicalWidth
             graphics.drawLine(logicalMouse.x, 0.0f, logicalMouse.x, static_cast<float>(plotHeight), 1.0f);
 
             // Calculate tooltip values
-            const float midi = (logicalMouse.x - dbAxisWidth) / (static_cast<float>(logicalWidth) - dbAxisWidth) * (maxMidiNote - minMidiNote) + minMidiNote;
+            const float midi = (logicalMouse.x - dbAxisWidth) / (static_cast<float>(logicalWidth) - dbAxisWidth) * (
+                maxMidiNote - minMidiNote) + minMidiNote;
             const float freq = 440.0f * std::pow(2.0f, (midi - 69.0f) / 12.0f);
             const float normY = (static_cast<float>(plotHeight) - logicalMouse.y) / static_cast<float>(plotHeight);
             const float dbValue = normY * 90.0f - 90.0f;
@@ -153,7 +170,8 @@ void RollStft::paintCrosshairs(juce::Graphics& graphics, const int physicalWidth
             const int wholeMidi = static_cast<int>(std::round(midi));
             const int roundedCents = static_cast<int>(std::round((midi - static_cast<float>(wholeMidi)) * 100.0f));
             const juce::String noteName = Tone::getNoteName(wholeMidi, processor.settings.isLetterNotation);
-            const juce::String centsStr = (roundedCents >= 0 ? "+" : "-") + juce::String(std::abs(roundedCents)).paddedLeft('0', 2) + "c";
+            const juce::String centsStr = (roundedCents >= 0 ? "+" : "-") + juce::String(std::abs(roundedCents)).
+                paddedLeft('0', 2) + "c";
 
             tooltipLines.add(noteName + " (" + centsStr + ")");
             tooltipLines.add(juce::String(freq, 1) + " Hz");
@@ -195,7 +213,12 @@ void RollStft::paint(juce::Graphics& graphics) {
     if (processor.settings.isShowSmoke) {
         graphics.saveState();
         const float dbAxisWidth = getDbAxisWidth();
-        graphics.reduceClipRegion(static_cast<int>(dbAxisWidth), 0, logicalWidth - static_cast<int>(dbAxisWidth), plotHeight);
+        graphics.reduceClipRegion(
+            static_cast<int>(dbAxisWidth),
+            0,
+            logicalWidth - static_cast<int>(dbAxisWidth),
+            plotHeight
+        );
         paintSmoke(graphics);
         graphics.restoreState();
     }
@@ -252,23 +275,33 @@ void RollStft::buildFrame() {
         }
 
         if (processor.settings.isShowRollLabels()) {
-            paintLabel(graphics, labelHeight, maxTextWidth, midiNote, targetCenter, totalHeight, baseColor, isHorizontal);
+            paintLabel(
+                graphics,
+                labelHeight,
+                maxTextWidth,
+                midiNote,
+                targetCenter,
+                totalHeight,
+                baseColor,
+                isHorizontal
+            );
         }
     }
 
     paintRawAxisLabels(graphics, plotHeight, static_cast<float>(logicalWidth));
 }
 
-void RollStft::paintRawAxisLabels(juce::Graphics& graphics, float plotHeight, float logicalWidth) {
-    if (!processor.settings.isRawMode) return;
-
-    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
-    const juce::Font labelFont = Common::getLabelFont();
-    const float labelHeight = labelFont.getHeight();
-    const float totalHeight = static_cast<float>(graphics.getClipBounds().getHeight());
-    const float dbAxisWidth = getDbAxisWidth();
-
-    const float noteAreaHeight = processor.settings.isShowRollLabels() ? juce::GlyphArrangement::getStringWidth(labelFont, "Ww8") + 4.0f : 0.0f;
+void RollStft::paintHzAxis(
+    juce::Graphics& graphics,
+    float logicalWidth,
+    const juce::Font& labelFont,
+    const float labelHeight,
+    const float totalHeight,
+    const float dbAxisWidth
+) const {
+    const float noteAreaHeight = processor.settings.isShowRollLabels()
+                                     ? juce::GlyphArrangement::getStringWidth(labelFont, "Ww8") + 4.0f
+                                     : 0.0f;
     const float hzStartY = totalHeight - noteAreaHeight;
 
     for (float hz : hzValues) {
@@ -284,8 +317,15 @@ void RollStft::paintRawAxisLabels(juce::Graphics& graphics, float plotHeight, fl
 
         paintHzLabel(graphics, labelHeight, labelText, targetCenter, hzStartY, juce::Colours::grey);
     }
+}
 
-    // Add dB axis
+void RollStft::paintDbAxis(
+    juce::Graphics& graphics,
+    float plotHeight,
+    const bool isHorizontal,
+    const juce::Font& labelFont,
+    const float dbAxisWidth
+) {
     graphics.setColour(juce::Colours::grey);
     graphics.setFont(labelFont.withHeight(dbLabelFontSize));
     for (int db : dbValues) {
@@ -298,16 +338,36 @@ void RollStft::paintRawAxisLabels(juce::Graphics& graphics, float plotHeight, fl
             graphics.addTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi, cx, y));
             // Rotate 90 CW around (cx, y) to keep text upright in the final view.
             // The box is centered on (cx, y) in rotated logical space.
-            graphics.drawText(juce::String(db), 
-                              juce::Rectangle<float>(cx - dbLabelHeight, y - dbAxisWidth * 0.5f, dbLabelHeight * 2.0f, dbAxisWidth), 
-                              juce::Justification::centred, false);
+            graphics.drawText(
+                juce::String(db),
+                juce::Rectangle<float>(cx - dbLabelHeight, y - dbAxisWidth * 0.5f, dbLabelHeight * 2.0f, dbAxisWidth),
+                juce::Justification::centred,
+                false
+            );
             graphics.restoreState();
         } else {
-            graphics.drawText(juce::String(db), 
-                              juce::Rectangle<float>(0.0f, y - dbLabelHeight * 0.5f, dbAxisWidth - dbLabelMarginRight, dbLabelHeight), 
-                              juce::Justification::centredRight, false);
+            graphics.drawText(
+                juce::String(db),
+                juce::Rectangle<float>(0.0f, y - dbLabelHeight * 0.5f, dbAxisWidth - dbLabelMarginRight, dbLabelHeight),
+                juce::Justification::centredRight,
+                false
+            );
         }
     }
+}
+
+void RollStft::paintRawAxisLabels(juce::Graphics& graphics, float plotHeight, float logicalWidth) {
+    if (!processor.settings.isRawMode) return;
+
+    const bool isHorizontal = processor.settings.isFlipRollHorizontal;
+    const juce::Font labelFont = Common::getLabelFont();
+    const float labelHeight = labelFont.getHeight();
+    const float totalHeight = static_cast<float>(graphics.getClipBounds().getHeight());
+    const float dbAxisWidth = getDbAxisWidth();
+
+    paintHzAxis(graphics, logicalWidth, labelFont, labelHeight, totalHeight, dbAxisWidth);
+
+    paintDbAxis(graphics, plotHeight, isHorizontal, labelFont, dbAxisWidth);
 }
 
 void RollStft::paintLabel(
@@ -333,11 +393,25 @@ void RollStft::paintLabel(
     if (isHorizontal) {
         const float rotX = targetCenter + labelHeight / 2.0f;
         const float rotY = startY - maxTextWidth;
-        graphics.addTransform(juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi, rotX, rotY));
-        graphics.drawText(name, juce::Rectangle(rotX, rotY, maxTextWidth, labelHeight), juce::Justification::centredLeft, false);
+        graphics.addTransform(
+            juce::AffineTransform::rotation(juce::MathConstants<float>::halfPi, rotX, rotY)
+        );
+        graphics.drawText(
+            name,
+            juce::Rectangle(rotX, rotY, maxTextWidth, labelHeight),
+            juce::Justification::centredLeft,
+            false
+        );
     } else {
-        graphics.addTransform(juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, targetCenter, startY - 2.0f));
-        graphics.drawText(name, juce::Rectangle(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight), juce::Justification::centredLeft, false);
+        graphics.addTransform(
+            juce::AffineTransform::rotation(-juce::MathConstants<float>::halfPi, targetCenter, startY - 2.0f)
+        );
+        graphics.drawText(
+            name,
+            juce::Rectangle<float>(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
+            juce::Justification::centredLeft,
+            false
+        );
     }
 
     graphics.restoreState();
@@ -358,9 +432,12 @@ void RollStft::paintHzLabel(
     // Hz labels are parallel to the frequency axis (Logical X).
     // In logical space, they are always horizontal and sit in a strip of height labelHeight.
     // Placement: Centered on targetCenter, anchored to the bottom of the strip (startY).
-    graphics.drawText(text,
+    graphics.drawText(
+        text,
         juce::Rectangle(targetCenter - textWidth / 2.0f, startY - labelHeight, textWidth, labelHeight),
-        juce::Justification::centredBottom, false);
+        juce::Justification::centredBottom,
+        false
+    );
 }
 
 void RollStft::paintForrest(juce::Graphics& graphics) const {
@@ -380,7 +457,11 @@ void RollStft::paintForrest(juce::Graphics& graphics) const {
             float stemWidthPixels = 5.0f;
             const bool doDynamicStem = enableDynamicStemWidth && !processor.settings.isRawMode;
             if (doDynamicStem) {
-                const float nextX = frequencyToX(peak.frequencyHz + peak.bandwidthHz, static_cast<float>(width), dbAxisWidth);
+                const float nextX = frequencyToX(
+                    peak.frequencyHz + peak.bandwidthHz,
+                    static_cast<float>(width),
+                    dbAxisWidth
+                );
                 // +1.0f forces deliberate sub-pixel overlap to completely kill rendering gaps
                 stemWidthPixels = std::max(1.0f, nextX - xPos + 1.0f);
             }
