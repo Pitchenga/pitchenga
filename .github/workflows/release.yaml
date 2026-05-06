@@ -54,10 +54,10 @@ jobs:
         run: |
           cd build/Pitchenga_artefacts/Release
           
-          # Sign the fully assembled bundles manually
-          codesign --force --deep --sign "Developer ID Application" --preserve-metadata=identifier,entitlements Standalone/Pitchenga.app
-          codesign --force --deep --sign "Developer ID Application" --preserve-metadata=identifier,entitlements AU/Pitchenga.component
-          codesign --force --deep --sign "Developer ID Application" --preserve-metadata=identifier,entitlements VST3/Pitchenga.vst3
+          #  Sign the fully assembled bundles manually (Hardened Runtime and Timestamp are mandatory for Notarization)
+          codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --preserve-metadata=identifier,entitlements Standalone/Pitchenga.app
+          codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --preserve-metadata=identifier,entitlements AU/Pitchenga.component
+          codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --preserve-metadata=identifier,entitlements VST3/Pitchenga.vst3
           
           # Create a temporary zip for Apple's Notarization servers
           zip -ry ../../../notary-payload.zip ./*
