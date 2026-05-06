@@ -266,13 +266,15 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
 void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& description, bool forceOpenWindow) {
     if (wrapperType != wrapperType_Standalone) return;
 
-    Util::debug("Attempting to load plugin: " + description.name + " (" + description.fileOrIdentifier + ")");
+    // Control suspension externally to allow atomic operations like setup restoration
+    // to keep processing suspended while state is restored.
+    const bool wasSuspended = isSuspended();
+    if (!wasSuspended) suspendProcessing(true);
 
     const double sampleRate = getSampleRate();
     const int blockSize = getBlockSize();
 
-    // Gracefully shutdown and unload the current plugin
-    suspendProcessing(true);
+    Util::debug("Attempting to load plugin: " + description.name + " (" + description.fileOrIdentifier + ")");
 
     if (onPluginAboutToBeDeleted) {
         onPluginAboutToBeDeleted();
@@ -319,13 +321,13 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
             atomicPlugin.store(instance.release(), std::memory_order_release);
         }
 
-        suspendProcessing(false);
+        if (!wasSuspended) suspendProcessing(false);
 
         if (onPluginLoaded) {
             juce::MessageManager::callAsync([this] { if (onPluginLoaded) onPluginLoaded(); });
         }
     } else {
-        suspendProcessing(false);
+        if (!wasSuspended) suspendProcessing(false);
         Util::debug("Failed loading plugin, name=" + description.name + ", error=" + error);
 
         juce::MessageManager::callAsync([name = description.name, error] {

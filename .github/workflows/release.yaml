@@ -47,9 +47,14 @@ jobs:
 
       - name: Zip Artifacts (macOS)
         if: runner.os == 'macOS'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           cd build/Pitchenga_artefacts/Release
           zip -ry ../../../Pitchenga-macOS.zip ./*
+          xcrun notarytool submit ../../../Pitchenga-macOS.zip --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
 
       - name: Zip Artifacts (Windows)
         if: runner.os == 'Windows'
