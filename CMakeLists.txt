@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 project(Pitchenga VERSION 0.0.0)
 
-# Disable features requiring missing system dependencies on Linux
-if (UNIX AND NOT APPLE)
-    add_compile_definitions(JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_ALSA=0 JUCE_JACK=0 JUCE_USE_XRENDER=0 JUCE_USE_XSHM=0)
-endif()
-
 # Force static linking of the MSVC runtime to prevent "MSVCP140.dll not found" errors on Windows
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 

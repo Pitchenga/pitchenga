@@ -791,10 +791,10 @@ void Control::resized() {
     positionButton(toggleLayoutPivot, topRow);
 
     // Position presets and tweak from the right
-    constexpr int comboWidth = 140;
-    comboPresets.setBounds(topRow.removeFromRight(comboWidth));
     positionButtonRight(buttonSaveAs, topRow);
     positionButtonRight(buttonSave, topRow);
+    constexpr int comboWidth = 140;
+    comboPresets.setBounds(topRow.removeFromRight(comboWidth));
     topRow.removeFromRight(6);
     positionButtonRight(toggleTweak, topRow);
 
