@@ -472,6 +472,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     addAndMakeVisible(toggleRoll);
     addAndMakeVisible(toggleLayoutPivot);
     addAndMakeVisible(toggleIsFreezeRoll);
+    addAndMakeVisible(toggleRaw);
 
     addAndMakeVisible(toggleTweak);
     addAndMakeVisible(comboPresets);
@@ -490,7 +491,6 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(volumeLabelRight);
 
     tweakPanel.addAndMakeVisible(toggleStrobe);
-    tweakPanel.addAndMakeVisible(toggleRaw);
     tweakPanel.addAndMakeVisible(toggleRollType);
     tweakPanel.addAndMakeVisible(toggleFlipRoll);
     tweakPanel.addAndMakeVisible(toggleSmoke);
@@ -797,6 +797,7 @@ void Control::resized() {
     comboPresets.setBounds(topRow.removeFromRight(comboWidth));
     topRow.removeFromRight(6);
     positionButtonRight(toggleTweak, topRow);
+    positionButtonRight(toggleRaw, topRow);
 
     positionButtonRight(toggleIsFreezeRoll, topRow);
 
@@ -836,7 +837,6 @@ void Control::resized() {
         positionButtonRight(toggleSmoke, panelBounds);
         positionButtonRight(toggleFlipRoll, panelBounds);
         positionButtonRight(toggleRollType, panelBounds);
-        positionButtonRight(toggleRaw, panelBounds);
 
         positionButtonRight(toggleStrobe, panelBounds);
         positionButtonRight(toggleLetter, panelBounds);
