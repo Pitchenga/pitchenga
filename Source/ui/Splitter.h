@@ -8,8 +8,8 @@
 class Splitter : public juce::Component {
 public:
     explicit Splitter(PitchengaAudioProcessor& proc);
-    void mouseDrag(const juce::MouseEvent& e) override;
-    void paint(juce::Graphics& g) override;
+    void mouseDrag(const juce::MouseEvent& event) override;
+    void paint(juce::Graphics& graphics) override;
     void mouseEnter(const juce::MouseEvent& e) override;
     void mouseExit(const juce::MouseEvent& e) override;
 
