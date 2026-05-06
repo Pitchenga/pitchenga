@@ -34,7 +34,7 @@ In Standalone mode, Pitchenga can host a VST3 or AU software instrument.
 A custom internal routing matrix allows you to blend any live audio input — such as a microphone, guitar, or line-in —
 with your software synth, complete with independent monitor controls to prevent feedback while you perform.
 
-### Downloads & Installation
+### Installation
 
 Pre-built binaries are provided in the Releases section.
 
