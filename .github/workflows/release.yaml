@@ -45,7 +45,7 @@ jobs:
       - name: Build Project
         run: cmake --build build --config Release
 
-      - name: Zip Artifacts (macOS)
+      - name: Sign, Notarize, and Zip Artifacts (macOS)
         if: runner.os == 'macOS'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -53,8 +53,27 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           cd build/Pitchenga_artefacts/Release
+          
+          # Sign the fully assembled bundles manually
+          codesign --force --deep --sign "Developer ID Application" --preserve-metadata=identifier,entitlements Standalone/Pitchenga.app
+          codesign --force --deep --sign "Developer ID Application" --preserve-metadata=identifier,entitlements AU/Pitchenga.component
+          codesign --force --deep --sign "Developer ID Application" --preserve-metadata=identifier,entitlements VST3/Pitchenga.vst3
+          
+          # Create a temporary zip for Apple's Notarization servers
+          zip -ry ../../../notary-payload.zip ./*
+          
+          # Submit to Apple and wait for the result
+          cd ../../..
+          xcrun notarytool submit notary-payload.zip --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+          
+          # Staple the approval tickets directly to the binaries
+          cd build/Pitchenga_artefacts/Release
+          xcrun stapler staple Standalone/Pitchenga.app
+          xcrun stapler staple AU/Pitchenga.component
+          xcrun stapler staple VST3/Pitchenga.vst3
+          
+          # Create the final distribution zip containing the stapled apps
           zip -ry ../../../Pitchenga-macOS.zip ./*
-          xcrun notarytool submit ../../../Pitchenga-macOS.zip --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
 
       - name: Zip Artifacts (Windows)
         if: runner.os == 'Windows'
