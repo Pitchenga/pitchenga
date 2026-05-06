@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 project(Pitchenga VERSION 26.0506.085049)
 
-# Disable features requiring missing system dependencies on Linux
-if (UNIX AND NOT APPLE)
-    add_compile_definitions(JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_ALSA=0 JUCE_JACK=0 JUCE_USE_XRENDER=0 JUCE_USE_XSHM=0)
-endif()
-
 # Force static linking of the MSVC runtime to prevent "MSVCP140.dll not found" errors on Windows
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
@@ -155,6 +150,12 @@ if (APPLE)
             "-framework CoreMedia"
             "-framework AVFoundation")
 
+    if (DEFINED ENV{CI})
+        set(MAC_SIGNING_IDENTITY "Developer ID Application")
+    else()
+        set(MAC_SIGNING_IDENTITY "Apple Development")
+    endif()
+
     if (TARGET Pitchenga_Standalone)
         target_link_libraries(Pitchenga_Standalone PRIVATE "-framework ScreenCaptureKit")
         target_sources(Pitchenga_Standalone PRIVATE Source/DesktopAudioCapture.mm)
@@ -162,7 +163,7 @@ if (APPLE)
 
         # Force signing the Standalone app with stable developer ID while preserving JUCE entitlements
         add_custom_command(TARGET Pitchenga_Standalone POST_BUILD
-            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_Standalone>"
+            COMMAND /usr/bin/codesign --force --deep --sign "${MAC_SIGNING_IDENTITY}" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_Standalone>"
             VERBATIM)
 
         # Load copy destination from .env if it exists
@@ -192,7 +193,7 @@ if (APPLE)
         target_compile_definitions(Pitchenga_AU PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
 
         add_custom_command(TARGET Pitchenga_AU POST_BUILD
-            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_AU>"
+            COMMAND /usr/bin/codesign --force --deep --sign "${MAC_SIGNING_IDENTITY}" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_AU>"
             VERBATIM)
     endif()
 
@@ -201,7 +202,7 @@ if (APPLE)
         target_compile_definitions(Pitchenga_VST3 PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=0)
 
         add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
-            COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_VST3>"
+            COMMAND /usr/bin/codesign --force --deep --sign "${MAC_SIGNING_IDENTITY}" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_VST3>"
             VERBATIM)
     endif()
 else()
