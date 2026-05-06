@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(Pitchenga VERSION 26.0505.132628)
+project(Pitchenga VERSION 26.0506.085049)
 
 # Disable features requiring missing system dependencies on Linux
 if (UNIX AND NOT APPLE)
