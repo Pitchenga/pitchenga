@@ -5,12 +5,22 @@ project(Pitchenga VERSION 1.0.0)
 # shows more than "1.0.0" in hosts like Logic Pro.
 set(PITCHENGA_VERSION ${PROJECT_VERSION})
 if (PROJECT_VERSION STREQUAL "1.0.0")
-    execute_process(
-            COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/version.sh"
-            OUTPUT_VARIABLE DYNAMIC_VERSION
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (NOT DYNAMIC_VERSION STREQUAL "")
+    find_program(BASH_EXECUTABLE NAMES bash)
+    if (BASH_EXECUTABLE)
+        execute_process(
+                COMMAND ${BASH_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/version.sh"
+                OUTPUT_VARIABLE DYNAMIC_VERSION
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                RESULT_VARIABLE BASH_RESULT
+        )
+        if (BASH_RESULT EQUAL 0 AND NOT DYNAMIC_VERSION STREQUAL "")
+            set(PITCHENGA_VERSION ${DYNAMIC_VERSION})
+        endif()
+    endif()
+
+    if (PITCHENGA_VERSION STREQUAL "1.0.0")
+        # Fallback for systems without bash
+        string(TIMESTAMP DYNAMIC_VERSION "%y.%m%d.%H%M")
         set(PITCHENGA_VERSION ${DYNAMIC_VERSION})
     endif()
 endif()
