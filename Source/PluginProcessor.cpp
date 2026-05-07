@@ -333,7 +333,7 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
         juce::MessageManager::callAsync([name = description.name, error] {
             juce::String detailedError = "Failed to load plugin '" + name + "':\n\n" + error;
 
-            #if JUCE_ARM64
+            #if JUCE_ARM
              detailedError += "\n\nHost Architecture: ARM64\nNote: If this is an x64 plugin, it cannot be loaded directly by an ARM64 host on Windows.";
             #elif JUCE_64BIT
              detailedError += "\n\nHost Architecture: x64";
