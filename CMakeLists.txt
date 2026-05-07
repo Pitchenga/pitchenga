@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.22)
 project(Pitchenga VERSION 0.0.0)
 
+if (APPLE)
+    # Force macOS to build a Universal Binary (arm64 + x86_64) to support both Apple Silicon and Intel plugins
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Build Universal Binaries" FORCE)
+endif()
+
 # Force static linking of the MSVC runtime to prevent "MSVCP140.dll not found" errors on Windows
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
