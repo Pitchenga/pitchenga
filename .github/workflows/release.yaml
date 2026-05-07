@@ -85,6 +85,7 @@ jobs:
           
           # Sign the PKG container itself using the Installer certificate
           productsign --sign "Developer ID Installer" Pitchenga-unsigned.pkg Pitchenga.pkg
+          rm Pitchenga-unsigned.pkg
           
           # Submit the PKG to Apple for Notarization
           xcrun notarytool submit Pitchenga.pkg --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
@@ -112,6 +113,9 @@ jobs:
       contents: write
     if: startsWith(github.ref, 'refs/tags/')
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         with:
