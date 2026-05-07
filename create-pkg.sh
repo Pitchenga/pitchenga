@@ -40,7 +40,8 @@ if [ -d "$ARTIFACTS_DIR/AU/Pitchenga.component" ]; then
              --version "$VERSION" \
              "$STAGING_DIR/components/au.pkg"
 else
-    echo "Warning: AU plugin not found."
+    echo "Error: AU plugin not found."
+    exit 1
 fi
 
 # VST3 -> /Library/Audio/Plug-Ins/VST3
