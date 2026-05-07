@@ -97,6 +97,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
+          $VERSION = bash version.sh
+          iscc /DMyAppVersion="$VERSION" /DMyBuildDir="build\Pitchenga_artefacts\Release" installer.iss
           Compress-Archive -Path build\Pitchenga_artefacts\Release\* -DestinationPath Pitchenga-Windows.zip
 
       - name: Upload Artifact
