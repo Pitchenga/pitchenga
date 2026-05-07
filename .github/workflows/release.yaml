@@ -73,26 +73,29 @@ jobs:
           </plist>
           EOF
           
-          #  Sign the fully assembled bundles manually (Hardened Runtime and Timestamp are mandatory for Notarization)
+          # Sign the fully assembled bundles manually (Hardened Runtime applied only to Standalone host)
           codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --entitlements entitlements.plist --preserve-metadata=identifier Standalone/Pitchenga.app
-          codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --entitlements entitlements.plist --preserve-metadata=identifier AU/Pitchenga.component
-          codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --entitlements entitlements.plist --preserve-metadata=identifier VST3/Pitchenga.vst3
+          codesign --force --deep --timestamp --sign "Developer ID Application" --preserve-metadata=identifier AU/Pitchenga.component
+          codesign --force --deep --timestamp --sign "Developer ID Application" --preserve-metadata=identifier VST3/Pitchenga.vst3
           
-          # Create a temporary zip for Apple's Notarization servers
-          zip -ry ../../../notary-payload.zip ./*
+          # Stage the files and create the DMG container
+          mkdir -p Pitchenga_macOS
+          cp -R Standalone/Pitchenga.app Pitchenga_macOS/
+          cp -R AU/Pitchenga.component Pitchenga_macOS/
+          cp -R VST3/Pitchenga.vst3 Pitchenga_macOS/
+          hdiutil create -volname "Pitchenga" -srcfolder Pitchenga_macOS -ov -format UDZO Pitchenga.dmg
           
-          # Submit to Apple and wait for the result
-          cd ../../..
-          xcrun notarytool submit notary-payload.zip --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+          # Sign the DMG container itself
+          codesign --force --sign "Developer ID Application" Pitchenga.dmg
           
-          # Staple the approval tickets directly to the binaries
-          cd build/Pitchenga_artefacts/Release
-          xcrun stapler staple Standalone/Pitchenga.app
-          xcrun stapler staple AU/Pitchenga.component
-          xcrun stapler staple VST3/Pitchenga.vst3
+          # Submit the DMG to Apple for Notarization
+          xcrun notarytool submit Pitchenga.dmg --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
           
-          # Create the final distribution zip containing the stapled apps
-          zip -ry ../../../Pitchenga-macOS.zip ./*
+          # Staple the approval ticket directly to the DMG
+          xcrun stapler staple Pitchenga.dmg
+          
+          # Move it up for the upload artifact step
+          mv Pitchenga.dmg ../../../Pitchenga-macOS.dmg
 
       - name: Windows Artifacts
         if: runner.os == 'Windows'
@@ -104,7 +107,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Pitchenga-${{ runner.os }}
-          path: Pitchenga-*.zip
+          path: Pitchenga-*.*
 
   release:
     name: Create Release
@@ -123,6 +126,6 @@ jobs:
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/Pitchenga-*.zip
+          files: artifacts/Pitchenga-*.*
         env:
           GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(Pitchenga VERSION 0.0.0)
+project(Pitchenga VERSION 1.0.0)
 
 if (APPLE)
     # Force macOS to build a Universal Binary (arm64 + x86_64) to support both Apple Silicon and Intel plugins
@@ -56,8 +56,8 @@ add_subdirectory(libs/eigen)
 juce_add_plugin(Pitchenga
         COMPANY_NAME "Pitchenga"
         BUNDLE_ID "com.github.pitchenga.Pitchenga"
-        PLUGIN_MANUFACTURER_CODE "PTNG"  # Exactly 4 chars
-        PLUGIN_CODE "PTNG"               # Exactly 4 chars
+        PLUGIN_MANUFACTURER_CODE "Ptng"  # Exactly 4 chars
+        PLUGIN_CODE "Ptng"               # Exactly 4 chars
         FORMATS AU VST3 Standalone       # The magic dual-compile flag
         PRODUCT_NAME "Pitchenga"
         ICON_BIG "Source/Assets/pitchenga-squircle.png"
@@ -97,16 +97,16 @@ endif()
 
 if (TARGET Pitchenga_AU)
     add_custom_command(TARGET Pitchenga_AU POST_BUILD
-            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.github.pitchenga.Pitchenga.AU' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist\" || true"
-            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSAudioCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist\" || true"
+            COMMAND /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.github.pitchenga.Pitchenga.AU" "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist"
+            COMMAND /usr/libexec/PlistBuddy -c "Delete :NSAudioCaptureUsageDescription" "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist"
             COMMENT "Isolating AU Bundle ID and fixing Plist"
             VERBATIM)
 endif()
 
 if (APPLE AND TARGET Pitchenga_VST3)
     add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
-            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.github.pitchenga.Pitchenga.VST3' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_VST3>/Info.plist\" || true"
-            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSAudioCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_VST3>/Info.plist\" || true"
+            COMMAND /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.github.pitchenga.Pitchenga.VST3" "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_VST3>/Info.plist"
+            COMMAND /usr/libexec/PlistBuddy -c "Delete :NSAudioCaptureUsageDescription" "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_VST3>/Info.plist"
             COMMENT "Isolating VST3 Bundle ID and fixing Plist"
             VERBATIM)
 endif()
@@ -147,7 +147,7 @@ set(PITCHENGA_SOURCES
         Source/DesktopAudioCapture.h
 )
 
-if (PROJECT_VERSION STREQUAL "0.0.0")
+if (PROJECT_VERSION STREQUAL "1.0.0")
     # Generate dynamic timestamp for local dev on every build
     add_custom_command(
             OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version.h
@@ -216,7 +216,7 @@ if (APPLE)
 
         if (NOT DEFINED ENV{CI})
             add_custom_command(TARGET Pitchenga_AU POST_BUILD
-                COMMAND /usr/bin/codesign --force --deep --options runtime --sign "Apple Development"  --entitlements "${ENTITLEMENTS_FILE}" --preserve-metadata=identifier "$<TARGET_BUNDLE_DIR:Pitchenga_AU>"
+                COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier "$<TARGET_BUNDLE_DIR:Pitchenga_AU>"
                 VERBATIM)
         endif()
     endif()
@@ -227,7 +227,7 @@ if (APPLE)
 
         if (NOT DEFINED ENV{CI})
             add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
-                COMMAND /usr/bin/codesign --force --deep --options runtime --sign "Apple Development" --entitlements "${ENTITLEMENTS_FILE}" --preserve-metadata=identifier "$<TARGET_BUNDLE_DIR:Pitchenga_VST3>"
+                COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier "$<TARGET_BUNDLE_DIR:Pitchenga_VST3>"
                 VERBATIM)
         endif()
     endif()
@@ -237,8 +237,6 @@ else()
 endif()
 
 target_compile_features(Pitchenga PUBLIC cxx_std_20)
-
-target_compile_definitions(Pitchenga PUBLIC)
 
 target_compile_definitions(Pitchenga PRIVATE
     CMAKE_BUILD_PROFILE=$<CONFIG>
