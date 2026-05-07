@@ -30,7 +30,8 @@ if [ -d "$ARTIFACTS_DIR/Standalone/Pitchenga.app" ]; then
              --version "$VERSION" \
              "$STAGING_DIR/components/standalone.pkg"
 else
-    echo "Warning: Standalone app not found."
+    echo "Error: Standalone app not found."
+    exit 1
 fi
 
 # AU -> /Library/Audio/Plug-Ins/Components
