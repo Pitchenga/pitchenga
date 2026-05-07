@@ -77,19 +77,21 @@ jobs:
           codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --entitlements entitlements.plist --preserve-metadata=identifier Standalone/Pitchenga.app
           codesign --force --deep --timestamp --sign "Developer ID Application" --preserve-metadata=identifier AU/Pitchenga.component
           codesign --force --deep --timestamp --sign "Developer ID Application" --preserve-metadata=identifier VST3/Pitchenga.vst3
-          
-          # Return to root to run the DMG script
+
+          # Return to root to run the PKG script
           cd ../../../
-          ./create-dmg.sh build/Pitchenga_artefacts/Release Pitchenga.dmg
-          
-          # Sign the DMG container itself
-          codesign --force --sign "Developer ID Application" Pitchenga.dmg
-          
-          # Submit the DMG to Apple for Notarization
-          xcrun notarytool submit Pitchenga.dmg --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
-          
-          # Staple the approval ticket directly to the DMG
-          xcrun stapler staple Pitchenga.dmg
+          VERSION=$(bash version.sh)
+          ./create-pkg.sh build/Pitchenga_artefacts/Release Pitchenga.pkg "$VERSION"
+
+          # Sign the PKG container itself
+          # Note: Ideally this uses "Developer ID Installer", but we use the available Application cert
+          codesign --force --timestamp --sign "Developer ID Application" Pitchenga.pkg
+
+          # Submit the PKG to Apple for Notarization
+          xcrun notarytool submit Pitchenga.pkg --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+
+          # Staple the approval ticket directly to the PKG
+          xcrun stapler staple Pitchenga.pkg
 
       - name: Windows Artifacts
         if: runner.os == 'Windows'
