@@ -39,11 +39,10 @@ with your software synth, complete with independent monitor controls to prevent 
 Pre-built binaries are provided in the [Releases](https://github.com/pitchenga/pitchenga/releases) section.
 
 - **macOS:** Available as a Standalone application, Audio Unit (AU Component), and VST3.
-  - [Download latest release](https://github.com/pitchenga/pitchenga/releases/latest/download/Pitchenga.pkg)
+  - [Download latest release](https://github.com/pitchenga/pitchenga/releases/latest/download/pitchenga.pkg)
 
-//fixme: Installer for Windows
 - **Windows:** Available as a Standalone application and VST3.
-  - [Download latest release](https://github.com/pitchenga/pitchenga/releases/latest/download/pitchenga-windows.zip)
+  - [Download latest release](https://github.com/pitchenga/pitchenga/releases/latest/download/pitchenga-windows-installer.exe)
   - Unpack and move the `Pitchenga.vst3` folder to: `C:\Program Files\Common Files\VST3\`
 
 > **Important Windows Note:** Because the software is not yet digitally signed, Windows Defender SmartScreen may block
