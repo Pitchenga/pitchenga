@@ -37,26 +37,17 @@ with your software synth, complete with independent monitor controls to prevent 
 ### Installation
 
 Pre-built binaries are provided in the Releases section.
+//fixme: Build installers
 
-- **macOS:** Available as a Standalone `.app`, Audio Unit (AU Component), and VST3.
+- **macOS:** Available as a Standalone .app, Audio Unit (AU Component), and VST3.
+  - Move the unzipped files to their respective folders:
+ ```bash
+mv ~/Downloads/Pitchenga-macOS/Standalone/Pitchenga.app ~/Applications/
+mv ~/Downloads/Pitchenga-macOS/AU/Pitchenga.component ~/Library/Audio/Plug-Ins/Components/
+```
 
-> **Important macOS Note:** The current releases are not yet signed with an Apple Developer certificate. When you
-> download the `.zip` file from the internet, macOS adds a "quarantine" flag. Because the app is ad-hoc signed, Gatekeeper
-> will misleadingly state that the app is "damaged and should be moved to the trash".
-> To fix this, you must clear the quarantine flag using Terminal after unpacking the zip:
-> ```bash
-> xattr -cr ~/Downloads/Pitchenga-macOS/Standalone/Pitchenga.app
-> xattr -cr ~/Downloads/Pitchenga-macOS/AU/Pitchenga.component
-> ```
->
-> **Installation:**
-> Move the unzipped files to their correct folders:
-> ```bash
-> mv ~/Downloads/Pitchenga-macOS/Standalone/Pitchenga.app ~/Applications/
-> mv ~/Downloads/Pitchenga-macOS/AU/Pitchenga.component ~/Library/Audio/Plug-Ins/Components/
-> ```
-
-- **Windows:** Available as a Standalone `.exe` and VST3.
+- **Windows:** Available as a Standalone .exe and VST3.
+  - Move the `Pitchenga.vst3` folder to: `C:\Program Files\Common Files\VST3\`
 
 > **Important Windows Note:** Because the software is not yet digitally signed, Windows Defender SmartScreen may block
 > the application from running.
@@ -65,8 +56,6 @@ Pre-built binaries are provided in the Releases section.
 > If you receive an error about **"MSVCP140.dll not found"**, you may need to install
 > the [Microsoft Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe).
 >
-> **Installation:**
-> - Move the `Pitchenga.vst3` folder to: `C:\Program Files\Common Files\VST3\`
 
 - **Linux** //fixme
 ```
