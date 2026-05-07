@@ -23,22 +23,6 @@ jobs:
         with:
           submodules: recursive
 
-#      - name: Install Apple Certificate (macOS)
-#        if: runner.os == 'macOS'
-#        env:
-#          BUILD_CERTIFICATE_BASE64: ${{ secrets.MAC_CERTS }}
-#          P12_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
-#          KEYCHAIN_PASSWORD: 'temporary_password'
-#        run: |
-#          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-#          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-#          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
-#          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-#          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-#          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-#          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-#          security list-keychain -d user -s $KEYCHAIN_PATH
-
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
@@ -47,32 +31,8 @@ jobs:
 
       - name: macOS Artifacts
         if: runner.os == 'macOS'
-#        env:
-#          APPLE_ID: ${{ secrets.APPLE_ID }}
-#          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-#          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           cd build/Pitchenga_artefacts/Release
-          
-#          #  Sign the fully assembled bundles manually (Hardened Runtime and Timestamp are mandatory for Notarization)
-#          codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --preserve-metadata=identifier,entitlements Standalone/Pitchenga.app
-#          codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --preserve-metadata=identifier,entitlements AU/Pitchenga.component
-#          codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --preserve-metadata=identifier,entitlements VST3/Pitchenga.vst3
-#
-#          # Create a temporary zip for Apple's Notarization servers
-#          zip -ry ../../../notary-payload.zip ./*
-#
-#          # Submit to Apple and wait for the result
-#          cd ../../..
-#          xcrun notarytool submit notary-payload.zip --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
-#
-#          # Staple the approval tickets directly to the binaries
-#          cd build/Pitchenga_artefacts/Release
-#          xcrun stapler staple Standalone/Pitchenga.app
-#          xcrun stapler staple AU/Pitchenga.component
-#          xcrun stapler staple VST3/Pitchenga.vst3
-          
-          # Create the final distribution zip containing the stapled apps
           zip -ry ../../../Pitchenga-macOS.zip ./*
 
       - name: Windows Artifacts
