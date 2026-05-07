@@ -78,18 +78,9 @@ jobs:
           codesign --force --deep --timestamp --sign "Developer ID Application" --preserve-metadata=identifier AU/Pitchenga.component
           codesign --force --deep --timestamp --sign "Developer ID Application" --preserve-metadata=identifier VST3/Pitchenga.vst3
           
-          # Stage the files and create the DMG container
-          mkdir -p Pitchenga_macOS
-          cp -R Standalone/Pitchenga.app Pitchenga_macOS/
-          cp -R AU/Pitchenga.component Pitchenga_macOS/
-          cp -R VST3/Pitchenga.vst3 Pitchenga_macOS/
-
-          # Create symlinks for easier installation
-          ln -s /Applications Pitchenga_macOS/Applications
-          ln -s /Library/Audio/Plug-Ins/Components Pitchenga_macOS/Components
-          ln -s /Library/Audio/Plug-Ins/VST3 Pitchenga_macOS/VST3
-
-          hdiutil create -volname "Pitchenga" -srcfolder Pitchenga_macOS -ov -format UDZO Pitchenga.dmg
+          # Return to root to run the DMG script
+          cd ../../../
+          ./create-dmg.sh build/Pitchenga_artefacts/Release Pitchenga.dmg
           
           # Sign the DMG container itself
           codesign --force --sign "Developer ID Application" Pitchenga.dmg
@@ -99,9 +90,6 @@ jobs:
           
           # Staple the approval ticket directly to the DMG
           xcrun stapler staple Pitchenga.dmg
-          
-          # Move it up for the upload artifact step
-          mv Pitchenga.dmg ../../../Pitchenga-macOS.dmg
 
       - name: Windows Artifacts
         if: runner.os == 'Windows'
@@ -113,7 +101,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Pitchenga-${{ runner.os }}
-          path: Pitchenga-*.*
+          path: Pitchenga*.*
 
   release:
     name: Create Release
@@ -132,6 +120,6 @@ jobs:
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/Pitchenga-*.*
+          files: artifacts/Pitchenga*.*
         env:
           GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
