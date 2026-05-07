@@ -4,6 +4,27 @@ project(Pitchenga VERSION 0.0.0)
 if (APPLE)
     # Force macOS to build a Universal Binary (arm64 + x86_64) to support both Apple Silicon and Intel plugins
     set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Build Universal Binaries" FORCE)
+
+    # Generate the required entitlements file for hosting third-party plugins in a Hardened Runtime
+    set(ENTITLEMENTS_FILE "${CMAKE_CURRENT_BINARY_DIR}/Pitchenga.entitlements")
+    file(WRITE "${ENTITLEMENTS_FILE}"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <key>com.apple.security.cs.disable-executable-page-protection</key>
+    <true/>
+</dict>
+</plist>
+")
 endif()
 
 # Force static linking of the MSVC runtime to prevent "MSVCP140.dll not found" errors on Windows
