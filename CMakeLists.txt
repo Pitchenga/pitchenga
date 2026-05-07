@@ -56,8 +56,8 @@ add_subdirectory(libs/eigen)
 juce_add_plugin(Pitchenga
         COMPANY_NAME "Pitchenga"
         BUNDLE_ID "com.github.pitchenga.Pitchenga"
-        PLUGIN_MANUFACTURER_CODE "Ptng"  # Exactly 4 chars
-        PLUGIN_CODE "Ptng"               # Exactly 4 chars
+        PLUGIN_MANUFACTURER_CODE "PTNG"  # Exactly 4 chars
+        PLUGIN_CODE "PTNG"               # Exactly 4 chars
         FORMATS AU VST3 Standalone       # The magic dual-compile flag
         PRODUCT_NAME "Pitchenga"
         ICON_BIG "Source/Assets/pitchenga-squircle.png"
@@ -97,15 +97,17 @@ endif()
 
 if (TARGET Pitchenga_AU)
     add_custom_command(TARGET Pitchenga_AU POST_BUILD
+            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.github.pitchenga.Pitchenga.AU' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist\" || true"
             COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSAudioCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist\" || true"
-            COMMENT "Removing system audio capture usage description from AU plist"
+            COMMENT "Isolating AU Bundle ID and fixing Plist"
             VERBATIM)
 endif()
 
 if (APPLE AND TARGET Pitchenga_VST3)
     add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
+            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.github.pitchenga.Pitchenga.VST3' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_VST3>/Info.plist\" || true"
             COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSAudioCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_VST3>/Info.plist\" || true"
-            COMMENT "Removing system audio capture usage description from VST3 plist"
+            COMMENT "Isolating VST3 Bundle ID and fixing Plist"
             VERBATIM)
 endif()
 
@@ -181,10 +183,10 @@ if (APPLE)
         target_sources(Pitchenga_Standalone PRIVATE Source/DesktopAudioCapture.mm)
         target_compile_definitions(Pitchenga_Standalone PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=1)
 
-        # Force signing the Standalone app with stable developer ID while preserving JUCE entitlements
+        # Force signing the Standalone app with stable developer ID and custom plugin-host entitlements
         if (NOT DEFINED ENV{CI})
             add_custom_command(TARGET Pitchenga_Standalone POST_BUILD
-                COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_Standalone>"
+                COMMAND /usr/bin/codesign --force --deep --options runtime --sign "Apple Development" --entitlements "${ENTITLEMENTS_FILE}" --preserve-metadata=identifier "$<TARGET_BUNDLE_DIR:Pitchenga_Standalone>"
                 VERBATIM)
 
             # Load copy destination from .env if it exists
@@ -214,7 +216,7 @@ if (APPLE)
 
         if (NOT DEFINED ENV{CI})
             add_custom_command(TARGET Pitchenga_AU POST_BUILD
-                COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_AU>"
+                COMMAND /usr/bin/codesign --force --deep --options runtime --sign "Apple Development"  --entitlements "${ENTITLEMENTS_FILE}" --preserve-metadata=identifier "$<TARGET_BUNDLE_DIR:Pitchenga_AU>"
                 VERBATIM)
         endif()
     endif()
@@ -225,7 +227,7 @@ if (APPLE)
 
         if (NOT DEFINED ENV{CI})
             add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
-                COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier,entitlements "$<TARGET_BUNDLE_DIR:Pitchenga_VST3>"
+                COMMAND /usr/bin/codesign --force --deep --options runtime --sign "Apple Development" --entitlements "${ENTITLEMENTS_FILE}" --preserve-metadata=identifier "$<TARGET_BUNDLE_DIR:Pitchenga_VST3>"
                 VERBATIM)
         endif()
     endif()
