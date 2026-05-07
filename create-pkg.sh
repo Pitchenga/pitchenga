@@ -30,7 +30,8 @@ if [ -d "$ARTIFACTS_DIR/Standalone/Pitchenga.app" ]; then
              --version "$VERSION" \
              "$STAGING_DIR/components/standalone.pkg"
 else
-    echo "Warning: Standalone app not found."
+    echo "Error: Standalone app not found."
+    exit 1
 fi
 
 # AU -> /Library/Audio/Plug-Ins/Components
@@ -40,7 +41,8 @@ if [ -d "$ARTIFACTS_DIR/AU/Pitchenga.component" ]; then
              --version "$VERSION" \
              "$STAGING_DIR/components/au.pkg"
 else
-    echo "Warning: AU plugin not found."
+    echo "Error: AU plugin not found."
+    exit 1
 fi
 
 # VST3 -> /Library/Audio/Plug-Ins/VST3
@@ -50,7 +52,8 @@ if [ -d "$ARTIFACTS_DIR/VST3/Pitchenga.vst3" ]; then
              --version "$VERSION" \
              "$STAGING_DIR/components/vst3.pkg"
 else
-    echo "Warning: VST3 plugin not found."
+    echo "Error: VST3 plugin not found."
+    exit 1
 fi
 
 # Generate Distribution XML
