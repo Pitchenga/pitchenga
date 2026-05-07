@@ -6,6 +6,7 @@ DAY=$(date +%d)
 HOUR=$(date +%H)
 MINUTE=$(date +%M)
 
+# Note: This is going to collapse on 2080-08-01
 EPOCH_YEAR=2026
 
 # Note: The "10#" forces bash to treat the numbers as Base-10.
