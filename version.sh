@@ -1,6 +1,6 @@
 #!/bin/bash
 
-read -r YEAR MONTH DAY HOUR MINUTE <<< "$(date +'%Y %m %d %H %M')"
+read -r YEAR MONTH DAY HOUR MINUTE <<< "$(TZ='Europe/Copenhagen' date +'%Y %m %d %H %M')"
 
 # Note: This is going to collapse on 2080-08-01
 EPOCH_YEAR=2026
