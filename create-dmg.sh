@@ -2,8 +2,6 @@
 set -e
 
 # Default artifacts path if not provided
-# Use build/Pitchenga_artefacts/Release as default to match CI, 
-# but allow override for local testing (e.g. cmake-build-debug/...)
 ARTIFACTS_DIR=${1:-"build/Pitchenga_artefacts/Release"}
 OUTPUT_DMG=${2:-"Pitchenga.dmg"}
 VOL_NAME="Pitchenga"
@@ -46,49 +44,56 @@ ln -s /Library/Audio/Plug-Ins/VST3 "$STAGING_DIR/VST3"
 echo "Building temporary DMG..."
 TEMP_DMG="temp.dmg"
 rm -f "$TEMP_DMG"
-hdiutil create -volname "$VOL_NAME" -srcfolder "$STAGING_DIR" -ov -format UDRW "$TEMP_DMG"
+hdiutil create -volname "$VOL_NAME" -srcfolder "$STAGING_DIR" -ov -format UDRW -size 300m "$TEMP_DMG"
 
 # Mount the temporary DMG
 echo "Mounting DMG to arrange icons..."
 DEVICE=$(hdiutil attach -readwrite -noverify "$TEMP_DMG" | egrep '^/dev/' | sed 1q | awk '{print $1}')
-sleep 2
+sleep 3
 
 # Use AppleScript to arrange icons
-# Layout: Left column (Binaries), Right column (Symlinks)
-# Pairs: App -> Applications, Component -> Components, VST3 -> VST3
 echo "Arranging icons with AppleScript..."
 osascript <<EOF
 tell application "Finder"
-    tell disk "$VOL_NAME"
-        open
-        set current view of container window to icon view
-        set toolbar visible of container window to false
-        set statusbar visible of container window to false
-        set the bounds of container window to {400, 100, 1000, 500}
-        set viewOptions to the icon view options of container window
-        set icon size of viewOptions to 72
-        set arrangement of viewOptions to not arranged
-        
-        -- Binary positions (Left)
-        set position of item "Pitchenga.app" to {150, 100}
-        set position of item "Pitchenga.component" to {150, 200}
-        set position of item "Pitchenga.vst3" to {150, 300}
-        
-        -- Symlink positions (Right)
-        set position of item "Applications" to {450, 100}
-        set position of item "Components" to {450, 200}
-        set position of item "VST3" to {450, 300}
-        
-        close
-        update without registering applications
-        delay 2
-    end tell
+    set theDisk to disk "$VOL_NAME"
+    open theDisk
+    set theView to container window of theDisk
+    
+    set current view of theView to icon view
+    set toolbar visible of theView to false
+    set statusbar visible of theView to false
+    -- {left, top, right, bottom}
+    set the bounds of theView to {400, 100, 1000, 550}
+    
+    set viewOptions to the icon view options of theView
+    set icon size of viewOptions to 80
+    set text size of viewOptions to 12
+    set arrangement of viewOptions to not arranged
+    
+    -- Positioning pairs
+    set position of item "Pitchenga.app" of theDisk to {150, 100}
+    set position of item "Applications" of theDisk to {450, 100}
+    
+    set position of item "Pitchenga.component" of theDisk to {150, 240}
+    set position of item "Components" of theDisk to {450, 240}
+    
+    set position of item "Pitchenga.vst3" of theDisk to {150, 380}
+    set position of item "VST3" of theDisk to {450, 380}
+    
+    update items of theDisk
+    delay 5
+    close theView
 end tell
 EOF
 
-# Unmount and convert to compressed DMG
-echo "Unmounting and finalizing DMG..."
+# Explicitly sync to disk
+echo "Syncing and unmounting..."
+sync
+sleep 2
 hdiutil detach "$DEVICE"
+
+# Convert to final compressed DMG
+echo "Finalizing DMG..."
 rm -f "$OUTPUT_DMG"
 hdiutil convert "$TEMP_DMG" -format UDZO -o "$OUTPUT_DMG"
 
