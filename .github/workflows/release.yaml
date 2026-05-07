@@ -125,3 +125,15 @@ jobs:
           files: artifacts/Pitchenga*.*
         env:
           GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
+
+      - name: Cleanup Previous Releases
+        run: |
+          echo "Fetching list of previous releases..."
+          gh release list --limit 100 | cut -f 3 | while read -r tag; do
+            if [ -n "$tag" ] && [ "$tag" != "${{ github.ref_name }}" ]; then
+              echo "Deleting previous release and tag: $tag"
+              gh release delete "$tag" --yes --cleanup-tag
+            fi
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
