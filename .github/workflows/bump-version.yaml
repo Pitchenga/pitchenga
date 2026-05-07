@@ -25,7 +25,7 @@ jobs:
         id: gen_version
         run: |
           # Generate version based on version.cmake format: yy.mmdd.HHMMSS
-          VERSION=$(date +'%y.%m%d.%H%M%S')
+          VERSION=$(date +'%y.%m%d.%H%M')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Create and Push Tag
