@@ -83,6 +83,12 @@ jobs:
           cp -R Standalone/Pitchenga.app Pitchenga_macOS/
           cp -R AU/Pitchenga.component Pitchenga_macOS/
           cp -R VST3/Pitchenga.vst3 Pitchenga_macOS/
+
+          # Create symlinks for easier installation
+          ln -s /Applications Pitchenga_macOS/Applications
+          ln -s /Library/Audio/Plug-Ins/Components Pitchenga_macOS/Components
+          ln -s /Library/Audio/Plug-Ins/VST3 Pitchenga_macOS/VST3
+
           hdiutil create -volname "Pitchenga" -srcfolder Pitchenga_macOS -ov -format UDZO Pitchenga.dmg
           
           # Sign the DMG container itself

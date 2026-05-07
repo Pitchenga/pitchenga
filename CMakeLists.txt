@@ -1,6 +1,20 @@
 cmake_minimum_required(VERSION 3.22)
 project(Pitchenga VERSION 1.0.0)
 
+# Calculate a dynamic version for local development to ensure the AU bundle
+# shows more than "1.0.0" in hosts like Logic Pro.
+set(PITCHENGA_VERSION ${PROJECT_VERSION})
+if (PROJECT_VERSION STREQUAL "1.0.0")
+    execute_process(
+            COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/version.sh"
+            OUTPUT_VARIABLE DYNAMIC_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if (NOT DYNAMIC_VERSION STREQUAL "")
+        set(PITCHENGA_VERSION ${DYNAMIC_VERSION})
+    endif()
+endif()
+
 if (APPLE)
     # Force macOS to build a Universal Binary (arm64 + x86_64) to support both Apple Silicon and Intel plugins
     set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Build Universal Binaries" FORCE)
@@ -54,6 +68,7 @@ add_subdirectory(libs/eigen)
 
 # Define the exact plugin we are building
 juce_add_plugin(Pitchenga
+        VERSION "${PITCHENGA_VERSION}"
         COMPANY_NAME "Pitchenga"
         BUNDLE_ID "com.github.pitchenga.Pitchenga"
         PLUGIN_MANUFACTURER_CODE "Ptng"  # Exactly 4 chars
