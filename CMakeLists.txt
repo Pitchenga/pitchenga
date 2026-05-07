@@ -97,16 +97,16 @@ endif()
 
 if (TARGET Pitchenga_AU)
     add_custom_command(TARGET Pitchenga_AU POST_BUILD
-            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.github.pitchenga.Pitchenga.AU' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist\" || true"
-            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSAudioCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist\" || true"
+            COMMAND /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.github.pitchenga.Pitchenga.AU' "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist"
+            COMMAND /usr/libexec/PlistBuddy -c 'Delete :NSAudioCaptureUsageDescription' "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist"
             COMMENT "Isolating AU Bundle ID and fixing Plist"
             VERBATIM)
 endif()
 
 if (APPLE AND TARGET Pitchenga_VST3)
     add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
-            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.github.pitchenga.Pitchenga.VST3' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_VST3>/Info.plist\" || true"
-            COMMAND /bin/sh -c "/usr/libexec/PlistBuddy -c 'Delete :NSAudioCaptureUsageDescription' \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_VST3>/Info.plist\" || true"
+            COMMAND /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.github.pitchenga.Pitchenga.VST3' "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_VST3>/Info.plist"
+            COMMAND /usr/libexec/PlistBuddy -c 'Delete :NSAudioCaptureUsageDescription' "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_VST3>/Info.plist"
             COMMENT "Isolating VST3 Bundle ID and fixing Plist"
             VERBATIM)
 endif()
