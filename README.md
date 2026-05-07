@@ -43,7 +43,7 @@ Pre-built binaries are provided in the [Releases](https://github.com/pitchenga/p
 
 //fixme: Installer for Windows
 - **Windows:** Available as a Standalone application and VST3.
-  - [Download latest release](https://github.com/pitchenga/pitchenga/releases/latest/download/Pitchenga-Windows.zip)
+  - [Download latest release](https://github.com/pitchenga/pitchenga/releases/latest/download/pitchenga-windows.zip)
   - Unpack and move the `Pitchenga.vst3` folder to: `C:\Program Files\Common Files\VST3\`
 
 > **Important Windows Note:** Because the software is not yet digitally signed, Windows Defender SmartScreen may block
