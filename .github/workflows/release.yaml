@@ -54,10 +54,29 @@ jobs:
         run: |
           cd build/Pitchenga_artefacts/Release
           
+          cat <<EOF > entitlements.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>com.apple.security.device.audio-input</key>
+              <true/>
+              <key>com.apple.security.cs.disable-library-validation</key>
+              <true/>
+              <key>com.apple.security.cs.allow-jit</key>
+              <true/>
+              <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+              <true/>
+              <key>com.apple.security.cs.disable-executable-page-protection</key>
+              <true/>
+          </dict>
+          </plist>
+          EOF
+          
           #  Sign the fully assembled bundles manually (Hardened Runtime and Timestamp are mandatory for Notarization)
-          codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --preserve-metadata=identifier,entitlements Standalone/Pitchenga.app
-          codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --preserve-metadata=identifier,entitlements AU/Pitchenga.component
-          codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --preserve-metadata=identifier,entitlements VST3/Pitchenga.vst3
+          codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --entitlements entitlements.plist --preserve-metadata=identifier Standalone/Pitchenga.app
+          codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --entitlements entitlements.plist --preserve-metadata=identifier AU/Pitchenga.component
+          codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --entitlements entitlements.plist --preserve-metadata=identifier VST3/Pitchenga.vst3
           
           # Create a temporary zip for Apple's Notarization servers
           zip -ry ../../../notary-payload.zip ./*
