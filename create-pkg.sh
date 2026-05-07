@@ -20,7 +20,7 @@ STAGING_DIR="pkg_staging"
 rm -rf "$STAGING_DIR"
 mkdir -p "$STAGING_DIR/components"
 
-# 1. Build Component Packages
+# Build Component Packages
 echo "Building component packages..."
 
 # Standalone -> /Applications
@@ -30,7 +30,8 @@ if [ -d "$ARTIFACTS_DIR/Standalone/Pitchenga.app" ]; then
              --version "$VERSION" \
              "$STAGING_DIR/components/standalone.pkg"
 else
-    echo "Warning: Standalone app not found."
+    echo "Error: Standalone app not found."
+    exit 1
 fi
 
 # AU -> /Library/Audio/Plug-Ins/Components
@@ -40,7 +41,8 @@ if [ -d "$ARTIFACTS_DIR/AU/Pitchenga.component" ]; then
              --version "$VERSION" \
              "$STAGING_DIR/components/au.pkg"
 else
-    echo "Warning: AU plugin not found."
+    echo "Error: AU plugin not found."
+    exit 1
 fi
 
 # VST3 -> /Library/Audio/Plug-Ins/VST3
@@ -50,16 +52,17 @@ if [ -d "$ARTIFACTS_DIR/VST3/Pitchenga.vst3" ]; then
              --version "$VERSION" \
              "$STAGING_DIR/components/vst3.pkg"
 else
-    echo "Warning: VST3 plugin not found."
+    echo "Error: VST3 plugin not found."
+    exit 1
 fi
 
-# 2. Generate Distribution XML
+# Generate Distribution XML
 echo "Generating Distribution.xml..."
 cat <<EOF > "$STAGING_DIR/Distribution.xml"
 <?xml version="1.0" encoding="utf-8"?>
 <installer-gui-script minSpecVersion="2">
     <title>Pitchenga</title>
-    <options customize="always" require-scripts="false" hostArchitectures="arm64,x64"/>
+    <options customize="always" require-scripts="false" hostArchitectures="arm64,x86_64"/>
     <choices-outline>
         <line choice="choice_standalone"/>
         <line choice="choice_au"/>
@@ -67,22 +70,22 @@ cat <<EOF > "$STAGING_DIR/Distribution.xml"
     </choices-outline>
     
     <choice id="choice_standalone" title="Standalone Application" description="Install the Pitchenga Standalone application to /Applications.">
-        <pkg-ref id="com.github.pitchenga.Standalone"/>
+        <pkg-ref id="com.github.pitchenga.Pitchenga"/>
     </choice>
     <choice id="choice_au" title="Audio Unit Plugin" description="Install the Pitchenga AU plugin for Logic Pro, Ableton Live, etc.">
-        <pkg-ref id="com.github.pitchenga.AU"/>
+        <pkg-ref id="com.github.pitchenga.Pitchenga.AU"/>
     </choice>
     <choice id="choice_vst3" title="VST3 Plugin" description="Install the Pitchenga VST3 plugin for Cubase, Studio One, etc.">
-        <pkg-ref id="com.github.pitchenga.VST3"/>
+        <pkg-ref id="com.github.pitchenga.Pitchenga.VST3"/>
     </choice>
 
-    <pkg-ref id="com.github.pitchenga.Standalone" version="$VERSION" onConclusion="none">standalone.pkg</pkg-ref>
-    <pkg-ref id="com.github.pitchenga.AU" version="$VERSION" onConclusion="none">au.pkg</pkg-ref>
-    <pkg-ref id="com.github.pitchenga.VST3" version="$VERSION" onConclusion="none">vst3.pkg</pkg-ref>
+    <pkg-ref id="com.github.pitchenga.Pitchenga" version="$VERSION" onConclusion="none">standalone.pkg</pkg-ref>
+    <pkg-ref id="com.github.pitchenga.Pitchenga.AU" version="$VERSION" onConclusion="none">au.pkg</pkg-ref>
+    <pkg-ref id="com.github.pitchenga.Pitchenga.VST3" version="$VERSION" onConclusion="none">vst3.pkg</pkg-ref>
 </installer-gui-script>
 EOF
 
-# 3. Build Final Product Package
+# Build Final Product Package
 echo "Building final product package..."
 productbuild --distribution "$STAGING_DIR/Distribution.xml" \
              --package-path "$STAGING_DIR/components" \
