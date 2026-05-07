@@ -43,11 +43,9 @@ Pre-built binaries are provided in the [Releases](https://github.com/pitchenga/p
 
 - **Windows:** Available as a Standalone application and VST3.
   - [Download latest release](https://github.com/pitchenga/pitchenga/releases/latest/download/pitchenga-windows-installer.exe)
-  - Unpack and move the `Pitchenga.vst3` folder to: `C:\Program Files\Common Files\VST3\`
 
-> **Important Windows Note:** Because the software is not yet digitally signed, Windows Defender SmartScreen may block
-> the application from running.
-> To bypass this: click **"More info"** and then select **"Run anyway"**.
+> **Note:** If Windows Defender SmartScreen blocks the application from running,
+> click **"More info"** and then select **"Run anyway"**.
 >
 > If you receive an error about **"MSVCP140.dll not found"**, you may need to install
 > the [Microsoft Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe).
