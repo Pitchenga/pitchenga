@@ -15,7 +15,7 @@ jobs:
             - name: Get version
               id: get_version
               run: |
-                VERSION=$(date +'%y.%m%d.%H%M')
+                VERSION=$(bash version.sh)
                 echo "version=$VERSION" >> $GITHUB_OUTPUT
 
             - name: Create Pull Request
