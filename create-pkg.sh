@@ -50,7 +50,8 @@ if [ -d "$ARTIFACTS_DIR/VST3/Pitchenga.vst3" ]; then
              --version "$VERSION" \
              "$STAGING_DIR/components/vst3.pkg"
 else
-    echo "Warning: VST3 plugin not found."
+    echo "Error: VST3 plugin not found."
+    exit 1
 fi
 
 # Generate Distribution XML
