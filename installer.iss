@@ -1,26 +1,34 @@
-#define MyAppName "Pitchenga"
-#define MyAppPublisher "Pitchenga"
-#define MyAppURL "https://github.com/pitchenga/pitchenga"
-#define MyAppExeName "Pitchenga.exe"
+#define MyApplicationName "Pitchenga"
+#define MyApplicationPublisher "Pitchenga"
+#define MyApplicationUrl "https://github.com/pitchenga/pitchenga"
+#define MyApplicationExecutableName "Pitchenga.exe"
+
+#ifndef MyApplicationVersion
+  #define MyApplicationVersion "1.0.0"
+#endif
+
+#ifndef MyBuildDirectory
+  #define MyBuildDirectory "cmake-build-release\Pitchenga_artefacts\Release"
+#endif
 
 [Setup]
 AppId={{D3B3E8C1-8A7E-4B0E-B8A8-8F8C8A8C8A8C}
-AppName={#MyAppName}
-AppVersion={#MyAppVersion}
-AppPublisher={#MyAppPublisher}
-AppPublisherURL={#MyAppURL}
-AppSupportURL={#MyAppURL}
-AppUpdatesURL={#MyAppURL}
-DefaultDirName={autopf}\{#MyAppName}
-DefaultGroupName={#MyAppName}
+AppName={#MyApplicationName}
+AppVersion={#MyApplicationVersion}
+AppPublisher={#MyApplicationPublisher}
+AppPublisherURL={#MyApplicationUrl}
+AppSupportURL={#MyApplicationUrl}
+AppUpdatesURL={#MyApplicationUrl}
+DefaultDirName={autopf}\{#MyApplicationName}
+DefaultGroupName={#MyApplicationName}
 AllowNoIcons=yes
 OutputDir=.
 OutputBaseFilename=pitchenga-windows-installer
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
-ArchitecturesAllowed=x64 arm64
-ArchitecturesInstallIn64BitMode=x64 arm64
+ArchitecturesAllowed=x64
+ArchitecturesInstallIn64BitMode=x64
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -29,12 +37,12 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "{#MyBuildDir}\Standalone\Pitchenga.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#MyBuildDir}\VST3\Pitchenga.vst3\*"; DestDir: "{commoncf}\VST3\Pitchenga.vst3"; Flags: ignoreversion recursesubdirs
+Source: "{#MyBuildDirectory}\Standalone\Pitchenga.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#MyBuildDirectory}\VST3\Pitchenga.vst3\*"; DestDir: "{commoncf}\VST3\Pitchenga.vst3"; Flags: ignoreversion recursesubdirs
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{group}\{#MyApplicationName}"; Filename: "{app}\{#MyApplicationExecutableName}"
+Name: "{autodesktop}\{#MyApplicationName}"; Filename: "{app}\{#MyApplicationExecutableName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyApplicationExecutableName}"; Description: "{cm:LaunchProgram,{#StringChange(MyApplicationName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
