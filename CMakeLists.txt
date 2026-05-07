@@ -216,7 +216,7 @@ if (APPLE)
 
         if (NOT DEFINED ENV{CI})
             add_custom_command(TARGET Pitchenga_AU POST_BUILD
-                COMMAND /usr/bin/codesign --force --deep --options runtime --sign "Apple Development"  --entitlements "${ENTITLEMENTS_FILE}" --preserve-metadata=identifier "$<TARGET_BUNDLE_DIR:Pitchenga_AU>"
+                COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier "$<TARGET_BUNDLE_DIR:Pitchenga_AU>"
                 VERBATIM)
         endif()
     endif()
@@ -227,7 +227,7 @@ if (APPLE)
 
         if (NOT DEFINED ENV{CI})
             add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
-                COMMAND /usr/bin/codesign --force --deep --options runtime --sign "Apple Development" --entitlements "${ENTITLEMENTS_FILE}" --preserve-metadata=identifier "$<TARGET_BUNDLE_DIR:Pitchenga_VST3>"
+                COMMAND /usr/bin/codesign --force --deep --sign "Apple Development" --preserve-metadata=identifier "$<TARGET_BUNDLE_DIR:Pitchenga_VST3>"
                 VERBATIM)
         endif()
     endif()
@@ -237,8 +237,6 @@ else()
 endif()
 
 target_compile_features(Pitchenga PUBLIC cxx_std_20)
-
-target_compile_definitions(Pitchenga PUBLIC)
 
 target_compile_definitions(Pitchenga PRIVATE
     CMAKE_BUILD_PROFILE=$<CONFIG>
