@@ -20,7 +20,7 @@ STAGING_DIR="pkg_staging"
 rm -rf "$STAGING_DIR"
 mkdir -p "$STAGING_DIR/components"
 
-# 1. Build Component Packages
+# Build Component Packages
 echo "Building component packages..."
 
 # Standalone -> /Applications
@@ -53,7 +53,7 @@ else
     echo "Warning: VST3 plugin not found."
 fi
 
-# 2. Generate Distribution XML
+# Generate Distribution XML
 echo "Generating Distribution.xml..."
 cat <<EOF > "$STAGING_DIR/Distribution.xml"
 <?xml version="1.0" encoding="utf-8"?>
@@ -82,7 +82,7 @@ cat <<EOF > "$STAGING_DIR/Distribution.xml"
 </installer-gui-script>
 EOF
 
-# 3. Build Final Product Package
+# Build Final Product Package
 echo "Building final product package..."
 productbuild --distribution "$STAGING_DIR/Distribution.xml" \
              --package-path "$STAGING_DIR/components" \
