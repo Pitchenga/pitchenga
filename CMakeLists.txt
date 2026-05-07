@@ -110,18 +110,30 @@ if (TARGET Pitchenga_VST3)
             XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.github.pitchenga.Pitchenga.VST3")
 endif()
 
-if (TARGET Pitchenga_AU)
-    add_custom_command(TARGET Pitchenga_AU POST_BUILD
-            COMMAND /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.github.pitchenga.Pitchenga.AU" "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_AU>/Info.plist"
-            COMMENT "Isolating AU Bundle ID"
-            VERBATIM)
-endif()
+if (APPLE)
+    # Force unique Bundle IDs to prevent LaunchServices collisions between formats
+    foreach(target_suffix AU VST3)
+        if (TARGET Pitchenga_${target_suffix})
+            add_custom_command(TARGET Pitchenga_${target_suffix} POST_BUILD
+                    COMMAND /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.github.pitchenga.Pitchenga.${target_suffix}" "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist"
+                    COMMENT "Isolating ${target_suffix} Bundle ID"
+                    VERBATIM)
+        endif()
+    endforeach()
 
-if (APPLE AND TARGET Pitchenga_VST3)
-    add_custom_command(TARGET Pitchenga_VST3 POST_BUILD
-            COMMAND /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.github.pitchenga.Pitchenga.VST3" "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_VST3>/Info.plist"
-            COMMENT "Isolating VST3 Bundle ID"
-            VERBATIM)
+    # For local development (1.0.0), inject a fresh timestamp-based version on every build.
+    # This prevents hosts like Logic Pro from caching old AU versions.
+    if (PROJECT_VERSION STREQUAL "1.0.0")
+        foreach(target_suffix Standalone AU VST3)
+            if (TARGET Pitchenga_${target_suffix})
+                add_custom_command(TARGET Pitchenga_${target_suffix} POST_BUILD
+                        COMMAND /bin/bash -c "V=$(bash ${CMAKE_CURRENT_SOURCE_DIR}/version.sh); /usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $V\" \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist\"; /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $V\" \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist\""
+                        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                        COMMENT "Injecting dynamic version into ${target_suffix} bundle"
+                        VERBATIM)
+            endif()
+        endforeach()
+    endif()
 endif()
 
 # Tell CMake which C++ files to compile

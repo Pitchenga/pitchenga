@@ -499,11 +499,11 @@ Control::Control(PitchengaAudioProcessor& proc)
     tweakPanel.addAndMakeVisible(buttonDelete);
     tweakPanel.addAndMakeVisible(buttonRename);
 
-    buildTimestampLabel.setText(juce::String("v") + VERSION, juce::NotificationType::dontSendNotification);
+    buildTimestampLabel.setText(VERSION, juce::NotificationType::dontSendNotification);
     buildTimestampLabel.setColour(juce::Label::textColourId, juce::Colours::grey);
     buildTimestampLabel.setFont(juce::FontOptions(13.0f));
     buildTimestampLabel.setJustificationType(juce::Justification::centredLeft);
-    tweakPanel.addAndMakeVisible(buildTimestampLabel);
+    addAndMakeVisible(buildTimestampLabel);
 
     updateButtonStates();
 }
@@ -790,6 +790,10 @@ void Control::resized() {
     positionButton(toggleRoll, topRow);
     positionButton(toggleLayoutPivot, topRow);
 
+    topRow.removeFromLeft(4);
+    const float versionWidth = juce::GlyphArrangement::getStringWidth(buildTimestampLabel.getFont(), buildTimestampLabel.getText());
+    buildTimestampLabel.setBounds(topRow.removeFromLeft(static_cast<int>(std::ceil(versionWidth)) + 4));
+
     // Position presets and tweak from the right
     positionButtonRight(buttonSaveAs, topRow);
     positionButtonRight(buttonSave, topRow);
@@ -840,9 +844,6 @@ void Control::resized() {
 
         positionButtonRight(toggleStrobe, panelBounds);
         positionButtonRight(toggleLetter, panelBounds);
-
-        panelBounds.removeFromRight(8);
-        buildTimestampLabel.setBounds(panelBounds);
     }
 }
 
@@ -987,3 +988,6 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
 
     return true;
 }
+
+
+
