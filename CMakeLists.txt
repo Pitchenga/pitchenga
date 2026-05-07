@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(Pitchenga VERSION 1.0.0)
+project(Pitchenga VERSION 26.0507.1155)
 
 if (APPLE)
     # Force macOS to build a Universal Binary (arm64 + x86_64) to support both Apple Silicon and Intel plugins
