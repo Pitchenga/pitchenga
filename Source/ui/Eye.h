@@ -18,7 +18,7 @@ public:
 
     void updateResults(const std::vector<double>& results);
 
-    void paint(juce::Graphics& g) override;
+    void paint(juce::Graphics& graphics) override;
     void paintLabel(
         juce::Graphics& graphics,
         juce::Point<float> center,

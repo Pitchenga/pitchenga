@@ -84,14 +84,14 @@ void Eye::paintBins(juce::Graphics& graphics) const {
     }
 }
 
-void Eye::paint(juce::Graphics& g) {
+void Eye::paint(juce::Graphics& graphics) {
     if (cachedFrame.isValid()) {
-        g.drawImageAt(cachedFrame, 0, 0);
+        graphics.drawImageAt(cachedFrame, 0, 0);
     } else {
-        buildFrame(g);
+        buildFrame(graphics);
     }
 
-    paintBins(g);
+    paintBins(graphics);
 }
 
 void Eye::paintLabel(
