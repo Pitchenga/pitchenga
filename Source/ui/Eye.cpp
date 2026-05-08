@@ -24,13 +24,7 @@ juce::Colour Eye::calculateColor(const float velocity, const float toneRatio) {
     return juce::Colours::black.interpolatedWith(continuousColor, colorVelocity);
 }
 
-void Eye::paint(juce::Graphics& g) {
-    if (cachedFrame.isValid()) {
-        g.drawImageAt(cachedFrame, 0, 0);
-    } else {
-        paintFrame(g);
-    }
-
+void Eye::paintBins(juce::Graphics& g) {
     const auto bounds = getLocalBounds().toFloat();
     const auto center = bounds.getCentre();
     const auto outerRadius = std::min(bounds.getWidth(), bounds.getHeight()) / 2.0f;
@@ -70,6 +64,9 @@ void Eye::paint(juce::Graphics& g) {
             renderVelocity *= 1.3f;
         }
         renderVelocity = std::min(renderVelocity, 1.15f);
+        if (paintLogo) {
+            renderVelocity = 1.15f;
+        }
 
         const float toneRatio = static_cast<float>(i) / static_cast<float>(binsPerSemitone);
         const juce::Colour color = calculateColor(renderVelocity, toneRatio);
@@ -85,6 +82,16 @@ void Eye::paint(juce::Graphics& g) {
 
         g.strokePath(originalPath, strokeType, transform);
     }
+}
+
+void Eye::paint(juce::Graphics& g) {
+    if (cachedFrame.isValid()) {
+        g.drawImageAt(cachedFrame, 0, 0);
+    } else {
+        buildFrame(g);
+    }
+
+    paintBins(g);
 }
 
 void Eye::paintLabel(
@@ -132,7 +139,7 @@ void Eye::paintLabel(
     arrangement.draw(graphics);
 }
 
-void Eye::paintFrame(juce::Graphics& graphics) const {
+void Eye::buildFrame(juce::Graphics& graphics) const {
     const auto bounds = getLocalBounds().toFloat();
     const auto center = bounds.getCentre();
     const auto outerRadius = std::min(bounds.getWidth(), bounds.getHeight()) / 2.0f;
@@ -145,7 +152,7 @@ void Eye::paintFrame(juce::Graphics& graphics) const {
 
     for (int i = 0; i < numSegments; ++i) {
         const float arcStart = static_cast<float>(i) * segmentAngleStep;
-        // Overlap slightly to prevent anti-aliasing gaps
+        // Overlap slightly to prevent antialiasing gaps
         const float arcEnd = static_cast<float>(i + 1) * segmentAngleStep + 0.01f;
         const float chroma = static_cast<float>(i) / static_cast<float>(numSegments) * 12.0f;
 
@@ -184,10 +191,10 @@ void Eye::paintFrame() {
 
     cachedFrame = juce::Image(juce::Image::ARGB, width, height, true);
     juce::Graphics graphics(cachedFrame);
-    paintFrame(graphics);
+    buildFrame(graphics);
 }
 
-void Eye::paintBins() {
+void Eye::buildBins() {
     constexpr float angleStep = juce::MathConstants<float>::twoPi / static_cast<float>(totalFoldedBins);
     constexpr float rotation = 0.0f - 0.5f * angleStep;
 
@@ -208,5 +215,5 @@ void Eye::paintBins() {
 
 void Eye::resized() {
     paintFrame();
-    paintBins();
+    buildBins();
 }
