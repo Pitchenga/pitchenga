@@ -76,7 +76,7 @@ juce_add_plugin(Pitchenga
         FORMATS AU VST3 Standalone       # The magic dual-compile flag
         PRODUCT_NAME "Pitchenga"
         ICON_BIG "Source/Assets/pitchenga-squircle-1024.png"
-        ICON_SMALL "Source/Assets/pitchenga-squircle-1024.png"
+        ICON_SMALL "Source/Assets/pitchenga-squircle-256.png"
 
         # Architecture rules
         IS_SYNTH FALSE                   # It's an effect/visualizer, not a synth generator
