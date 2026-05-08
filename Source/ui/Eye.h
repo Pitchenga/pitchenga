@@ -9,6 +9,8 @@ class PitchengaAudioProcessor;
 
 class Eye : public juce::Component {
 public:
+    static constexpr bool paintLogo = false;
+    // static constexpr bool paintLogo = true;
     static constexpr int semitonesPerOctave = 12;
     static constexpr int binsPerSemitone = 9;
     static constexpr int totalFoldedBins = binsPerSemitone * semitonesPerOctave;
@@ -17,7 +19,7 @@ public:
 
     void updateResults(const std::vector<double>& results);
 
-    void paint(juce::Graphics& g) override;
+    void paint(juce::Graphics& graphics) override;
     void paintLabel(
         juce::Graphics& graphics,
         juce::Point<float> center,
@@ -29,11 +31,12 @@ public:
     ) const;
     void resized() override;
     static juce::Colour calculateColor(float velocity, float toneRatio);
+    void paintBins(juce::Graphics& graphics) const;
 
 private:
-    void paintFrame(juce::Graphics& graphics) const;
+    void buildFrame(juce::Graphics& graphics) const;
     void paintFrame();
-    void paintBins();
+    void buildBins();
 
     PitchengaAudioProcessor& processor;
 

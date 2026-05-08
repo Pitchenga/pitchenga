@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - '*' # Triggers when you push a tag like v1.0.0
+      - '*'
   workflow_dispatch: # Allows you to trigger the build manually from the Actions tab
 
 jobs:
