@@ -24,7 +24,7 @@ juce::Colour Eye::calculateColor(const float velocity, const float toneRatio) {
     return juce::Colours::black.interpolatedWith(continuousColor, colorVelocity);
 }
 
-void Eye::paintBins(juce::Graphics& g) {
+void Eye::paintBins(juce::Graphics& graphics) const {
     const auto bounds = getLocalBounds().toFloat();
     const auto center = bounds.getCentre();
     const auto outerRadius = std::min(bounds.getWidth(), bounds.getHeight()) / 2.0f;
@@ -77,10 +77,10 @@ void Eye::paintBins(juce::Graphics& g) {
         auto& originalPath = segmentPaths[static_cast<size_t>(i)];
         auto transform = juce::AffineTransform::scale(currentRadius, currentRadius).translated(center.x, center.y);
 
-        g.setColour(color);
-        g.fillPath(originalPath, transform);
+        graphics.setColour(color);
+        graphics.fillPath(originalPath, transform);
 
-        g.strokePath(originalPath, strokeType, transform);
+        graphics.strokePath(originalPath, strokeType, transform);
     }
 }
 

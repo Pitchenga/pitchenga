@@ -30,7 +30,7 @@ public:
     ) const;
     void resized() override;
     static juce::Colour calculateColor(float velocity, float toneRatio);
-    void paintBins(juce::Graphics& g);
+    void paintBins(juce::Graphics& graphics) const;
 
 private:
     void buildFrame(juce::Graphics& graphics) const;
