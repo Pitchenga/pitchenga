@@ -10,6 +10,7 @@ class PitchengaAudioProcessor;
 class Eye : public juce::Component {
 public:
     static constexpr bool paintLogo = false;
+    // static constexpr bool paintLogo = true;
     static constexpr int semitonesPerOctave = 12;
     static constexpr int binsPerSemitone = 9;
     static constexpr int totalFoldedBins = binsPerSemitone * semitonesPerOctave;

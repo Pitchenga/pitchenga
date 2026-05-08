@@ -22,7 +22,6 @@ PitchengaAudioProcessorEditor::PitchengaAudioProcessorEditor(PitchengaAudioProce
     rollCqt(p),
     splitter(p),
     control(p) {
-
     // Set processor callbacks
     processor.onShowExternalPluginEditor = [this] { openPluginWindow(); };
     processor.onOpenPluginBrowser = [this] { openPluginBrowserWindow(); };
@@ -76,14 +75,14 @@ void PitchengaAudioProcessorEditor::timerCallback() {
         worker.getEyeResults(eyeBuffer);
         worker.getRollStftResults(rollStftBuffer);
         worker.getRollCqtResults(rollCqtBuffer);
-        
+
         eye.updateResults(eyeBuffer);
         rollStft.updateResults(rollStftBuffer);
         rollCqt.updateResults(rollCqtBuffer);
-        
+
         worker.clearNewDataFlag();
     }
-    
+
     // Smoothly poll current pitch for the needle
     const float latestPitchHz = processor.currentPitchHz.load(std::memory_order_relaxed);
     needle.setPitchFrequency(latestPitchHz);
@@ -115,28 +114,28 @@ void PitchengaAudioProcessorEditor::openPluginBrowserWindow() {
         browserWindow->setUsingNativeTitleBar(true);
         browserWindow->setResizable(true, true);
         browserWindow->setSize(900, 900);
-        
+
         auto& formatManager = processor.getFormatManager();
         auto& knownPluginList = processor.getKnownPluginList();
-        
+
         auto list = std::make_unique<juce::PluginListComponent>(
-            formatManager, 
-            knownPluginList, 
-            juce::File(), 
+            formatManager,
+            knownPluginList,
+            juce::File(),
             nullptr
         );
-        
+
         listComponent = list.get();
         browserWindow->setContentOwned(list.release(), true);
     }
-    
+
     browserWindow->setVisible(true);
 }
 
 void PitchengaAudioProcessorEditor::startPluginScan() {
     // Ensure the browser component is created so we can use its scanning functionality
     openPluginBrowserWindow();
-    
+
     if (listComponent != nullptr) {
         auto& formatManager = processor.getFormatManager();
         for (int i = 0; i < formatManager.getNumFormats(); ++i) {
@@ -146,25 +145,29 @@ void PitchengaAudioProcessorEditor::startPluginScan() {
             }
         }
     }
-    
+
     // Close the residual plugin manager window after the scan is complete as requested
     if (browserWindow != nullptr) {
         browserWindow->setVisible(false);
     }
 }
 
-void PitchengaAudioProcessorEditor::paint(juce::Graphics& g) {
-    g.fillAll(juce::Colours::black);
+void PitchengaAudioProcessorEditor::paint(juce::Graphics& graphics) {
+    if (Eye::paintLogo) {
+        graphics.fillAll(juce::Colours::white);
+    } else {
+        graphics.fillAll(juce::Colours::black);
+    }
 }
 
 void PitchengaAudioProcessorEditor::updateVisibilityFromState() {
     control.updateVisibilityFromState();
-    
+
     needle.resized();
     eye.resized();
     rollStft.resized();
     rollCqt.resized();
-    
+
     resized();
 }
 
@@ -193,8 +196,9 @@ void PitchengaAudioProcessorEditor::resized() {
         if (isLayoutHorizontal) {
             // --- Horizontal Layout: [Eye/Needle] |Split| [Roll] ---
             const int availableWidth = bounds.getWidth() - 4; // 4 is splitter width
-            const int eyeWidth = static_cast<int>(static_cast<float>(availableWidth) * (1.0f - processor.settings.splitRatio));
-            
+            const int eyeWidth = static_cast<int>(static_cast<float>(availableWidth)
+                * (1.0f - processor.settings.splitRatio));
+
             auto eyeNeedleRect = bounds.removeFromLeft(eyeWidth);
             if (isShowNeedle) {
                 needle.setBounds(eyeNeedleRect.removeFromBottom(needleHeight));
@@ -203,7 +207,7 @@ void PitchengaAudioProcessorEditor::resized() {
             eye.setBounds(eyeNeedleRect);
 
             splitter.setBounds(bounds.removeFromLeft(4));
-            
+
             if (processor.settings.isUseRollStft) {
                 rollStft.setBounds(bounds);
             } else {
@@ -212,7 +216,8 @@ void PitchengaAudioProcessorEditor::resized() {
         } else {
             // --- Vertical Layout: [Roll] / [Eye] / [Needle] ---
             const int availableHeight = bounds.getHeight() - needleHeight - 4; // 4 is splitter height
-            const int rollHeight = static_cast<int>(static_cast<float>(availableHeight) * processor.settings.splitRatio);
+            const int rollHeight = static_cast<int>(static_cast<float>(availableHeight)
+                * processor.settings.splitRatio);
 
             auto rollRect = bounds.removeFromTop(rollHeight);
             if (processor.settings.isUseRollStft) {
@@ -222,7 +227,7 @@ void PitchengaAudioProcessorEditor::resized() {
             }
 
             splitter.setBounds(bounds.removeFromTop(4));
-            
+
             if (isShowNeedle) {
                 needle.setBounds(bounds.removeFromBottom(needleHeight));
                 bounds.removeFromBottom(1); // 1px gap
