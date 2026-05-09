@@ -38,7 +38,7 @@ GitHub Actions needs both certificates in a single file to sign everything corre
     * **Developer ID Installer: [Your Name] ([Team ID])**
 4. **Shift-Click** to select BOTH certificates.
 5. Ensure the expansion arrows `>` are toggled so the private keys are visible (and selected).
-6. Right-click and select **Export 2 items...**
+6. Right-click and select **Export 4 items...**
 7. Save as a **Personal Information Exchange (.p12)** file.
 8. Create a password and save it as your `MAC_CERTS_PASSWORD` secret in GitHub.
 
