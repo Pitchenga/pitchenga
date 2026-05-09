@@ -37,10 +37,16 @@ jobs:
         run: |
           CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          
+          # Paranoia check: How many characters is our secret?
+          echo "Base64 Secret Length: $(echo -n "$BUILD_CERTIFICATE_BASE64" | wc -c)"
+          
           echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          
+          # Import and check output
           security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security list-keychains -d user -s $KEYCHAIN_PATH
           
@@ -50,7 +56,7 @@ jobs:
           echo "--- Installed Certificates ---"
           security find-certificate -a $KEYCHAIN_PATH
           
-          echo "--- Valid Signing Identities (All) ---"
+          echo "--- Valid Signing Identities ---"
           security find-identity -v
 
       - name: Configure CMake
