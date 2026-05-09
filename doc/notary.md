@@ -16,9 +16,7 @@ Apple needs a cryptographic lock from your specific Mac before they issue a cert
 
 Now you trade that request file for the actual certificate.
 
-1. Go to
-   [developer.apple.com](https://developer.apple.com/)
-   and log in.
+1. Go to [developer.apple.com](https://developer.apple.com/) and log in.
 2. Click on **Certificates, IDs & Profiles** in the left sidebar.
 3. Click the blue **+** icon next to the "Certificates" header to create a new one.
 4. Scroll down to the "Software" section and select **Developer ID Application**.
