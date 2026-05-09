@@ -13,14 +13,14 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v4
 
-            - name: Get version
-              id: get_version
+            - name: Get current date
+              id: get_date
               run: |
-                VERSION=$(bash version.sh)
-                echo "version=$VERSION" >> $GITHUB_OUTPUT
+                DATE=$(TZ='Europe/Copenhagen' date +'%Y-%m-%d %H:%M')
+                echo "date=$DATE" >> $GITHUB_OUTPUT
 
             - name: Create Pull Request
               env:
                   GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
               run: |
-                  gh pr create --base production --head main --title "Production ${{ steps.get_version.outputs.version }}" --body "Automated PR from main to production." || echo "PR already exists or could not be created"
+                  gh pr create --base production --head main --title "Production ${{ steps.get_date.outputs.date }}" --body "Automated PR from main to production." || echo "PR already exists or could not be created"
