@@ -42,9 +42,13 @@ jobs:
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security list-keychains -d user -s $KEYCHAIN_PATH $(security list-keychains -d user | xargs)
+          security list-keychains -d user -s $KEYCHAIN_PATH
+          security default-keychain -s $KEYCHAIN_PATH
           
-          # Verify identities are installed
+          # Authorize codesign and productbuild to access the keys without a prompt
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          
+          # Verify identities are installed and print them for debugging
           security find-identity -v -p codesigning
 
       - name: Configure CMake
@@ -91,7 +95,7 @@ jobs:
           ./create-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-unsigned.pkg "${{ github.ref_name }}"
           
           # Sign the PKG container itself using the Installer certificate
-          productsign --sign "Developer ID Installer" Pitchenga-unsigned.pkg pitchenga.pkg
+          productsign --sign "Developer ID Installer" --keychain $RUNNER_TEMP/app-signing.keychain-db Pitchenga-unsigned.pkg pitchenga.pkg
           rm Pitchenga-unsigned.pkg
           
           # Submit the PKG to Apple for Notarization
