@@ -9,13 +9,16 @@ on:
 jobs:
   build:
     name: Build on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
     strategy:
       matrix:
-        # Using macos-latest (M1/M2) and windows-latest
-        os: [macos-latest, windows-latest]
+        include:
+          - os: macOS
+            runner: self-hosted
+          - os: Windows
+            runner: windows-latest
 
     steps:
       - name: Checkout repository
