@@ -50,8 +50,8 @@ jobs:
           echo "--- Installed Certificates ---"
           security find-certificate -a $KEYCHAIN_PATH
           
-          echo "--- Valid Signing Identities (All Keychains) ---"
-          security find-identity -v -p codesigning
+          echo "--- Valid Signing Identities (All) ---"
+          security find-identity -v
 
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DPITCHENGA_VERSION=${{ github.ref_name }}

@@ -15,10 +15,12 @@ Apple needs a cryptographic lock from your specific Mac before they issue a cert
 ### Step 2: Generate the Certificates on Apple's Portal
 
 You need **two** different types of certificates to distribute a Mac app outside the App Store:
+
 1. **Developer ID Application**: Used to sign the app and plugins.
 2. **Developer ID Installer**: Used to sign the `.pkg` installer.
 
 For **each** of these:
+
 1. Go to [developer.apple.com](https://developer.apple.com/) and log in.
 2. Click on **Certificates, IDs & Profiles**.
 3. Click the blue **+** icon next to "Certificates".
@@ -30,8 +32,9 @@ For **each** of these:
 ### Step 3: Install and Export the combined `.p12`
 
 GitHub Actions needs both certificates in a single file to sign everything correctly.
+You can also include **Apple Distribution** certificate in this same file if you are building for iOS.
 
-1. Double-click **both** downloaded `.cer` files to install them into your Keychain.
+1. Double-click **all** downloaded `.cer` files to install them into your Keychain.
 2. Open **Keychain Access**, select the **login** keychain, and click the **My Certificates** tab.
 3. Find both certificates:
     * **Developer ID Application: [Your Name] ([Team ID])**
