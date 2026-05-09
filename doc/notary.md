@@ -61,8 +61,8 @@ secrets to your GitHub repository to authenticate the notarization upload:
 
 * **`APPLE_ID`**: Your standard Apple ID email address.
 * **`APPLE_PASSWORD`**: An app-specific password. Go to
-  [appleid.apple.com](https://appleid.apple.com/)
-  , log in, go to the "App-Specific Passwords" section, generate one (call it "GitHub Actions"), and paste it here. Do
+  [appleid.apple.com](https://appleid.apple.com/),
+  log in, go to the "App-Specific Passwords" section, generate one (call it "GitHub Actions"), and paste it here. Do
   not use your actual Apple ID login password.
 * **`APPLE_TEAM_ID`**: Your 10-character Team ID. You can find this in the top right corner of the Apple Developer
   portal under your name.
