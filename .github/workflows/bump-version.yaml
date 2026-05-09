@@ -29,27 +29,8 @@ jobs:
           VERSION=$(bash version.sh)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Create and Push Tag
+      - name: Push Tag
         run: |
-          # Replace the project version line (compatible with both macOS and Linux)
-          sed "s/project(Pitchenga VERSION .*)/project(Pitchenga VERSION ${{ env.VERSION }})/" CMakeLists.txt > CMakeLists.txt.tmp && mv CMakeLists.txt.tmp CMakeLists.txt
-
-      - name: Commit and Push Tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -am "Release ${{ env.VERSION }}"
-          
-          # Push the commit back to the production branch
-          git push origin production
-          
           # Create and push the tag to trigger release.yaml
           git tag "${{ env.VERSION }}"
           git push origin "${{ env.VERSION }}"
-
-#      - name: Cascade Merge to main
-#        run: |
-#          git fetch origin main
-#          git checkout main
-#          git merge production --no-edit
-#          git push origin main

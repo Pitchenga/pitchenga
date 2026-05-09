@@ -44,7 +44,7 @@ jobs:
           security list-keychain -d user -s $KEYCHAIN_PATH
 
       - name: Configure CMake
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DPITCHENGA_VERSION=${{ github.ref_name }}
 
       - name: Build Project
         run: cmake --build build --config Release
@@ -84,8 +84,7 @@ jobs:
 
           # Return to root to run the PKG script
           cd ../../../
-          VERSION=$(bash version.sh)
-          ./create-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-unsigned.pkg "$VERSION"
+          ./create-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-unsigned.pkg "${{ github.ref_name }}"
           
           # Sign the PKG container itself using the Installer certificate
           productsign --sign "Developer ID Installer" Pitchenga-unsigned.pkg pitchenga.pkg
@@ -101,8 +100,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $VERSION = bash version.sh
-          iscc /DMyAppVersion="$VERSION" /DMyBuildDir="build\Pitchenga_artefacts\Release" installer.iss
+          iscc /DMyAppVersion="${{ github.ref_name }}" /DMyBuildDir="build\Pitchenga_artefacts\Release" installer.iss
           Compress-Archive -Path build\Pitchenga_artefacts\Release\* -DestinationPath pitchenga-windows.zip
 
       - name: Upload Artifact
