@@ -3,15 +3,17 @@ project(Pitchenga VERSION 1.0.0)
 
 # Calculate a dynamic version for local development to ensure the AU bundle
 # shows more than "1.0.0" in hosts like Logic Pro.
-set(PITCHENGA_VERSION ${PROJECT_VERSION})
-if (PROJECT_VERSION STREQUAL "1.0.0")
-    execute_process(
-            COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/version.sh"
-            OUTPUT_VARIABLE DYNAMIC_VERSION
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    if (NOT DYNAMIC_VERSION STREQUAL "")
-        set(PITCHENGA_VERSION ${DYNAMIC_VERSION})
+if (NOT PITCHENGA_VERSION)
+    set(PITCHENGA_VERSION ${PROJECT_VERSION})
+    if (PROJECT_VERSION STREQUAL "1.0.0")
+        execute_process(
+                COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/version.sh"
+                OUTPUT_VARIABLE DYNAMIC_VERSION
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        if (NOT DYNAMIC_VERSION STREQUAL "")
+            set(PITCHENGA_VERSION ${DYNAMIC_VERSION})
+        endif()
     endif()
 endif()
 
