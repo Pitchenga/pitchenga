@@ -50,8 +50,8 @@ jobs:
           echo "--- Installed Certificates ---"
           security find-certificate -a $KEYCHAIN_PATH
           
-          echo "--- Valid Signing Identities ---"
-          security find-identity -v -p codesigning $KEYCHAIN_PATH
+          echo "--- Valid Signing Identities (All) ---"
+          security find-identity -v
 
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DPITCHENGA_VERSION=${{ github.ref_name }}
@@ -97,7 +97,7 @@ jobs:
           ./create-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-unsigned.pkg "${{ github.ref_name }}"
           
           # Sign the PKG container itself using the Installer certificate
-          productsign --sign "Developer ID Installer" --keychain $RUNNER_TEMP/app-signing.keychain-db Pitchenga-unsigned.pkg pitchenga.pkg
+          productsign --sign "Developer ID Installer" Pitchenga-unsigned.pkg pitchenga.pkg
           rm Pitchenga-unsigned.pkg
           
           # Submit the PKG to Apple for Notarization
