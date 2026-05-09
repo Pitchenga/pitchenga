@@ -1,5 +1,5 @@
 name: Auto-Create PR from main to review
-run-name: "Pitchenga review ${{ github.ref_name }}: ${{ github.event.head_commit.message }}"
+run-name: "Pitchenga review ${{ github.ref_name }} - ${{ github.event.head_commit.message }}"
 on:
     push:
         branches:
@@ -24,4 +24,4 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
               run: |
-                  gh pr create --base review --head main --title "Pitchenga review ${{ steps.get_date.outputs.date }}" --body "Automated PR from main to review." || echo "PR already exists or could not be created"
+                  gh pr create --base review --head main --title "Pitchenga review ${{ steps.get_date.outputs.date }} - ${{ github.ref_name }} - ${{ github.event.head_commit.message }}" --body "Automated PR from main to review." || echo "PR already exists or could not be created"
