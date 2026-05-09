@@ -1,5 +1,5 @@
 name: Auto-Create PR from main to production
-run-name: "Pitchenga production ${{ github.ref_name }} - ${{ github.event.head_commit.message }}"
+run-name: "Pitchenga production - ${{ github.event.head_commit.message }}"
 on:
     push:
         branches:
@@ -24,4 +24,4 @@ jobs:
               env:
                   GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
               run: |
-                  gh pr create --base production --head main --title "Pitchenga production ${{ steps.get_date.outputs.date }} - ${{ github.ref_name }} - ${{ github.event.head_commit.message }}" --body "Automated PR from main to production." || echo "PR already exists or could not be created"
+                  gh pr create --base production --head main --title "Pitchenga production ${{ steps.get_date.outputs.date }} - ${{ github.event.head_commit.message }}" --body "Automated PR from main to production." || echo "PR already exists or could not be created"
