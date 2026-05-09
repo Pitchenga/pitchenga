@@ -11,6 +11,7 @@ jobs:
     name: Bump Version and Create Tag
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+#    runs-on: self-hosted
     permissions:
       contents: write
     steps:
@@ -30,14 +31,14 @@ jobs:
 
       - name: Create and Push Tag
         run: |
-          # Replace the project version line
-          sed -i "s/project(Pitchenga VERSION .*)/project(Pitchenga VERSION ${{ env.VERSION }})/" CMakeLists.txt
+          # Replace the project version line (compatible with both macOS and Linux)
+          sed "s/project(Pitchenga VERSION .*)/project(Pitchenga VERSION ${{ env.VERSION }})/" CMakeLists.txt > CMakeLists.txt.tmp && mv CMakeLists.txt.tmp CMakeLists.txt
 
       - name: Commit and Push Tag
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git commit -am "chore: bump version to ${{ env.VERSION }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit -am "Release ${{ env.VERSION }}"
           
           # Push the commit back to the production branch
           git push origin production
