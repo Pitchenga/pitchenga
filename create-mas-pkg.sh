@@ -129,6 +129,9 @@ else
     exit 1
 fi
 
+echo "Removing extended attributes (like quarantine)..."
+xattr -rc "$stagedAppPath"
+
 echo "Signing app for Mac App Store..."
 codesign --force --deep --options runtime --timestamp \
     --identifier "$bundleIdentifier" \
