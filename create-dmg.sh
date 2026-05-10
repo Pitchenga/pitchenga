@@ -15,7 +15,7 @@ if [ ! -d "$ARTIFACTS_DIR" ]; then
 fi
 
 STAGING_DIR="dmg_staging"
-rm -rf "$STAGING_DIR"
+rm -rf "${STAGING_DIR:?}"
 mkdir -p "$STAGING_DIR"
 
 # Copy bundles
