@@ -24,6 +24,7 @@ fi
 STAGING_DIR="pkg_staging"
 rm -rf "$STAGING_DIR"
 mkdir -p "$STAGING_DIR/components"
+mkdir -p "$STAGING_DIR/roots"
 
 # Helper function to build a component package with relocation disabled
 build_component() {
@@ -35,12 +36,16 @@ build_component() {
     if [ -d "$bundle_path" ]; then
         echo "Building component package for $bundle_name..."
         
-        # Create a temporary root for this specific component
+        # Create a clean temporary root for this specific component
+        # This avoids permission issues and relocation bugs
         local temp_root="$STAGING_DIR/roots/$pkg_name"
         local install_dir
         install_dir=$(dirname "$install_path")
         mkdir -p "$temp_root/$install_dir"
         cp -R "$bundle_path" "$temp_root/$install_dir/"
+        
+        # Ensure staged files are writable
+        chmod -R +w "$temp_root"
         
         # Create a temporary plist to disable relocation
         local plist_path="$STAGING_DIR/${pkg_name}.plist"
