@@ -87,6 +87,10 @@ plutil -replace LSApplicationCategoryType -string "public.app-category.music" "$
 plutil -replace CFBundleVersion -string "$version" "$plistPath"
 plutil -replace CFBundleShortVersionString -string "$version" "$plistPath"
 
+# Extract and print the identifier for verification
+bundleIdentifier=$(plutil -extract CFBundleIdentifier raw "$plistPath")
+echo "Using Bundle Identifier: $bundleIdentifier"
+
 echo "Signing app for Mac App Store..."
 codesign --force --deep --options runtime --timestamp \
     --sign "$applicationIdentity" \
@@ -105,9 +109,6 @@ pkgbuild --analyze --root "$masRoot" "$componentPlist"
 sed -i '' 's/<key>BundleIsRelocatable<\/key>.*<true\/>/<key>BundleIsRelocatable<\/key><false\/>/' "$componentPlist"
 
 # Build the component package using the temporary root
-# Dynamically extract bundle identifier from Info.plist
-bundleIdentifier=$(plutil -extract CFBundleIdentifier raw "$plistPath")
-
 pkgbuild --root "$masRoot" \
     --identifier "$bundleIdentifier" \
     --install-location "/" \
