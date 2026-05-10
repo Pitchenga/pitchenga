@@ -126,7 +126,16 @@ jobs:
           # Mac App Store (MAS) Build & Upload
           # Note: Plugins (AU/VST3) cannot be distributed via MAS.
           ./create-mas-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-macOS-AppStore.pkg "${{ github.ref_name }}"
-          xcrun altool --upload-package Pitchenga-macOS-AppStore.pkg --type osx --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --bundle-id "com.github.pitchenga.Pitchenga" --bundle-version "${{ github.ref_name }}" --bundle-short-version-string "${{ github.ref_name }}"
+
+          # Upload to App Store Connect
+          xcrun altool --upload-package Pitchenga-macOS-AppStore.pkg \
+            --type osx \
+            --username "$APPLE_ID" \
+            --password "$APPLE_PASSWORD" \
+            --asc-provider "$APPLE_TEAM_ID" \
+            --bundle-id "com.github.pitchenga.Pitchenga" \
+            --bundle-version "${{ github.ref_name }}" \
+            --bundle-short-version-string "${{ github.ref_name }}"
 
       - name: Windows Artifacts
         if: runner.os == 'Windows'
