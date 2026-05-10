@@ -1,9 +1,9 @@
 name: Bump Version
-run-name: "Bump Version - ${{ github.event.head_commit.timestamp }}"
+run-name: "Bump Version"
 
 on:
   pull_request:
-    types: [closed]
+    types: [ closed ]
     branches:
       - production
 
@@ -12,7 +12,7 @@ jobs:
     name: Bump Version and Create Tag
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-#    runs-on: self-hosted
+    #runs-on: self-hosted
     permissions:
       contents: write
     steps:

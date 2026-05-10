@@ -19,8 +19,8 @@ jobs:
           - os: macOS
             #runner: self-hosted
             runner: macos-latest
-          - os: Windows
-            runner: windows-latest
+#          - os: Windows
+#            runner: windows-latest
 
     steps:
       - name: Checkout repository
@@ -108,8 +108,17 @@ jobs:
           # Submit the PKG to Apple for Notarization
           xcrun notarytool submit Pitchenga-macOS-Installer.pkg --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
 
-          # Staple the approval ticket directly to the PKG
-          xcrun stapler staple Pitchenga-macOS-Installer.pkg
+          # Staple the approval ticket directly to the DMG
+          xcrun stapler staple Pitchenga-macOS-Portable.dmg
+
+          # --- Mac App Store (MAS) Build ---
+          # Note: Plugins (AU/VST3) cannot be distributed via MAS in the traditional way, 
+          # so we only package the Standalone app.
+          ./create-mas-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-macOS-AppStore.pkg "${{ github.ref_name }}"
+          
+          # Upload to App Store Connect
+          xcrun altool --upload-package Pitchenga-macOS-AppStore.pkg --type osx --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --bundle-id "com.github.pitchenga.Pitchenga" --bundle-version "${{ github.ref_name }}" --bundle-short-version-string "${{ github.ref_name }}"
+
 
           # Staple the individual bundles and create a portable DMG
           cd build/Pitchenga_artefacts/Release
