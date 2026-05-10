@@ -55,7 +55,7 @@ You can also include the **Apple Distribution** certificate in this same file if
 * Save as a **Personal Information Exchange (.p12)** file.
 * Create a password and save it as your `MAC_CERTS_PASSWORD` secret in GitHub.
 
-### Step 4: Inject it into GitHub Actions
+### Inject it into GitHub Actions
 
 This is the exact same process we discussed earlier, just with the production-ready certificate.
 
@@ -77,7 +77,7 @@ final three text secrets to your GitHub repository to authenticate the uploads:
 * **`APPLE_PASSWORD`**: An app-specific password. Go to [appleid.apple.com](https://appleid.apple.com/),
   log in, go to the "App-Specific Passwords" section, generate one (call it "GitHub Actions"), and paste it here.
   Do not use your actual Apple ID login password.
-* **`APPLE_TEAM_ID`**: Your 10-character Team ID. This is used as the **ASC Provider** for App Store uploads.
+* **`APPLE_TEAM_ID`**: Your 10-character Team ID. You can find this in the top right corner of the Apple Developer portal under your name. This is used as the **ASC Provider** for App Store uploads.
 
 ## Troubleshooting
 
@@ -88,5 +88,16 @@ GitHub logs:
 
 ```bash
 TXT="apple-all.p12.txt"; PKSC="$TXT.p12"; wc -c "$TXT" && base64 -D -i "$TXT" -o "$PKSC" && md5 -q "$PKSC"; KEYCHAIN="temp.keychain"; security create-keychain -p t "$KEYCHAIN" && security import "$PKSC" -k "$KEYCHAIN" -T /usr/bin/codesign && security find-identity -v "$KEYCHAIN"; security delete-keychain "$KEYCHAIN"; rm -f "$PKSC"
+```
+### List your current identities
+
+```
+security find-identity -v
+```
+
+### Reset your Keychain Search List
+
+```
+security list-keychains -s ~/Library/Keychains/login.keychain-db /Library/Keychains/System.keychain
 ```
 

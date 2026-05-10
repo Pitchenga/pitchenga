@@ -5,8 +5,8 @@ set -euo pipefail
 artifactsDirectory=${1:-"cmake-build-release/Pitchenga_artefacts/Release"}
 outputPackage=${2:-"Pitchenga-macOS-AppStore.pkg"}
 version=${3:-"1.0.0"}
-applicationIdentity=${4:-"Apple Distribution"}
-installerIdentity=${5:-"3rd Party Mac Developer Installer"}
+applicationIdentity=${4:-"Apple Distribution:"}
+installerIdentity=${5:-"3rd Party Mac Developer Installer:"}
 
 echo "--- Creating macOS App Store Package ---"
 echo "Artifacts source:   $artifactsDirectory"
@@ -47,9 +47,10 @@ cat <<EOF > mas.entitlements
 EOF
 
 echo "Injecting MAS metadata into Info.plist..."
-PLIST_PATH="$applicationPath/Contents/Info.plist"
-plutil -replace CFBundleSupportedPlatforms -json '["MacOSX"]' "$PLIST_PATH"
-plutil -replace LSApplicationCategoryType -string "public.app-category.music" "$PLIST_PATH"
+plistPath="$applicationPath/Contents/Info.plist"
+chmod +w "$plistPath"
+plutil -replace CFBundleSupportedPlatforms -json '["MacOSX"]' "$plistPath"
+plutil -replace LSApplicationCategoryType -string "public.app-category.music" "$plistPath"
 
 echo "Signing app for Mac App Store..."
 codesign --force --options runtime --timestamp \
