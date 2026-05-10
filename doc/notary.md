@@ -25,7 +25,7 @@ To distribute Pitchenga, you need different sets of certificates depending on th
 #### For Mac App Store (MAS)
 
 1. **Apple Distribution**: Used to sign the Standalone app for the store.
-2. **Mac Installer Distribution**: Used to sign the `.pkg` destined for App Store Connect.
+2. **3rd Party Mac Developer Installer**: Used to sign the `.pkg` destined for App Store Connect.
 
 For **each** of these:
 
