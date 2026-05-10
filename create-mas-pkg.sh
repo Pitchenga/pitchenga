@@ -19,17 +19,30 @@ echo "Version:            $version"
 echo "App Identity:       $applicationIdentity"
 echo "Installer Identity: $installerIdentity"
 
-applicationPath="$artifactsDirectory/Standalone/Pitchenga.app"
+originalAppPath="$artifactsDirectory/Standalone/Pitchenga.app"
 
-if [ ! -d "$applicationPath" ]; then
-    echo "Error: Standalone application not found at $applicationPath"
+if [ ! -d "$originalAppPath" ]; then
+    echo "Error: Standalone application not found at $originalAppPath"
     exit 1
 fi
 
+# Create a clean staging directory for MAS modifications
+# This avoids permission issues with build artifacts
+stagingDir="mas_staging"
+rm -rf "$stagingDir"
+mkdir -p "$stagingDir"
+
+echo "Staging application for modification..."
+cp -R "$originalAppPath" "$stagingDir/"
+stagedAppPath="$stagingDir/Pitchenga.app"
+
+# Ensure staged files are writable
+chmod -R +w "$stagedAppPath"
+
 # MAS requires App Sandbox
 echo "Generating MAS entitlements..."
-trap 'rm -f mas.entitlements' EXIT
-cat <<EOF > mas.entitlements
+entitlementsPath="$stagingDir/mas.entitlements"
+cat <<EOF > "$entitlementsPath"
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -51,25 +64,23 @@ cat <<EOF > mas.entitlements
 EOF
 
 echo "Injecting MAS metadata into Info.plist..."
-plistPath="$applicationPath/Contents/Info.plist"
-
-# Ensure the entire bundle is writable to avoid permission issues with plutil
-chmod -R +w "$applicationPath"
-
+plistPath="$stagedAppPath/Contents/Info.plist"
 plutil -replace CFBundleSupportedPlatforms -json '["MacOSX"]' "$plistPath"
 plutil -replace LSApplicationCategoryType -string "public.app-category.music" "$plistPath"
 
 echo "Signing app for Mac App Store..."
-codesign --force --options runtime --timestamp \
+codesign --force --deep --options runtime --timestamp \
     --sign "$applicationIdentity" \
-    --entitlements mas.entitlements \
-    "$applicationPath"
+    --entitlements "$entitlementsPath" \
+    "$stagedAppPath"
 
 echo "Building store-bound package..."
-productbuild --component "$applicationPath" /Applications \
+productbuild --component "$stagedAppPath" /Applications \
     --sign "$installerIdentity" \
     --version "$version" \
     "$outputPackage"
 
 # Clean up
+rm -rf "$stagingDir"
+
 echo "Success! MAS Package created at $outputPackage"
