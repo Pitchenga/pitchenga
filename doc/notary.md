@@ -4,8 +4,8 @@ Apple needs a cryptographic lock from your Mac for each certificate. **CRITICAL:
 **each** certificate type (Application, Installer, and Distribution). Using the same CSR for multiple certificates will
 cause them to "collapse" into a single identity on GitHub runners.
 
-1. Open the **Keychain Access** app on your Mac.
-2. For **each** certificate you need (Application, Installer, etc.):
+* Open the **Keychain Access** app on your Mac.
+* For **each** certificate you need (Application, Installer, etc.):
     * Click **Keychain Access** \> **Certificate Assistant** \>
       **Request a Certificate from a Certificate Authority...**
     * **User Email Address:** Your Apple Developer email.
@@ -19,53 +19,54 @@ To distribute Pitchenga, you need different sets of certificates depending on th
 
 #### For Direct Distribution (Website/GitHub)
 
-1. **Developer ID Application**: Used to sign the app and plugins.
-2. **Developer ID Installer**: Used to sign the `.pkg` installer.
+* **Developer ID Application**: Used to sign the app and plugins.
+* **Developer ID Installer**: Used to sign the `.pkg` installer.
 
 #### For Mac App Store (MAS)
 
-1. **Apple Distribution**: Used to sign the Standalone app for the store.
-2. **3rd Party Mac Developer Installer**: Used to sign the `.pkg` destined for App Store Connect.
+* **Apple Distribution**: Used to sign the Standalone app for the store.
+* **Mac Installer Distribution** (**3rd Party Mac Developer Installer**): Used to sign the `.pkg` destined for App Store
+  Connect.
 
 For **each** of these:
 
-1. Go to [developer.apple.com](https://developer.apple.com/) \> **Certificates, IDs & Profiles**.
-2. Click the blue **+** icon.
-3. Select the type (e.g., **Developer ID Application**).
-4. **Choose File** and upload the **specific CSR** you created for that type in Step 1.
-5. Download the resulting `.cer` file.
-6. **Repeat** for all required types.
+* Go to [developer.apple.com](https://developer.apple.com/) \> **Certificates, IDs & Profiles**.
+* Click the blue **+** icon.
+* Select the type (e.g., **Developer ID Application**).
+* **Choose File** and upload the **specific CSR** you created for that type in Step 1.
+* Download the resulting `.cer` file.
+* **Repeat** for all required types.
 
 ### Step 3: Install and Export the combined `.p12`
 
 GitHub Actions needs both certificates in a single file to sign everything correctly.
 You can also include the **Apple Distribution** certificate in this same file if you are building for iOS.
 
-1. Double-click **all** downloaded `.cer` files to install them into your Keychain.
-2. Open **Keychain Access**, select the **login** keychain, and click the **My Certificates** tab.
-3. Find the certificates (including **Apple Distribution** and **Mac Installer Distribution** if applicable):
+* Double-click **all** downloaded `.cer` files to install them into your Keychain.
+* Open **Keychain Access**, select the **login** keychain, and click the **My Certificates** tab.
+* Find the certificates (including **Apple Distribution** and **3rd Party Mac Developer Installer** if applicable):
     * **Developer ID Application: [Your Name] ([Team ID])**
     * **Developer ID Installer: [Your Name] ([Team ID])**
     * **Apple Distribution: [Your Name] ([Team ID])**
-    * **Mac Installer Distribution: [Your Name] ([Team ID])**
-4. **Shift-Click** to select all applicable certificates.
-5. Ensure the expansion arrows `>` are toggled so the private keys are visible (and selected).
-6. Right-click and select **Export N items...** (N should be number of certificates times 2).
-7. Save as a **Personal Information Exchange (.p12)** file.
-8. Create a password and save it as your `MAC_CERTS_PASSWORD` secret in GitHub.
+    * **3rd Party Mac Developer Installer: [Your Name] ([Team ID])**
+* **Shift-Click** to select all applicable certificates.
+* Ensure the expansion arrows `>` are toggled so the private keys are visible (and selected).
+* Right-click and select **Export N items...** (N should be number of certificates times 2).
+* Save as a **Personal Information Exchange (.p12)** file.
+* Create a password and save it as your `MAC_CERTS_PASSWORD` secret in GitHub.
 
 ### Step 4: Inject it into GitHub Actions
 
 This is the exact same process we discussed earlier, just with the production-ready certificate.
 
-1. Open your Mac Terminal and convert the `.p12` to a text string:
+* Open your Mac Terminal and convert the `.p12` to a text string:
    ```
    PKSC="apple-all.p12"; base64 -i $PKSC | tee $PKSC.txt | pbcopy
    ```
-2. Open `apple-all.p12.txt` and copy the massive block of text.
-3. Go to your GitHub Repository \> **Settings** \> **Secrets and variables** \> **Actions**.
-4. Update (or create) the `MAC_CERTS` secret with that text block.
-5. Update the `MAC_CERTS_PASSWORD` secret with the password you made in Step 3.
+* Open `apple-all.p12.txt` and copy the massive block of text.
+* Go to your GitHub Repository \> **Settings** \> **Secrets and variables** \> **Actions**.
+* Update (or create) the `MAC_CERTS` secret with that text block.
+* Update the `MAC_CERTS_PASSWORD` secret with the password you made in Step 3.
 
 ### The Final Notarization and App Store Pieces
 
@@ -76,8 +77,7 @@ final three text secrets to your GitHub repository to authenticate the uploads:
 * **`APPLE_PASSWORD`**: An app-specific password. Go to [appleid.apple.com](https://appleid.apple.com/),
   log in, go to the "App-Specific Passwords" section, generate one (call it "GitHub Actions"), and paste it here.
   Do not use your actual Apple ID login password.
-* **`APPLE_TEAM_ID`**: Your 10-character Team ID. You can find this in the top right corner of the Apple Developer
-  portal under your name.
+* **`APPLE_TEAM_ID`**: Your 10-character Team ID. This is used as the **ASC Provider** for App Store uploads.
 
 ## Troubleshooting
 
