@@ -31,13 +31,16 @@ printf "\n📤 Uploading to TestFlight...\n"
 
 # Using --apple-id (numeric) is much more reliable than Bundle ID lookup.
 # Explicitly setting --type osx to resolve platform determination errors.
-xcrun altool --upload-package "$OUTPUT_PKG" \
+if xcrun altool --upload-package "$OUTPUT_PKG" \
     --type osx \
     --username "$APPLE_ID" \
     --password "$APPLE_PASSWORD" \
     --asc-provider "$APPLE_TEAM_ID" \
     --apple-id "$MAC_APP_APPLE_ID" \
     --bundle-version "$VERSION" \
-    --bundle-short-version-string "$VERSION"
-
-printf "\n✅ Successfully uploaded to TestFlight!\n"
+    --bundle-short-version-string "$VERSION"; then
+    printf "\n✅ Successfully uploaded to TestFlight!\n"
+else
+    printf "\n❌ Failed to upload to TestFlight.\n"
+    exit 1
+fi
