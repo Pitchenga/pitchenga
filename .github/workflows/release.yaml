@@ -1,5 +1,5 @@
 name: Build and Release
-run-name: "PITCHENGA RELEASE ${{ github.ref_name }} - ${{ github.sha }}"
+run-name: "PITCHENGA RELEASE ${{ github.ref_name }} - ${{ github.event.head_commit.timestamp }} - ${{ github.sha }}"
 
 on:
   push:

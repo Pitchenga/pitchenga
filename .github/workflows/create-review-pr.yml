@@ -1,5 +1,5 @@
 name: Auto-Create PR from main to review
-run-name: "Create review PR - ${{ github.sha }}"
+run-name: "Create review PR - ${{ github.event.head_commit.timestamp }}"
 on:
   push:
     branches:
@@ -9,7 +9,7 @@ jobs:
   create-pr:
     if: "github.event.head_commit != null && !contains(github.event.head_commit.message, 'Merge pull request') && !contains(github.event.head_commit.message, 'Merge branch')"
     runs-on: ubuntu-latest
-    #        runs-on: self-hosted
+    #runs-on: self-hosted
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,5 +18,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
         run: |
-          DATE=$(TZ='Europe/Copenhagen' date +'%Y-%m-%d %H:%M')
-          gh pr create --base review --head main --title "Pitchenga review $DATE - ${{ github.sha }}" --body "Automated PR from main to review." || echo "PR already exists or could not be created"
+          DATE=$(TZ='Europe/Copenhagen' date -d "${{ github.event.head_commit.timestamp }}" +'%Y-%m-%d %H:%M')
+          gh pr create --base review --head main --title "Pitchenga review $DATE" --body "Automated PR from main to review." || echo "PR already exists or could not be created"
