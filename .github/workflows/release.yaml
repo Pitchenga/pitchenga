@@ -103,12 +103,12 @@ jobs:
           cd ../../../
           
           # Create the Installer PKG
-          ./create-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-unsigned.pkg "${{ github.ref_name }}"
+          ./create-mac-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-unsigned.pkg "${{ github.ref_name }}"
           productsign --sign "Developer ID Installer" Pitchenga-unsigned.pkg Pitchenga-macOS-Installer.pkg
           rm Pitchenga-unsigned.pkg
 
           # Create the Portable DMG
-          ./create-dmg.sh build/Pitchenga_artefacts/Release Pitchenga-macOS-Portable.dmg
+          ./create-mac-dmg.sh build/Pitchenga_artefacts/Release Pitchenga-macOS-Portable.dmg
           codesign --force --timestamp --sign "Developer ID Application" Pitchenga-macOS-Portable.dmg
 
           # Notarize both artifacts
