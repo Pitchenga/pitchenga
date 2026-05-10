@@ -28,28 +28,31 @@ mkdir -p "$STAGING_DIR/components"
 # Helper function to build a component package with relocation disabled
 build_component() {
     local bundle_name=$1
-    local install_location=$2
+    local install_path=$2
     local pkg_name=$3
     local bundle_path="$ARTIFACTS_DIR/$bundle_name"
     
     if [ -d "$bundle_path" ]; then
         echo "Building component package for $bundle_name..."
         
-        # Create a temporary plist to disable relocation
-        # Analyze the parent directory of the bundle to get a valid component plist
-        local bundle_parent
-        bundle_parent=$(dirname "$bundle_path")
-        local plist_path="$STAGING_DIR/${pkg_name}.plist"
+        # Create a temporary root for this specific component
+        local temp_root="$STAGING_DIR/roots/$pkg_name"
+        local install_dir
+        install_dir=$(dirname "$install_path")
+        mkdir -p "$temp_root/$install_dir"
+        cp -R "$bundle_path" "$temp_root/$install_dir/"
         
-        pkgbuild --analyze --root "$bundle_parent" "$plist_path"
+        # Create a temporary plist to disable relocation
+        local plist_path="$STAGING_DIR/${pkg_name}.plist"
+        pkgbuild --analyze --root "$temp_root" "$plist_path"
         
         # Use sed to set BundleIsRelocatable to false
         sed -i '' 's/<key>BundleIsRelocatable<\/key>.*<true\/>/<key>BundleIsRelocatable<\/key><false\/>/' "$plist_path"
         
-        pkgbuild --component "$bundle_path" \
-          --install-location "$install_location" \
-          --version "$VERSION" \
+        # Build the component package using the temporary root
+        pkgbuild --root "$temp_root" \
           --component-plist "$plist_path" \
+          --version "$VERSION" \
           "$STAGING_DIR/components/$pkg_name"
     else
         echo "Error: $bundle_name not found at $bundle_path"
@@ -58,9 +61,9 @@ build_component() {
 }
 
 # Build Component Packages
-build_component "Standalone/Pitchenga.app" "/Applications" "standalone.pkg"
-build_component "AU/Pitchenga.component" "/Library/Audio/Plug-Ins/Components" "au.pkg"
-build_component "VST3/Pitchenga.vst3" "/Library/Audio/Plug-Ins/VST3" "vst3.pkg"
+build_component "Standalone/Pitchenga.app" "/Applications/Pitchenga.app" "standalone.pkg"
+build_component "AU/Pitchenga.component" "/Library/Audio/Plug-Ins/Components/Pitchenga.component" "au.pkg"
+build_component "VST3/Pitchenga.vst3" "/Library/Audio/Plug-Ins/VST3/Pitchenga.vst3" "vst3.pkg"
 
 # Generate Distribution XML
 echo "Generating Distribution.xml..."

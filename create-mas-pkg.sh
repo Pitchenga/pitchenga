@@ -66,7 +66,7 @@ EOF
 echo "Injecting MAS metadata into Info.plist..."
 plistPath="$stagedAppPath/Contents/Info.plist"
 # Ensure the directory and file are writable
-chmod +w "$stagedAppPath/Contents"
+chmod +w "$stagingDir/Pitchenga.app/Contents"
 chmod +w "$plistPath"
 plutil -replace CFBundleSupportedPlatforms -json '["MacOSX"]' "$plistPath"
 plutil -replace LSApplicationCategoryType -string "public.app-category.music" "$plistPath"
@@ -78,15 +78,19 @@ codesign --force --deep --options runtime --timestamp \
     "$stagedAppPath"
 
 echo "Building store-bound package..."
-# For MAS, we must ensure relocation is disabled to avoid "nothing installed"
+# For MAS, we must ensure relocation is disabled to avoid "nothing installed" errors
+# We use a temporary root folder pattern for pkgbuild
+masRoot="$stagingDir/pkg_root"
+mkdir -p "$masRoot/Applications"
+cp -R "$stagedAppPath" "$masRoot/Applications/"
+
 componentPlist="$stagingDir/component.plist"
-# We analyze the directory containing the app to get a valid component plist
-pkgbuild --analyze --root "$stagingDir" "$componentPlist"
+pkgbuild --analyze --root "$masRoot" "$componentPlist"
 sed -i '' 's/<key>BundleIsRelocatable<\/key>.*<true\/>/<key>BundleIsRelocatable<\/key><false\/>/' "$componentPlist"
 
 # Create a temporary component pkg
-pkgbuild --component "$stagedAppPath" \
-    --install-location "/Applications" \
+pkgbuild --root "$masRoot" \
+    --install-location "/" \
     --version "$version" \
     --component-plist "$componentPlist" \
     "$stagingDir/component.pkg"
