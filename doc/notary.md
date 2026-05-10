@@ -6,7 +6,7 @@ cause them to "collapse" into a single identity on GitHub runners.
 
 1. Open the **Keychain Access** app on your Mac.
 2. For **each** certificate you need (Application, Installer, etc.):
-    * Click **Keychain Access** \> **Certificate Assistant** \> 
+    * Click **Keychain Access** \> **Certificate Assistant** \>
       **Request a Certificate from a Certificate Authority...**
     * **User Email Address:** Your Apple Developer email.
     * **Common Name:** Something descriptive (e.g., "Pitchenga App CSR", "Pitchenga Installer CSR").
@@ -18,10 +18,12 @@ cause them to "collapse" into a single identity on GitHub runners.
 To distribute Pitchenga, you need different sets of certificates depending on the destination:
 
 #### For Direct Distribution (Website/GitHub)
+
 1. **Developer ID Application**: Used to sign the app and plugins.
 2. **Developer ID Installer**: Used to sign the `.pkg` installer.
 
 #### For Mac App Store (MAS)
+
 1. **Apple Distribution**: Used to sign the Standalone app for the store.
 2. **Mac Installer Distribution**: Used to sign the `.pkg` destined for App Store Connect.
 
@@ -67,8 +69,8 @@ This is the exact same process we discussed earlier, just with the production-re
 
 ### The Final Notarization and App Store Pieces
 
-Because your `release.yaml` is already configured to run Apple's `notarytool` and `altool`, you just need to add the final three text
-secrets to your GitHub repository to authenticate the uploads:
+Because your `release.yaml` is already configured to run Apple's `notarytool` and `altool`, you just need to add the
+final three text secrets to your GitHub repository to authenticate the uploads:
 
 * **`APPLE_ID`**: Your standard Apple ID email address.
 * **`APPLE_PASSWORD`**: An app-specific password. Go to [appleid.apple.com](https://appleid.apple.com/),
