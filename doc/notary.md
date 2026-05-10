@@ -51,7 +51,7 @@ This is the exact same process we discussed earlier, just with the production-re
 
 1. Open your Mac Terminal and convert the `.p12` to a text string:
    ```
-   base64 -i ~/Desktop/your_developer_id.p12 -o ~/Desktop/cert_base64.txt
+   PKSC="apple-all.p12"; base64 -i $PKSC | tee $PKSC.txt | pbcopy
    ```
 2. Open `cert_base64.txt` and copy the massive block of text.
 3. Go to your GitHub Repository \> **Settings** \> **Secrets and variables** \> **Actions**.
@@ -77,5 +77,7 @@ If your GitHub build fails with "item could not be found" or "0 valid identities
 Run this one-liner in your terminal to check if both **Application** and **Installer** identities are present:
 
 ```bash
-F="apple-all.p12"; K="t.kc"; security create-keychain -p t $K && security import $F -k $K -T /usr/bin/codesign && security find-identity -v $K; security delete-keychain $K
+TXT="apple-all.p12.txt"; PKSC="$TXT.p12"; wc -c $TXT; base64 -d -i $TXT -o $PKSC; KEYCHAIN="temp.keychain"; security create-keychain -p t $KEYCHAIN && security import $PKSC -k $KEYCHAIN -T /usr/bin/codesign && security find-identity -v $KEYCHAIN; security delete-keychain $KEYCHAIN; rm $PKSC
 ```
+
+
