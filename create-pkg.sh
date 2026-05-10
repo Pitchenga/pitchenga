@@ -3,7 +3,7 @@ set -e
 
 # Default artifacts path if not provided
 ARTIFACTS_DIR=${1:-"cmake-build-release/Pitchenga_artefacts/Release"}
-OUTPUT_PKG=${2:-"Pitchenga-macOS.pkg"}
+OUTPUT_PKG=${2:-"Pitchenga-macOS-Installer.pkg"}
 VERSION=${3:-"1.0.0"}
 
 echo "--- Creating macOS Package Installer ---"
