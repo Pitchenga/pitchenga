@@ -5,8 +5,12 @@ set -euo pipefail
 artifactsDirectory=${1:-"cmake-build-release/Pitchenga_artefacts/Release"}
 outputPackage=${2:-"Pitchenga-macOS-AppStore.pkg"}
 version=${3:-"1.0.0"}
-applicationIdentity=${4:-"Apple Distribution:"}
-installerIdentity=${5:-"3rd Party Mac Developer Installer:"}
+applicationIdentity=${4:-"Apple Distribution"}
+installerIdentity=${5:-"3rd Party Mac Developer Installer"}
+
+if [ "$version" == "1.0.0" ]; then
+    version=$(bash version.sh)
+fi
 
 echo "--- Creating macOS App Store Package ---"
 echo "Artifacts source:   $artifactsDirectory"
@@ -48,7 +52,10 @@ EOF
 
 echo "Injecting MAS metadata into Info.plist..."
 plistPath="$applicationPath/Contents/Info.plist"
-chmod +w "$plistPath"
+
+# Ensure the entire bundle is writable to avoid permission issues with plutil
+chmod -R +w "$applicationPath"
+
 plutil -replace CFBundleSupportedPlatforms -json '["MacOSX"]' "$plistPath"
 plutil -replace LSApplicationCategoryType -string "public.app-category.music" "$plistPath"
 
