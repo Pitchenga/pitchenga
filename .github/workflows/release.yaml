@@ -102,21 +102,28 @@ jobs:
           ./create-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-unsigned.pkg "${{ github.ref_name }}"
           
           # Sign the PKG container itself using the Installer certificate
-          productsign --sign "Developer ID Installer" Pitchenga-unsigned.pkg Pitchenga.pkg
+          productsign --sign "Developer ID Installer" Pitchenga-unsigned.pkg Pitchenga-macOS.pkg
           rm Pitchenga-unsigned.pkg
           
           # Submit the PKG to Apple for Notarization
-          xcrun notarytool submit Pitchenga.pkg --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+          xcrun notarytool submit Pitchenga-macOS.pkg --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
 
           # Staple the approval ticket directly to the PKG
-          xcrun stapler staple Pitchenga.pkg
+          xcrun stapler staple Pitchenga-macOS.pkg
+
+          # Staple the individual bundles and create a portable ZIP
+          cd build/Pitchenga_artefacts/Release
+          xcrun stapler staple Standalone/Pitchenga.app
+          xcrun stapler staple AU/Pitchenga.component
+          xcrun stapler staple VST3/Pitchenga.vst3
+          zip -r ../../../Pitchenga-macOS-Portable.zip Standalone/Pitchenga.app AU/Pitchenga.component VST3/Pitchenga.vst3
 
       - name: Windows Artifacts
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           iscc /DMyAppVersion="${{ github.ref_name }}" /DMyBuildDir="build\Pitchenga_artefacts\Release" installer.iss
-          Compress-Archive -Path build\Pitchenga_artefacts\Release\* -DestinationPath Pitchenga-Windows.zip
+          Compress-Archive -Path build\Pitchenga_artefacts\Release\* -DestinationPath Pitchenga-Windows-Portable.zip
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
