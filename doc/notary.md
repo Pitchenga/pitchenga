@@ -32,16 +32,16 @@ For **each** of these:
 ### Step 3: Install and Export the combined `.p12`
 
 GitHub Actions needs both certificates in a single file to sign everything correctly.
-You can also include **Apple Distribution** certificate in this same file if you are building for iOS.
+You can also include the **Apple Distribution** certificate in this same file if you are building for iOS.
 
 1. Double-click **all** downloaded `.cer` files to install them into your Keychain.
 2. Open **Keychain Access**, select the **login** keychain, and click the **My Certificates** tab.
-3. Find both certificates:
+3. Find the certificates (including **Apple Distribution** if applicable):
     * **Developer ID Application: [Your Name] ([Team ID])**
     * **Developer ID Installer: [Your Name] ([Team ID])**
-4. **Shift-Click** to select BOTH certificates.
+4. **Shift-Click** to select the certificates.
 5. Ensure the expansion arrows `>` are toggled so the private keys are visible (and selected).
-6. Right-click and select **Export 4 items...**
+6. Right-click and select **Export N items...** (N should be number of certificates times 2).
 7. Save as a **Personal Information Exchange (.p12)** file.
 8. Create a password and save it as your `MAC_CERTS_PASSWORD` secret in GitHub.
 
@@ -70,3 +70,12 @@ secrets to your GitHub repository to authenticate the notarization upload:
   not use your actual Apple ID login password.
 * **`APPLE_TEAM_ID`**: Your 10-character Team ID. You can find this in the top right corner of the Apple Developer
   portal under your name.
+
+## Troubleshooting
+
+If your GitHub build fails with "item could not be found" or "0 valid identities found", verify your `.p12` file locally.
+Run this one-liner in your terminal to check if both **Application** and **Installer** identities are present:
+
+```bash
+F="apple-all.p12"; K="t.kc"; security create-keychain -p t $K && security import $F -k $K -T /usr/bin/codesign && security find-identity -v $K; security delete-keychain $K
+```
