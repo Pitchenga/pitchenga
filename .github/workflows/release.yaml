@@ -92,47 +92,41 @@ jobs:
           </plist>
           EOF
           
-          # Sign the fully assembled bundles manually (Hardened Runtime applied only to Standalone host)
+          # Sign individual bundles manually (Hardened Runtime applied only to Standalone host)
           codesign --force --deep --options runtime --timestamp --sign "Developer ID Application" --entitlements entitlements.plist --preserve-metadata=identifier Standalone/Pitchenga.app
           codesign --force --deep --timestamp --sign "Developer ID Application" --preserve-metadata=identifier AU/Pitchenga.component
           codesign --force --deep --timestamp --sign "Developer ID Application" --preserve-metadata=identifier VST3/Pitchenga.vst3
 
-          # Return to root to run the PKG script
+          # Return to root for packaging
           cd ../../../
-          ./create-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-unsigned.pkg "${{ github.ref_name }}"
           
-          # Sign the PKG container itself using the Installer certificate
+          # Create the Installer PKG
+          ./create-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-unsigned.pkg "${{ github.ref_name }}"
           productsign --sign "Developer ID Installer" Pitchenga-unsigned.pkg Pitchenga-macOS-Installer.pkg
           rm Pitchenga-unsigned.pkg
-          
-          # Submit the PKG to Apple for Notarization
-          xcrun notarytool submit Pitchenga-macOS-Installer.pkg --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
 
-          # Staple the approval ticket directly to the DMG
-          xcrun stapler staple Pitchenga-macOS-Portable.dmg
-
-          # --- Mac App Store (MAS) Build ---
-          # Note: Plugins (AU/VST3) cannot be distributed via MAS in the traditional way, 
-          # so we only package the Standalone app.
-          ./create-mas-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-macOS-AppStore.pkg "${{ github.ref_name }}"
-          
-          # Upload to App Store Connect
-          xcrun altool --upload-package Pitchenga-macOS-AppStore.pkg --type osx --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --bundle-id "com.github.pitchenga.Pitchenga" --bundle-version "${{ github.ref_name }}" --bundle-short-version-string "${{ github.ref_name }}"
-
-
-          # Staple the individual bundles and create a portable DMG
-          cd build/Pitchenga_artefacts/Release
-          xcrun stapler staple Standalone/Pitchenga.app
-          xcrun stapler staple AU/Pitchenga.component
-          xcrun stapler staple VST3/Pitchenga.vst3
-          cd ../../../
-          
+          # Create the Portable DMG
           ./create-dmg.sh build/Pitchenga_artefacts/Release Pitchenga-macOS-Portable.dmg
-          
           codesign --force --timestamp --sign "Developer ID Application" Pitchenga-macOS-Portable.dmg
-          
+
+          # Notarize both artifacts
+          # Note: notarytool can accept multiple files, but for clarity and better logging, we submit them sequentially.
+          xcrun notarytool submit Pitchenga-macOS-Installer.pkg --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
           xcrun notarytool submit Pitchenga-macOS-Portable.dmg --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+
+          # Staple everything
+          xcrun stapler staple Pitchenga-macOS-Installer.pkg
           xcrun stapler staple Pitchenga-macOS-Portable.dmg
+          
+          # Also staple the individual bundles inside the artifacts folder (for MAS or local use)
+          xcrun stapler staple build/Pitchenga_artefacts/Release/Standalone/Pitchenga.app
+          xcrun stapler staple build/Pitchenga_artefacts/Release/AU/Pitchenga.component
+          xcrun stapler staple build/Pitchenga_artefacts/Release/VST3/Pitchenga.vst3
+
+          # Mac App Store (MAS) Build & Upload
+          # Note: Plugins (AU/VST3) cannot be distributed via MAS.
+          ./create-mas-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-macOS-AppStore.pkg "${{ github.ref_name }}"
+          xcrun altool --upload-package Pitchenga-macOS-AppStore.pkg --type osx --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --bundle-id "com.github.pitchenga.Pitchenga" --bundle-version "${{ github.ref_name }}" --bundle-short-version-string "${{ github.ref_name }}"
 
       - name: Windows Artifacts
         if: runner.os == 'Windows'

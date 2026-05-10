@@ -1,29 +1,30 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # Default values
-ARTIFACTS_DIR=${1:-"build/Pitchenga_artefacts/Release"}
-OUTPUT_PKG=${2:-"Pitchenga-macOS-AppStore.pkg"}
-VERSION=${3:-"1.0.0"}
-APP_IDENTITY=${4:-"Apple Distribution"}
-INSTALLER_IDENTITY=${5:-"Mac Installer Distribution"}
+artifactsDirectory=${1:-"cmake-build-release/Pitchenga_artefacts/Release"}
+outputPackage=${2:-"Pitchenga-macOS-AppStore.pkg"}
+version=${3:-"1.0.0"}
+applicationIdentity=${4:-"Apple Distribution"}
+installerIdentity=${5:-"Mac Installer Distribution"}
 
 echo "--- Creating macOS App Store Package ---"
-echo "Artifacts source:   $ARTIFACTS_DIR"
-echo "Output PKG:         $OUTPUT_PKG"
-echo "Version:            $VERSION"
-echo "App Identity:       $APP_IDENTITY"
-echo "Installer Identity: $INSTALLER_IDENTITY"
+echo "Artifacts source:   $artifactsDirectory"
+echo "Output Package:     $outputPackage"
+echo "Version:            $version"
+echo "App Identity:       $applicationIdentity"
+echo "Installer Identity: $installerIdentity"
 
-APP_PATH="$ARTIFACTS_DIR/Standalone/Pitchenga.app"
+applicationPath="$artifactsDirectory/Standalone/Pitchenga.app"
 
-if [ ! -d "$APP_PATH" ]; then
-    echo "Error: Standalone app not found at $APP_PATH"
+if [ ! -d "$applicationPath" ]; then
+    echo "Error: Standalone application not found at $applicationPath"
     exit 1
 fi
 
 # MAS requires App Sandbox
 echo "Generating MAS entitlements..."
+trap 'rm -f mas.entitlements' EXIT
 cat <<EOF > mas.entitlements
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -46,17 +47,16 @@ cat <<EOF > mas.entitlements
 EOF
 
 echo "Signing app for Mac App Store..."
-codesign --force --deep --options runtime --timestamp \
-    --sign "$APP_IDENTITY" \
+codesign --force --options runtime --timestamp \
+    --sign "$applicationIdentity" \
     --entitlements mas.entitlements \
-    "$APP_PATH"
+    "$applicationPath"
 
 echo "Building store-bound package..."
-productbuild --component "$APP_PATH" /Applications \
-    --sign "$INSTALLER_IDENTITY" \
-    "$OUTPUT_PKG"
+productbuild --component "$applicationPath" /Applications \
+    --sign "$installerIdentity" \
+    --version "$version" \
+    "$outputPackage"
 
 # Clean up
-rm mas.entitlements
-
-echo "Success! MAS Package created at $OUTPUT_PKG"
+echo "Success! MAS Package created at $outputPackage"
