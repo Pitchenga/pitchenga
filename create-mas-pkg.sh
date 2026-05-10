@@ -59,6 +59,4 @@ productbuild --component "$applicationPath" /Applications \
     "$outputPackage"
 
 # Clean up
-rm mas.entitlements
-
-echo "Success! MAS Package created at $OUTPUT_PKG"
+echo "Success! MAS Package created at $outputPackage"
