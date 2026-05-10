@@ -149,15 +149,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
 
-      - name: Cleanup Previous Releases
+      - name: Cleanup Old Releases
         run: |
           echo "Fetching list of releases..."
           # Keep the 5 most recent releases (including the one just created)
           gh release list --limit 100 | cut -f 3 | tail -n +6 | while read -r tag; do
-            if [ -n "$tag" ]; then
-              echo "Deleting old release and tag: $tag"
-              gh release delete "$tag" --yes --cleanup-tag
-            fi
+              # Match the pattern: major.minor.patch
+              if [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && [ "$tag" != "${{ github.ref_name }}" ]; then
+                  echo "Deleting old release and tag: $tag"
+                  gh release delete "$tag" --yes --cleanup-tag
+              fi
           done
         env:
           GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
