@@ -18,5 +18,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
         run: |
-          DATE=$(TZ='Europe/Copenhagen' date -d "${{ github.event.head_commit.timestamp }}" +'%Y-%m-%d %H:%M')
-          gh pr create --base review --head main --title "Pitchenga review $DATE" --body "Automated PR from main to review." || echo "PR already exists or could not be created"
+          gh pr create --base review --head main --title "Pitchenga review ${{ github.event.head_commit.timestamp }}" --body "Automated PR from main to review." || echo "PR already exists or could not be created"

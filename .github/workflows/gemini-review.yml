@@ -1,21 +1,22 @@
-name: Auto-Trigger Gemini Review
+name: Trigger Gemini Review
+run-name: "Trigger Gemini Review - ${{ github.event.head_commit.timestamp }}"
+
 on:
-    pull_request:
-#        types: [opened, synchronize]
-        types: [opened]
-        branches-ignore:
-            - production
+  pull_request:
+    types: [ opened ]
+    branches-ignore:
+      - production
 
 jobs:
-    trigger-review:
-        runs-on: ubuntu-latest
-#        runs-on: self-hosted
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+  trigger-review:
+    runs-on: ubuntu-latest
+    #runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Post /gemini review comment
-              env:
-                  GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
-              run: |
-                  gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "/gemini review"
+      - name: Post /gemini review comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "/gemini review"
