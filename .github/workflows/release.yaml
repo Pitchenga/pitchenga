@@ -108,8 +108,44 @@ jobs:
           # Submit the PKG to Apple for Notarization
           xcrun notarytool submit Pitchenga-macOS-Installer.pkg --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
 
-          # Staple the approval ticket directly to the PKG
-          xcrun stapler staple Pitchenga-macOS-Installer.pkg
+          # Staple the approval ticket directly to the DMG
+          xcrun stapler staple Pitchenga-macOS-Portable.dmg
+
+          # --- Mac App Store (MAS) Build ---
+          # MAS requires App Sandbox and specifically signed components.
+          # Note: Plugins (AU/VST3) cannot be distributed via MAS in the traditional way, 
+          # so we only package the Standalone app.
+
+          cat <<EOF > mas.entitlements
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>com.apple.security.app-sandbox</key>
+              <true/>
+              <key>com.apple.security.device.audio-input</key>
+              <true/>
+              <key>com.apple.security.cs.disable-library-validation</key>
+              <true/>
+              <key>com.apple.security.cs.allow-jit</key>
+              <true/>
+              <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+              <true/>
+              <key>com.apple.security.cs.disable-executable-page-protection</key>
+              <true/>
+          </dict>
+          </plist>
+          EOF
+
+          # Re-sign the Standalone for MAS
+          codesign --force --deep --options runtime --timestamp --sign "Apple Distribution" --entitlements mas.entitlements build/Pitchenga_artefacts/Release/Standalone/Pitchenga.app
+
+          # Create the Store-bound PKG
+          productbuild --component build/Pitchenga_artefacts/Release/Standalone/Pitchenga.app /Applications --sign "Mac Installer Distribution" Pitchenga-macOS-AppStore.pkg
+
+          # Upload to App Store Connect
+          xcrun altool --upload-package Pitchenga-macOS-AppStore.pkg --type osx --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --bundle-id "com.github.pitchenga.Pitchenga" --bundle-version "${{ github.ref_name }}" --bundle-short-version-string "${{ github.ref_name }}"
+
 
           # Staple the individual bundles and create a portable DMG
           cd build/Pitchenga_artefacts/Release
