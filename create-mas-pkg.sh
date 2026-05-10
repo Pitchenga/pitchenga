@@ -53,9 +53,10 @@ codesign --force --options runtime --timestamp \
     "$applicationPath"
 
 echo "Building store-bound package..."
-productbuild --component "$APP_PATH" /Applications \
-    --sign "$INSTALLER_IDENTITY" \
-    "$OUTPUT_PKG"
+productbuild --component "$applicationPath" /Applications \
+    --sign "$installerIdentity" \
+    --version "$version" \
+    "$outputPackage"
 
 # Clean up
 rm mas.entitlements
