@@ -1,16 +1,17 @@
-### Step 1: Create a Certificate Signing Request (CSR)
+### Step 1: Create Certificate Signing Requests (CSRs)
 
-Apple needs a cryptographic lock from your specific Mac before they issue a certificate.
+Apple needs a cryptographic lock from your Mac for each certificate. **CRITICAL:** You must create a **unique** CSR for
+**each** certificate type (Application, Installer, and Distribution). Using the same CSR for multiple certificates will
+cause them to "collapse" into a single identity on GitHub runners.
 
 1. Open the **Keychain Access** app on your Mac.
-2. In the top menu bar, click **Keychain Access** \> **Certificate Assistant** \> **Request a Certificate from a
-   Certificate Authority...**
-3. In the window that opens:
-    * **User Email Address:** Enter the email associated with your Apple Developer account.
-    * **Common Name:** Enter your name or company name.
-    * **CA Email Address:** Leave this blank.
+2. For **each** certificate you need (Application, Installer, etc.):
+    * Click **Keychain Access** \> **Certificate Assistant** \> 
+      **Request a Certificate from a Certificate Authority...**
+    * **User Email Address:** Your Apple Developer email.
+    * **Common Name:** Something descriptive (e.g., "Pitchenga App CSR", "Pitchenga Installer CSR").
     * **Request is:** Select **Saved to disk**.
-4. Click **Continue** and save the `.certSigningRequest` file to your Desktop.
+    * Save it with a unique name (e.g., `app.certSigningRequest`, `installer.certSigningRequest`).
 
 ### Step 2: Generate the Certificates on Apple's Portal
 
@@ -21,13 +22,12 @@ You need **two** different types of certificates to distribute a Mac app outside
 
 For **each** of these:
 
-1. Go to [developer.apple.com](https://developer.apple.com/) and log in.
-2. Click on **Certificates, IDs & Profiles**.
-3. Click the blue **+** icon next to "Certificates".
-4. Select the specific type (**Developer ID Application** first, then repeat for **Developer ID Installer**).
-5. Click **Continue**.
-6. Upload the `.certSigningRequest` you saved to your Desktop.
-7. Click **Download** to get the `.cer` files.
+1. Go to [developer.apple.com](https://developer.apple.com/) \> **Certificates, IDs & Profiles**.
+2. Click the blue **+** icon.
+3. Select the type (e.g., **Developer ID Application**).
+4. **Choose File** and upload the **specific CSR** you created for that type in Step 1.
+5. Download the resulting `.cer` file.
+6. **Repeat** for **Developer ID Installer** (using its unique CSR) and any other types.
 
 ### Step 3: Install and Export the combined `.p12`
 
@@ -73,8 +73,10 @@ secrets to your GitHub repository to authenticate the notarization upload:
 
 ## Troubleshooting
 
-If your GitHub build fails with "item could not be found" or "0 valid identities found", verify your `.p12` file locally.
-Run this one-liner in your terminal to check if your identities are present and get the MD5 checksum to compare with the GitHub logs:
+If your GitHub build fails with "item could not be found" or "0 valid identities found", verify your `.p12` file
+locally.
+Run this one-liner in your terminal to check if your identities are present and get the MD5 checksum to compare with the
+GitHub logs:
 
 ```bash
 TXT="apple-all.p12.txt"; PKSC="$TXT.p12"; wc -c "$TXT" && base64 -D -i "$TXT" -o "$PKSC" && md5 -q "$PKSC"; KEYCHAIN="temp.keychain"; security create-keychain -p t "$KEYCHAIN" && security import "$PKSC" -k "$KEYCHAIN" -T /usr/bin/codesign && security find-identity -v "$KEYCHAIN"; security delete-keychain "$KEYCHAIN"; rm -f "$PKSC"
