@@ -53,7 +53,7 @@ This is the exact same process we discussed earlier, just with the production-re
    ```
    PKSC="apple-all.p12"; base64 -i $PKSC | tee $PKSC.txt | pbcopy
    ```
-2. Open `cert_base64.txt` and copy the massive block of text.
+2. Open `apple-all.p12.txt` and copy the massive block of text.
 3. Go to your GitHub Repository \> **Settings** \> **Secrets and variables** \> **Actions**.
 4. Update (or create) the `MAC_CERTS` secret with that text block.
 5. Update the `MAC_CERTS_PASSWORD` secret with the password you made in Step 3.
@@ -74,10 +74,10 @@ secrets to your GitHub repository to authenticate the notarization upload:
 ## Troubleshooting
 
 If your GitHub build fails with "item could not be found" or "0 valid identities found", verify your `.p12` file locally.
-Run this one-liner in your terminal to check if both **Application** and **Installer** identities are present:
+Run this one-liner in your terminal to check if your identities are present and get the MD5 checksum to compare with the GitHub logs:
 
 ```bash
-TXT="apple-all.p12.txt"; PKSC="$TXT.p12"; wc -c $TXT; base64 -d -i $TXT -o $PKSC; KEYCHAIN="temp.keychain"; security create-keychain -p t $KEYCHAIN && security import $PKSC -k $KEYCHAIN -T /usr/bin/codesign && security find-identity -v $KEYCHAIN; security delete-keychain $KEYCHAIN; rm $PKSC
+TXT="apple-all.p12.txt"; PKSC="$TXT.p12"; wc -c "$TXT" && base64 -D -i "$TXT" -o "$PKSC" && md5 -q "$PKSC"; KEYCHAIN="temp.keychain"; security create-keychain -p t "$KEYCHAIN" && security import "$PKSC" -k "$KEYCHAIN" -T /usr/bin/codesign && security find-identity -v "$KEYCHAIN"; security delete-keychain "$KEYCHAIN"; rm -f "$PKSC"
 ```
 
 
