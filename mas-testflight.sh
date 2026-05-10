@@ -15,17 +15,16 @@ fi
 export ARTIFACTS_DIR="cmake-build-release/Pitchenga_artefacts/Release"
 export OUTPUT_PKG="Pitchenga-macOS-TestFlight.pkg"
 
+# Check for required identifiers and credentials
+if [ -z "${APPLE_ID:-}" ] || [ -z "${APPLE_PASSWORD:-}" ] || [ -z "${APPLE_TEAM_ID:-}" ] || [ -z "${MAC_APP_APPLE_ID:-}" ] || [ -z "${MAC_APP_BUNDLE_ID:-}" ]; then
+    printf "\n⚠️  Required secrets (APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID, MAC_APP_APPLE_ID, or MAC_APP_BUNDLE_ID) not set.\n"
+    exit 1
+fi
+
 # Build the MAS-compliant package
 # This script handles staging, Info.plist metadata injection, and signing.
 printf "\n📦 Building MAS Package for TestFlight (Version: $VERSION)...\n"
-./create-mas-pkg.sh "$ARTIFACTS_DIR" "$OUTPUT_PKG" "$VERSION" "${MAC_APP_BUNDLE_ID:-com.github.pitchenga.Pitchenga}"
-
-# Check for upload credentials
-if [ -z "${APPLE_ID:-}" ] || [ -z "${APPLE_PASSWORD:-}" ] || [ -z "${APPLE_TEAM_ID:-}" ] || [ -z "${MAC_APP_APPLE_ID:-}" ]; then
-    printf "\n⚠️  Required secrets (APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID, or MAC_APP_APPLE_ID) not set.\n"
-    printf "The PKG has been built locally at: $OUTPUT_PKG\n"
-    exit 0
-fi
+./create-mas-pkg.sh "$ARTIFACTS_DIR" "$OUTPUT_PKG" "$VERSION" "$MAC_APP_BUNDLE_ID"
 
 # Upload to App Store Connect / TestFlight
 printf "\n📤 Uploading to TestFlight...\n"

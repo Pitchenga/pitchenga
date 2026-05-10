@@ -5,7 +5,7 @@ set -euo pipefail
 artifactsDirectory=${1:-"cmake-build-release/Pitchenga_artefacts/Release"}
 outputPackage=${2:-"Pitchenga-macOS-AppStore.pkg"}
 version=${3:-"1.0.0"}
-bundleIdentifier=${4:-"com.github.pitchenga.Pitchenga"}
+bundleIdentifier=${4:-""}
 applicationIdentity=${5:-"Apple Distribution"}
 installerIdentity=${6:-"3rd Party Mac Developer Installer"}
 
@@ -20,6 +20,11 @@ echo "Version:            $version"
 echo "Bundle ID:          $bundleIdentifier"
 echo "App Identity:       $applicationIdentity"
 echo "Installer Identity: $installerIdentity"
+
+if [ -z "$bundleIdentifier" ]; then
+    echo "Error: bundleIdentifier must be provided."
+    exit 1
+fi
 
 originalAppPath="$artifactsDirectory/Standalone/Pitchenga.app"
 
