@@ -89,6 +89,7 @@ EOF
 echo "Injecting MAS metadata into Info.plist..."
 plutil -replace CFBundleSupportedPlatforms -json '["MacOSX"]' "$plistPath"
 plutil -replace LSApplicationCategoryType -string "public.app-category.music" "$plistPath"
+plutil -replace LSMinimumSystemVersion -string "10.15" "$plistPath"
 
 # Set the Bundle Identifier
 plutil -replace CFBundleIdentifier -string "$bundleIdentifier" "$plistPath"
@@ -98,6 +99,15 @@ plutil -replace CFBundleVersion -string "$version" "$plistPath"
 plutil -replace CFBundleShortVersionString -string "$version" "$plistPath"
 
 echo "Using Bundle Identifier: $(plutil -extract CFBundleIdentifier raw "$plistPath")"
+
+echo "Embedding Provisioning Profile..."
+profilePath="Pitchenga_MAS.provisionprofile"
+if [ -f "$profilePath" ]; then
+    cp "$profilePath" "$stagedAppPath/Contents/embedded.provisionprofile"
+else
+    echo "WARNING: No provisioning profile found at $profilePath."
+    echo "TestFlight requires an embedded.provisionprofile for Mac App Store builds."
+fi
 
 echo "Signing app for Mac App Store..."
 codesign --force --deep --options runtime --timestamp \

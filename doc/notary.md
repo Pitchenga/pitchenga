@@ -60,6 +60,19 @@ For **each** of these:
 * Download the resulting `.cer` file.
 * **Repeat** for all required types.
 
+### Generate the Provisioning Profile (For TestFlight/MAS)
+
+To upload your app to TestFlight, Apple requires a **Mac App Store Provisioning Profile** embedded in the app bundle. Since we are building manually without Xcode, you must download this profile from the Developer Portal.
+
+* Go to [developer.apple.com](https://developer.apple.com/) \> **Profiles**.
+* Click the blue **+** icon.
+* Under **Distribution**, select **Mac App Store**.
+* Select your **App ID** (`com.github.pitchenga.Pitchenga`).
+* Select the **Mac App Distribution** certificate you created earlier.
+* Name the profile (e.g., `Pitchenga MAS`).
+* Download the profile.
+* Rename the downloaded file to `Pitchenga_MAS.provisionprofile` and place it in the root folder of your project (alongside this README). The `create-mas-pkg.sh` script will automatically embed it into the app bundle.
+
 ### Install and Export the combined `.p12`
 
 GitHub Actions needs both certificates in a single file to sign everything correctly.
