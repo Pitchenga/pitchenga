@@ -23,9 +23,9 @@ To distribute Pitchenga, you need different sets of certificates depending on th
 2. **Developer ID Installer**: Used to sign the `.pkg` installer.
 
 #### For Mac App Store (MAS)
-
 1. **Apple Distribution**: Used to sign the Standalone app for the store.
-2. **3rd Party Mac Developer Installer**: Used to sign the `.pkg` destined for App Store Connect.
+2. **Mac Installer Distribution** (**3rd Party Mac Developer Installer**): Used to sign the `.pkg` destined for App Store Connect.
+
 
 For **each** of these:
 
@@ -43,11 +43,11 @@ You can also include the **Apple Distribution** certificate in this same file if
 
 1. Double-click **all** downloaded `.cer` files to install them into your Keychain.
 2. Open **Keychain Access**, select the **login** keychain, and click the **My Certificates** tab.
-3. Find the certificates (including **Apple Distribution** and **Mac Installer Distribution** if applicable):
+3. Find the certificates (including **Apple Distribution** and **3rd Party Mac Developer Installer** if applicable):
     * **Developer ID Application: [Your Name] ([Team ID])**
     * **Developer ID Installer: [Your Name] ([Team ID])**
     * **Apple Distribution: [Your Name] ([Team ID])**
-    * **Mac Installer Distribution: [Your Name] ([Team ID])**
+    * **3rd Party Mac Developer Installer: [Your Name] ([Team ID])**
 4. **Shift-Click** to select all applicable certificates.
 5. Ensure the expansion arrows `>` are toggled so the private keys are visible (and selected).
 6. Right-click and select **Export N items...** (N should be number of certificates times 2).
