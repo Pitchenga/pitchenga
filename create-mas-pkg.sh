@@ -46,10 +46,10 @@ cat <<EOF > mas.entitlements
 EOF
 
 echo "Signing app for Mac App Store..."
-codesign --force --deep --options runtime --timestamp \
-    --sign "$APP_IDENTITY" \
+codesign --force --options runtime --timestamp \
+    --sign "$applicationIdentity" \
     --entitlements mas.entitlements \
-    "$APP_PATH"
+    "$applicationPath"
 
 echo "Building store-bound package..."
 productbuild --component "$APP_PATH" /Applications \
