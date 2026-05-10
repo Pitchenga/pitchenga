@@ -13,6 +13,5 @@ code_review:
         summary: false
         code_review: false
         include_drafts: false
-ignore_patterns:
-    - "!.github/**"
+ignore_patterns: []
 

@@ -46,6 +46,11 @@ cat <<EOF > mas.entitlements
 </plist>
 EOF
 
+echo "Injecting MAS metadata into Info.plist..."
+PLIST_PATH="$applicationPath/Contents/Info.plist"
+plutil -replace CFBundleSupportedPlatforms -json '["MacOSX"]' "$PLIST_PATH"
+plutil -replace LSApplicationCategoryType -string "public.app-category.music" "$PLIST_PATH"
+
 echo "Signing app for Mac App Store..."
 codesign --force --options runtime --timestamp \
     --sign "$applicationIdentity" \
