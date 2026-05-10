@@ -39,6 +39,22 @@ stagedAppPath="$stagingDir/Pitchenga.app"
 # Ensure staged files are writable
 chmod -R +w "$stagedAppPath"
 
+# Find Info.plist (it might be missing in the bundle but present in JuceLibraryCode folder)
+plistPath="$stagedAppPath/Contents/Info.plist"
+if [ ! -f "$plistPath" ]; then
+    echo "Warning: Info.plist not found in bundle. Searching for fallback..."
+    # Attempt to find fallback in build artifacts
+    fallbackPlist=$(find "$(dirname "$artifactsDirectory")" -name "Info.plist" | grep "Pitchenga_Standalone" | head -n 1)
+    if [ -n "$fallbackPlist" ] && [ -f "$fallbackPlist" ]; then
+        echo "Found fallback Info.plist at $fallbackPlist"
+        mkdir -p "$(dirname "$plistPath")"
+        cp "$fallbackPlist" "$plistPath"
+    else
+        echo "Error: Could not find Info.plist for Standalone app."
+        exit 1
+    fi
+fi
+
 # MAS requires App Sandbox
 echo "Generating MAS entitlements..."
 entitlementsPath="$stagingDir/mas.entitlements"
@@ -64,12 +80,12 @@ cat <<EOF > "$entitlementsPath"
 EOF
 
 echo "Injecting MAS metadata into Info.plist..."
-plistPath="$stagedAppPath/Contents/Info.plist"
-# Ensure the directory and file are writable
-chmod +w "$stagingDir/Pitchenga.app/Contents"
-chmod +w "$plistPath"
 plutil -replace CFBundleSupportedPlatforms -json '["MacOSX"]' "$plistPath"
 plutil -replace LSApplicationCategoryType -string "public.app-category.music" "$plistPath"
+
+# Ensure version matches the package
+plutil -replace CFBundleVersion -string "$version" "$plistPath"
+plutil -replace CFBundleShortVersionString -string "$version" "$plistPath"
 
 echo "Signing app for Mac App Store..."
 codesign --force --deep --options runtime --timestamp \
@@ -90,6 +106,7 @@ sed -i '' 's/<key>BundleIsRelocatable<\/key>.*<true\/>/<key>BundleIsRelocatable<
 
 # Create a temporary component pkg
 pkgbuild --root "$masRoot" \
+    --identifier "com.github.pitchenga.Pitchenga" \
     --install-location "/" \
     --version "$version" \
     --component-plist "$componentPlist" \
