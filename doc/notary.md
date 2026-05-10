@@ -1,4 +1,26 @@
-### Step 1: Create Certificate Signing Requests (CSRs)
+# Pitchenga Mac Distribution and Notarization
+
+### Create the App Record in App Store Connect
+
+Before you can upload to the Mac App Store, you must create an app record to receive the build.
+
+* Log in to [App Store Connect](https://appstoreconnect.apple.com/).
+* Go to **Apps** and click the **+** icon, then select **New App**.
+* Select **macOS** as the platform.
+* Enter the name: **Pitchenga**.
+* Select your primary language.
+* Select the Bundle ID: **com.github.pitchenga.Pitchenga**.
+* Enter a unique SKU (e.g., `pitchenga-mac-v1`).
+* Click **Create**.
+* Go to **App Information** \> **General Information** to find your **Apple ID** (numeric) for the `MAC_APP_ID` secret.
+
+### TestFlight for Mac
+
+* Once your MAS build is uploaded and processed, it will appear in the **TestFlight** tab of your app record.
+* You can invite internal or external testers to download the app via the **TestFlight app for Mac**.
+* This is the best way to verify that the **App Sandbox** and store-specific features are working correctly before release.
+
+### Certificate Signing Requests (CSRs)
 
 Apple needs a cryptographic lock from your Mac for each certificate. **CRITICAL:** You must create a **unique** CSR for
 **each** certificate type (Application, Installer, and Distribution). Using the same CSR for multiple certificates will
@@ -13,7 +35,7 @@ cause them to "collapse" into a single identity on GitHub runners.
     * **Request is:** Select **Saved to disk**.
     * Save it with a unique name (e.g., `app.certSigningRequest`, `installer.certSigningRequest`).
 
-### Step 2: Generate the Certificates on Apple's Portal
+### Generate the Certificates on Apple's Portal
 
 To distribute Pitchenga, you need different sets of certificates depending on the destination:
 
@@ -37,7 +59,7 @@ For **each** of these:
 * Download the resulting `.cer` file.
 * **Repeat** for all required types.
 
-### Step 3: Install and Export the combined `.p12`
+### Install and Export the combined `.p12`
 
 GitHub Actions needs both certificates in a single file to sign everything correctly.
 You can also include the **Apple Distribution** certificate in this same file if you are building for iOS.
