@@ -6,6 +6,11 @@ ARTIFACTS_DIR=${1:-"cmake-build-release/Pitchenga_artefacts/Release"}
 OUTPUT_PKG=${2:-"Pitchenga-macOS-Installer.pkg"}
 VERSION=${3:-"1.0.0"}
 
+# Generate dynamic version if 1.0.0 is provided
+if [ "$VERSION" == "1.0.0" ]; then
+    VERSION=$(bash version.sh)
+fi
+
 echo "--- Creating macOS Package Installer ---"
 echo "Artifacts source: $ARTIFACTS_DIR"
 echo "Output PKG:       $OUTPUT_PKG"
@@ -19,42 +24,51 @@ fi
 STAGING_DIR="pkg_staging"
 rm -rf "$STAGING_DIR"
 mkdir -p "$STAGING_DIR/components"
+mkdir -p "$STAGING_DIR/roots"
+
+# Helper function to build a component package with relocation disabled
+build_component() {
+    local bundle_name=$1
+    local install_path=$2
+    local pkg_name=$3
+    local bundle_path="$ARTIFACTS_DIR/$bundle_name"
+    
+    if [ -d "$bundle_path" ]; then
+        echo "Building component package for $bundle_name..."
+        
+        # Create a clean temporary root for this specific component
+        # This avoids permission issues and relocation bugs
+        local temp_root="$STAGING_DIR/roots/$pkg_name"
+        local install_dir
+        install_dir=$(dirname "$install_path")
+        mkdir -p "$temp_root/$install_dir"
+        cp -R "$bundle_path" "$temp_root/$install_dir/"
+        
+        # Ensure staged files are writable
+        chmod -R +w "$temp_root"
+        
+        # Create a temporary plist to disable relocation
+        local plist_path="$STAGING_DIR/${pkg_name}.plist"
+        pkgbuild --analyze --root "$temp_root" "$plist_path"
+        
+        # Use sed to set BundleIsRelocatable to false
+        sed -i '' 's/<key>BundleIsRelocatable<\/key>.*<true\/>/<key>BundleIsRelocatable<\/key><false\/>/' "$plist_path"
+        
+        # Build the component package using the temporary root
+        pkgbuild --root "$temp_root" \
+          --component-plist "$plist_path" \
+          --version "$VERSION" \
+          "$STAGING_DIR/components/$pkg_name"
+    else
+        echo "Error: $bundle_name not found at $bundle_path"
+        exit 1
+    fi
+}
 
 # Build Component Packages
-echo "Building component packages..."
-
-# Standalone -> /Applications
-if [ -d "$ARTIFACTS_DIR/Standalone/Pitchenga.app" ]; then
-    pkgbuild --component "$ARTIFACTS_DIR/Standalone/Pitchenga.app" \
-      --install-location "/Applications" \
-      --version "$VERSION" \
-      "$STAGING_DIR/components/standalone.pkg"
-else
-    echo "Error: Standalone app not found."
-    exit 1
-fi
-
-# AU -> /Library/Audio/Plug-Ins/Components
-if [ -d "$ARTIFACTS_DIR/AU/Pitchenga.component" ]; then
-    pkgbuild --component "$ARTIFACTS_DIR/AU/Pitchenga.component" \
-      --install-location "/Library/Audio/Plug-Ins/Components" \
-      --version "$VERSION" \
-      "$STAGING_DIR/components/au.pkg"
-else
-    echo "Error: AU plugin not found."
-    exit 1
-fi
-
-# VST3 -> /Library/Audio/Plug-Ins/VST3
-if [ -d "$ARTIFACTS_DIR/VST3/Pitchenga.vst3" ]; then
-    pkgbuild --component "$ARTIFACTS_DIR/VST3/Pitchenga.vst3" \
-      --install-location "/Library/Audio/Plug-Ins/VST3" \
-      --version "$VERSION" \
-      "$STAGING_DIR/components/vst3.pkg"
-else
-    echo "Error: VST3 plugin not found."
-    exit 1
-fi
+build_component "Standalone/Pitchenga.app" "/Applications/Pitchenga.app" "standalone.pkg"
+build_component "AU/Pitchenga.component" "/Library/Audio/Plug-Ins/Components/Pitchenga.component" "au.pkg"
+build_component "VST3/Pitchenga.vst3" "/Library/Audio/Plug-Ins/VST3/Pitchenga.vst3" "vst3.pkg"
 
 # Generate Distribution XML
 echo "Generating Distribution.xml..."

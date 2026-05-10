@@ -127,7 +127,12 @@ jobs:
           # Note: Plugins (AU/VST3) cannot be distributed via MAS.
           ./create-mas-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-macOS-AppStore.pkg "${{ github.ref_name }}"
 
+          # Diagnostic: List providers to confirm credentials and find the correct Short Name/Public ID.
+          xcrun altool --list-providers --username "$APPLE_ID" --password "$APPLE_PASSWORD"
+
           # Upload to App Store Connect
+          # Using --username and --password (app-specific) along with --asc-provider for authentication.
+          # Explicitly providing bundle metadata for reliable identification.
           xcrun altool --upload-package Pitchenga-macOS-AppStore.pkg \
             --type osx \
             --username "$APPLE_ID" \

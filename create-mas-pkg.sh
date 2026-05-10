@@ -5,8 +5,12 @@ set -euo pipefail
 artifactsDirectory=${1:-"cmake-build-release/Pitchenga_artefacts/Release"}
 outputPackage=${2:-"Pitchenga-macOS-AppStore.pkg"}
 version=${3:-"1.0.0"}
-applicationIdentity=${4:-"Apple Distribution:"}
-installerIdentity=${5:-"3rd Party Mac Developer Installer:"}
+applicationIdentity=${4:-"Apple Distribution"}
+installerIdentity=${5:-"3rd Party Mac Developer Installer"}
+
+if [ "$version" == "1.0.0" ]; then
+    version=$(bash version.sh)
+fi
 
 echo "--- Creating macOS App Store Package ---"
 echo "Artifacts source:   $artifactsDirectory"
@@ -15,17 +19,30 @@ echo "Version:            $version"
 echo "App Identity:       $applicationIdentity"
 echo "Installer Identity: $installerIdentity"
 
-applicationPath="$artifactsDirectory/Standalone/Pitchenga.app"
+originalAppPath="$artifactsDirectory/Standalone/Pitchenga.app"
 
-if [ ! -d "$applicationPath" ]; then
-    echo "Error: Standalone application not found at $applicationPath"
+if [ ! -d "$originalAppPath" ]; then
+    echo "Error: Standalone application not found at $originalAppPath"
     exit 1
 fi
 
+# Create a clean staging directory for MAS modifications
+# This avoids permission issues with build artifacts
+stagingDir="mas_staging"
+rm -rf "$stagingDir"
+mkdir -p "$stagingDir"
+
+echo "Staging application for modification..."
+cp -R "$originalAppPath" "$stagingDir/"
+stagedAppPath="$stagingDir/Pitchenga.app"
+
+# Ensure staged files are writable
+chmod -R +w "$stagedAppPath"
+
 # MAS requires App Sandbox
 echo "Generating MAS entitlements..."
-trap 'rm -f mas.entitlements' EXIT
-cat <<EOF > mas.entitlements
+entitlementsPath="$stagingDir/mas.entitlements"
+cat <<EOF > "$entitlementsPath"
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -47,22 +64,43 @@ cat <<EOF > mas.entitlements
 EOF
 
 echo "Injecting MAS metadata into Info.plist..."
-plistPath="$applicationPath/Contents/Info.plist"
+plistPath="$stagedAppPath/Contents/Info.plist"
+# Ensure the directory and file are writable
+chmod +w "$stagingDir/Pitchenga.app/Contents"
 chmod +w "$plistPath"
 plutil -replace CFBundleSupportedPlatforms -json '["MacOSX"]' "$plistPath"
 plutil -replace LSApplicationCategoryType -string "public.app-category.music" "$plistPath"
 
 echo "Signing app for Mac App Store..."
-codesign --force --options runtime --timestamp \
+codesign --force --deep --options runtime --timestamp \
     --sign "$applicationIdentity" \
-    --entitlements mas.entitlements \
-    "$applicationPath"
+    --entitlements "$entitlementsPath" \
+    "$stagedAppPath"
 
 echo "Building store-bound package..."
-productbuild --component "$applicationPath" /Applications \
-    --sign "$installerIdentity" \
+# For MAS, we must ensure relocation is disabled to avoid "nothing installed" errors
+# We use a temporary root folder pattern for pkgbuild
+masRoot="$stagingDir/pkg_root"
+mkdir -p "$masRoot/Applications"
+cp -R "$stagedAppPath" "$masRoot/Applications/"
+
+componentPlist="$stagingDir/component.plist"
+pkgbuild --analyze --root "$masRoot" "$componentPlist"
+sed -i '' 's/<key>BundleIsRelocatable<\/key>.*<true\/>/<key>BundleIsRelocatable<\/key><false\/>/' "$componentPlist"
+
+# Create a temporary component pkg
+pkgbuild --root "$masRoot" \
+    --install-location "/" \
     --version "$version" \
+    --component-plist "$componentPlist" \
+    "$stagingDir/component.pkg"
+
+# Wrap it in a signed product package
+productbuild --package "$stagingDir/component.pkg" \
+    --sign "$installerIdentity" \
     "$outputPackage"
 
 # Clean up
+rm -rf "$stagingDir"
+
 echo "Success! MAS Package created at $outputPackage"
