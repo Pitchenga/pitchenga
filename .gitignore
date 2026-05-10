@@ -50,3 +50,5 @@ tests_build/
 /cmake-build-*
 jpitchenga
 /Pitchenga_macOS_Staging
+/mas_staging
+/pkg_staging

@@ -65,6 +65,9 @@ EOF
 
 echo "Injecting MAS metadata into Info.plist..."
 plistPath="$stagedAppPath/Contents/Info.plist"
+# Ensure the directory and file are writable
+chmod +w "$stagedAppPath/Contents"
+chmod +w "$plistPath"
 plutil -replace CFBundleSupportedPlatforms -json '["MacOSX"]' "$plistPath"
 plutil -replace LSApplicationCategoryType -string "public.app-category.music" "$plistPath"
 
@@ -75,9 +78,22 @@ codesign --force --deep --options runtime --timestamp \
     "$stagedAppPath"
 
 echo "Building store-bound package..."
-productbuild --component "$stagedAppPath" /Applications \
-    --sign "$installerIdentity" \
+# For MAS, we must ensure relocation is disabled to avoid "nothing installed"
+componentPlist="$stagingDir/component.plist"
+# We analyze the directory containing the app to get a valid component plist
+pkgbuild --analyze --root "$stagingDir" "$componentPlist"
+sed -i '' 's/<key>BundleIsRelocatable<\/key>.*<true\/>/<key>BundleIsRelocatable<\/key><false\/>/' "$componentPlist"
+
+# Create a temporary component pkg
+pkgbuild --component "$stagedAppPath" \
+    --install-location "/Applications" \
     --version "$version" \
+    --component-plist "$componentPlist" \
+    "$stagingDir/component.pkg"
+
+# Wrap it in a signed product package
+productbuild --package "$stagingDir/component.pkg" \
+    --sign "$installerIdentity" \
     "$outputPackage"
 
 # Clean up
