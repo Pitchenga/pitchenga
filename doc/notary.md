@@ -131,3 +131,12 @@ security find-identity -v
 security list-keychains -s ~/Library/Keychains/login.keychain-db /Library/Keychains/System.keychain
 ```
 
+## Helper Scripts
+
+Several scripts are provided to automate the local build and publishing process:
+
+* **`create-pkg.sh`**: Builds the standard macOS installer package.
+* **`create-dmg.sh`**: Builds the portable macOS disk image.
+* **`create-mas-pkg.sh`**: Builds the sandboxed, signed package for the Mac App Store.
+* **`mas-testflight.sh`**: Combines building and publishing to TestFlight in one command.
+

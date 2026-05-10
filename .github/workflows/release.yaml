@@ -123,24 +123,10 @@ jobs:
           xcrun stapler staple build/Pitchenga_artefacts/Release/AU/Pitchenga.component
           xcrun stapler staple build/Pitchenga_artefacts/Release/VST3/Pitchenga.vst3
 
-          # Mac App Store (MAS) Build & Upload
+          # Mac App Store (MAS) Build & Upload to TestFlight
           # Note: Plugins (AU/VST3) cannot be distributed via MAS.
-          ./create-mas-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-macOS-AppStore.pkg "${{ github.ref_name }}"
-
-          # Diagnostic: List providers to confirm credentials and find the correct Short Name/Public ID.
-          xcrun altool --list-providers --username "$APPLE_ID" --password "$APPLE_PASSWORD"
-
-          # Upload to App Store Connect
-          # Using --apple-id (numeric) is much more reliable than Bundle ID lookup.
-          # Explicitly setting --type osx to resolve platform determination errors.
-          xcrun altool --upload-package Pitchenga-macOS-AppStore.pkg \
-            --type osx \
-            --username "$APPLE_ID" \
-            --password "$APPLE_PASSWORD" \
-            --asc-provider "$APPLE_TEAM_ID" \
-            --apple-id "${{ secrets.MAC_APP_ID }}" \
-            --bundle-version "${{ github.ref_name }}" \
-            --bundle-short-version-string "${{ github.ref_name }}"
+          export MAC_APP_ID="${{ secrets.MAC_APP_ID }}"
+          ./mas-testflight.sh "${{ github.ref_name }}"
 
       - name: Windows Artifacts
         if: runner.os == 'Windows'
