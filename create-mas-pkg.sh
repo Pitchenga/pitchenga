@@ -104,9 +104,12 @@ componentPlist="$stagingDir/component.plist"
 pkgbuild --analyze --root "$masRoot" "$componentPlist"
 sed -i '' 's/<key>BundleIsRelocatable<\/key>.*<true\/>/<key>BundleIsRelocatable<\/key><false\/>/' "$componentPlist"
 
-# Create a temporary component pkg
+# Build the component package using the temporary root
+# Dynamically extract bundle identifier from Info.plist
+bundleIdentifier=$(plutil -extract CFBundleIdentifier raw "$plistPath")
+
 pkgbuild --root "$masRoot" \
-    --identifier "com.github.pitchenga.Pitchenga" \
+    --identifier "$bundleIdentifier" \
     --install-location "/" \
     --version "$version" \
     --component-plist "$componentPlist" \
