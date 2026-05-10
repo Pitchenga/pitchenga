@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # Default artifacts path if not provided
 ARTIFACTS_DIR=${1:-"cmake-build-release/Pitchenga_artefacts/Release"}
@@ -15,7 +15,7 @@ if [ ! -d "$ARTIFACTS_DIR" ]; then
 fi
 
 STAGING_DIR="dmg_staging"
-rm -rf "$STAGING_DIR"
+rm -rf "${STAGING_DIR:?}"
 mkdir -p "$STAGING_DIR"
 
 # Copy bundles
@@ -32,6 +32,6 @@ echo "Generating DMG..."
 hdiutil create -volname "Pitchenga" -srcfolder "$STAGING_DIR" -ov -format UDZO "$OUTPUT_DMG"
 
 # Clean up
-rm -rf "$STAGING_DIR"
+rm -rf "${STAGING_DIR:?}"
 
 echo "Success! Portable DMG created at $OUTPUT_DMG"

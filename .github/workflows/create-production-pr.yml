@@ -1,5 +1,5 @@
 name: Auto-Create PR from main to production
-run-name: "Create production PR - ${{ github.event.head_commit.message }}"
+run-name: "Create production PR - ${{ github.event.head_commit.timestamp }}"
 on:
     push:
         branches:
@@ -8,20 +8,14 @@ on:
 jobs:
     create-pr:
         if: "github.event.head_commit != null && !contains(github.event.head_commit.message, 'Merge pull request') && !contains(github.event.head_commit.message, 'Merge branch')"
+        #runs-on: self-hosted
         runs-on: ubuntu-latest
-#        runs-on: self-hosted
         steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+            -   name: Checkout repository
+                uses: actions/checkout@v4
 
-            - name: Get current date
-              id: get_date
-              run: |
-                DATE=$(TZ='Europe/Copenhagen' date +'%Y-%m-%d %H:%M')
-                echo "date=$DATE" >> $GITHUB_OUTPUT
-
-            - name: Create Pull Request
-              env:
-                  GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
-              run: |
-                  gh pr create --base production --head main --title "Pitchenga production ${{ steps.get_date.outputs.date }} - ${{ github.event.head_commit.message }}" --body "Automated PR from main to production." || echo "PR already exists or could not be created"
+            -   name: Create Pull Request
+                env:
+                    GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
+                run: |
+                    gh pr create --base production --head main --title "Pitchenga production ${{ github.event.head_commit.timestamp }}" --body "Automated PR from main to production." || echo "PR already exists or could not be created"

@@ -6,7 +6,7 @@ cause them to "collapse" into a single identity on GitHub runners.
 
 1. Open the **Keychain Access** app on your Mac.
 2. For **each** certificate you need (Application, Installer, etc.):
-    * Click **Keychain Access** \> **Certificate Assistant** \> 
+    * Click **Keychain Access** \> **Certificate Assistant** \>
       **Request a Certificate from a Certificate Authority...**
     * **User Email Address:** Your Apple Developer email.
     * **Common Name:** Something descriptive (e.g., "Pitchenga App CSR", "Pitchenga Installer CSR").
@@ -15,10 +15,17 @@ cause them to "collapse" into a single identity on GitHub runners.
 
 ### Step 2: Generate the Certificates on Apple's Portal
 
-You need **two** different types of certificates to distribute a Mac app outside the App Store:
+To distribute Pitchenga, you need different sets of certificates depending on the destination:
+
+#### For Direct Distribution (Website/GitHub)
 
 1. **Developer ID Application**: Used to sign the app and plugins.
 2. **Developer ID Installer**: Used to sign the `.pkg` installer.
+
+#### For Mac App Store (MAS)
+
+1. **Apple Distribution**: Used to sign the Standalone app for the store.
+2. **Mac Installer Distribution**: Used to sign the `.pkg` destined for App Store Connect.
 
 For **each** of these:
 
@@ -27,7 +34,7 @@ For **each** of these:
 3. Select the type (e.g., **Developer ID Application**).
 4. **Choose File** and upload the **specific CSR** you created for that type in Step 1.
 5. Download the resulting `.cer` file.
-6. **Repeat** for **Developer ID Installer** (using its unique CSR) and any other types.
+6. **Repeat** for all required types.
 
 ### Step 3: Install and Export the combined `.p12`
 
@@ -36,10 +43,12 @@ You can also include the **Apple Distribution** certificate in this same file if
 
 1. Double-click **all** downloaded `.cer` files to install them into your Keychain.
 2. Open **Keychain Access**, select the **login** keychain, and click the **My Certificates** tab.
-3. Find the certificates (including **Apple Distribution** if applicable):
+3. Find the certificates (including **Apple Distribution** and **Mac Installer Distribution** if applicable):
     * **Developer ID Application: [Your Name] ([Team ID])**
     * **Developer ID Installer: [Your Name] ([Team ID])**
-4. **Shift-Click** to select the certificates.
+    * **Apple Distribution: [Your Name] ([Team ID])**
+    * **Mac Installer Distribution: [Your Name] ([Team ID])**
+4. **Shift-Click** to select all applicable certificates.
 5. Ensure the expansion arrows `>` are toggled so the private keys are visible (and selected).
 6. Right-click and select **Export N items...** (N should be number of certificates times 2).
 7. Save as a **Personal Information Exchange (.p12)** file.
@@ -58,16 +67,15 @@ This is the exact same process we discussed earlier, just with the production-re
 4. Update (or create) the `MAC_CERTS` secret with that text block.
 5. Update the `MAC_CERTS_PASSWORD` secret with the password you made in Step 3.
 
-### The Final Notarization Pieces
+### The Final Notarization and App Store Pieces
 
-Because your `release.yaml` is already configured to run Apple's `notarytool`, you just need to add the final three text
-secrets to your GitHub repository to authenticate the notarization upload:
+Because your `release.yaml` is already configured to run Apple's `notarytool` and `altool`, you just need to add the
+final three text secrets to your GitHub repository to authenticate the uploads:
 
 * **`APPLE_ID`**: Your standard Apple ID email address.
-* **`APPLE_PASSWORD`**: An app-specific password. Go to
-  [appleid.apple.com](https://appleid.apple.com/),
-  log in, go to the "App-Specific Passwords" section, generate one (call it "GitHub Actions"), and paste it here. Do
-  not use your actual Apple ID login password.
+* **`APPLE_PASSWORD`**: An app-specific password. Go to [appleid.apple.com](https://appleid.apple.com/),
+  log in, go to the "App-Specific Passwords" section, generate one (call it "GitHub Actions"), and paste it here.
+  Do not use your actual Apple ID login password.
 * **`APPLE_TEAM_ID`**: Your 10-character Team ID. You can find this in the top right corner of the Apple Developer
   portal under your name.
 
@@ -81,5 +89,4 @@ GitHub logs:
 ```bash
 TXT="apple-all.p12.txt"; PKSC="$TXT.p12"; wc -c "$TXT" && base64 -D -i "$TXT" -o "$PKSC" && md5 -q "$PKSC"; KEYCHAIN="temp.keychain"; security create-keychain -p t "$KEYCHAIN" && security import "$PKSC" -k "$KEYCHAIN" -T /usr/bin/codesign && security find-identity -v "$KEYCHAIN"; security delete-keychain "$KEYCHAIN"; rm -f "$PKSC"
 ```
-
 
