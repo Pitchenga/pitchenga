@@ -56,16 +56,16 @@ jobs:
           security list-keychains -d user -s $KEYCHAIN_PATH
 
           # Authorize codesign and productbuild to access the keys
-          security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-
-          echo "--- Valid Signing Identities (Global) ---"
-          security find-identity -v
-
-          echo "--- Valid Signing Identities (Specific Keychain) ---"
-          security find-identity -v $KEYCHAIN_PATH
-          
-          echo "--- Valid Signing Identities ---"
-          security find-identity -v
+          #security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          #  
+          #  echo "--- Valid Signing Identities (Global) ---"
+          #  security find-identity -v
+          #  
+          #  echo "--- Valid Signing Identities (Specific Keychain) ---"
+          #  security find-identity -v $KEYCHAIN_PATH
+          #  
+          #  echo "--- Valid Signing Identities ---"
+          #  security find-identity -v
 
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DPITCHENGA_VERSION=${{ github.ref_name }}
