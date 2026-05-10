@@ -1,5 +1,5 @@
 name: Build and Release
-run-name: "Pitchenga RELEASE ${{ github.ref_name }}: ${{ github.event.head_commit.message }}"
+run-name: "PITCHENGA RELEASE ${{ github.ref_name }}: ${{ github.event.head_commit.message }}"
 
 on:
   push:
@@ -56,16 +56,7 @@ jobs:
           security list-keychains -d user -s $KEYCHAIN_PATH
 
           # Authorize codesign and productbuild to access the keys
-          #security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          #  
-          #  echo "--- Valid Signing Identities (Global) ---"
-          #  security find-identity -v
-          #  
-          #  echo "--- Valid Signing Identities (Specific Keychain) ---"
-          #  security find-identity -v $KEYCHAIN_PATH
-          #  
-          #  echo "--- Valid Signing Identities ---"
-          #  security find-identity -v
+          security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DPITCHENGA_VERSION=${{ github.ref_name }}
@@ -111,21 +102,40 @@ jobs:
           ./create-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-unsigned.pkg "${{ github.ref_name }}"
           
           # Sign the PKG container itself using the Installer certificate
-          productsign --sign "Developer ID Installer" Pitchenga-unsigned.pkg pitchenga.pkg
+          productsign --sign "Developer ID Installer" Pitchenga-unsigned.pkg Pitchenga-macOS-Installer.pkg
           rm Pitchenga-unsigned.pkg
           
           # Submit the PKG to Apple for Notarization
-          xcrun notarytool submit pitchenga.pkg --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+          xcrun notarytool submit Pitchenga-macOS-Installer.pkg --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
 
           # Staple the approval ticket directly to the PKG
-          xcrun stapler staple pitchenga.pkg
+          xcrun stapler staple Pitchenga-macOS-Installer.pkg
+
+          # Staple the individual bundles and create a portable DMG
+          cd build/Pitchenga_artefacts/Release
+          xcrun stapler staple Standalone/Pitchenga.app
+          xcrun stapler staple AU/Pitchenga.component
+          xcrun stapler staple VST3/Pitchenga.vst3
+          cd ../../../
+          
+          mkdir -p dmg_staging
+          cp -R build/Pitchenga_artefacts/Release/Standalone/Pitchenga.app dmg_staging/
+          cp -R build/Pitchenga_artefacts/Release/AU/Pitchenga.component dmg_staging/
+          cp -R build/Pitchenga_artefacts/Release/VST3/Pitchenga.vst3 dmg_staging/
+          
+          hdiutil create -volname "Pitchenga" -srcfolder dmg_staging -ov -format UDZO Pitchenga-macOS-Portable.dmg
+          codesign --force --timestamp --sign "Developer ID Application" Pitchenga-macOS-Portable.dmg
+          
+          xcrun notarytool submit Pitchenga-macOS-Portable.dmg --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+          xcrun stapler staple Pitchenga-macOS-Portable.dmg
+          rm -rf dmg_staging
 
       - name: Windows Artifacts
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           iscc /DMyAppVersion="${{ github.ref_name }}" /DMyBuildDir="build\Pitchenga_artefacts\Release" installer.iss
-          Compress-Archive -Path build\Pitchenga_artefacts\Release\* -DestinationPath pitchenga-windows.zip
+          Compress-Archive -Path build\Pitchenga_artefacts\Release\* -DestinationPath Pitchenga-Windows-Portable.zip
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -158,14 +168,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}
 
-      - name: Cleanup Previous Releases
+      - name: Cleanup Old Releases
         run: |
-          echo "Fetching list of previous releases..."
-          gh release list --limit 100 | cut -f 3 | while read -r tag; do
-            if [ -n "$tag" ] && [ "$tag" != "${{ github.ref_name }}" ]; then
-              echo "Deleting previous release and tag: $tag"
-              gh release delete "$tag" --yes --cleanup-tag
-            fi
+          echo "Fetching list of releases..."
+          # Keep the 5 most recent releases (including the one just created)
+          gh release list --limit 100 | cut -f 3 | tail -n +6 | while read -r tag; do
+              # Match the pattern: major.minor.patch
+              if [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] && [ "$tag" != "${{ github.ref_name }}" ]; then
+                  echo "Deleting old release and tag: $tag"
+                  gh release delete "$tag" --yes --cleanup-tag
+              fi
           done
         env:
           GITHUB_TOKEN: ${{ secrets.JULES_AUTOMATION_PAT }}

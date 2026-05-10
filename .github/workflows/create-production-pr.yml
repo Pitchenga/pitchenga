@@ -1,5 +1,5 @@
 name: Auto-Create PR from main to production
-run-name: "Pitchenga production - ${{ github.event.head_commit.message }}"
+run-name: "Create production PR - ${{ github.event.head_commit.message }}"
 on:
     push:
         branches:
