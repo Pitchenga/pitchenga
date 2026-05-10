@@ -17,8 +17,8 @@ jobs:
       matrix:
         include:
           - os: macOS
-            #runner: self-hosted
-            runner: macos-latest
+            runner: self-hosted
+#            runner: macos-latest
 #          - os: Windows
 #            runner: windows-latest
 
