@@ -5,8 +5,9 @@ set -euo pipefail
 artifactsDirectory=${1:-"cmake-build-release/Pitchenga_artefacts/Release"}
 outputPackage=${2:-"Pitchenga-macOS-AppStore.pkg"}
 version=${3:-"1.0.0"}
-applicationIdentity=${4:-"Apple Distribution"}
-installerIdentity=${5:-"3rd Party Mac Developer Installer"}
+bundleIdentifier=${4:-"com.github.pitchenga.Pitchenga"}
+applicationIdentity=${5:-"Apple Distribution"}
+installerIdentity=${6:-"3rd Party Mac Developer Installer"}
 
 if [ "$version" == "1.0.0" ]; then
     version=$(bash version.sh)
@@ -16,6 +17,7 @@ echo "--- Creating macOS App Store Package ---"
 echo "Artifacts source:   $artifactsDirectory"
 echo "Output Package:     $outputPackage"
 echo "Version:            $version"
+echo "Bundle ID:          $bundleIdentifier"
 echo "App Identity:       $applicationIdentity"
 echo "Installer Identity: $installerIdentity"
 
@@ -83,9 +85,7 @@ echo "Injecting MAS metadata into Info.plist..."
 plutil -replace CFBundleSupportedPlatforms -json '["MacOSX"]' "$plistPath"
 plutil -replace LSApplicationCategoryType -string "public.app-category.music" "$plistPath"
 
-# Force the Bundle Identifier to match App Store Connect (remove any Team ID suffixes)
-# This resolves the "invalid ID for this relationship" error.
-bundleIdentifier="com.github.pitchenga.Pitchenga"
+# Set the Bundle Identifier
 plutil -replace CFBundleIdentifier -string "$bundleIdentifier" "$plistPath"
 
 # Ensure version matches the package
@@ -95,7 +95,6 @@ plutil -replace CFBundleShortVersionString -string "$version" "$plistPath"
 echo "Using Bundle Identifier: $(plutil -extract CFBundleIdentifier raw "$plistPath")"
 
 echo "Signing app for Mac App Store..."
-# Force the identifier during signing to ensure no Team ID suffixes are added to the designated requirement
 codesign --force --deep --options runtime --timestamp \
     --identifier "$bundleIdentifier" \
     --sign "$applicationIdentity" \

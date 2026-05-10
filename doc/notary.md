@@ -18,7 +18,8 @@ Before you can upload to the Mac App Store, you must create an app record to rec
 
 * Once your MAS build is uploaded and processed, it will appear in the **TestFlight** tab of your app record.
 * You can invite internal or external testers to download the app via the **TestFlight app for Mac**.
-* This is the best way to verify that the **App Sandbox** and store-specific features are working correctly before release.
+* This is the best way to verify that the **App Sandbox** and store-specific features are working correctly before
+  release.
 
 ### Certificate Signing Requests (CSRs)
 
@@ -102,11 +103,12 @@ final three text secrets to your GitHub repository to authenticate the uploads:
 * **`APPLE_TEAM_ID`**: Your 10-character Team ID.
   You can find this in the top right corner of the Apple Developer portal under your name.
   This is used as the **ASC Provider** for App Store uploads.
-* **`MAC_APP_ID`**: Your app's **numeric Apple ID**. To find this:
+* **`MAC_APP_BUNDLE_ID`**: Your app's **string Bundle Identifier** (e.g., `com.example.MyApp.ABC123DEF456`).
+* **`MAC_APP_APPLE_ID`**: Your app's **numeric Apple ID** (e.g., `1234567890`). To find this:
     * Go to [App Store Connect](https://appstoreconnect.apple.com/) \> **Apps**.
     * Select **Pitchenga**.
     * Go to **App Information** \> **General Information**.
-    * Copy the value next to **Apple ID** (e.g., `6473123456`).
+    * Copy the value next to **Apple ID**.
 
 ## Troubleshooting
 
@@ -127,7 +129,8 @@ security find-identity -v
 
 ### Reset your Keychain Search List
 
-If your local identities are missing (`security find-identity -v` shows 0), your search list may have been corrupted by a script. Run this to restore it:
+If your local identities are missing (`security find-identity -v` shows 0), your search list may have been corrupted by
+a script. Run this to restore it:
 
 ```bash
 security list-keychains -d user -s ~/Library/Keychains/login.keychain-db /Library/Keychains/System.keychain
