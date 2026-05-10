@@ -1,4 +1,5 @@
-name: Bump Version and Tag
+name: Bump Version
+run-name: "Bump Version - ${{ github.event.head_commit.timestamp }}"
 
 on:
   pull_request:
@@ -29,8 +30,7 @@ jobs:
           VERSION=$(bash version.sh)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Push Tag
+      - name: Create and Push Tag
         run: |
-          # Create and push the tag to trigger release.yaml
           git tag "${{ env.VERSION }}"
           git push origin "${{ env.VERSION }}"
