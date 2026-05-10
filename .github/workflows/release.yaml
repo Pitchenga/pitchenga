@@ -131,14 +131,14 @@ jobs:
           xcrun altool --list-providers --username "$APPLE_ID" --password "$APPLE_PASSWORD"
 
           # Upload to App Store Connect
-          # Using --username and --password (app-specific) along with --asc-provider for authentication.
-          # Explicitly providing bundle metadata for reliable identification.
+          # Using --apple-id (numeric) is much more reliable than Bundle ID lookup.
+          # Explicitly setting --type osx to resolve platform determination errors.
           xcrun altool --upload-package Pitchenga-macOS-AppStore.pkg \
             --type osx \
             --username "$APPLE_ID" \
             --password "$APPLE_PASSWORD" \
             --asc-provider "$APPLE_TEAM_ID" \
-            --bundle-id "com.github.pitchenga.Pitchenga" \
+            --apple-id "${{ secrets.MAC_APP_ID }}" \
             --bundle-version "${{ github.ref_name }}" \
             --bundle-short-version-string "${{ github.ref_name }}"
 
