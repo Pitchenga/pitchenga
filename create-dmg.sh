@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # Default artifacts path if not provided
 ARTIFACTS_DIR=${1:-"cmake-build-release/Pitchenga_artefacts/Release"}
