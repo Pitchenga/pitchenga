@@ -83,16 +83,21 @@ echo "Injecting MAS metadata into Info.plist..."
 plutil -replace CFBundleSupportedPlatforms -json '["MacOSX"]' "$plistPath"
 plutil -replace LSApplicationCategoryType -string "public.app-category.music" "$plistPath"
 
+# Force the Bundle Identifier to match App Store Connect (remove any Team ID suffixes)
+# This resolves the "invalid ID for this relationship" error.
+bundleIdentifier="com.github.pitchenga.Pitchenga"
+plutil -replace CFBundleIdentifier -string "$bundleIdentifier" "$plistPath"
+
 # Ensure version matches the package
 plutil -replace CFBundleVersion -string "$version" "$plistPath"
 plutil -replace CFBundleShortVersionString -string "$version" "$plistPath"
 
-# Extract and print the identifier for verification
-bundleIdentifier=$(plutil -extract CFBundleIdentifier raw "$plistPath")
-echo "Using Bundle Identifier: $bundleIdentifier"
+echo "Using Bundle Identifier: $(plutil -extract CFBundleIdentifier raw "$plistPath")"
 
 echo "Signing app for Mac App Store..."
+# Force the identifier during signing to ensure no Team ID suffixes are added to the designated requirement
 codesign --force --deep --options runtime --timestamp \
+    --identifier "$bundleIdentifier" \
     --sign "$applicationIdentity" \
     --entitlements "$entitlementsPath" \
     "$stagedAppPath"
@@ -108,7 +113,10 @@ componentPlist="$stagingDir/component.plist"
 pkgbuild --analyze --root "$masRoot" "$componentPlist"
 sed -i '' 's/<key>BundleIsRelocatable<\/key>.*<true\/>/<key>BundleIsRelocatable<\/key><false\/>/' "$componentPlist"
 
-# Build the component package using the temporary root
+# Ensure the component identifier matches perfectly
+plutil -replace BundleIdentifier -string "$bundleIdentifier" "$componentPlist"
+
+# Build the component package
 pkgbuild --root "$masRoot" \
     --identifier "$bundleIdentifier" \
     --install-location "/" \

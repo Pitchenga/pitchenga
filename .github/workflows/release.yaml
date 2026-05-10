@@ -127,7 +127,7 @@ jobs:
 
           # Mac App Store (MAS) Build & Upload to TestFlight
           # Note: Plugins (AU/VST3) cannot be distributed via MAS.
-          export MAC_APP_ID="${{ secrets.MAC_APP_ID }}"
+          export MAC_BUNDLE_ID="${{ secrets.MAC_BUNDLE_ID }}"
           ./mas-testflight.sh "${{ github.ref_name }}"
 
       - name: Windows Artifacts

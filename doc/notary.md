@@ -102,11 +102,11 @@ final three text secrets to your GitHub repository to authenticate the uploads:
 * **`APPLE_TEAM_ID`**: Your 10-character Team ID.
   You can find this in the top right corner of the Apple Developer portal under your name.
   This is used as the **ASC Provider** for App Store uploads.
-* **`MAC_APP_ID`**: The numeric Apple ID for your app. To find this:
+* **`MAC_APP_ID`**: Your app's **numeric Apple ID**. To find this:
     * Go to [App Store Connect](https://appstoreconnect.apple.com/) \> **Apps**.
     * Select **Pitchenga**.
     * Go to **App Information** \> **General Information**.
-    * Copy the value next to **Apple ID**.
+    * Copy the value next to **Apple ID** (e.g., `6473123456`).
 
 ## Troubleshooting
 
