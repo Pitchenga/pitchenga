@@ -1,5 +1,5 @@
 name: Trigger Gemini Review
-run-name: "Trigger Gemini Review - ${{ github.event.head_commit.timestamp }}"
+run-name: "Trigger Gemini Review"
 
 on:
   pull_request:

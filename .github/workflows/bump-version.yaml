@@ -1,5 +1,5 @@
 name: Bump Version
-run-name: "Bump Version - ${{ github.event.head_commit.timestamp }}"
+run-name: "Bump Version"
 
 on:
   pull_request:
