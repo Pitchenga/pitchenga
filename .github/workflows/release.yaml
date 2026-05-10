@@ -1,5 +1,5 @@
 name: Build and Release
-run-name: "PITCHENGA RELEASE ${{ github.ref_name }}: ${{ github.event.head_commit.message }}"
+run-name: "PITCHENGA RELEASE ${{ github.ref_name }} - ${{ github.sha }}"
 
 on:
   push:
@@ -118,17 +118,12 @@ jobs:
           xcrun stapler staple VST3/Pitchenga.vst3
           cd ../../../
           
-          mkdir -p dmg_staging
-          cp -R build/Pitchenga_artefacts/Release/Standalone/Pitchenga.app dmg_staging/
-          cp -R build/Pitchenga_artefacts/Release/AU/Pitchenga.component dmg_staging/
-          cp -R build/Pitchenga_artefacts/Release/VST3/Pitchenga.vst3 dmg_staging/
+          ./create-dmg.sh build/Pitchenga_artefacts/Release Pitchenga-macOS-Portable.dmg
           
-          hdiutil create -volname "Pitchenga" -srcfolder dmg_staging -ov -format UDZO Pitchenga-macOS-Portable.dmg
           codesign --force --timestamp --sign "Developer ID Application" Pitchenga-macOS-Portable.dmg
           
           xcrun notarytool submit Pitchenga-macOS-Portable.dmg --apple-id "$APPLE_ID" --password "$APPLE_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
           xcrun stapler staple Pitchenga-macOS-Portable.dmg
-          rm -rf dmg_staging
 
       - name: Windows Artifacts
         if: runner.os == 'Windows'
