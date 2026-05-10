@@ -37,12 +37,23 @@ jobs:
         run: |
           CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+          
+          # Paranoia check: How many characters is our secret?
+          echo "Base64 Secret Length: $(echo -n "$BUILD_CERTIFICATE_BASE64" | wc -c)"
+          
           echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          
+          # Import and check output
           security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
+
+          echo "--- All Certificates in Keychain ---"
+          security find-certificate -a -c "" $KEYCHAIN_PATH | grep "labl"
+
           security list-keychains -d user -s $KEYCHAIN_PATH
+
           
           # Authorize codesign and productbuild to access the keys
           security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
@@ -51,7 +62,7 @@ jobs:
           security find-certificate -a $KEYCHAIN_PATH
           
           echo "--- Valid Signing Identities ---"
-          security find-identity -v -p codesigning $KEYCHAIN_PATH
+          security find-identity -v
 
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DPITCHENGA_VERSION=${{ github.ref_name }}
@@ -97,7 +108,7 @@ jobs:
           ./create-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-unsigned.pkg "${{ github.ref_name }}"
           
           # Sign the PKG container itself using the Installer certificate
-          productsign --sign "Developer ID Installer" --keychain $RUNNER_TEMP/app-signing.keychain-db Pitchenga-unsigned.pkg pitchenga.pkg
+          productsign --sign "Developer ID Installer" Pitchenga-unsigned.pkg pitchenga.pkg
           rm Pitchenga-unsigned.pkg
           
           # Submit the PKG to Apple for Notarization
