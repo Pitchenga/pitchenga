@@ -104,6 +104,21 @@ echo "Embedding Provisioning Profile..."
 profilePath=".macprovisionprofile"
 if [ -f "$profilePath" ]; then
     cp "$profilePath" "$stagedAppPath/Contents/embedded.provisionprofile"
+    
+    # Extract identifiers from profile to inject into entitlements
+    echo "Extracting profile entitlements..."
+    security cms -D -i "$profilePath" > "$stagingDir/profile.plist" 2>/dev/null || true
+    if [ -f "$stagingDir/profile.plist" ]; then
+        appIdentifier=$(plutil -extract Entitlements.application-identifier raw "$stagingDir/profile.plist" 2>/dev/null || echo "")
+        teamIdentifier=$(plutil -extract Entitlements.com.apple.developer.team-identifier raw "$stagingDir/profile.plist" 2>/dev/null || echo "")
+        
+        if [ -n "$appIdentifier" ] && [ "$appIdentifier" != "No value" ]; then
+            plutil -insert application-identifier -string "$appIdentifier" "$entitlementsPath" || true
+        fi
+        if [ -n "$teamIdentifier" ] && [ "$teamIdentifier" != "No value" ]; then
+            plutil -insert com.apple.developer.team-identifier -string "$teamIdentifier" "$entitlementsPath" || true
+        fi
+    fi
 else
     echo "WARNING: No provisioning profile found at $profilePath."
     echo "TestFlight requires an embedded.provisionprofile for Mac App Store builds."
@@ -138,8 +153,27 @@ pkgbuild --root "$masRoot" \
     --component-plist "$componentPlist" \
     "$stagingDir/component.pkg"
 
+# Create a Distribution.xml to pass metadata to App Store Connect
+distributionPath="$stagingDir/Distribution.xml"
+cat <<EOF > "$distributionPath"
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <options customize="never" require-scripts="false"/>
+    <product id="$bundleIdentifier" version="$version"/>
+    <os-version min="10.15"/>
+    <choices-outline>
+        <line choice="default"/>
+    </choices-outline>
+    <choice id="default">
+        <pkg-ref id="$bundleIdentifier"/>
+    </choice>
+    <pkg-ref id="$bundleIdentifier" version="$version" onConclusion="none">component.pkg</pkg-ref>
+</installer-gui-script>
+EOF
+
 # Wrap it in a signed product package
-productbuild --package "$stagingDir/component.pkg" \
+productbuild --distribution "$distributionPath" \
+    --package-path "$stagingDir" \
     --sign "$installerIdentity" \
     "$outputPackage"
 
