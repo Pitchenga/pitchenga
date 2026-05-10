@@ -56,16 +56,7 @@ jobs:
           security list-keychains -d user -s $KEYCHAIN_PATH
 
           # Authorize codesign and productbuild to access the keys
-          #security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          #  
-          #  echo "--- Valid Signing Identities (Global) ---"
-          #  security find-identity -v
-          #  
-          #  echo "--- Valid Signing Identities (Specific Keychain) ---"
-          #  security find-identity -v $KEYCHAIN_PATH
-          #  
-          #  echo "--- Valid Signing Identities ---"
-          #  security find-identity -v
+          security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
       - name: Configure CMake
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DPITCHENGA_VERSION=${{ github.ref_name }}
@@ -160,10 +151,11 @@ jobs:
 
       - name: Cleanup Previous Releases
         run: |
-          echo "Fetching list of previous releases..."
-          gh release list --limit 100 | cut -f 3 | while read -r tag; do
-            if [ -n "$tag" ] && [ "$tag" != "${{ github.ref_name }}" ]; then
-              echo "Deleting previous release and tag: $tag"
+          echo "Fetching list of releases..."
+          # Keep the 5 most recent releases (including the one just created)
+          gh release list --limit 100 | cut -f 3 | tail -n +6 | while read -r tag; do
+            if [ -n "$tag" ]; then
+              echo "Deleting old release and tag: $tag"
               gh release delete "$tag" --yes --cleanup-tag
             fi
           done
