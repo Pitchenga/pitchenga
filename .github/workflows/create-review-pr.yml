@@ -1,5 +1,5 @@
 name: Auto-Create PR from main to review
-run-name: "Pitchenga review - ${{ github.event.head_commit.message }}"
+run-name: "Create review PR - ${{ github.event.head_commit.message }}"
 on:
     push:
         branches:
