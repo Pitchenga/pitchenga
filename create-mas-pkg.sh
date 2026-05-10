@@ -113,14 +113,15 @@ if [ -f "$profilePath" ]; then
         exit 1
     fi
     
-    appIdentifier=$(plutil -extract Entitlements.application-identifier raw "$stagingDir/profile.plist" 2>/dev/null || echo "")
-    teamIdentifier=$(plutil -extract Entitlements.com.apple.developer.team-identifier raw "$stagingDir/profile.plist" 2>/dev/null || echo "")
+    # Note: Plutil requires escaping dots in key paths
+    appIdentifier=$(plutil -extract 'Entitlements.com\.apple\.application-identifier' raw "$stagingDir/profile.plist" 2>/dev/null || echo "")
+    teamIdentifier=$(plutil -extract 'Entitlements.com\.apple\.developer\.team-identifier' raw "$stagingDir/profile.plist" 2>/dev/null || echo "")
     
     if [ -n "$appIdentifier" ] && [ "$appIdentifier" != "No value" ]; then
-        plutil -insert application-identifier -string "$appIdentifier" "$entitlementsPath" || true
+        plutil -insert 'com.apple.application-identifier' -string "$appIdentifier" "$entitlementsPath" || true
     fi
     if [ -n "$teamIdentifier" ] && [ "$teamIdentifier" != "No value" ]; then
-        plutil -insert com.apple.developer.team-identifier -string "$teamIdentifier" "$entitlementsPath" || true
+        plutil -insert 'com.apple.developer.team-identifier' -string "$teamIdentifier" "$entitlementsPath" || true
     fi
 else
     echo "ERROR: No provisioning profile found at $profilePath."
