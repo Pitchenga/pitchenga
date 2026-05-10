@@ -32,6 +32,6 @@ echo "Generating DMG..."
 hdiutil create -volname "Pitchenga" -srcfolder "$STAGING_DIR" -ov -format UDZO "$OUTPUT_DMG"
 
 # Clean up
-rm -rf "$STAGING_DIR"
+rm -rf "${STAGING_DIR:?}"
 
 echo "Success! Portable DMG created at $OUTPUT_DMG"
