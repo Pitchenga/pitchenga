@@ -8,6 +8,10 @@ fi
 
 # Configuration
 VERSION=${1:-"1.0.0"}
+if [ "$VERSION" == "1.0.0" ]; then
+    VERSION=$(bash version.sh)
+fi
+
 export ARTIFACTS_DIR="cmake-build-release/Pitchenga_artefacts/Release"
 export OUTPUT_PKG="Pitchenga-macOS-TestFlight.pkg"
 

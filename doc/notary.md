@@ -127,8 +127,10 @@ security find-identity -v
 
 ### Reset your Keychain Search List
 
-```
-security list-keychains -s ~/Library/Keychains/login.keychain-db /Library/Keychains/System.keychain
+If your local identities are missing (`security find-identity -v` shows 0), your search list may have been corrupted by a script. Run this to restore it:
+
+```bash
+security list-keychains -d user -s ~/Library/Keychains/login.keychain-db /Library/Keychains/System.keychain
 ```
 
 ## Helper Scripts
