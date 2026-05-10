@@ -91,6 +91,9 @@ plutil -replace CFBundleSupportedPlatforms -json '["MacOSX"]' "$plistPath"
 plutil -replace LSApplicationCategoryType -string "public.app-category.music" "$plistPath"
 plutil -replace LSMinimumSystemVersion -string "10.15" "$plistPath"
 
+# Bypass App Store Connect Export Compliance prompt
+plutil -replace ITSAppUsesNonExemptEncryption -bool false "$plistPath"
+
 # Set the Bundle Identifier
 plutil -replace CFBundleIdentifier -string "$bundleIdentifier" "$plistPath"
 
