@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # Default values
 ARTIFACTS_DIR=${1:-"build/Pitchenga_artefacts/Release"}
