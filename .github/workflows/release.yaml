@@ -127,6 +127,8 @@ jobs:
 
           # Mac App Store (MAS) Build & Upload to TestFlight
           # Note: Plugins (AU/VST3) cannot be distributed via MAS.
+          echo -n "${{ secrets.MAC_PROVISION_PROFILE }}" | base64 --decode -o .macprovisionprofile
+          
           export MAC_APP_BUNDLE_ID="${{ secrets.MAC_APP_BUNDLE_ID }}"
           export MAC_APP_APPLE_ID="${{ secrets.MAC_APP_APPLE_ID }}"
           ./mas-testflight.sh "${{ github.ref_name }}"

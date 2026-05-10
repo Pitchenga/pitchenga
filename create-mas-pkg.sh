@@ -101,7 +101,7 @@ plutil -replace CFBundleShortVersionString -string "$version" "$plistPath"
 echo "Using Bundle Identifier: $(plutil -extract CFBundleIdentifier raw "$plistPath")"
 
 echo "Embedding Provisioning Profile..."
-profilePath="Pitchenga_MAS.provisionprofile"
+profilePath=".macprovisionprofile"
 if [ -f "$profilePath" ]; then
     cp "$profilePath" "$stagedAppPath/Contents/embedded.provisionprofile"
 else

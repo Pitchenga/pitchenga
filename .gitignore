@@ -54,3 +54,4 @@ jpitchenga
 /pkg_staging
 *.pkg
 *.dmg
+.macprovisionprofile

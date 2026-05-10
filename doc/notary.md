@@ -69,9 +69,14 @@ To upload your app to TestFlight, Apple requires a **Mac App Store Provisioning 
 * Under **Distribution**, select **Mac App Store**.
 * Select your **App ID** (`com.github.pitchenga.Pitchenga`).
 * Select the **Mac App Distribution** certificate you created earlier.
-* Name the profile (e.g., `Pitchenga MAS`).
+* Name the profile `PitchengaMas`.
 * Download the profile.
-* Rename the downloaded file to `Pitchenga_MAS.provisionprofile` and place it in the root folder of your project (alongside this README). The `create-mas-pkg.sh` script will automatically embed it into the app bundle.
+* Convert it to Base64:
+  ```bash
+  PROFILE="PitchengaMas.provisionprofile"; base64 -i $PROFILE | tee $PROFILE.txt | pbcopy
+  ```
+* Save the copied string as a new GitHub Secret named **`MAC_PROVISION_PROFILE`**.
+* Copy the downloaded file to the project as `.macprovisionprofile`.
 
 ### Install and Export the combined `.p12`
 
@@ -122,6 +127,7 @@ final three text secrets to your GitHub repository to authenticate the uploads:
     * Select **Pitchenga**.
     * Go to **App Information** \> **General Information**.
     * Copy the value next to **Apple ID**.
+* **`MAC_PROVISION_PROFILE`**: The Base64 string of your `.macprovisionprofile`.
 
 ## Troubleshooting
 
