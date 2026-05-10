@@ -55,7 +55,7 @@ You can also include the **Apple Distribution** certificate in this same file if
 * Save as a **Personal Information Exchange (.p12)** file.
 * Create a password and save it as your `MAC_CERTS_PASSWORD` secret in GitHub.
 
-### Step 4: Inject it into GitHub Actions
+### Inject it into GitHub Actions
 
 This is the exact same process we discussed earlier, just with the production-ready certificate.
 
@@ -88,5 +88,16 @@ GitHub logs:
 
 ```bash
 TXT="apple-all.p12.txt"; PKSC="$TXT.p12"; wc -c "$TXT" && base64 -D -i "$TXT" -o "$PKSC" && md5 -q "$PKSC"; KEYCHAIN="temp.keychain"; security create-keychain -p t "$KEYCHAIN" && security import "$PKSC" -k "$KEYCHAIN" -T /usr/bin/codesign && security find-identity -v "$KEYCHAIN"; security delete-keychain "$KEYCHAIN"; rm -f "$PKSC"
+```
+### List your current identities
+
+```
+security find-identity -v
+```
+
+### Reset your Keychain Search List
+
+```
+security list-keychains -s ~/Library/Keychains/login.keychain-db /Library/Keychains/System.keychain
 ```
 

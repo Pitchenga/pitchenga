@@ -5,8 +5,8 @@ set -euo pipefail
 artifactsDirectory=${1:-"cmake-build-release/Pitchenga_artefacts/Release"}
 outputPackage=${2:-"Pitchenga-macOS-AppStore.pkg"}
 version=${3:-"1.0.0"}
-applicationIdentity=${4:-"Apple Distribution"}
-installerIdentity=${5:-"3rd Party Mac Developer Installer"}
+applicationIdentity=${4:-"Apple Distribution:"}
+installerIdentity=${5:-"3rd Party Mac Developer Installer:"}
 
 echo "--- Creating macOS App Store Package ---"
 echo "Artifacts source:   $artifactsDirectory"
