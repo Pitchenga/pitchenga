@@ -39,7 +39,8 @@ with your software synth, complete with independent monitor controls to prevent 
 Pre-built binaries are provided in the [Releases](https://github.com/pitchenga/pitchenga/releases) section.
 
 - **macOS:** Available as a Standalone application, Audio Unit (AU Component), and VST3.
-  - [Download latest release](https://github.com/pitchenga/pitchenga/releases/latest/download/Pitchenga-macOS.pkg)
+  - [Download latest installer release](https://github.com/pitchenga/pitchenga/releases/latest/download/Pitchenga-macOS.pkg)
+  - [Download latest portable release](https://github.com/pitchenga/pitchenga/releases/latest/download/Pitchenga-macOS-Portable.zip)
 
 - **Windows:** Available as a Standalone application and VST3.
   - [Download latest installer release](https://github.com/pitchenga/pitchenga/releases/latest/download/Pitchenga-Windows-Installer.exe)

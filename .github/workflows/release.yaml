@@ -111,6 +111,13 @@ jobs:
           # Staple the approval ticket directly to the PKG
           xcrun stapler staple Pitchenga-macOS.pkg
 
+          # Staple the individual bundles and create a portable ZIP
+          cd build/Pitchenga_artefacts/Release
+          xcrun stapler staple Standalone/Pitchenga.app
+          xcrun stapler staple AU/Pitchenga.component
+          xcrun stapler staple VST3/Pitchenga.vst3
+          zip -r ../../../Pitchenga-macOS-Portable.zip Standalone/Pitchenga.app AU/Pitchenga.component VST3/Pitchenga.vst3
+
       - name: Windows Artifacts
         if: runner.os == 'Windows'
         shell: pwsh
