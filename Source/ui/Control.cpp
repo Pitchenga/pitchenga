@@ -714,7 +714,7 @@ void Control::NoEllipsisLookAndFeel::drawButtonText(juce::Graphics& graphics, ju
 }
 
 juce::Font Control::NoEllipsisLookAndFeel::getTextButtonFont(juce::TextButton&, int) {
-    return juce::FontOptions(15.0f).withStyle("Bold");
+    return juce::FontOptions(13.0f);
 }
 
 void Control::setupButton(juce::TextButton& button) {
