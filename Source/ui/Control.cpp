@@ -953,8 +953,7 @@ void Control::refreshPresets() {
     const auto applicationFolder = Util::getApplicationFolder();
     const auto presetsFolder = applicationFolder.getChildFile(presetsFolderName);
 
-    const bool folderExists = presetsFolder.exists();
-    if (folderExists) {
+    if (presetsFolder.exists()) {
         juce::Array<juce::File> files;
         presetsFolder.findChildFiles(files, juce::File::findFiles, false, "*.xml");
 
@@ -962,7 +961,7 @@ void Control::refreshPresets() {
         // it means enumeration is blocked, redirected, or actually empty.
         // We use a write-test to distinguish between a legitimate empty folder and a sandbox block.
         if (files.isEmpty()) {
-            auto dummyFile = presetsFolder.getChildFile("sandbox_test.tmp");
+            auto dummyFile = presetsFolder.getChildFile("test.tmp");
             if (dummyFile.create().wasOk()) {
                 bool deleted = dummyFile.deleteFile();
                 if (!deleted) {
