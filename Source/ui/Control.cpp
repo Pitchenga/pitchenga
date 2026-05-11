@@ -681,21 +681,41 @@ Control::NoEllipsisLookAndFeel::NoEllipsisLookAndFeel() {
     setColour(juce::TextButton::textColourOffId, juce::Colours::white);
 }
 
-void Control::NoEllipsisLookAndFeel::drawButtonBackground(juce::Graphics& graphics, juce::Button& button, const juce::Colour& backgroundColour, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) {
-    juce::Colour colorToUse = backgroundColour;
-    if (!button.isEnabled() && button.getClickingTogglesState()) {
-        colorToUse = juce::Colours::darkgrey;
+void Control::NoEllipsisLookAndFeel::drawButtonBackground(
+    juce::Graphics& graphics,
+    juce::Button& button,
+    const juce::Colour& backgroundColour,
+    bool shouldDrawButtonAsHighlighted,
+    bool shouldDrawButtonAsDown
+) {
+    juce::Colour color = backgroundColour;
+    if (button.getClickingTogglesState() && !button.isEnabled()) {
+        color = juce::Colours::darkgrey;
     }
-    LookAndFeel_V4::drawButtonBackground(graphics, button, colorToUse, shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
+    LookAndFeel_V4::drawButtonBackground(
+        graphics,
+        button,
+        color,
+        shouldDrawButtonAsHighlighted,
+        shouldDrawButtonAsDown
+    );
 }
 
 void Control::NoEllipsisLookAndFeel::drawButtonText(juce::Graphics& graphics, juce::TextButton& button, bool, bool) {
     graphics.setFont(getTextButtonFont(button, button.getHeight()));
 
-    const bool isToggle = button.getClickingTogglesState();
-    const bool isOn = button.getToggleState();
+    juce::Colour color;
+    if (button.isEnabled()) {
+        if (button.getClickingTogglesState()) {
+            color = button.getToggleState() ? juce::Colours::white : juce::Colours::lightgrey;
+        } else {
+            color = juce::Colours::white;
+        }
+    } else {
+        color = juce::Colours::grey;
+    }
 
-    graphics.setColour(button.isEnabled() ? juce::Colours::white : juce::Colours::grey);
+    graphics.setColour(color);
 
     const int yIndent = juce::jmin(4, button.proportionOfHeight(0.3f));
     const int textWidth = button.getWidth();
