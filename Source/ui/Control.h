@@ -126,7 +126,8 @@ private:
 
     struct NoEllipsisLookAndFeel : juce::LookAndFeel_V4 {
         NoEllipsisLookAndFeel();
-        void drawButtonText(juce::Graphics& g, juce::TextButton& button, bool isMouseOverButton, bool isButtonDown) override;
+        void drawButtonText(juce::Graphics& graphics, juce::TextButton& button, bool isMouseOverButton, bool isButtonDown) override;
+        juce::Font getTextButtonFont(juce::TextButton& button, int buttonHeight) override;
     };
 
     NoEllipsisLookAndFeel noEllipsisLookAndFeel;

@@ -681,28 +681,31 @@ void Control::renameCurrentPreset() {
 Control::NoEllipsisLookAndFeel::NoEllipsisLookAndFeel() {
     setColour(juce::TextButton::buttonColourId, juce::Colours::black.withAlpha(0.4f));
     setColour(juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha(0.2f));
-    setColour(juce::TextButton::textColourOffId, juce::Colours::grey);
+    setColour(juce::TextButton::textColourOffId, juce::Colours::white.withAlpha(0.5f));
     setColour(juce::TextButton::textColourOnId, juce::Colours::white);
 }
 
-void Control::NoEllipsisLookAndFeel::drawButtonText(juce::Graphics& g, juce::TextButton& button, bool, bool) {
-    auto font = getTextButtonFont(button, button.getHeight());
-    g.setFont(font);
-    g.setColour(
-        button.findColour(
-            button.getToggleState()
-                ? juce::TextButton::textColourOnId
-                : juce::TextButton::textColourOffId
-        )
-        .withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.5f)
+void Control::NoEllipsisLookAndFeel::drawButtonText(juce::Graphics& graphics, juce::TextButton& button, bool, bool) {
+    graphics.setFont(getTextButtonFont(button, button.getHeight()));
+
+    const bool isToggle = button.getClickingTogglesState();
+    const bool isOn = button.getToggleState();
+
+    // Use On colour for non-toggle buttons or when a toggle button is active
+    auto colour = button.findColour(
+        (!isToggle || isOn)
+            ? juce::TextButton::textColourOnId
+            : juce::TextButton::textColourOffId
     );
+
+    graphics.setColour(colour.withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.5f));
 
     const int yIndent = juce::jmin(4, button.proportionOfHeight(0.3f));
     const int textWidth = button.getWidth();
 
     if (textWidth > 0) {
         // Use drawText with useEllipsis = false to prevent "..." truncation
-        g.drawText(
+        graphics.drawText(
             button.getButtonText(),
             0,
             yIndent,
@@ -712,6 +715,10 @@ void Control::NoEllipsisLookAndFeel::drawButtonText(juce::Graphics& g, juce::Tex
             false
         );
     }
+}
+
+juce::Font Control::NoEllipsisLookAndFeel::getTextButtonFont(juce::TextButton&, int) {
+    return juce::FontOptions(15.0f).withStyle("Bold");
 }
 
 void Control::setupButton(juce::TextButton& button) {

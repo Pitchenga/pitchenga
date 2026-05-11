@@ -74,7 +74,7 @@ Since we are building manually without Xcode, you must download this profile fro
 * Download the profile.
 * Convert it to Base64:
   ```bash
-  base64 -i PitchengaMas.provisionprofile | tee .macprovisionprofile | pbcopy
+  PROFILE="PitchengaMas.provisionprofile"; base64 -i $PROFILE | tee $PROFILE.txt | pbcopy
   ```
 * Save the copied string as a new GitHub Secret named **`MAC_PROVISION_PROFILE`**.
 * Copy the downloaded file to the project as `.macprovisionprofile`.
