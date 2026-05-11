@@ -128,6 +128,14 @@ if [ -f "$profilePath" ]; then
     if [ -n "$teamIdentifier" ] && [ "$teamIdentifier" != "No value" ]; then
         plutil -insert 'com\.apple\.developer\.team-identifier' -string "$teamIdentifier" "$entitlementsPath" || true
     fi
+
+    # Extract and inject App Groups if present
+    echo "Checking for App Groups..."
+    plutil -extract 'Entitlements.com\.apple\.security\.application-groups' xml1 "$stagingDir/profile.plist" -o "$stagingDir/groups.plist" 2>/dev/null || true
+    if [ -f "$stagingDir/groups.plist" ]; then
+        echo "Injecting App Groups into entitlements..."
+        plutil -insert 'com\.apple\.security\.application-groups' -xml "$(cat "$stagingDir/groups.plist")" "$entitlementsPath" || true
+    fi
 else
     echo "ERROR: No provisioning profile found at $profilePath."
     echo "TestFlight requires an embedded.provisionprofile for Mac App Store builds."
