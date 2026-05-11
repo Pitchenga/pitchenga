@@ -1,6 +1,11 @@
 #include "Util.h"
 #include <mutex>
 
+#if JUCE_MAC
+#include <pwd.h>
+#include <unistd.h>
+#endif
+
 #include "version.h"
 
 bool Util::debugLogEnabled = true;
@@ -9,6 +14,14 @@ bool Util::debugLogEnabled = true;
 juce::String Util::startTimestamp;
 
 juce::File Util::getApplicationDirectory() {
+#if JUCE_MAC
+    // In a sandboxed macOS app, standard JUCE/macOS APIs return the sandboxed Container directory.
+    // To access the shared folder granted via temporary-exception, we must get the real home directory using POSIX APIs.
+    struct passwd* pw = getpwuid(getuid());
+    if (pw != nullptr && pw->pw_dir != nullptr) {
+        return juce::File(juce::String(pw->pw_dir)).getChildFile("Library/Application Support/Pitchenga");
+    }
+#endif
     return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
 }
 
