@@ -74,6 +74,8 @@ cat <<EOF > "$entitlementsPath"
     <true/>
     <key>com.apple.security.device.audio-input</key>
     <true/>
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
     <key>com.apple.security.cs.disable-library-validation</key>
     <true/>
     <key>com.apple.security.cs.allow-jit</key>
