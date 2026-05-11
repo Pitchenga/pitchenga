@@ -958,15 +958,24 @@ void Control::refreshPresets() {
 
     if (folderExists) {
         presetsDir.findChildFiles(files, juce::File::findFiles, false, "*.xml");
-        
+
         // If the folder exists but no XML files (even Default.xml) are found, 
-        // it means enumeration is blocked or redirected.
+        // it means enumeration is blocked, redirected, or actually empty.
+        // We use a write-test to distinguish between a legitimate empty folder and a sandbox block.
         if (files.isEmpty()) {
-            juce::AlertWindow::showMessageBoxAsync(
-                juce::MessageBoxIconType::WarningIcon,
-                "Access Error",
-                "The folder exists but its contents are hidden (enumeration failed).\nPath: " + presetsDir.getFullPathName()
-            );
+            auto dummyFile = presetsDir.getChildFile("sandbox_test.tmp");
+            if (dummyFile.create().wasOk()) {
+                bool deleted = dummyFile.deleteFile();
+                if (!deleted) {
+                    Util::debug("Failed deleting dummyFile=" + dummyFile.getFullPathName());
+                }
+            } else {
+                juce::AlertWindow::showMessageBoxAsync(
+                    juce::MessageBoxIconType::WarningIcon,
+                    "Access Error",
+                    "The presets folder is inaccessible (Permission Denied).\nPath: " + presetsDir.getFullPathName()
+                );
+            }
         }
 
         int id = customPresetsStartId;

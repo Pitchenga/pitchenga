@@ -29,10 +29,6 @@ cat <<EOF > "$TEST_ENTITLEMENTS"
     <true/>
     <key>com.apple.security.files.user-selected.read-write</key>
     <true/>
-    <key>com.apple.security.temporary-exception.files.home-relative-path.read-write</key>
-    <array>
-        <string>Library/Pitchenga</string>
-    </array>
 </dict>
 </plist>
 EOF
