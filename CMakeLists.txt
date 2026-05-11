@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(Pitchenga VERSION 0509.23.23)
+project(Pitchenga VERSION 1.0.0)
 
 # Calculate a dynamic version for local development to ensure the AU bundle
 # shows more than "1.0.0" in hosts like Logic Pro.
