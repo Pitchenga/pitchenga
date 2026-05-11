@@ -466,8 +466,8 @@ void RollStft::paintForrest(juce::Graphics& graphics) const {
         if (xPos >= dbAxisWidth && xPos <= static_cast<float>(width)) {
             // Configurable razor-sharp stems for the Forrest
             float stemWidthPixels = 5.0f;
-            const bool doDynamicStem = enableDynamicStemWidth && !processor.settings.isRawMode;
-            if (doDynamicStem) {
+            const bool isDynamicStem = enableDynamicStemWidth && !processor.settings.isRawMode;
+            if (isDynamicStem) {
                 const float nextX = frequencyToX(
                     peak.frequencyHz + peak.bandwidthHz,
                     static_cast<float>(width),

@@ -681,6 +681,14 @@ Control::NoEllipsisLookAndFeel::NoEllipsisLookAndFeel() {
     setColour(juce::TextButton::textColourOffId, juce::Colours::white);
 }
 
+void Control::NoEllipsisLookAndFeel::drawButtonBackground(juce::Graphics& graphics, juce::Button& button, const juce::Colour& backgroundColour, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) {
+    juce::Colour colorToUse = backgroundColour;
+    if (!button.isEnabled() && button.getClickingTogglesState()) {
+        colorToUse = juce::Colours::darkgrey;
+    }
+    LookAndFeel_V4::drawButtonBackground(graphics, button, colorToUse, shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
+}
+
 void Control::NoEllipsisLookAndFeel::drawButtonText(juce::Graphics& graphics, juce::TextButton& button, bool, bool) {
     graphics.setFont(getTextButtonFont(button, button.getHeight()));
 
