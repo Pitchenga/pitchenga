@@ -677,7 +677,7 @@ void Control::renameCurrentPreset() {
 }
 
 Control::NoEllipsisLookAndFeel::NoEllipsisLookAndFeel() {
-    setColour(juce::TextButton::buttonColourId, juce::Colours::black.withAlpha(0.4f));
+    setColour(juce::TextButton::buttonColourId, juce::Colours::white.withAlpha(0.2f));
     setColour(juce::TextButton::textColourOffId, juce::Colours::white);
 }
 
@@ -729,8 +729,9 @@ void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
     setupButton(button);
     button.setClickingTogglesState(true);
     button.setToggleState(initialState, juce::NotificationType::dontSendNotification);
+    button.setColour(juce::TextButton::buttonColourId, juce::Colours::black.withAlpha(0.4f));
     button.setColour(juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha(0.2f));
-    button.setColour(juce::TextButton::textColourOffId, juce::Colours::grey);
+    button.setColour(juce::TextButton::textColourOffId, juce::Colours::lightgrey);
     button.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
 }
 
