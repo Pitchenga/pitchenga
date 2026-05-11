@@ -1,4 +1,27 @@
-### Step 1: Create Certificate Signing Requests (CSRs)
+# Pitchenga Mac Distribution and Notarization
+
+### Create the App Record in App Store Connect
+
+Before you can upload to the Mac App Store, you must create an app record to receive the build.
+
+* Log in to [App Store Connect](https://appstoreconnect.apple.com/).
+* Go to **Apps** and click the **+** icon, then select **New App**.
+* Select **macOS** as the platform.
+* Enter the name: **Pitchenga**.
+* Select your primary language.
+* Select the Bundle ID: **com.github.pitchenga.Pitchenga**.
+* Enter a unique SKU (e.g., `pitchenga-mac-v1`).
+* Click **Create**.
+* Go to **App Information** \> **General Information** to find your **Apple ID** (numeric) for the `MAC_APP_ID` secret.
+
+### TestFlight for Mac
+
+* Once your MAS build is uploaded and processed, it will appear in the **TestFlight** tab of your app record.
+* You can invite internal or external testers to download the app via the **TestFlight app for Mac**.
+* This is the best way to verify that the **App Sandbox** and store-specific features are working correctly before
+  release.
+
+### Certificate Signing Requests (CSRs)
 
 Apple needs a cryptographic lock from your Mac for each certificate. **CRITICAL:** You must create a **unique** CSR for
 **each** certificate type (Application, Installer, and Distribution). Using the same CSR for multiple certificates will
@@ -13,7 +36,7 @@ cause them to "collapse" into a single identity on GitHub runners.
     * **Request is:** Select **Saved to disk**.
     * Save it with a unique name (e.g., `app.certSigningRequest`, `installer.certSigningRequest`).
 
-### Step 2: Generate the Certificates on Apple's Portal
+### Generate the Certificates on Apple's Portal
 
 To distribute Pitchenga, you need different sets of certificates depending on the destination:
 
@@ -37,7 +60,25 @@ For **each** of these:
 * Download the resulting `.cer` file.
 * **Repeat** for all required types.
 
-### Step 3: Install and Export the combined `.p12`
+### Generate the Provisioning Profile (For TestFlight/MAS)
+
+To upload your app to TestFlight, Apple requires a **Mac App Store Provisioning Profile** embedded in the app bundle. Since we are building manually without Xcode, you must download this profile from the Developer Portal.
+
+* Go to [developer.apple.com](https://developer.apple.com/) \> **Profiles**.
+* Click the blue **+** icon.
+* Under **Distribution**, select **Mac App Store**.
+* Select your **App ID** (`com.github.pitchenga.Pitchenga`).
+* Select the **Mac App Distribution** certificate you created earlier.
+* Name the profile `PitchengaMas`.
+* Download the profile.
+* Convert it to Base64:
+  ```bash
+  PROFILE="PitchengaMas.provisionprofile"; base64 -i $PROFILE | tee $PROFILE.txt | pbcopy
+  ```
+* Save the copied string as a new GitHub Secret named **`MAC_PROVISION_PROFILE`**.
+* Copy the downloaded file to the project as `.macprovisionprofile`.
+
+### Install and Export the combined `.p12`
 
 GitHub Actions needs both certificates in a single file to sign everything correctly.
 You can also include the **Apple Distribution** certificate in this same file if you are building for iOS.
@@ -77,7 +118,16 @@ final three text secrets to your GitHub repository to authenticate the uploads:
 * **`APPLE_PASSWORD`**: An app-specific password. Go to [appleid.apple.com](https://appleid.apple.com/),
   log in, go to the "App-Specific Passwords" section, generate one (call it "GitHub Actions"), and paste it here.
   Do not use your actual Apple ID login password.
-* **`APPLE_TEAM_ID`**: Your 10-character Team ID. You can find this in the top right corner of the Apple Developer portal under your name. This is used as the **ASC Provider** for App Store uploads.
+* **`APPLE_TEAM_ID`**: Your 10-character Team ID.
+  You can find this in the top right corner of the Apple Developer portal under your name.
+  This is used as the **ASC Provider** for App Store uploads.
+* **`MAC_APP_BUNDLE_ID`**: Your app's **string Bundle Identifier** (e.g., `com.example.MyApp.ABC123DEF456`).
+* **`MAC_APP_APPLE_ID`**: Your app's **numeric Apple ID** (e.g., `1234567890`). To find this:
+    * Go to [App Store Connect](https://appstoreconnect.apple.com/) \> **Apps**.
+    * Select **Pitchenga**.
+    * Go to **App Information** \> **General Information**.
+    * Copy the value next to **Apple ID**.
+* **`MAC_PROVISION_PROFILE`**: The Base64 string of your `.macprovisionprofile`.
 
 ## Troubleshooting
 
@@ -89,6 +139,7 @@ GitHub logs:
 ```bash
 TXT="apple-all.p12.txt"; PKSC="$TXT.p12"; wc -c "$TXT" && base64 -D -i "$TXT" -o "$PKSC" && md5 -q "$PKSC"; KEYCHAIN="temp.keychain"; security create-keychain -p t "$KEYCHAIN" && security import "$PKSC" -k "$KEYCHAIN" -T /usr/bin/codesign && security find-identity -v "$KEYCHAIN"; security delete-keychain "$KEYCHAIN"; rm -f "$PKSC"
 ```
+
 ### List your current identities
 
 ```
@@ -97,7 +148,19 @@ security find-identity -v
 
 ### Reset your Keychain Search List
 
+If your local identities are missing (`security find-identity -v` shows 0), your search list may have been corrupted by
+a script. Run this to restore it:
+
+```bash
+security list-keychains -d user -s ~/Library/Keychains/login.keychain-db /Library/Keychains/System.keychain
 ```
-security list-keychains -s ~/Library/Keychains/login.keychain-db /Library/Keychains/System.keychain
-```
+
+## Helper Scripts
+
+Several scripts are provided to automate the local build and publishing process:
+
+* **`create-mac-pkg.sh`**: Builds the standard macOS installer package.
+* **`create-mac-dmg.sh`**: Builds the portable macOS disk image.
+* **`create-mas-pkg.sh`**: Builds the sandboxed, signed package for the Mac App Store.
+* **`mas-testflight.sh`**: Combines building and publishing to TestFlight in one command.
 

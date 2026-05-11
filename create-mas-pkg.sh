@@ -5,8 +5,9 @@ set -euo pipefail
 artifactsDirectory=${1:-"cmake-build-release/Pitchenga_artefacts/Release"}
 outputPackage=${2:-"Pitchenga-macOS-AppStore.pkg"}
 version=${3:-"1.0.0"}
-applicationIdentity=${4:-"Apple Distribution"}
-installerIdentity=${5:-"3rd Party Mac Developer Installer"}
+bundleIdentifier=${4:-""}
+applicationIdentity=${5:-"Apple Distribution"}
+installerIdentity=${6:-"3rd Party Mac Developer Installer"}
 
 if [ "$version" == "1.0.0" ]; then
     version=$(bash version.sh)
@@ -16,8 +17,14 @@ echo "--- Creating macOS App Store Package ---"
 echo "Artifacts source:   $artifactsDirectory"
 echo "Output Package:     $outputPackage"
 echo "Version:            $version"
+echo "Bundle ID:          $bundleIdentifier"
 echo "App Identity:       $applicationIdentity"
 echo "Installer Identity: $installerIdentity"
+
+if [ -z "$bundleIdentifier" ]; then
+    echo "Error: bundleIdentifier must be provided."
+    exit 1
+fi
 
 originalAppPath="$artifactsDirectory/Standalone/Pitchenga.app"
 
@@ -38,6 +45,22 @@ stagedAppPath="$stagingDir/Pitchenga.app"
 
 # Ensure staged files are writable
 chmod -R +w "$stagedAppPath"
+
+# Find Info.plist (it might be missing in the bundle but present in JuceLibraryCode folder)
+plistPath="$stagedAppPath/Contents/Info.plist"
+if [ ! -f "$plistPath" ]; then
+    echo "Warning: Info.plist not found in bundle. Searching for fallback..."
+    # Attempt to find fallback in build artifacts
+    fallbackPlist=$(find "$(dirname "$artifactsDirectory")" -name "Info.plist" | grep "Pitchenga_Standalone" | head -n 1)
+    if [ -n "$fallbackPlist" ] && [ -f "$fallbackPlist" ]; then
+        echo "Found fallback Info.plist at $fallbackPlist"
+        mkdir -p "$(dirname "$plistPath")"
+        cp "$fallbackPlist" "$plistPath"
+    else
+        echo "Error: Could not find Info.plist for Standalone app."
+        exit 1
+    fi
+fi
 
 # MAS requires App Sandbox
 echo "Generating MAS entitlements..."
@@ -64,40 +87,67 @@ cat <<EOF > "$entitlementsPath"
 EOF
 
 echo "Injecting MAS metadata into Info.plist..."
-plistPath="$stagedAppPath/Contents/Info.plist"
-# Ensure the directory and file are writable
-chmod +w "$stagingDir/Pitchenga.app/Contents"
-chmod +w "$plistPath"
 plutil -replace CFBundleSupportedPlatforms -json '["MacOSX"]' "$plistPath"
 plutil -replace LSApplicationCategoryType -string "public.app-category.music" "$plistPath"
+plutil -replace LSMinimumSystemVersion -string "10.15" "$plistPath"
+
+# Bypass App Store Connect Export Compliance prompt
+plutil -replace ITSAppUsesNonExemptEncryption -bool false "$plistPath"
+
+# Set the Bundle Identifier
+plutil -replace CFBundleIdentifier -string "$bundleIdentifier" "$plistPath"
+
+# Ensure version matches the package
+plutil -replace CFBundleVersion -string "$version" "$plistPath"
+plutil -replace CFBundleShortVersionString -string "$version" "$plistPath"
+
+echo "Using Bundle Identifier: $(plutil -extract CFBundleIdentifier raw "$plistPath")"
+
+echo "Embedding Provisioning Profile..."
+profilePath=".macprovisionprofile"
+if [ -f "$profilePath" ]; then
+    cp "$profilePath" "$stagedAppPath/Contents/embedded.provisionprofile"
+    
+    # Extract identifiers from profile to inject into entitlements
+    echo "Extracting profile entitlements..."
+    if ! security cms -D -i "$profilePath" > "$stagingDir/profile.plist" 2>/dev/null; then
+        echo "ERROR: Failed to read .macprovisionprofile. The file is likely corrupted (e.g., saved as text instead of binary)."
+        echo "Please re-download the profile directly from Apple Developer and DO NOT open/copy-paste its contents."
+        exit 1
+    fi
+    
+    # Note: Plutil requires escaping dots in key paths
+    appIdentifier=$(plutil -extract 'Entitlements.com\.apple\.application-identifier' raw "$stagingDir/profile.plist" 2>/dev/null || echo "")
+    teamIdentifier=$(plutil -extract 'Entitlements.com\.apple\.developer\.team-identifier' raw "$stagingDir/profile.plist" 2>/dev/null || echo "")
+    
+    if [ -n "$appIdentifier" ] && [ "$appIdentifier" != "No value" ]; then
+        plutil -insert 'com\.apple\.application-identifier' -string "$appIdentifier" "$entitlementsPath" || true
+    fi
+    if [ -n "$teamIdentifier" ] && [ "$teamIdentifier" != "No value" ]; then
+        plutil -insert 'com\.apple\.developer\.team-identifier' -string "$teamIdentifier" "$entitlementsPath" || true
+    fi
+else
+    echo "ERROR: No provisioning profile found at $profilePath."
+    echo "TestFlight requires an embedded.provisionprofile for Mac App Store builds."
+    exit 1
+fi
+
+echo "Removing extended attributes (like quarantine)..."
+xattr -rc "$stagedAppPath"
 
 echo "Signing app for Mac App Store..."
 codesign --force --deep --options runtime --timestamp \
+    --identifier "$bundleIdentifier" \
     --sign "$applicationIdentity" \
     --entitlements "$entitlementsPath" \
     "$stagedAppPath"
 
 echo "Building store-bound package..."
-# For MAS, we must ensure relocation is disabled to avoid "nothing installed" errors
-# We use a temporary root folder pattern for pkgbuild
-masRoot="$stagingDir/pkg_root"
-mkdir -p "$masRoot/Applications"
-cp -R "$stagedAppPath" "$masRoot/Applications/"
-
-componentPlist="$stagingDir/component.plist"
-pkgbuild --analyze --root "$masRoot" "$componentPlist"
-sed -i '' 's/<key>BundleIsRelocatable<\/key>.*<true\/>/<key>BundleIsRelocatable<\/key><false\/>/' "$componentPlist"
-
-# Create a temporary component pkg
-pkgbuild --root "$masRoot" \
-    --install-location "/" \
-    --version "$version" \
-    --component-plist "$componentPlist" \
-    "$stagingDir/component.pkg"
-
-# Wrap it in a signed product package
-productbuild --package "$stagingDir/component.pkg" \
+# App Store Connect strictly requires the metadata generated by productbuild --component.
+# (The pkgbuild/Distribution method strips product metadata and OS versions).
+productbuild --component "$stagedAppPath" /Applications \
     --sign "$installerIdentity" \
+    --version "$version" \
     "$outputPackage"
 
 # Clean up

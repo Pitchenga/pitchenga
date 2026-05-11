@@ -1,5 +1,5 @@
 name: Build and Release
-run-name: "PITCHENGA RELEASE ${{ github.ref_name }} - ${{ github.event.head_commit.timestamp }} - ${{ github.sha }}"
+run-name: "### PITCHENGA RELEASE ${{ github.ref_name }} - ${{ github.event.head_commit.timestamp }} - ${{ github.sha }}"
 
 on:
   push:
@@ -53,7 +53,9 @@ jobs:
           # Import and check output
           security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
 
-          security list-keychains -d user -s $KEYCHAIN_PATH
+          # Append the temporary keychain to the search list instead of replacing it.
+          # This prevents persistent changes to the search list on self-hosted runners.
+          security list-keychains -d user -s $KEYCHAIN_PATH $(security list-keychains -d user | xargs)
 
           # Authorize codesign and productbuild to access the keys
           security set-key-partition-list -S apple-tool:,apple:,codesign:,productbuild: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
@@ -101,12 +103,12 @@ jobs:
           cd ../../../
           
           # Create the Installer PKG
-          ./create-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-unsigned.pkg "${{ github.ref_name }}"
+          ./create-mac-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-unsigned.pkg "${{ github.ref_name }}"
           productsign --sign "Developer ID Installer" Pitchenga-unsigned.pkg Pitchenga-macOS-Installer.pkg
           rm Pitchenga-unsigned.pkg
 
           # Create the Portable DMG
-          ./create-dmg.sh build/Pitchenga_artefacts/Release Pitchenga-macOS-Portable.dmg
+          ./create-mac-dmg.sh build/Pitchenga_artefacts/Release Pitchenga-macOS-Portable.dmg
           codesign --force --timestamp --sign "Developer ID Application" Pitchenga-macOS-Portable.dmg
 
           # Notarize both artifacts
@@ -123,24 +125,13 @@ jobs:
           xcrun stapler staple build/Pitchenga_artefacts/Release/AU/Pitchenga.component
           xcrun stapler staple build/Pitchenga_artefacts/Release/VST3/Pitchenga.vst3
 
-          # Mac App Store (MAS) Build & Upload
+          # Mac App Store (MAS) Build & Upload to TestFlight
           # Note: Plugins (AU/VST3) cannot be distributed via MAS.
-          ./create-mas-pkg.sh build/Pitchenga_artefacts/Release Pitchenga-macOS-AppStore.pkg "${{ github.ref_name }}"
-
-          # Diagnostic: List providers to confirm credentials and find the correct Short Name/Public ID.
-          xcrun altool --list-providers --username "$APPLE_ID" --password "$APPLE_PASSWORD"
-
-          # Upload to App Store Connect
-          # Using --username and --password (app-specific) along with --asc-provider for authentication.
-          # Explicitly providing bundle metadata for reliable identification.
-          xcrun altool --upload-package Pitchenga-macOS-AppStore.pkg \
-            --type osx \
-            --username "$APPLE_ID" \
-            --password "$APPLE_PASSWORD" \
-            --asc-provider "$APPLE_TEAM_ID" \
-            --bundle-id "com.github.pitchenga.Pitchenga" \
-            --bundle-version "${{ github.ref_name }}" \
-            --bundle-short-version-string "${{ github.ref_name }}"
+          echo -n "${{ secrets.MAC_PROVISION_PROFILE }}" | base64 --decode -o .macprovisionprofile
+          
+          export MAC_APP_BUNDLE_ID="${{ secrets.MAC_APP_BUNDLE_ID }}"
+          export MAC_APP_APPLE_ID="${{ secrets.MAC_APP_APPLE_ID }}"
+          ./mas-testflight.sh "${{ github.ref_name }}"
 
       - name: Windows Artifacts
         if: runner.os == 'Windows'

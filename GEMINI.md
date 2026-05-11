@@ -47,3 +47,5 @@ Pitchenga is a real-time music visualization application and audio plugin.
 - CRITICAL: NEVER hard-code sizes for visual components - ALWAYS use their intrinsic sizes instead.
 - CRITICAL: ALWAYS use named constants rather than hard-coded values.
 - CRITICAL: ALWAYS declare the named constants in the header file.
+- CRITICAL: Do NOT expose private identifiers in files submitted to version control (including documentation):
+  this is a public repo. For private identifiers, key, and passwords use GitHub secrets and local .env file.

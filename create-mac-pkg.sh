@@ -54,8 +54,13 @@ build_component() {
         # Use sed to set BundleIsRelocatable to false
         sed -i '' 's/<key>BundleIsRelocatable<\/key>.*<true\/>/<key>BundleIsRelocatable<\/key><false\/>/' "$plist_path"
         
+        # Derive identifier from the bundle name
+        local identifier
+        identifier="com.github.pitchenga.$(basename "$bundle_name" | sed 's/\..*//')"
+
         # Build the component package using the temporary root
         pkgbuild --root "$temp_root" \
+          --identifier "$identifier" \
           --component-plist "$plist_path" \
           --version "$VERSION" \
           "$STAGING_DIR/components/$pkg_name"

@@ -52,3 +52,6 @@ jpitchenga
 /Pitchenga_macOS_Staging
 /mas_staging
 /pkg_staging
+*.pkg
+*.dmg
+.macprovisionprofile
