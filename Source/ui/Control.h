@@ -76,7 +76,7 @@ public:
     // Callback so the Editor knows when the user clicked a toggle
     std::function<void()> onVisibilityChanged;
 
-    static inline const juce::String presetsDirectoryName = "presets";
+    static inline const juce::String presetsFolderName = "presets";
     static inline const juce::String userDefaultPresetFileName = "Default.xml";
 
 private:

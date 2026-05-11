@@ -40,7 +40,7 @@ PitchengaAudioProcessor::~PitchengaAudioProcessor() {
 void PitchengaAudioProcessor::loadDefaultSettings() {
     // Attempt to load user-default.xml from the "presets" sub-folder
     const auto appDataDir = Util::getApplicationFolder();
-    const auto presetsDir = appDataDir.getChildFile(Control::presetsDirectoryName);
+    const auto presetsDir = appDataDir.getChildFile(Control::presetsFolderName);
     const auto userDefaultFile = presetsDir.getChildFile(Control::userDefaultPresetFileName);
 
     if (userDefaultFile.existsAsFile()) {

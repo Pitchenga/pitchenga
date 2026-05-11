@@ -261,7 +261,7 @@ Control::Control(PitchengaAudioProcessor& proc)
             if (xml != nullptr) xml->setTagName(getSettingsTagName());
         } else if (id == userDefaultPresetId) {
             const auto appDataDir = Util::getApplicationFolder();
-            newPresetFile = appDataDir.getChildFile(presetsDirectoryName).getChildFile(userDefaultPresetFileName);
+            newPresetFile = appDataDir.getChildFile(presetsFolderName).getChildFile(userDefaultPresetFileName);
             newPresetName = userDefaultPresetName;
 
             if (newPresetFile.existsAsFile()) {
@@ -304,7 +304,7 @@ Control::Control(PitchengaAudioProcessor& proc)
 
     // Ensure Default.xml exists, create from factory if missing
     const auto appDataDir = Util::getApplicationFolder();
-    const auto presetsDir = appDataDir.getChildFile(presetsDirectoryName);
+    const auto presetsDir = appDataDir.getChildFile(presetsFolderName);
     const auto defaultFile = presetsDir.getChildFile(userDefaultPresetFileName);
     if (!defaultFile.existsAsFile()) {
         const auto factoryXml = juce::XmlDocument::parse(
@@ -316,7 +316,19 @@ Control::Control(PitchengaAudioProcessor& proc)
         if (factoryXml != nullptr) {
             factoryXml->setTagName(getSettingsTagName());
             if (presetsDir.createDirectory()) {
-                factoryXml->writeTo(defaultFile);
+                if (!factoryXml->writeTo(defaultFile)) {
+                    juce::AlertWindow::showMessageBoxAsync(
+                        juce::MessageBoxIconType::WarningIcon,
+                        "Permission Error",
+                        "Failed to write " + defaultFile.getFullPathName()
+                    );
+                }
+            } else {
+                juce::AlertWindow::showMessageBoxAsync(
+                    juce::MessageBoxIconType::WarningIcon,
+                    "Permission Error",
+                    "Failed to create directory: " + presetsDir.getFullPathName()
+                );
             }
         }
     }
@@ -373,7 +385,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                     if (result != 0 && safeThis != nullptr) {
                         if (presetName == safeThis->userDefaultPresetName) {
                             safeThis->currentPresetFile = Util::getApplicationFolder()
-                                .getChildFile(safeThis->presetsDirectoryName)
+                                .getChildFile(safeThis->presetsFolderName)
                                 .getChildFile(safeThis->userDefaultPresetFileName);
                         }
                         safeThis->saveCurrentPreset();
@@ -399,7 +411,7 @@ Control::Control(PitchengaAudioProcessor& proc)
 
         chooser = std::make_unique<juce::FileChooser>(
             "Select where to save the settings...",
-            Util::getApplicationFolder().getChildFile(presetsDirectoryName).getChildFile(suggestedName),
+            Util::getApplicationFolder().getChildFile(presetsFolderName).getChildFile(suggestedName),
             "*.xml"
         );
 
@@ -939,7 +951,7 @@ void Control::refreshPresets() {
 
     presets.clear();
     const auto appDataDir = Util::getApplicationFolder();
-    const auto presetsDir = appDataDir.getChildFile(presetsDirectoryName);
+    const auto presetsDir = appDataDir.getChildFile(presetsFolderName);
     if (presetsDir.exists()) {
         juce::Array<juce::File> files;
         presetsDir.findChildFiles(files, juce::File::findFiles, false, "*.xml");
