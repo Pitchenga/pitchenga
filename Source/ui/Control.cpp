@@ -678,9 +678,7 @@ void Control::renameCurrentPreset() {
 
 Control::NoEllipsisLookAndFeel::NoEllipsisLookAndFeel() {
     setColour(juce::TextButton::buttonColourId, juce::Colours::black.withAlpha(0.4f));
-    setColour(juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha(0.2f));
-    setColour(juce::TextButton::textColourOffId, juce::Colours::white.withAlpha(0.5f));
-    setColour(juce::TextButton::textColourOnId, juce::Colours::white);
+    setColour(juce::TextButton::textColourOffId, juce::Colours::white);
 }
 
 void Control::NoEllipsisLookAndFeel::drawButtonText(juce::Graphics& graphics, juce::TextButton& button, bool, bool) {
@@ -689,12 +687,12 @@ void Control::NoEllipsisLookAndFeel::drawButtonText(juce::Graphics& graphics, ju
     const bool isToggle = button.getClickingTogglesState();
     const bool isOn = button.getToggleState();
 
-    // Use On colour for non-toggle buttons or when a toggle button is active
-    auto colour = button.findColour(
-        (!isToggle || isOn)
-            ? juce::TextButton::textColourOnId
-            : juce::TextButton::textColourOffId
-    );
+    juce::Colour colour;
+    if (isToggle) {
+        colour = button.findColour(isOn ? juce::TextButton::textColourOnId : juce::TextButton::textColourOffId);
+    } else {
+        colour = button.findColour(juce::TextButton::textColourOffId);
+    }
 
     graphics.setColour(colour.withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.5f));
 
@@ -731,6 +729,9 @@ void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
     setupButton(button);
     button.setClickingTogglesState(true);
     button.setToggleState(initialState, juce::NotificationType::dontSendNotification);
+    button.setColour(juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha(0.2f));
+    button.setColour(juce::TextButton::textColourOffId, juce::Colours::grey);
+    button.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
 }
 
 void Control::updateVisibilityFromState() {
