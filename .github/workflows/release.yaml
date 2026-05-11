@@ -131,6 +131,7 @@ jobs:
           
           export MAC_APP_BUNDLE_ID="${{ secrets.MAC_APP_BUNDLE_ID }}"
           export MAC_APP_APPLE_ID="${{ secrets.MAC_APP_APPLE_ID }}"
+          export ARTIFACTS_DIR="build/Pitchenga_artefacts/Release"
           ./mas-testflight.sh "${{ github.ref_name }}"
 
       - name: Windows Artifacts
