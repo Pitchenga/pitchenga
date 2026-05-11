@@ -12,7 +12,7 @@ if [ "$VERSION" == "1.0.0" ]; then
     VERSION=$(bash version.sh)
 fi
 
-export ARTIFACTS_DIR="cmake-build-release/Pitchenga_artefacts/Release"
+export ARTIFACTS_DIR="${ARTIFACTS_DIR:-cmake-build-release/Pitchenga_artefacts/Release}"
 export OUTPUT_PKG="Pitchenga-macOS-TestFlight.pkg"
 
 # Check for required identifiers and credentials
