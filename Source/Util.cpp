@@ -22,11 +22,13 @@ juce::File Util::getApplicationFolder() {
     if (passwd != nullptr && passwd->pw_dir != nullptr) {
         auto applicationFolder = juce::File(juce::String(passwd->pw_dir))
             .getChildFile("Library/Pitchenga");
+        debug("applicationFolder=" + applicationFolder.getFullPathName());
         return applicationFolder;
     }
 #endif
     auto applicationFolder = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
         .getChildFile("Pitchenga");
+    debug("applicationFolder=" + applicationFolder.getFullPathName());
     return applicationFolder;
 }
 
@@ -70,25 +72,26 @@ void Util::init() {
 }
 
 void Util::debug(const juce::String& message) {
-    const auto fullMessage = "[" + startTimestamp + "][" + getTimestamp() + "] " + message;
-    std::cout << fullMessage.toStdString() << std::endl;
+    if (debugLogEnabled) {
+        const auto fullMessage = "[" + startTimestamp + "][" + getTimestamp() + "] " + message;
+        std::cout << fullMessage.toStdString() << std::endl;
 
-    if (debugLogEnabled && createFile()) {
-        logFile.appendText(fullMessage + "\n");
+        if (createFile()) logFile.appendText(fullMessage + "\n");
     }
 }
 
 bool Util::createFile() {
     if (!logFile.getParentDirectory().exists()) {
         if (!logFile.getParentDirectory().createDirectory()) {
-            std::cout << "[Util] FAILED creating directory=" << logFile.getParentDirectory().getFullPathName().toStdString() << std::endl;
+            std::cout << "Failed creating folder="
+                << logFile.getParentDirectory().getFullPathName().toStdString() << std::endl;
             return false;
         }
     }
     if (!logFile.exists()) {
         auto result = logFile.create();
         if (!result) {
-            std::cout << "[Util] FAILED creating logFile=" << logFile.getFullPathName().toStdString() << std::endl;
+            std::cout << "Failed creating logFile=" << logFile.getFullPathName().toStdString() << std::endl;
         }
         return result;
     }

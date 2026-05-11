@@ -318,14 +318,14 @@ Control::Control(PitchengaAudioProcessor& proc)
                     juce::AlertWindow::showMessageBoxAsync(
                         juce::MessageBoxIconType::WarningIcon,
                         "Permission Error",
-                        "Failed to write " + defaultFile.getFullPathName()
+                        "Failed writing file: " + defaultFile.getFullPathName()
                     );
                 }
             } else {
                 juce::AlertWindow::showMessageBoxAsync(
                     juce::MessageBoxIconType::WarningIcon,
                     "Permission Error",
-                    "Failed to create directory: " + presetsDir.getFullPathName()
+                    "Failed creating directory: " + presetsDir.getFullPathName()
                 );
             }
         }
@@ -372,7 +372,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         if (presetName == factoryDefaultPresetName || currentPresetFile == juce::File()) {
             presetName = userDefaultPresetName;
         }
-        juce::Component::SafePointer<Control> safeThis(this);
+        SafePointer safeThis(this);
         juce::AlertWindow::showOkCancelBox(
             juce::MessageBoxIconType::QuestionIcon,
             saveConfirmTitle,
@@ -950,20 +950,19 @@ void Control::refreshPresets() {
     comboPresets.addSeparator();
 
     presets.clear();
-    const auto appDataDir = Util::getApplicationFolder();
-    const auto presetsDir = appDataDir.getChildFile(presetsFolderName);
+    const auto applicationFolder = Util::getApplicationFolder();
+    const auto presetsFolder = applicationFolder.getChildFile(presetsFolderName);
 
-    juce::Array<juce::File> files;
-    const bool folderExists = presetsDir.exists();
-
+    const bool folderExists = presetsFolder.exists();
     if (folderExists) {
-        presetsDir.findChildFiles(files, juce::File::findFiles, false, "*.xml");
+        juce::Array<juce::File> files;
+        presetsFolder.findChildFiles(files, juce::File::findFiles, false, "*.xml");
 
         // If the folder exists but no XML files (even Default.xml) are found, 
         // it means enumeration is blocked, redirected, or actually empty.
         // We use a write-test to distinguish between a legitimate empty folder and a sandbox block.
         if (files.isEmpty()) {
-            auto dummyFile = presetsDir.getChildFile("sandbox_test.tmp");
+            auto dummyFile = presetsFolder.getChildFile("sandbox_test.tmp");
             if (dummyFile.create().wasOk()) {
                 bool deleted = dummyFile.deleteFile();
                 if (!deleted) {
@@ -973,7 +972,7 @@ void Control::refreshPresets() {
                 juce::AlertWindow::showMessageBoxAsync(
                     juce::MessageBoxIconType::WarningIcon,
                     "Access Error",
-                    "The presets folder is inaccessible (Permission Denied).\nPath: " + presetsDir.getFullPathName()
+                    "Failed accessing presets folder: " + presetsFolder.getFullPathName()
                 );
             }
         }
