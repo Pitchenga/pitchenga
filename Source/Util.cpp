@@ -1,10 +1,6 @@
 #include "Util.h"
 #include <mutex>
 
-#if JUCE_MAC || JUCE_IOS
-#include "UtilMac.h"
-#endif
-
 #include "version.h"
 
 bool Util::debugLogEnabled = true;
@@ -13,11 +9,7 @@ bool Util::debugLogEnabled = true;
 juce::String Util::startTimestamp;
 
 juce::File Util::getApplicationDirectory() {
-#if JUCE_MAC || JUCE_IOS
-    return UtilMac::getSharedApplicationDirectory();
-#else
     return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
-#endif
 }
 
 juce::File Util::logFile;

@@ -204,7 +204,6 @@ if (APPLE)
     target_link_libraries(Pitchenga PRIVATE
             "-framework CoreMedia"
             "-framework AVFoundation")
-    target_sources(Pitchenga PRIVATE Source/UtilMac.mm)
 
     if (TARGET Pitchenga_Standalone)
         target_link_libraries(Pitchenga_Standalone PRIVATE "-framework ScreenCaptureKit")

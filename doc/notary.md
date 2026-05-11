@@ -60,25 +60,6 @@ For **each** of these:
 * Download the resulting `.cer` file.
 * **Repeat** for all required types.
 
-### Configure Shared App Groups (For Presets & Logs)
-
-To allow your Mac App Store app (which is strictly sandboxed) to share presets and logs with your AU/VST3 plugins, you
-must register a shared App Group.
-
-* Go to [developer.apple.com](https://developer.apple.com/) \> **Certificates, IDs & Profiles**.
-* On the left sidebar, click **Identifiers**.
-* Click the blue **+** icon and select **App Groups**, then click **Continue**.
-* **Description**: Pitchenga Shared Data.
-* **Identifier**: `group.com.github.pitchenga`
-* Click **Continue** and then **Register**.
-* Go back to the **Identifiers** list.
-* Use the filter dropdown near the top right to select **App IDs**.
-* Click on your app (`com.github.pitchenga.Pitchenga`).
-* Scroll down the **Capabilities** list and check the box next to **App Groups**.
-* Click the **Configure** button on that row.
-* Check the box next to the `group.com.github.pitchenga` group you just created and click **Continue**.
-* Click **Save** at the top right of the page.
-
 ### Generate the Provisioning Profile (For TestFlight/MAS)
 
 To upload your app to TestFlight, Apple requires a **Mac App Store Provisioning Profile** embedded in the app bundle.
