@@ -678,21 +678,54 @@ void Control::renameCurrentPreset() {
     );
 }
 
+Control::NoEllipsisLookAndFeel::NoEllipsisLookAndFeel() {
+    setColour(juce::TextButton::buttonColourId, juce::Colours::black.withAlpha(0.4f));
+    setColour(juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha(0.2f));
+    setColour(juce::TextButton::textColourOffId, juce::Colours::grey);
+    setColour(juce::TextButton::textColourOnId, juce::Colours::white);
+}
+
+void Control::NoEllipsisLookAndFeel::drawButtonText(juce::Graphics& g, juce::TextButton& button, bool, bool) {
+    auto font = getTextButtonFont(button, button.getHeight());
+    g.setFont(font);
+    g.setColour(
+        button.findColour(
+            button.getToggleState()
+                ? juce::TextButton::textColourOnId
+                : juce::TextButton::textColourOffId
+        )
+        .withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.5f)
+    );
+
+    const int yIndent = juce::jmin(4, button.proportionOfHeight(0.3f));
+    const int textWidth = button.getWidth();
+
+    if (textWidth > 0) {
+        // Use drawText with useEllipsis = false to prevent "..." truncation
+        g.drawText(
+            button.getButtonText(),
+            0,
+            yIndent,
+            textWidth,
+            button.getHeight() - yIndent * 2,
+            juce::Justification::centred,
+            false
+        );
+    }
+}
+
 void Control::setupButton(juce::TextButton& button) {
+    button.setLookAndFeel(&noEllipsisLookAndFeel);
     button.setConnectedEdges(
         juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight |
         juce::Button::ConnectedOnTop | juce::Button::ConnectedOnBottom
     );
-    button.setColour(juce::TextButton::buttonColourId, juce::Colours::black.withAlpha(0.4f));
-    button.setColour(juce::TextButton::textColourOffId, juce::Colours::grey);
 }
 
 void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
     setupButton(button);
     button.setClickingTogglesState(true);
     button.setToggleState(initialState, juce::NotificationType::dontSendNotification);
-    button.setColour(juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha(0.2f));
-    button.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
 }
 
 void Control::updateVisibilityFromState() {

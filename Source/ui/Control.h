@@ -123,8 +123,16 @@ private:
     void saveCurrentPreset();
     void deleteCurrentPreset();
     void renameCurrentPreset();
-    static void setupButton(juce::TextButton& button);
-    static void setupToggleButton(juce::TextButton& button, bool initialState);
+
+    struct NoEllipsisLookAndFeel : juce::LookAndFeel_V4 {
+        NoEllipsisLookAndFeel();
+        void drawButtonText(juce::Graphics& g, juce::TextButton& button, bool isMouseOverButton, bool isButtonDown) override;
+    };
+
+    NoEllipsisLookAndFeel noEllipsisLookAndFeel;
+
+    void setupButton(juce::TextButton& button);
+    void setupToggleButton(juce::TextButton& button, bool initialState);
     void updateButtonStates();
 
     PitchengaAudioProcessor& processor;
