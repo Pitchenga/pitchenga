@@ -228,11 +228,13 @@ Control::Control(PitchengaAudioProcessor& proc)
         }
     };
 
+    setupButton(buttonPlugs);
     buttonPlugs.setButtonText(plugs);
     buttonPlugs.onClick = [this] {
         showPlugsMenu();
     };
 
+    setupButton(buttonPlug);
     buttonPlug.setButtonText(plug);
     buttonPlug.onClick = [this] {
         processor.showExternalPluginEditor();
@@ -353,6 +355,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
+    setupButton(buttonSave);
     buttonSave.setButtonText(save);
     buttonSave.onClick = [this] {
         auto presetName = comboPresets.getText();
@@ -382,6 +385,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         );
     };
 
+    setupButton(buttonSaveAs);
     buttonSaveAs.setButtonText(saveAs);
     buttonSaveAs.onClick = [this] {
         const juce::String currentName = comboPresets.getText();
@@ -435,6 +439,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         );
     };
 
+    setupButton(buttonDelete);
     buttonDelete.setButtonText(deletePreset);
     buttonDelete.onClick = [this] {
         if (currentPresetFile == juce::File()) {
@@ -459,6 +464,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         );
     };
 
+    setupButton(buttonRename);
     buttonRename.setButtonText(rename);
     buttonRename.onClick = [this] {
         if (currentPresetFile == juce::File()) {
@@ -618,7 +624,8 @@ void Control::renameCurrentPreset() {
                 if (result == 1 && safeThis != nullptr) {
                     juce::String newName = alert->getTextEditorContents("name").trim();
                     if (newName.isNotEmpty() && newName != safeThis->currentPresetFile.getFileNameWithoutExtension()) {
-                        juce::File newFile = safeThis->currentPresetFile.getSiblingFile(newName).withFileExtension(".xml");
+                        juce::File newFile = safeThis->currentPresetFile.getSiblingFile(newName)
+                            .withFileExtension(".xml");
 
                         auto doRename = [safeThis, newFile, newName]() {
                             if (newFile.existsAsFile() && newFile != safeThis->currentPresetFile) {
@@ -653,11 +660,13 @@ void Control::renameCurrentPreset() {
                                 "Overwrite",
                                 "Cancel",
                                 nullptr,
-                                juce::ModalCallbackFunction::create([doRename](int overwriteResult) {
-                                    if (overwriteResult != 0) {
-                                        doRename();
+                                juce::ModalCallbackFunction::create(
+                                    [doRename](int overwriteResult) {
+                                        if (overwriteResult != 0) {
+                                            doRename();
+                                        }
                                     }
-                                })
+                                )
                             );
                         } else {
                             doRename();
@@ -669,12 +678,20 @@ void Control::renameCurrentPreset() {
     );
 }
 
+void Control::setupButton(juce::TextButton& button) {
+    button.setConnectedEdges(
+        juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight |
+        juce::Button::ConnectedOnTop | juce::Button::ConnectedOnBottom
+    );
+    button.setColour(juce::TextButton::buttonColourId, juce::Colours::black.withAlpha(0.4f));
+    button.setColour(juce::TextButton::textColourOffId, juce::Colours::grey);
+}
+
 void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
+    setupButton(button);
     button.setClickingTogglesState(true);
     button.setToggleState(initialState, juce::NotificationType::dontSendNotification);
-    button.setColour(juce::TextButton::buttonColourId, juce::Colours::black.withAlpha(0.4f));
     button.setColour(juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha(0.2f));
-    button.setColour(juce::TextButton::textColourOffId, juce::Colours::grey);
     button.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
 }
 
@@ -791,7 +808,10 @@ void Control::resized() {
     positionButton(toggleLayoutPivot, topRow);
 
     topRow.removeFromLeft(4);
-    const float versionWidth = juce::GlyphArrangement::getStringWidth(buildTimestampLabel.getFont(), buildTimestampLabel.getText());
+    const float versionWidth = juce::GlyphArrangement::getStringWidth(
+        buildTimestampLabel.getFont(),
+        buildTimestampLabel.getText()
+    );
     buildTimestampLabel.setBounds(topRow.removeFromLeft(static_cast<int>(std::ceil(versionWidth)) + 4));
 
     // Position presets and tweak from the right
@@ -988,6 +1008,3 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
 
     return true;
 }
-
-
-

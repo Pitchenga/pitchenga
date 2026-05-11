@@ -123,6 +123,7 @@ private:
     void saveCurrentPreset();
     void deleteCurrentPreset();
     void renameCurrentPreset();
+    static void setupButton(juce::TextButton& button);
     static void setupToggleButton(juce::TextButton& button, bool initialState);
     void updateButtonStates();
 
