@@ -326,8 +326,6 @@ Control::Control(PitchengaAudioProcessor& proc)
         const auto presetName = processor.settings.currentPresetName;
         if (presetName == userDefaultPresetName) {
             comboPresets.setSelectedId(userDefaultPresetId, juce::NotificationType::dontSendNotification);
-            const auto appDataDir = Util::getApplicationDirectory();
-            const auto presetsDir = appDataDir.getChildFile(presetsDirectoryName);
             currentPresetFile = presetsDir.getChildFile(userDefaultPresetFileName);
         } else if (presetName == factoryDefaultPresetName) {
             comboPresets.setSelectedId(factoryDefaultPresetId, juce::NotificationType::dontSendNotification);
