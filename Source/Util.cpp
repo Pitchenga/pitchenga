@@ -13,22 +13,22 @@ bool Util::debugLogEnabled = true;
 
 juce::String Util::startTimestamp;
 
-juce::File Util::getApplicationDirectory() {
+juce::File Util::getApplicationFolder() {
 #if JUCE_MAC
     // In a sandboxed macOS app, standard JUCE/macOS APIs return the sandboxed Container directory.
     // To access the shared folder granted via temporary-exception, we must get the real home directory using POSIX APIs.
     passwd* passwd = getpwuid(getuid());
     if (passwd != nullptr && passwd->pw_dir != nullptr) {
-        auto applicationDirectory = juce::File(juce::String(passwd->pw_dir))
+        auto applicationFolder = juce::File(juce::String(passwd->pw_dir))
             .getChildFile("Library/Pitchenga");
-        debug("applicationDirectory=" + applicationDirectory.getFullPathName());
-        return applicationDirectory;
+        debug("applicationFolder=" + applicationFolder.getFullPathName());
+        return applicationFolder;
     }
 #endif
-    auto applicationDirectory = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+    auto applicationFolder = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
         .getChildFile("Pitchenga");
-    debug("applicationDirectory=" + applicationDirectory.getFullPathName());
-    return applicationDirectory;
+    debug("applicationFolder=" + applicationFolder.getFullPathName());
+    return applicationFolder;
 }
 
 juce::File Util::logFile;
@@ -45,7 +45,7 @@ void Util::init() {
         initFlag,
         []() {
             startTimestamp = getTimestamp();
-            const auto logsDirectory = getApplicationDirectory().getChildFile("logs");
+            const auto logsDirectory = getApplicationFolder().getChildFile("logs");
             logFile = logsDirectory.getChildFile("pitchenga-" + startTimestamp + ".log");
 
             juce::Thread::launch(

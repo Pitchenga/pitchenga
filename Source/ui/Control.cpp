@@ -260,7 +260,7 @@ Control::Control(PitchengaAudioProcessor& proc)
             );
             if (xml != nullptr) xml->setTagName(getSettingsTagName());
         } else if (id == userDefaultPresetId) {
-            const auto appDataDir = Util::getApplicationDirectory();
+            const auto appDataDir = Util::getApplicationFolder();
             newPresetFile = appDataDir.getChildFile(presetsDirectoryName).getChildFile(userDefaultPresetFileName);
             newPresetName = userDefaultPresetName;
 
@@ -303,7 +303,7 @@ Control::Control(PitchengaAudioProcessor& proc)
     refreshPresets();
 
     // Ensure Default.xml exists, create from factory if missing
-    const auto appDataDir = Util::getApplicationDirectory();
+    const auto appDataDir = Util::getApplicationFolder();
     const auto presetsDir = appDataDir.getChildFile(presetsDirectoryName);
     const auto defaultFile = presetsDir.getChildFile(userDefaultPresetFileName);
     if (!defaultFile.existsAsFile()) {
@@ -372,7 +372,7 @@ Control::Control(PitchengaAudioProcessor& proc)
                 [safeThis, presetName](int result) {
                     if (result != 0 && safeThis != nullptr) {
                         if (presetName == safeThis->userDefaultPresetName) {
-                            safeThis->currentPresetFile = Util::getApplicationDirectory()
+                            safeThis->currentPresetFile = Util::getApplicationFolder()
                                 .getChildFile(safeThis->presetsDirectoryName)
                                 .getChildFile(safeThis->userDefaultPresetFileName);
                         }
@@ -399,7 +399,7 @@ Control::Control(PitchengaAudioProcessor& proc)
 
         chooser = std::make_unique<juce::FileChooser>(
             "Select where to save the settings...",
-            Util::getApplicationDirectory().getChildFile(presetsDirectoryName).getChildFile(suggestedName),
+            Util::getApplicationFolder().getChildFile(presetsDirectoryName).getChildFile(suggestedName),
             "*.xml"
         );
 
@@ -915,7 +915,7 @@ void Control::refreshPresets() {
     comboPresets.addSeparator();
 
     presets.clear();
-    const auto appDataDir = Util::getApplicationDirectory();
+    const auto appDataDir = Util::getApplicationFolder();
     const auto presetsDir = appDataDir.getChildFile(presetsDirectoryName);
     if (presetsDir.exists()) {
         juce::Array<juce::File> files;
