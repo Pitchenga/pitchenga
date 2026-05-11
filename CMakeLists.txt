@@ -73,8 +73,8 @@ juce_add_plugin(Pitchenga
         VERSION "${PITCHENGA_VERSION}"
         COMPANY_NAME "Pitchenga"
         BUNDLE_ID "com.github.pitchenga.Pitchenga"
-        PLUGIN_MANUFACTURER_CODE "Ptng"  # Exactly 4 chars
-        PLUGIN_CODE "Ptng"               # Exactly 4 chars
+        PLUGIN_MANUFACTURER_CODE "Ptch"  # Exactly 4 chars
+        PLUGIN_CODE "Ptch"               # Exactly 4 chars
         FORMATS AU VST3 Standalone       # The magic dual-compile flag
         PRODUCT_NAME "Pitchenga"
         ICON_BIG "Source/Assets/pitchenga-squircle-1024.png"
