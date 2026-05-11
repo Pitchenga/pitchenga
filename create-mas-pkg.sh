@@ -1,11 +1,16 @@
 #!/bin/bash
 set -euo pipefail
 
+# Load environment variables if .env exists
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
 # Default values
 artifactsDirectory=${1:-"cmake-build-release/Pitchenga_artefacts/Release"}
 outputPackage=${2:-"Pitchenga-macOS-AppStore.pkg"}
 version=${3:-"1.0.0"}
-bundleIdentifier=${4:-""}
+bundleIdentifier=${4:-"${MAC_APP_BUNDLE_ID:-}"}
 applicationIdentity=${5:-"Apple Distribution"}
 installerIdentity=${6:-"3rd Party Mac Developer Installer"}
 
