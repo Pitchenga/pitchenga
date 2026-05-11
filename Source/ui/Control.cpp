@@ -300,8 +300,6 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
-    refreshPresets();
-
     // Ensure Default.xml exists, create from factory if missing
     const auto appDataDir = Util::getApplicationFolder();
     const auto presetsDir = appDataDir.getChildFile(presetsFolderName);
@@ -332,6 +330,8 @@ Control::Control(PitchengaAudioProcessor& proc)
             }
         }
     }
+
+    refreshPresets();
 
     // Restore selection by name
     if (processor.settings.currentPresetName.isNotEmpty()) {
