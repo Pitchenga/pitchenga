@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+cmake --build cmake-build-release
+
 # Configuration
 APP_PATH="cmake-build-release/Pitchenga_artefacts/Release/Standalone/Pitchenga.app"
 TEST_ENTITLEMENTS=".local-mas-test.entitlements"
