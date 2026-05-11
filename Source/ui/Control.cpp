@@ -677,7 +677,7 @@ void Control::renameCurrentPreset() {
 }
 
 Control::NoEllipsisLookAndFeel::NoEllipsisLookAndFeel() {
-    setColour(juce::TextButton::buttonColourId, juce::Colours::white.withAlpha(0.2f));
+    setColour(juce::TextButton::buttonColourId, juce::Colours::darkgrey);
     setColour(juce::TextButton::textColourOffId, juce::Colours::white);
 }
 
@@ -687,14 +687,7 @@ void Control::NoEllipsisLookAndFeel::drawButtonText(juce::Graphics& graphics, ju
     const bool isToggle = button.getClickingTogglesState();
     const bool isOn = button.getToggleState();
 
-    juce::Colour colour;
-    if (isToggle) {
-        colour = button.findColour(isOn ? juce::TextButton::textColourOnId : juce::TextButton::textColourOffId);
-    } else {
-        colour = button.findColour(juce::TextButton::textColourOffId);
-    }
-
-    graphics.setColour(colour.withMultipliedAlpha(button.isEnabled() ? 1.0f : 0.5f));
+    graphics.setColour(button.isEnabled() ? juce::Colours::white : juce::Colours::grey);
 
     const int yIndent = juce::jmin(4, button.proportionOfHeight(0.3f));
     const int textWidth = button.getWidth();
@@ -714,7 +707,7 @@ void Control::NoEllipsisLookAndFeel::drawButtonText(juce::Graphics& graphics, ju
 }
 
 juce::Font Control::NoEllipsisLookAndFeel::getTextButtonFont(juce::TextButton&, int) {
-    return juce::FontOptions(13.0f);
+    return juce::FontOptions(14.0f);
 }
 
 void Control::setupButton(juce::TextButton& button) {
@@ -729,8 +722,8 @@ void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
     setupButton(button);
     button.setClickingTogglesState(true);
     button.setToggleState(initialState, juce::NotificationType::dontSendNotification);
-    button.setColour(juce::TextButton::buttonColourId, juce::Colours::black.withAlpha(0.4f));
-    button.setColour(juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha(0.2f));
+    button.setColour(juce::TextButton::buttonColourId, juce::Colours::black);
+    button.setColour(juce::TextButton::buttonOnColourId, juce::Colours::darkgrey);
     button.setColour(juce::TextButton::textColourOffId, juce::Colours::lightgrey);
     button.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
 }
