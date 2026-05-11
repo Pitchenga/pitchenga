@@ -13,7 +13,7 @@ if [ "$VERSION" == "1.0.0" ]; then
 fi
 
 export ARTIFACTS_DIR="${ARTIFACTS_DIR:-cmake-build-release/Pitchenga_artefacts/Release}"
-export OUTPUT_PKG="Pitchenga-macOS-TestFlight.pkg"
+export OUTPUT_PKG="Pitchenga-macOS-AppStore.pkg"
 
 # Check for required identifiers and credentials
 if [ -z "${APPLE_ID:-}" ] || [ -z "${APPLE_PASSWORD:-}" ] || [ -z "${APPLE_TEAM_ID:-}" ] || [ -z "${MAC_APP_APPLE_ID:-}" ] || [ -z "${MAC_APP_BUNDLE_ID:-}" ]; then

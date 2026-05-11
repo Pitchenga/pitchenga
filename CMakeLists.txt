@@ -117,7 +117,7 @@ if (APPLE)
     foreach(target_suffix AU VST3)
         if (TARGET Pitchenga_${target_suffix})
             add_custom_command(TARGET Pitchenga_${target_suffix} POST_BUILD
-                    COMMAND /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.github.pitchenga.Pitchenga.${target_suffix}" "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist"
+                    COMMAND /usr/bin/plutil -replace CFBundleIdentifier -string "com.github.pitchenga.Pitchenga.${target_suffix}" "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist"
                     COMMENT "Isolating ${target_suffix} Bundle ID"
                     VERBATIM)
         endif()
@@ -129,7 +129,7 @@ if (APPLE)
         foreach(target_suffix Standalone AU VST3)
             if (TARGET Pitchenga_${target_suffix})
                 add_custom_command(TARGET Pitchenga_${target_suffix} POST_BUILD
-                        COMMAND /bin/bash -c "V=$(bash ${CMAKE_CURRENT_SOURCE_DIR}/version.sh); /usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $V\" \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist\"; /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $V\" \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist\""
+                        COMMAND /bin/bash -c "V=$(bash ${CMAKE_CURRENT_SOURCE_DIR}/version.sh); /usr/bin/plutil -replace CFBundleVersion -string \"$V\" \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist\"; /usr/bin/plutil -replace CFBundleShortVersionString -string \"$V\" \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist\""
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Injecting dynamic version into ${target_suffix} bundle"
                         VERBATIM)
