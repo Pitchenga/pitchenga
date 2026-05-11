@@ -1,5 +1,6 @@
 #include "Util.h"
 #include <mutex>
+#include <iostream>
 
 #if JUCE_MAC
 #include <pwd.h>
@@ -21,13 +22,11 @@ juce::File Util::getApplicationFolder() {
     if (passwd != nullptr && passwd->pw_dir != nullptr) {
         auto applicationFolder = juce::File(juce::String(passwd->pw_dir))
             .getChildFile("Library/Pitchenga");
-        debug("applicationFolder=" + applicationFolder.getFullPathName());
         return applicationFolder;
     }
 #endif
     auto applicationFolder = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
         .getChildFile("Pitchenga");
-    debug("applicationFolder=" + applicationFolder.getFullPathName());
     return applicationFolder;
 }
 
@@ -58,7 +57,7 @@ void Util::init() {
                             if (file.getLastModificationTime() < ago) {
                                 bool deleted = file.deleteFile();
                                 if (!deleted) {
-                                    DBG("Failed deleting logFile=" + file.getFullPathName());
+                                    debug("Failed deleting logFile=" + file.getFullPathName());
                                 }
                             }
                         }
@@ -71,25 +70,25 @@ void Util::init() {
 }
 
 void Util::debug(const juce::String& message) {
-    if (debugLogEnabled) {
-        DBG(message);
-        const auto fullMessage = "[" + startTimestamp + "][" + getTimestamp() + "] " + message;
+    const auto fullMessage = "[" + startTimestamp + "][" + getTimestamp() + "] " + message;
+    std::cout << fullMessage.toStdString() << std::endl;
 
-        if (createFile()) logFile.appendText(fullMessage + "\n");
+    if (debugLogEnabled && createFile()) {
+        logFile.appendText(fullMessage + "\n");
     }
 }
 
 bool Util::createFile() {
     if (!logFile.getParentDirectory().exists()) {
         if (!logFile.getParentDirectory().createDirectory()) {
-            DBG("Failed creating directory=" + logFile.getParentDirectory().getFullPathName());
+            std::cout << "[Util] FAILED creating directory=" << logFile.getParentDirectory().getFullPathName().toStdString() << std::endl;
             return false;
         }
     }
     if (!logFile.exists()) {
         auto result = logFile.create();
         if (!result) {
-            DBG("Failed creating logFile=" + logFile.getFullPathName());
+            std::cout << "[Util] FAILED creating logFile=" << logFile.getFullPathName().toStdString() << std::endl;
         }
         return result;
     }

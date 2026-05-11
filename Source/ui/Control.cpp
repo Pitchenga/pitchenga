@@ -952,9 +952,22 @@ void Control::refreshPresets() {
     presets.clear();
     const auto appDataDir = Util::getApplicationFolder();
     const auto presetsDir = appDataDir.getChildFile(presetsFolderName);
-    if (presetsDir.exists()) {
-        juce::Array<juce::File> files;
+
+    juce::Array<juce::File> files;
+    const bool folderExists = presetsDir.exists();
+
+    if (folderExists) {
         presetsDir.findChildFiles(files, juce::File::findFiles, false, "*.xml");
+        
+        // If the folder exists but no XML files (even Default.xml) are found, 
+        // it means enumeration is blocked or redirected.
+        if (files.isEmpty()) {
+            juce::AlertWindow::showMessageBoxAsync(
+                juce::MessageBoxIconType::WarningIcon,
+                "Access Error",
+                "The folder exists but its contents are hidden (enumeration failed).\nPath: " + presetsDir.getFullPathName()
+            );
+        }
 
         int id = customPresetsStartId;
         for (auto& file : files) {
