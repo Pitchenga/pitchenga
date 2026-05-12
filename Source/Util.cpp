@@ -9,27 +9,23 @@
 
 #include "version.h"
 
-bool Util::debugLogEnabled = true;
-// bool Util::debugLogEnabled = false;
-
 juce::String Util::startTimestamp;
 
-juce::File Util::getApplicationFolder() {
+juce::File Util::getAppFolder() {
 #if JUCE_MAC
-    // In a sandboxed macOS app, standard JUCE/macOS APIs return the sandboxed Container directory.
-    // To access the shared folder granted via temporary-exception, we must get the real home directory using POSIX APIs.
+    // In a sandboxed macOS app, standard JUCE/macOS APIs return the sandboxed Container folder.
+    // To access the shared folder granted via temporary-exception, we must get the real home folder using POSIX APIs.
     passwd* passwd = getpwuid(getuid());
     if (passwd != nullptr && passwd->pw_dir != nullptr) {
-        auto applicationFolder = juce::File(juce::String(passwd->pw_dir))
+        auto appFolder = juce::File(juce::String(passwd->pw_dir))
             .getChildFile("Library/Pitchenga");
-        debug("applicationFolder=" + applicationFolder.getFullPathName());
-        return applicationFolder;
+        return appFolder;
     }
 #endif
-    auto applicationFolder = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+    auto appFolder = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
         .getChildFile("Pitchenga");
-    debug("applicationFolder=" + applicationFolder.getFullPathName());
-    return applicationFolder;
+    log("appFolder=" + appFolder.getFullPathName());
+    return appFolder;
 }
 
 juce::File Util::logFile;
@@ -46,45 +42,44 @@ void Util::init() {
         initFlag,
         []() {
             startTimestamp = getTimestamp();
-            const auto logsDirectory = getApplicationFolder().getChildFile("logs");
-            logFile = logsDirectory.getChildFile("pitchenga-" + startTimestamp + ".log");
+            const auto logsFolder = getAppFolder().getChildFile("logs");
+            logFile = logsFolder.getChildFile("pitchenga-" + startTimestamp + ".log");
 
             juce::Thread::launch(
-                [logsDirectory]() {
-                    if (logsDirectory.isDirectory()) {
+                [logsFolder]() {
+                    if (logsFolder.isDirectory()) {
                         const auto ago = juce::Time::getCurrentTime() - juce::RelativeTime::days(2);
                         juce::Array<juce::File> logFiles;
-                        logsDirectory.findChildFiles(logFiles, juce::File::findFiles, false, "pitchenga-*.log");
+                        logsFolder.findChildFiles(logFiles, juce::File::findFiles, false, "pitchenga-*.log");
                         for (const auto& file : logFiles) {
                             if (file.getLastModificationTime() < ago) {
                                 bool deleted = file.deleteFile();
                                 if (!deleted) {
-                                    debug("Failed deleting logFile=" + file.getFullPathName());
+                                    log("Failed deleting logFile=" + file.getFullPathName());
                                 }
                             }
                         }
                     }
                 }
             );
-            debug("Pitchenga " + juce::String(VERSION));
+            log("Pitchenga " + juce::String(VERSION));
         }
     );
 }
 
-void Util::debug(const juce::String& message) {
-    if (debugLogEnabled) {
-        const auto fullMessage = "[" + startTimestamp + "][" + getTimestamp() + "] " + message;
-        std::cout << fullMessage.toStdString() << std::endl;
+void Util::log(const juce::String& message) {
+    const auto fullMessage = "[" + startTimestamp + "][" + getTimestamp() + "] " + message;
+    std::cout << fullMessage.toStdString() << std::endl;
 
-        if (createFile()) logFile.appendText(fullMessage + "\n");
-    }
+    if (createFile()) logFile.appendText(fullMessage + "\n");
 }
 
 bool Util::createFile() {
     if (!logFile.getParentDirectory().exists()) {
         std::cout << "Creating folder=" << logFile.getParentDirectory().getFullPathName().toStdString() << std::endl;
         if (!logFile.getParentDirectory().createDirectory()) {
-            std::cout << "Failed creating folder=" << logFile.getParentDirectory().getFullPathName().toStdString() << std::endl;
+            std::cout << "Failed creating folder=" << logFile.getParentDirectory().getFullPathName().toStdString() <<
+                std::endl;
             return false;
         }
     }
