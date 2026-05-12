@@ -7,12 +7,20 @@ if [ -f .env ]; then
 fi
 
 # Configuration
+export ARTIFACTS_DIR="${ARTIFACTS_DIR:-cmake-build-release/Pitchenga_artefacts/Release}"
 VERSION=${1:-"1.0.0"}
+
 if [ "$VERSION" == "1.0.0" ]; then
-    VERSION=$(bash version.sh)
+    # Try to extract version from the built app's Info.plist first
+    PLIST_PATH="$ARTIFACTS_DIR/Standalone/Pitchenga.app/Contents/Info.plist"
+    if [ -f "$PLIST_PATH" ]; then
+        VERSION=$(/usr/bin/plutil -extract CFBundleVersion raw "$PLIST_PATH")
+        printf "\nDetected version from build artifacts: $VERSION\n"
+    else
+        VERSION=$(bash version.sh)
+    fi
 fi
 
-export ARTIFACTS_DIR="${ARTIFACTS_DIR:-cmake-build-release/Pitchenga_artefacts/Release}"
 export OUTPUT_PKG="Pitchenga-macOS-AppStore.pkg"
 
 # Check for required identifiers and credentials

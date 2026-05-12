@@ -15,7 +15,13 @@ applicationIdentity=${5:-"Apple Distribution"}
 installerIdentity=${6:-"3rd Party Mac Developer Installer"}
 
 if [ "$version" == "1.0.0" ]; then
-    version=$(bash version.sh)
+    # Try to extract version from the built app's Info.plist first
+    PLIST_PATH="$artifactsDirectory/Standalone/Pitchenga.app/Contents/Info.plist"
+    if [ -f "$PLIST_PATH" ]; then
+        version=$(/usr/bin/plutil -extract CFBundleVersion raw "$PLIST_PATH")
+    else
+        version=$(bash version.sh)
+    fi
 fi
 
 echo "--- Creating macOS App Store Package ---"
@@ -78,8 +84,6 @@ cat <<EOF > "$entitlementsPath"
     <key>com.apple.security.app-sandbox</key>
     <true/>
     <key>com.apple.security.device.audio-input</key>
-    <true/>
-    <key>com.apple.security.screen-capture</key>
     <true/>
     <key>com.apple.security.files.user-selected.read-write</key>
     <true/>
