@@ -9,9 +9,6 @@
 
 #include "version.h"
 
-bool Util::debugLogEnabled = true;
-// bool Util::debugLogEnabled = false;
-
 juce::String Util::startTimestamp;
 
 juce::File Util::getAppFolder() {
@@ -27,7 +24,7 @@ juce::File Util::getAppFolder() {
 #endif
     auto appFolder = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
         .getChildFile("Pitchenga");
-    debug("appFolder=" + appFolder.getFullPathName());
+    log("appFolder=" + appFolder.getFullPathName());
     return appFolder;
 }
 
@@ -58,32 +55,31 @@ void Util::init() {
                             if (file.getLastModificationTime() < ago) {
                                 bool deleted = file.deleteFile();
                                 if (!deleted) {
-                                    debug("Failed deleting logFile=" + file.getFullPathName());
+                                    log("Failed deleting logFile=" + file.getFullPathName());
                                 }
                             }
                         }
                     }
                 }
             );
-            debug("Pitchenga " + juce::String(VERSION));
+            log("Pitchenga " + juce::String(VERSION));
         }
     );
 }
 
-void Util::debug(const juce::String& message) {
-    if (debugLogEnabled) {
-        const auto fullMessage = "[" + startTimestamp + "][" + getTimestamp() + "] " + message;
-        std::cout << fullMessage.toStdString() << std::endl;
+void Util::log(const juce::String& message) {
+    const auto fullMessage = "[" + startTimestamp + "][" + getTimestamp() + "] " + message;
+    std::cout << fullMessage.toStdString() << std::endl;
 
-        if (createFile()) logFile.appendText(fullMessage + "\n");
-    }
+    if (createFile()) logFile.appendText(fullMessage + "\n");
 }
 
 bool Util::createFile() {
     if (!logFile.getParentDirectory().exists()) {
         std::cout << "Creating folder=" << logFile.getParentDirectory().getFullPathName().toStdString() << std::endl;
         if (!logFile.getParentDirectory().createDirectory()) {
-            std::cout << "Failed creating folder=" << logFile.getParentDirectory().getFullPathName().toStdString() << std::endl;
+            std::cout << "Failed creating folder=" << logFile.getParentDirectory().getFullPathName().toStdString() <<
+                std::endl;
             return false;
         }
     }

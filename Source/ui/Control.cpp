@@ -961,7 +961,7 @@ void Control::refreshPresets() {
             if (dummyFile.create().wasOk()) {
                 bool deleted = dummyFile.deleteFile();
                 if (!deleted) {
-                    Util::debug("Failed deleting dummyFile=" + dummyFile.getFullPathName());
+                    Util::log("Failed deleting dummyFile=" + dummyFile.getFullPathName());
                 }
             } else {
                 juce::AlertWindow::showMessageBoxAsync(

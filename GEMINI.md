@@ -28,7 +28,7 @@ Pitchenga is a real-time music visualization application and audio plugin.
 
 ## Logging
 
-- `Util::debug("Failed loading plugin, name=" + name + ", error=" + error + ",")`
+- `Util::log("Failed loading plugin, name=" + name + ", error=" + error + ",")`
 
 ## Coding style
 

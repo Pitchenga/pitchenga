@@ -274,7 +274,7 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
     const double sampleRate = getSampleRate();
     const int blockSize = getBlockSize();
 
-    Util::debug("Attempting to load plugin: " + description.name + " (" + description.fileOrIdentifier + ")");
+    Util::log("Attempting to load plugin: " + description.name + " (" + description.fileOrIdentifier + ")");
 
     if (onPluginAboutToBeDeleted) {
         onPluginAboutToBeDeleted();
@@ -296,7 +296,7 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
     );
 
     if (instance != nullptr) {
-        Util::debug("Successfully loaded plugin: " + instance->getName());
+        Util::log("Successfully loaded plugin: " + instance->getName());
         if (forceOpenWindow) {
             settings.isExternalPluginWindowOpen = true;
         }
@@ -328,7 +328,7 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
         }
     } else {
         if (!wasSuspended) suspendProcessing(false);
-        Util::debug("Failed loading plugin, name=" + description.name + ", error=" + error);
+        Util::log("Failed loading plugin, name=" + description.name + ", error=" + error);
 
         juce::MessageManager::callAsync([name = description.name, error] {
             juce::String detailedError = "Failed to load plugin '" + name + "':\n\n" + error;
