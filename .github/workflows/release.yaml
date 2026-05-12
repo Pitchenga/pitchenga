@@ -17,10 +17,10 @@ jobs:
       matrix:
         include:
           - os: macOS
-            runner: self-hosted
-#            runner: macos-latest
-#          - os: Windows
-#            runner: windows-latest
+#            runner: self-hosted
+            runner: macos-latest
+          - os: Windows
+            runner: windows-latest
 
     steps:
       - name: Checkout repository
