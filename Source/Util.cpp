@@ -49,7 +49,7 @@ void Util::init() {
             juce::Thread::launch(
                 [logsFolder]() {
                     if (logsFolder.isDirectory()) {
-                        const auto ago = juce::Time::getCurrentTime() - juce::RelativeTime::days(2);
+                        const auto ago = juce::Time::getCurrentTime() - juce::RelativeTime::days(1);
                         juce::Array<juce::File> logFiles;
                         logsFolder.findChildFiles(logFiles, juce::File::findFiles, false, "pitchenga-*.log");
                         for (const auto& file : logFiles) {
