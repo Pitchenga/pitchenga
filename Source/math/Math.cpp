@@ -143,7 +143,7 @@ void Math::flushStaleAudioData(int& availableSamples) {
     // If we have more than a few blocks waiting, instantly flush the old ones to catch up to live audio.
 
     if (availableSamples > 16384) {
-        Util::debug("!!! FLUSHING STALE AUDIO !!! Dropping from " + juce::String(availableSamples) + " samples.");
+        // Util::log("!!! FLUSHING STALE AUDIO !!! Dropping from " + juce::String(availableSamples) + " samples.");
         auto& octaves = processor.getOctaves();
 
         // Individually flush every octave to prevent Decimation Cascade Desync.

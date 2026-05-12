@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(Pitchenga VERSION 0509.23.23)
+project(Pitchenga VERSION 1.0.0)
 
 # Calculate a dynamic version for local development to ensure the AU bundle
 # shows more than "1.0.0" in hosts like Logic Pro.
@@ -73,8 +73,8 @@ juce_add_plugin(Pitchenga
         VERSION "${PITCHENGA_VERSION}"
         COMPANY_NAME "Pitchenga"
         BUNDLE_ID "com.github.pitchenga.Pitchenga"
-        PLUGIN_MANUFACTURER_CODE "Ptng"  # Exactly 4 chars
-        PLUGIN_CODE "Ptng"               # Exactly 4 chars
+        PLUGIN_MANUFACTURER_CODE "Ptch"  # Exactly 4 chars
+        PLUGIN_CODE "Ptch"               # Exactly 4 chars
         FORMATS AU VST3 Standalone       # The magic dual-compile flag
         PRODUCT_NAME "Pitchenga"
         ICON_BIG "Source/Assets/pitchenga-squircle-1024.png"
@@ -91,7 +91,7 @@ juce_add_plugin(Pitchenga
         MICROPHONE_PERMISSION_TEXT "Pitchenga needs microphone access to visualize your audio."
         PLUGINHOST_AU TRUE
         PLUGINHOST_VST3 TRUE
-        PLIST_TO_MERGE "<plist><dict><key>NSAudioCaptureUsageDescription</key><string>Pitchenga needs system audio access to visualize your desktop audio.</string></dict></plist>")
+        PLIST_TO_MERGE "<plist><dict><key>NSAudioCaptureUsageDescription</key><string>Pitchenga needs system audio access to capture your desktop audio.</string></dict></plist>")
 
 # Explicitly separate the bundle identifiers to prevent LaunchServices collisions
 if (TARGET Pitchenga_Standalone)
@@ -117,7 +117,7 @@ if (APPLE)
     foreach(target_suffix AU VST3)
         if (TARGET Pitchenga_${target_suffix})
             add_custom_command(TARGET Pitchenga_${target_suffix} POST_BUILD
-                    COMMAND /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.github.pitchenga.Pitchenga.${target_suffix}" "$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist"
+                    COMMAND /bin/bash -c "P=\"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist\"; if [ ! -f \"$P\" ]; then cp \"${CMAKE_CURRENT_BINARY_DIR}/Pitchenga_artefacts/JuceLibraryCode/Pitchenga_${target_suffix}/Info.plist\" \"$P\"; fi; /usr/bin/plutil -replace CFBundleIdentifier -string \"com.github.pitchenga.Pitchenga.${target_suffix}\" \"$P\""
                     COMMENT "Isolating ${target_suffix} Bundle ID"
                     VERBATIM)
         endif()
@@ -129,7 +129,7 @@ if (APPLE)
         foreach(target_suffix Standalone AU VST3)
             if (TARGET Pitchenga_${target_suffix})
                 add_custom_command(TARGET Pitchenga_${target_suffix} POST_BUILD
-                        COMMAND /bin/bash -c "V=$(bash ${CMAKE_CURRENT_SOURCE_DIR}/version.sh); /usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $V\" \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist\"; /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString $V\" \"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist\""
+                        COMMAND /bin/bash -c "P=\"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist\"; if [ ! -f \"$P\" ]; then cp \"${CMAKE_CURRENT_BINARY_DIR}/Pitchenga_artefacts/JuceLibraryCode/Pitchenga_${target_suffix}/Info.plist\" \"$P\"; fi; V=$(grep '#define VERSION' \"${CMAKE_CURRENT_BINARY_DIR}/version.h\" | cut -d'\"' -f2); /usr/bin/plutil -replace CFBundleVersion -string \"$V\" \"$P\"; /usr/bin/plutil -replace CFBundleShortVersionString -string \"$V\" \"$P\""
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Injecting dynamic version into ${target_suffix} bundle"
                         VERBATIM)
@@ -175,12 +175,14 @@ set(PITCHENGA_SOURCES
 )
 
 if (PROJECT_VERSION STREQUAL "1.0.0")
-    # Generate dynamic timestamp for local dev on every build
+    # Force version.h to regenerate on every build attempt for local development
+    add_custom_target(ForceVersionUpdate)
     add_custom_command(
             OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version.h
             COMMAND ${CMAKE_COMMAND} -DOUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/version.h -P ${CMAKE_CURRENT_SOURCE_DIR}/version.cmake
-            DEPENDS ${PITCHENGA_SOURCES}
+            DEPENDS ForceVersionUpdate ${PITCHENGA_SOURCES}
     )
+    add_dependencies(Pitchenga ForceVersionUpdate)
 else()
     # Ensure the UI matches the Release Tag exactly for production builds
     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/version.h" "#pragma once\n#define VERSION \"${PROJECT_VERSION}\"\n")

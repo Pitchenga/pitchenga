@@ -228,11 +228,13 @@ Control::Control(PitchengaAudioProcessor& proc)
         }
     };
 
+    setupButton(buttonPlugs);
     buttonPlugs.setButtonText(plugs);
     buttonPlugs.onClick = [this] {
         showPlugsMenu();
     };
 
+    setupButton(buttonPlug);
     buttonPlug.setButtonText(plug);
     buttonPlug.onClick = [this] {
         processor.showExternalPluginEditor();
@@ -258,8 +260,8 @@ Control::Control(PitchengaAudioProcessor& proc)
             );
             if (xml != nullptr) xml->setTagName(getSettingsTagName());
         } else if (id == userDefaultPresetId) {
-            const auto appDataDir = Util::getApplicationDirectory();
-            newPresetFile = appDataDir.getChildFile(presetsDirectoryName).getChildFile(userDefaultPresetFileName);
+            const auto appFolder = Util::getAppFolder();
+            newPresetFile = appFolder.getChildFile(presetsFolderName).getChildFile(userDefaultPresetFileName);
             newPresetName = userDefaultPresetName;
 
             if (newPresetFile.existsAsFile()) {
@@ -298,12 +300,10 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
-    refreshPresets();
-
     // Ensure Default.xml exists, create from factory if missing
-    const auto appDataDir = Util::getApplicationDirectory();
-    const auto presetsDir = appDataDir.getChildFile(presetsDirectoryName);
-    const auto defaultFile = presetsDir.getChildFile(userDefaultPresetFileName);
+    const auto appFolder = Util::getAppFolder();
+    const auto presetsFolder = appFolder.getChildFile(presetsFolderName);
+    const auto defaultFile = presetsFolder.getChildFile(userDefaultPresetFileName);
     if (!defaultFile.existsAsFile()) {
         const auto factoryXml = juce::XmlDocument::parse(
             juce::String::createStringFromData(
@@ -313,20 +313,32 @@ Control::Control(PitchengaAudioProcessor& proc)
         );
         if (factoryXml != nullptr) {
             factoryXml->setTagName(getSettingsTagName());
-            if (presetsDir.createDirectory()) {
-                factoryXml->writeTo(defaultFile);
+            if (presetsFolder.createDirectory()) {
+                if (!factoryXml->writeTo(defaultFile)) {
+                    juce::AlertWindow::showMessageBoxAsync(
+                        juce::MessageBoxIconType::WarningIcon,
+                        "Permission Error",
+                        "Failed writing file: " + defaultFile.getFullPathName()
+                    );
+                }
+            } else {
+                juce::AlertWindow::showMessageBoxAsync(
+                    juce::MessageBoxIconType::WarningIcon,
+                    "Permission Error",
+                    "Failed creating folder: " + presetsFolder.getFullPathName()
+                );
             }
         }
     }
+
+    refreshPresets();
 
     // Restore selection by name
     if (processor.settings.currentPresetName.isNotEmpty()) {
         const auto presetName = processor.settings.currentPresetName;
         if (presetName == userDefaultPresetName) {
             comboPresets.setSelectedId(userDefaultPresetId, juce::NotificationType::dontSendNotification);
-            const auto appDataDir = Util::getApplicationDirectory();
-            const auto presetsDir = appDataDir.getChildFile(presetsDirectoryName);
-            currentPresetFile = presetsDir.getChildFile(userDefaultPresetFileName);
+            currentPresetFile = presetsFolder.getChildFile(userDefaultPresetFileName);
         } else if (presetName == factoryDefaultPresetName) {
             comboPresets.setSelectedId(factoryDefaultPresetId, juce::NotificationType::dontSendNotification);
             currentPresetFile = juce::File();
@@ -353,6 +365,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         updateButtonStates();
     };
 
+    setupButton(buttonSave);
     buttonSave.setButtonText(save);
     buttonSave.onClick = [this] {
         auto presetName = comboPresets.getText();
@@ -371,8 +384,8 @@ Control::Control(PitchengaAudioProcessor& proc)
                 [safeThis, presetName](int result) {
                     if (result != 0 && safeThis != nullptr) {
                         if (presetName == safeThis->userDefaultPresetName) {
-                            safeThis->currentPresetFile = Util::getApplicationDirectory()
-                                .getChildFile(safeThis->presetsDirectoryName)
+                            safeThis->currentPresetFile = Util::getAppFolder()
+                                .getChildFile(safeThis->presetsFolderName)
                                 .getChildFile(safeThis->userDefaultPresetFileName);
                         }
                         safeThis->saveCurrentPreset();
@@ -382,6 +395,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         );
     };
 
+    setupButton(buttonSaveAs);
     buttonSaveAs.setButtonText(saveAs);
     buttonSaveAs.onClick = [this] {
         const juce::String currentName = comboPresets.getText();
@@ -397,7 +411,7 @@ Control::Control(PitchengaAudioProcessor& proc)
 
         chooser = std::make_unique<juce::FileChooser>(
             "Select where to save the settings...",
-            Util::getApplicationDirectory().getChildFile(presetsDirectoryName).getChildFile(suggestedName),
+            Util::getAppFolder().getChildFile(presetsFolderName).getChildFile(suggestedName),
             "*.xml"
         );
 
@@ -435,6 +449,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         );
     };
 
+    setupButton(buttonDelete);
     buttonDelete.setButtonText(deletePreset);
     buttonDelete.onClick = [this] {
         if (currentPresetFile == juce::File()) {
@@ -459,6 +474,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         );
     };
 
+    setupButton(buttonRename);
     buttonRename.setButtonText(rename);
     buttonRename.onClick = [this] {
         if (currentPresetFile == juce::File()) {
@@ -618,7 +634,8 @@ void Control::renameCurrentPreset() {
                 if (result == 1 && safeThis != nullptr) {
                     juce::String newName = alert->getTextEditorContents("name").trim();
                     if (newName.isNotEmpty() && newName != safeThis->currentPresetFile.getFileNameWithoutExtension()) {
-                        juce::File newFile = safeThis->currentPresetFile.getSiblingFile(newName).withFileExtension(".xml");
+                        juce::File newFile = safeThis->currentPresetFile.getSiblingFile(newName)
+                            .withFileExtension(".xml");
 
                         auto doRename = [safeThis, newFile, newName]() {
                             if (newFile.existsAsFile() && newFile != safeThis->currentPresetFile) {
@@ -653,11 +670,13 @@ void Control::renameCurrentPreset() {
                                 "Overwrite",
                                 "Cancel",
                                 nullptr,
-                                juce::ModalCallbackFunction::create([doRename](int overwriteResult) {
-                                    if (overwriteResult != 0) {
-                                        doRename();
+                                juce::ModalCallbackFunction::create(
+                                    [doRename](int overwriteResult) {
+                                        if (overwriteResult != 0) {
+                                            doRename();
+                                        }
                                     }
-                                })
+                                )
                             );
                         } else {
                             doRename();
@@ -669,12 +688,79 @@ void Control::renameCurrentPreset() {
     );
 }
 
+Control::NoEllipsisLookAndFeel::NoEllipsisLookAndFeel() {
+    setColour(juce::TextButton::buttonColourId, juce::Colours::darkgrey);
+    setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+}
+
+void Control::NoEllipsisLookAndFeel::drawButtonBackground(
+    juce::Graphics& graphics,
+    juce::Button& button,
+    const juce::Colour& backgroundColour,
+    bool shouldDrawButtonAsHighlighted,
+    bool shouldDrawButtonAsDown
+) {
+    juce::Colour color = backgroundColour;
+    if (button.getClickingTogglesState() && !button.isEnabled()) {
+        color = juce::Colours::darkgrey;
+    }
+    LookAndFeel_V4::drawButtonBackground(
+        graphics,
+        button,
+        color,
+        shouldDrawButtonAsHighlighted,
+        shouldDrawButtonAsDown
+    );
+}
+
+void Control::NoEllipsisLookAndFeel::drawButtonText(juce::Graphics& graphics, juce::TextButton& button, bool, bool) {
+    graphics.setFont(getTextButtonFont(button, button.getHeight()));
+
+    juce::Colour color;
+    if (button.isEnabled()) {
+        if (button.getClickingTogglesState()) {
+            color = button.getToggleState() ? juce::Colours::white : juce::Colours::lightgrey;
+        } else {
+            color = juce::Colours::white;
+        }
+    } else {
+        color = juce::Colours::grey;
+    }
+
+    graphics.setColour(color);
+
+    const int yIndent = juce::jmin(4, button.proportionOfHeight(0.3f));
+    const int textWidth = button.getWidth();
+
+    if (textWidth > 0) {
+        // Use drawText with useEllipsis = false to prevent "..." truncation
+        graphics.drawText(
+            button.getButtonText(),
+            0,
+            yIndent,
+            textWidth,
+            button.getHeight() - yIndent * 2,
+            juce::Justification::centred,
+            false
+        );
+    }
+}
+
+juce::Font Control::NoEllipsisLookAndFeel::getTextButtonFont(juce::TextButton&, int) {
+    return juce::FontOptions(14.0f);
+}
+
+void Control::setupButton(juce::TextButton& button) {
+    button.setLookAndFeel(&noEllipsisLookAndFeel);
+}
+
 void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
+    setupButton(button);
     button.setClickingTogglesState(true);
     button.setToggleState(initialState, juce::NotificationType::dontSendNotification);
-    button.setColour(juce::TextButton::buttonColourId, juce::Colours::black.withAlpha(0.4f));
-    button.setColour(juce::TextButton::buttonOnColourId, juce::Colours::white.withAlpha(0.2f));
-    button.setColour(juce::TextButton::textColourOffId, juce::Colours::grey);
+    button.setColour(juce::TextButton::buttonColourId, juce::Colours::black);
+    button.setColour(juce::TextButton::buttonOnColourId, juce::Colours::darkgrey);
+    button.setColour(juce::TextButton::textColourOffId, juce::Colours::lightgrey);
     button.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
 }
 
@@ -767,7 +853,7 @@ void Control::resized() {
     auto positionButton = [&](juce::TextButton& button, juce::Rectangle<int>& container) {
         if (!button.isVisible()) return;
         const float textWidth = juce::GlyphArrangement::getStringWidth(font, button.getButtonText());
-        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 8;
+        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 2;
         button.setBounds(container.removeFromLeft(buttonWidth));
     };
 
@@ -781,7 +867,7 @@ void Control::resized() {
         } else if (&button == &toggleLetter) {
             textWidth = juce::GlyphArrangement::getStringWidth(font, solfege);
         }
-        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 8;
+        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 2;
         button.setBounds(container.removeFromRight(buttonWidth));
     };
 
@@ -791,7 +877,10 @@ void Control::resized() {
     positionButton(toggleLayoutPivot, topRow);
 
     topRow.removeFromLeft(4);
-    const float versionWidth = juce::GlyphArrangement::getStringWidth(buildTimestampLabel.getFont(), buildTimestampLabel.getText());
+    const float versionWidth = juce::GlyphArrangement::getStringWidth(
+        buildTimestampLabel.getFont(),
+        buildTimestampLabel.getText()
+    );
     buildTimestampLabel.setBounds(topRow.removeFromLeft(static_cast<int>(std::ceil(versionWidth)) + 4));
 
     // Position presets and tweak from the right
@@ -799,7 +888,6 @@ void Control::resized() {
     positionButtonRight(buttonSave, topRow);
     constexpr int comboWidth = 140;
     comboPresets.setBounds(topRow.removeFromRight(comboWidth));
-    topRow.removeFromRight(6);
     positionButtonRight(toggleTweak, topRow);
     positionButtonRight(toggleRaw, topRow);
 
@@ -814,7 +902,6 @@ void Control::resized() {
         positionButton(toggleCapture, panelBounds);
 
         if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
-            panelBounds.removeFromLeft(6);
 
             // Layout the "Mic" label
             const float micTextWidth = juce::GlyphArrangement::getStringWidth(micLabel.getFont(), mic);
@@ -835,7 +922,6 @@ void Control::resized() {
 
         positionButtonRight(buttonDelete, panelBounds);
         positionButtonRight(buttonRename, panelBounds);
-        panelBounds.removeFromRight(6);
 
         positionButtonRight(toggleForrest, panelBounds);
         positionButtonRight(toggleSmoke, panelBounds);
@@ -857,11 +943,31 @@ void Control::refreshPresets() {
     comboPresets.addSeparator();
 
     presets.clear();
-    const auto appDataDir = Util::getApplicationDirectory();
-    const auto presetsDir = appDataDir.getChildFile(presetsDirectoryName);
-    if (presetsDir.exists()) {
+    const auto appFolder = Util::getAppFolder();
+    const auto presetsFolder = appFolder.getChildFile(presetsFolderName);
+
+    if (presetsFolder.exists()) {
         juce::Array<juce::File> files;
-        presetsDir.findChildFiles(files, juce::File::findFiles, false, "*.xml");
+        presetsFolder.findChildFiles(files, juce::File::findFiles, false, "*.xml");
+
+        // If the folder exists but no XML files (even Default.xml) are found, 
+        // it means enumeration is blocked, redirected, or actually empty.
+        // We use a write-test to distinguish between a legitimate empty folder and a sandbox block.
+        if (files.isEmpty()) {
+            auto dummyFile = presetsFolder.getChildFile("test.tmp");
+            if (dummyFile.create().wasOk()) {
+                bool deleted = dummyFile.deleteFile();
+                if (!deleted) {
+                    Util::log("Failed deleting dummyFile=" + dummyFile.getFullPathName());
+                }
+            } else {
+                juce::AlertWindow::showMessageBoxAsync(
+                    juce::MessageBoxIconType::WarningIcon,
+                    "Access Error",
+                    "Failed accessing presets folder: " + presetsFolder.getFullPathName()
+                );
+            }
+        }
 
         int id = customPresetsStartId;
         for (auto& file : files) {
@@ -988,6 +1094,3 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
 
     return true;
 }
-
-
-

@@ -38,15 +38,16 @@ with your software synth, complete with independent monitor controls to prevent 
 
 Pre-built binaries are provided in the [Releases](https://github.com/pitchenga/pitchenga/releases) section.
 
-- **macOS:** Available as a Standalone application, Audio Unit (AU Component), and VST3.
+- **macOS:** Available as a Standalone app, Audio Unit (AU Component), and VST3.
   - [Download latest release - installer](https://github.com/pitchenga/pitchenga/releases/latest/download/Pitchenga-macOS-Installer.pkg)
   - [Download latest release - portable](https://github.com/pitchenga/pitchenga/releases/latest/download/Pitchenga-macOS-Portable.dmg)
+  - //fixme - add link: [App Store - standalone app only]()
 
-- **Windows:** Available as a Standalone application and VST3.
+- **Windows:** Available as a Standalone app and VST3.
   - [Download latest release - installer](https://github.com/pitchenga/pitchenga/releases/latest/download/Pitchenga-Windows-Installer.exe)
   - [Download latest release - portable](https://github.com/pitchenga/pitchenga/releases/latest/download/Pitchenga-Windows-Portable.zip)
 
-> **Note:** If Windows Defender SmartScreen blocks the application from running,
+> **Note:** If Windows Defender SmartScreen blocks the app from running,
 > click **"More info"** and then select **"Run anyway"**.
 >
 > If you receive an error about **"MSVCP140.dll not found"**, you may need to install

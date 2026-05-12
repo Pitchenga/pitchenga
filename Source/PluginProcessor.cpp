@@ -14,8 +14,8 @@ PitchengaAudioProcessor::PitchengaAudioProcessor()
     juce::addDefaultFormatsToManager(formatManager);
 
     // Load plugin list
-    const auto appDataDir = Util::getApplicationDirectory();
-    const auto pluginListFile = appDataDir.getChildFile("plugins.xml");
+    const auto appFolder = Util::getAppFolder();
+    const auto pluginListFile = appFolder.getChildFile("plugins.xml");
     if (pluginListFile.existsAsFile()) {
         if (auto xml = juce::XmlDocument::parse(pluginListFile)) {
             knownPluginList.recreateFromXml(*xml);
@@ -30,8 +30,8 @@ PitchengaAudioProcessor::~PitchengaAudioProcessor() {
     unloadPluginInstance(plugin);
 
     // Save plugin list
-    const auto appDataDir = Util::getApplicationDirectory();
-    const auto pluginListFile = appDataDir.getChildFile("plugins.xml");
+    const auto appFolder = Util::getAppFolder();
+    const auto pluginListFile = appFolder.getChildFile("plugins.xml");
     if (auto xml = knownPluginList.createXml()) {
         xml->writeTo(pluginListFile);
     }
@@ -39,9 +39,9 @@ PitchengaAudioProcessor::~PitchengaAudioProcessor() {
 
 void PitchengaAudioProcessor::loadDefaultSettings() {
     // Attempt to load user-default.xml from the "presets" sub-folder
-    const auto appDataDir = Util::getApplicationDirectory();
-    const auto presetsDir = appDataDir.getChildFile(Control::presetsDirectoryName);
-    const auto userDefaultFile = presetsDir.getChildFile(Control::userDefaultPresetFileName);
+    const auto appFolder = Util::getAppFolder();
+    const auto presetsFolder = appFolder.getChildFile(Control::presetsFolderName);
+    const auto userDefaultFile = presetsFolder.getChildFile(Control::userDefaultPresetFileName);
 
     if (userDefaultFile.existsAsFile()) {
         if (auto xml = juce::XmlDocument::parse(userDefaultFile)) {
@@ -274,7 +274,7 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
     const double sampleRate = getSampleRate();
     const int blockSize = getBlockSize();
 
-    Util::debug("Attempting to load plugin: " + description.name + " (" + description.fileOrIdentifier + ")");
+    Util::log("Attempting to load plugin: " + description.name + " (" + description.fileOrIdentifier + ")");
 
     if (onPluginAboutToBeDeleted) {
         onPluginAboutToBeDeleted();
@@ -296,7 +296,7 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
     );
 
     if (instance != nullptr) {
-        Util::debug("Successfully loaded plugin: " + instance->getName());
+        Util::log("Successfully loaded plugin: " + instance->getName());
         if (forceOpenWindow) {
             settings.isExternalPluginWindowOpen = true;
         }
@@ -328,7 +328,7 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
         }
     } else {
         if (!wasSuspended) suspendProcessing(false);
-        Util::debug("Failed loading plugin, name=" + description.name + ", error=" + error);
+        Util::log("Failed loading plugin, name=" + description.name + ", error=" + error);
 
         juce::MessageManager::callAsync([name = description.name, error] {
             juce::String detailedError = "Failed to load plugin '" + name + "':\n\n" + error;

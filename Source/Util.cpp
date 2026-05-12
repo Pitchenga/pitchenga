@@ -1,18 +1,42 @@
 #include "Util.h"
 #include <mutex>
+#include <iostream>
+#include <vector>
+
+#if JUCE_MAC
+#include <pwd.h>
+#include <unistd.h>
+#endif
 
 #include "version.h"
 
-bool Util::debugLogEnabled = true;
-// bool Util::debugLogEnabled = false;
-
 juce::String Util::startTimestamp;
 
-juce::File Util::getApplicationDirectory() {
-    return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory).getChildFile("Pitchenga");
+juce::File Util::getAppFolder() {
+#if JUCE_MAC
+    // In a sandboxed macOS app, standard JUCE/macOS APIs return the sandboxed Container folder.
+    // To access the shared folder granted via temporary-exception, we must get the real home folder using POSIX APIs.
+    struct passwd pwd;
+    struct passwd* result = nullptr;
+    long bufferSize = sysconf(_SC_GETPW_R_SIZE_MAX);
+    if (bufferSize == -1) {
+        bufferSize = 4096;
+    }
+    std::vector<char> buffer(static_cast<size_t>(bufferSize));
+    if (getpwuid_r(getuid(), &pwd, buffer.data(), buffer.size(), &result) == 0 && result != nullptr && result->pw_dir != nullptr) {
+        auto appFolder = juce::File(juce::String(result->pw_dir))
+            .getChildFile("Library/Pitchenga");
+        return appFolder;
+    }
+#endif
+    auto appFolder = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+        .getChildFile("Pitchenga");
+    log("appFolder=" + appFolder.getFullPathName());
+    return appFolder;
 }
 
 juce::File Util::logFile;
+juce::CriticalSection Util::lock;
 
 juce::String Util::getTimestamp() {
     const auto time = juce::Time::getCurrentTime();
@@ -22,56 +46,57 @@ juce::String Util::getTimestamp() {
 static std::once_flag initFlag;
 
 void Util::init() {
-    std::call_once(initFlag, []() {
-        startTimestamp = getTimestamp();
-        const auto logsDirectory = getApplicationDirectory().getChildFile("logs");
-        logFile = logsDirectory.getChildFile("pitchenga-" + startTimestamp + ".log");
+    std::call_once(
+        initFlag,
+        []() {
+            startTimestamp = getTimestamp();
+            const auto logsFolder = getAppFolder().getChildFile("logs");
+            logFile = logsFolder.getChildFile("pitchenga-" + startTimestamp + ".log");
 
-#if JUCE_DEBUG
-        juce::Thread::launch([logsDirectory]() {
-            if (logsDirectory.isDirectory()) {
-                const auto ago = juce::Time::getCurrentTime() - juce::RelativeTime::days(2);
-                juce::Array<juce::File> logFiles;
-                logsDirectory.findChildFiles(logFiles, juce::File::findFiles, false, "pitchenga-*.log");
-                for (const auto& file : logFiles) {
-                    if (file.getLastModificationTime() < ago) {
-                        bool deleted = file.deleteFile();
-                        if (!deleted) {
-                            DBG("Failed deleting logFile=" + file.getFullPathName());
+            juce::Thread::launch(
+                [logsFolder]() {
+                    if (logsFolder.isDirectory()) {
+                        const auto ago = juce::Time::getCurrentTime() - juce::RelativeTime::days(1);
+                        juce::Array<juce::File> logFiles;
+                        logsFolder.findChildFiles(logFiles, juce::File::findFiles, false, "pitchenga-*.log");
+                        for (const auto& file : logFiles) {
+                            if (file.getLastModificationTime() < ago) {
+                                bool deleted = file.deleteFile();
+                                if (!deleted) {
+                                    log("Failed deleting logFile=" + file.getFullPathName());
+                                }
+                            }
                         }
                     }
                 }
-            }
-        });
-        debug("Pitchenga " + juce::String(VERSION));
-#endif
-    });
+            );
+            log("Pitchenga " + juce::String(VERSION));
+        }
+    );
 }
 
-void Util::debug(const juce::String& message) {
-#if JUCE_DEBUG
-    if (debugLogEnabled) {
-        DBG(message);
-        const auto fullMessage = "[" + startTimestamp + "][" + getTimestamp() + "] " + message;
+void Util::log(const juce::String& message) {
+    const juce::ScopedLock scopedLock (lock);
+    const auto fullMessage = "[" + startTimestamp + "][" + getTimestamp() + "] " + message;
+    std::cout << fullMessage.toStdString() << std::endl;
 
-        if (createFile()) logFile.appendText(fullMessage + "\n");
-    }
-#else
-    juce::ignoreUnused(message);
-#endif
+    if (createFile()) logFile.appendText(fullMessage + "\n");
 }
 
 bool Util::createFile() {
+    const juce::ScopedLock scopedLock (lock);
     if (!logFile.getParentDirectory().exists()) {
+        std::cout << "Creating folder=" << logFile.getParentDirectory().getFullPathName().toStdString() << std::endl;
         if (!logFile.getParentDirectory().createDirectory()) {
-            DBG("Failed creating directory=" + logFile.getParentDirectory().getFullPathName());
+            std::cout << "Failed creating folder=" << logFile.getParentDirectory().getFullPathName().toStdString() <<
+                std::endl;
             return false;
         }
     }
     if (!logFile.exists()) {
         auto result = logFile.create();
         if (!result) {
-            DBG("Failed creating logFile=" + logFile.getFullPathName());
+            std::cout << "Failed creating logFile=" << logFile.getFullPathName().toStdString() << std::endl;
         }
         return result;
     }

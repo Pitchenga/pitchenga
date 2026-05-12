@@ -36,7 +36,7 @@ public:
         auto result = chromaticScale[static_cast<size_t>(index1)].color
             .interpolatedWith(chromaticScale[static_cast<size_t>(index2)].color, fraction);
         if (log) {
-            Util::debug(
+            Util::log(
                 "chroma=" + std::to_string(chroma)
                 + ", wrapped=" + std::to_string(wrapped)
                 + ", index1=" + std::to_string(index1)

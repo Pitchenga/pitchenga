@@ -76,7 +76,7 @@ public:
     // Callback so the Editor knows when the user clicked a toggle
     std::function<void()> onVisibilityChanged;
 
-    static inline const juce::String presetsDirectoryName = "presets";
+    static inline const juce::String presetsFolderName = "presets";
     static inline const juce::String userDefaultPresetFileName = "Default.xml";
 
 private:
@@ -123,7 +123,18 @@ private:
     void saveCurrentPreset();
     void deleteCurrentPreset();
     void renameCurrentPreset();
-    static void setupToggleButton(juce::TextButton& button, bool initialState);
+
+    struct NoEllipsisLookAndFeel : juce::LookAndFeel_V4 {
+        NoEllipsisLookAndFeel();
+        void drawButtonText(juce::Graphics& graphics, juce::TextButton& button, bool isMouseOverButton, bool isButtonDown) override;
+        void drawButtonBackground(juce::Graphics& graphics, juce::Button& button, const juce::Colour& backgroundColour, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+        juce::Font getTextButtonFont(juce::TextButton& button, int buttonHeight) override;
+    };
+
+    NoEllipsisLookAndFeel noEllipsisLookAndFeel;
+
+    void setupButton(juce::TextButton& button);
+    void setupToggleButton(juce::TextButton& button, bool initialState);
     void updateButtonStates();
 
     PitchengaAudioProcessor& processor;
