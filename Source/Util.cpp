@@ -29,6 +29,7 @@ juce::File Util::getAppFolder() {
 }
 
 juce::File Util::logFile;
+juce::CriticalSection Util::lock;
 
 juce::String Util::getTimestamp() {
     const auto time = juce::Time::getCurrentTime();
@@ -68,6 +69,7 @@ void Util::init() {
 }
 
 void Util::log(const juce::String& message) {
+    const juce::ScopedLock scopedLock (lock);
     const auto fullMessage = "[" + startTimestamp + "][" + getTimestamp() + "] " + message;
     std::cout << fullMessage.toStdString() << std::endl;
 
@@ -75,6 +77,7 @@ void Util::log(const juce::String& message) {
 }
 
 bool Util::createFile() {
+    const juce::ScopedLock scopedLock (lock);
     if (!logFile.getParentDirectory().exists()) {
         std::cout << "Creating folder=" << logFile.getParentDirectory().getFullPathName().toStdString() << std::endl;
         if (!logFile.getParentDirectory().createDirectory()) {
