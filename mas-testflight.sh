@@ -45,6 +45,7 @@ if xcrun altool --upload-package "$OUTPUT_PKG" \
     --password "$APPLE_PASSWORD" \
     --asc-provider "$APPLE_TEAM_ID" \
     --apple-id "$MAC_APP_APPLE_ID" \
+    --bundle-id "com.github.pitchenga.Pitchenga" \
     --bundle-version "$VERSION" \
     --bundle-short-version-string "$VERSION"; then
     printf "\n✅ Successfully uploaded to TestFlight!\n"
