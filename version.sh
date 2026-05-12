@@ -14,6 +14,4 @@ MINOR=$(( 10#$HOUR ))
 PATCH=$(( 10#$MINUTE ))
 
 # Output the formatted version number
-# %04d = 4-digit zero-padded number (Major/MonthsSinceEpochAndDay)
-# %02d = 2-digit zero-padded number (Minor/Hours and Patch/Minutes)
-printf "%04d.%02d.%02d\n" "$MAJOR" "$MINOR" "$PATCH"
+printf "%d.%d.%d\n" "$MAJOR" "$MINOR" "$PATCH"

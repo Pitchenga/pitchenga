@@ -1,30 +1,34 @@
 #!/bin/bash
 set -euo pipefail
 
+# Load environment variables if .env exists
+if [ -f .env ]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
 # Default values
 artifactsDirectory=${1:-"cmake-build-release/Pitchenga_artefacts/Release"}
 outputPackage=${2:-"Pitchenga-macOS-AppStore.pkg"}
 version=${3:-"1.0.0"}
-bundleIdentifier=${4:-""}
-applicationIdentity=${5:-"Apple Distribution"}
-installerIdentity=${6:-"3rd Party Mac Developer Installer"}
+applicationIdentity=${4:-"Apple Distribution"}
+installerIdentity=${5:-"3rd Party Mac Developer Installer"}
 
 if [ "$version" == "1.0.0" ]; then
-    version=$(bash version.sh)
+    # Try to extract version from the built app's Info.plist first
+    PLIST_PATH="$artifactsDirectory/Standalone/Pitchenga.app/Contents/Info.plist"
+    if [ -f "$PLIST_PATH" ]; then
+        version=$(/usr/bin/plutil -extract CFBundleVersion raw "$PLIST_PATH")
+    else
+        version=$(bash version.sh)
+    fi
 fi
 
 echo "--- Creating macOS App Store Package ---"
 echo "Artifacts source:   $artifactsDirectory"
 echo "Output Package:     $outputPackage"
 echo "Version:            $version"
-echo "Bundle ID:          $bundleIdentifier"
 echo "App Identity:       $applicationIdentity"
 echo "Installer Identity: $installerIdentity"
-
-if [ -z "$bundleIdentifier" ]; then
-    echo "Error: bundleIdentifier must be provided."
-    exit 1
-fi
 
 originalAppPath="$artifactsDirectory/Standalone/Pitchenga.app"
 
@@ -74,6 +78,14 @@ cat <<EOF > "$entitlementsPath"
     <true/>
     <key>com.apple.security.device.audio-input</key>
     <true/>
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    <key>com.apple.security.temporary-exception.audio-unit-host</key>
+    <true/>
+    <key>com.apple.security.temporary-exception.files.home-relative-path.read-write</key>
+    <array>
+        <string>/Library/Pitchenga/</string>
+    </array>
     <key>com.apple.security.cs.disable-library-validation</key>
     <true/>
     <key>com.apple.security.cs.allow-jit</key>
@@ -94,14 +106,13 @@ plutil -replace LSMinimumSystemVersion -string "10.15" "$plistPath"
 # Bypass App Store Connect Export Compliance prompt
 plutil -replace ITSAppUsesNonExemptEncryption -bool false "$plistPath"
 
-# Set the Bundle Identifier
-plutil -replace CFBundleIdentifier -string "$bundleIdentifier" "$plistPath"
+# Extract the true Bundle Identifier from the original CMake build
+bundleIdentifier=$(plutil -extract CFBundleIdentifier raw "$plistPath")
+echo "Using Bundle Identifier: $bundleIdentifier"
 
 # Ensure version matches the package
 plutil -replace CFBundleVersion -string "$version" "$plistPath"
 plutil -replace CFBundleShortVersionString -string "$version" "$plistPath"
-
-echo "Using Bundle Identifier: $(plutil -extract CFBundleIdentifier raw "$plistPath")"
 
 echo "Embedding Provisioning Profile..."
 profilePath=".macprovisionprofile"

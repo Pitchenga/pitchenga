@@ -62,7 +62,8 @@ For **each** of these:
 
 ### Generate the Provisioning Profile (For TestFlight/MAS)
 
-To upload your app to TestFlight, Apple requires a **Mac App Store Provisioning Profile** embedded in the app bundle. Since we are building manually without Xcode, you must download this profile from the Developer Portal.
+To upload your app to TestFlight, Apple requires a **Mac App Store Provisioning Profile** embedded in the app bundle.
+Since we are building manually without Xcode, you must download this profile from the Developer Portal.
 
 * Go to [developer.apple.com](https://developer.apple.com/) \> **Profiles**.
 * Click the blue **+** icon.
@@ -121,7 +122,6 @@ final three text secrets to your GitHub repository to authenticate the uploads:
 * **`APPLE_TEAM_ID`**: Your 10-character Team ID.
   You can find this in the top right corner of the Apple Developer portal under your name.
   This is used as the **ASC Provider** for App Store uploads.
-* **`MAC_APP_BUNDLE_ID`**: Your app's **string Bundle Identifier** (e.g., `com.example.MyApp.ABC123DEF456`).
 * **`MAC_APP_APPLE_ID`**: Your app's **numeric Apple ID** (e.g., `1234567890`). To find this:
     * Go to [App Store Connect](https://appstoreconnect.apple.com/) \> **Apps**.
     * Select **Pitchenga**.
@@ -163,4 +163,26 @@ Several scripts are provided to automate the local build and publishing process:
 * **`create-mac-dmg.sh`**: Builds the portable macOS disk image.
 * **`create-mas-pkg.sh`**: Builds the sandboxed, signed package for the Mac App Store.
 * **`mas-testflight.sh`**: Combines building and publishing to TestFlight in one command.
+
+### Reset Privacy & Security Permissions (TCC Bug)
+
+If your app prompts for permissions but fails to add itself to the System Settings list, your LaunchServices database is likely corrupted with multiple local builds.
+
+First, wipe the permission state for the app:
+```bash
+tccutil reset All com.github.pitchenga.Pitchenga
+```
+
+Next, unregister all local development builds from LaunchServices:
+```bash
+find /Users/d/dev/pitchenga -name "Pitchenga.app" -type d -exec /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -u {} \;
+```
+
+If you have orphaned "Pitchenga" entries (binaries without a bundle ID) in your Microphone list, reset them by path:
+```bash
+find /Users/d/dev/pitchenga -name "Pitchenga" -type f -not -path "*.app/*" -exec tccutil reset Microphone {} \;
+```
+
+Reboot your Mac or log out and log back in to flush the in-memory LaunchServices cache.
+
 

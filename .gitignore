@@ -55,3 +55,4 @@ jpitchenga
 *.pkg
 *.dmg
 .macprovisionprofile
+.playwright-cli
