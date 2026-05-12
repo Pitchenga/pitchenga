@@ -15,9 +15,9 @@ juce::File Util::getAppFolder() {
 #if JUCE_MAC
     // In a sandboxed macOS app, standard JUCE/macOS APIs return the sandboxed Container folder.
     // To access the shared folder granted via temporary-exception, we must get the real home folder using POSIX APIs.
-    passwd* passwd = getpwuid(getuid());
-    if (passwd != nullptr && passwd->pw_dir != nullptr) {
-        auto appFolder = juce::File(juce::String(passwd->pw_dir))
+    auto* pw = getpwuid(getuid());
+    if (pw != nullptr && pw->pw_dir != nullptr) {
+        auto appFolder = juce::File(juce::String(pw->pw_dir))
             .getChildFile("Library/Pitchenga");
         return appFolder;
     }

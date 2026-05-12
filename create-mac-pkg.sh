@@ -52,7 +52,7 @@ build_component() {
         pkgbuild --analyze --root "$temp_root" "$plist_path"
         
         # Use sed to set BundleIsRelocatable to false
-        sed -i '' 's/<key>BundleIsRelocatable<\/key>.*<true\/>/<key>BundleIsRelocatable<\/key><false\/>/' "$plist_path"
+        plutil -replace BundleIsRelocatable -bool NO "$plist_path"
         
         # Derive identifier from the bundle name
         local identifier
