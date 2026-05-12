@@ -752,10 +752,6 @@ juce::Font Control::NoEllipsisLookAndFeel::getTextButtonFont(juce::TextButton&, 
 
 void Control::setupButton(juce::TextButton& button) {
     button.setLookAndFeel(&noEllipsisLookAndFeel);
-    button.setConnectedEdges(
-        juce::Button::ConnectedOnLeft | juce::Button::ConnectedOnRight |
-        juce::Button::ConnectedOnTop | juce::Button::ConnectedOnBottom
-    );
 }
 
 void Control::setupToggleButton(juce::TextButton& button, bool initialState) {
