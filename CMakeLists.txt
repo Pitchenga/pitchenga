@@ -175,12 +175,14 @@ set(PITCHENGA_SOURCES
 )
 
 if (PROJECT_VERSION STREQUAL "1.0.0")
-    # Generate dynamic timestamp for local dev on every build
+    # Force version.h to regenerate on every build attempt for local development
+    add_custom_target(ForceVersionUpdate)
     add_custom_command(
             OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version.h
             COMMAND ${CMAKE_COMMAND} -DOUTPUT_FILE=${CMAKE_CURRENT_BINARY_DIR}/version.h -P ${CMAKE_CURRENT_SOURCE_DIR}/version.cmake
-            DEPENDS ${PITCHENGA_SOURCES}
+            DEPENDS ForceVersionUpdate ${PITCHENGA_SOURCES}
     )
+    add_dependencies(Pitchenga ForceVersionUpdate)
 else()
     # Ensure the UI matches the Release Tag exactly for production builds
     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/version.h" "#pragma once\n#define VERSION \"${PROJECT_VERSION}\"\n")

@@ -83,8 +83,7 @@ void Util::debug(const juce::String& message) {
 bool Util::createFile() {
     if (!logFile.getParentDirectory().exists()) {
         if (!logFile.getParentDirectory().createDirectory()) {
-            std::cout << "Failed creating folder="
-                << logFile.getParentDirectory().getFullPathName().toStdString() << std::endl;
+            std::cout << "Failed creating folder=" << logFile.getParentDirectory().getFullPathName().toStdString() << std::endl;
             return false;
         }
     }

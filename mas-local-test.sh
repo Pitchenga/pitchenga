@@ -15,6 +15,9 @@ if [ ! -d "$APP_PATH" ]; then
     exit 1
 fi
 
+# Reset TCC for the clean bundle ID to ensure a fresh test
+tccutil reset All com.github.pitchenga.Pitchenga || true
+
 echo "--- Local macOS Sandbox Test (Mode: $MODE) ---"
 
 # Generate minimal test entitlements (No Team ID requirements to avoid launch failures)
