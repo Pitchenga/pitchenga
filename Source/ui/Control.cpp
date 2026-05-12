@@ -853,7 +853,7 @@ void Control::resized() {
     auto positionButton = [&](juce::TextButton& button, juce::Rectangle<int>& container) {
         if (!button.isVisible()) return;
         const float textWidth = juce::GlyphArrangement::getStringWidth(font, button.getButtonText());
-        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 8;
+        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 2;
         button.setBounds(container.removeFromLeft(buttonWidth));
     };
 
@@ -867,7 +867,7 @@ void Control::resized() {
         } else if (&button == &toggleLetter) {
             textWidth = juce::GlyphArrangement::getStringWidth(font, solfege);
         }
-        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 8;
+        const int buttonWidth = static_cast<int>(std::ceil(textWidth)) + 2;
         button.setBounds(container.removeFromRight(buttonWidth));
     };
 
@@ -888,7 +888,6 @@ void Control::resized() {
     positionButtonRight(buttonSave, topRow);
     constexpr int comboWidth = 140;
     comboPresets.setBounds(topRow.removeFromRight(comboWidth));
-    topRow.removeFromRight(6);
     positionButtonRight(toggleTweak, topRow);
     positionButtonRight(toggleRaw, topRow);
 
@@ -903,7 +902,6 @@ void Control::resized() {
         positionButton(toggleCapture, panelBounds);
 
         if (processor.wrapperType == juce::AudioProcessor::wrapperType_Standalone) {
-            panelBounds.removeFromLeft(6);
 
             // Layout the "Mic" label
             const float micTextWidth = juce::GlyphArrangement::getStringWidth(micLabel.getFont(), mic);
@@ -924,7 +922,6 @@ void Control::resized() {
 
         positionButtonRight(buttonDelete, panelBounds);
         positionButtonRight(buttonRename, panelBounds);
-        panelBounds.removeFromRight(6);
 
         positionButtonRight(toggleForrest, panelBounds);
         positionButtonRight(toggleSmoke, panelBounds);

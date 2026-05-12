@@ -160,13 +160,13 @@ void DesktopAudioCapture::start(double sampleRate) {
 
     [SCShareableContent getShareableContentWithCompletionHandler:^(SCShareableContent *content, NSError *error) {
         if (error != nil) {
-            Util::debug("SCShareableContent error: " + juce::String([error.localizedDescription UTF8String]));
+            Util::log("SCShareableContent error: " + juce::String([error.localizedDescription UTF8String]));
             return;
         }
         
         SCDisplay *display = content.displays.firstObject;
         if (display == nil) {
-            Util::debug("No display found for ScreenCaptureKit");
+            Util::log("No display found for ScreenCaptureKit");
             return;
         }
         
@@ -185,15 +185,15 @@ void DesktopAudioCapture::start(double sampleRate) {
         [impl->stream addStreamOutput:impl->delegate type:SCStreamOutputTypeAudio sampleHandlerQueue:impl->queue error:&outputError];
         
         if (outputError != nil) {
-            Util::debug("addStreamOutput error: " + juce::String([outputError.localizedDescription UTF8String]));
+            Util::log("addStreamOutput error: " + juce::String([outputError.localizedDescription UTF8String]));
             return;
         }
         
         [impl->stream startCaptureWithCompletionHandler:^(NSError *startError) {
             if (startError != nil) {
-                Util::debug("startCapture error: " + juce::String([startError.localizedDescription UTF8String]));
+                Util::log("startCapture error: " + juce::String([startError.localizedDescription UTF8String]));
             } else {
-                Util::debug("Desktop audio capture started");
+                Util::log("Desktop audio capture started");
             }
         }];
     }];
@@ -203,7 +203,7 @@ void DesktopAudioCapture::stop() {
     if (impl->stream) {
         [impl->stream stopCaptureWithCompletionHandler:^(NSError *error) {
             if (error != nil) {
-                Util::debug("stopCapture error: " + juce::String([error.localizedDescription UTF8String]));
+                Util::log("stopCapture error: " + juce::String([error.localizedDescription UTF8String]));
             }
         }];
         impl->stream = nil;
