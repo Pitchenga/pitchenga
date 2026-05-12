@@ -81,6 +81,8 @@ cat <<EOF > "$entitlementsPath"
     <true/>
     <key>com.apple.security.files.user-selected.read-write</key>
     <true/>
+    <key>com.apple.security.temporary-exception.audio-unit-host</key>
+    <true/>
     <key>com.apple.security.temporary-exception.files.home-relative-path.read-write</key>
     <array>
         <string>/Library/Pitchenga/</string>

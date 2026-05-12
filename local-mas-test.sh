@@ -29,10 +29,20 @@ cat <<EOF > "$TEST_ENTITLEMENTS"
     <true/>
     <key>com.apple.security.files.user-selected.read-write</key>
     <true/>
+    <key>com.apple.security.temporary-exception.audio-unit-host</key>
+    <true/>
     <key>com.apple.security.temporary-exception.files.home-relative-path.read-write</key>
     <array>
         <string>/Library/Pitchenga/</string>
     </array>
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <key>com.apple.security.cs.disable-executable-page-protection</key>
+    <true/>
 </dict>
 </plist>
 EOF
