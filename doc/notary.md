@@ -164,8 +164,23 @@ Several scripts are provided to automate the local build and publishing process:
 * **`create-mas-pkg.sh`**: Builds the sandboxed, signed package for the Mac App Store.
 * **`mas-testflight.sh`**: Combines building and publishing to TestFlight in one command.
 
-## Reset Privacy & Security permissions
+### Reset Privacy & Security permissions
 
 ```
 tccutil reset All com.github.pitchenga.Pitchenga.H3S6SYYCWN
+```
+
+Unregister the local dev builds from LaunchServices:
+
+```
+for app in $(find /Users/d/dev/pitchenga -name "Pitchenga.app" -type d); do
+   echo "Unregistering $app"
+   /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -u "$app" || true
+done
+```
+
+Force LaunchServices to rebuild its database:
+
+```
+/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -kill -r -domain local -domain system -domain user
 ```
