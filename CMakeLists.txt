@@ -72,7 +72,7 @@ add_subdirectory(libs/eigen)
 juce_add_plugin(Pitchenga
         VERSION "${PITCHENGA_VERSION}"
         COMPANY_NAME "Pitchenga"
-        BUNDLE_ID "com.github.pitchenga.Pitchenga"
+        BUNDLE_ID "com.github.pitchenga.Pitchenga.H3S6SYYCWN"
         PLUGIN_MANUFACTURER_CODE "Ptch"  # Exactly 4 chars
         PLUGIN_CODE "Ptch"               # Exactly 4 chars
         FORMATS AU VST3 Standalone       # The magic dual-compile flag
@@ -96,8 +96,8 @@ juce_add_plugin(Pitchenga
 # Explicitly separate the bundle identifiers to prevent LaunchServices collisions
 if (TARGET Pitchenga_Standalone)
     set_target_properties(Pitchenga_Standalone PROPERTIES
-            MACOSX_BUNDLE_GUI_IDENTIFIER "com.github.pitchenga.Pitchenga"
-            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.github.pitchenga.Pitchenga")
+            MACOSX_BUNDLE_GUI_IDENTIFIER "com.github.pitchenga.Pitchenga.H3S6SYYCWN"
+            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.github.pitchenga.Pitchenga.H3S6SYYCWN")
 endif()
 
 if (TARGET Pitchenga_AU)

@@ -122,7 +122,6 @@ final three text secrets to your GitHub repository to authenticate the uploads:
 * **`APPLE_TEAM_ID`**: Your 10-character Team ID.
   You can find this in the top right corner of the Apple Developer portal under your name.
   This is used as the **ASC Provider** for App Store uploads.
-* **`MAC_APP_BUNDLE_ID`**: Your app's **string Bundle Identifier** (e.g., `com.example.MyApp.ABC123DEF456`).
 * **`MAC_APP_APPLE_ID`**: Your app's **numeric Apple ID** (e.g., `1234567890`). To find this:
     * Go to [App Store Connect](https://appstoreconnect.apple.com/) \> **Apps**.
     * Select **Pitchenga**.
@@ -165,3 +164,8 @@ Several scripts are provided to automate the local build and publishing process:
 * **`create-mas-pkg.sh`**: Builds the sandboxed, signed package for the Mac App Store.
 * **`mas-testflight.sh`**: Combines building and publishing to TestFlight in one command.
 
+## Reset Privacy & Security permissions
+
+```
+tccutil reset All com.github.pitchenga.Pitchenga.H3S6SYYCWN
+```
