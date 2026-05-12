@@ -164,18 +164,25 @@ Several scripts are provided to automate the local build and publishing process:
 * **`create-mas-pkg.sh`**: Builds the sandboxed, signed package for the Mac App Store.
 * **`mas-testflight.sh`**: Combines building and publishing to TestFlight in one command.
 
-### Reset Privacy & Security
+### Reset Privacy & Security Permissions (TCC Bug)
 
 If your app prompts for permissions but fails to add itself to the System Settings list, your LaunchServices database is likely corrupted with multiple local builds.
 
-Wipe the permission state for the app:
+First, wipe the permission state for the app:
 ```bash
-tccutil reset All com.github.pitchenga.Pitchenga.H3S6SYYCWN
+tccutil reset All com.github.pitchenga.Pitchenga
 ```
 
-Unregister all local development builds from LaunchServices:
+Next, unregister all local development builds from LaunchServices:
 ```bash
 find /Users/d/dev/pitchenga -name "Pitchenga.app" -type d -exec /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -u {} \;
 ```
 
+If you have orphaned "Pitchenga" entries (binaries without a bundle ID) in your Microphone list, reset them by path:
+```bash
+find /Users/d/dev/pitchenga -name "Pitchenga" -type f -not -path "*.app/*" -exec tccutil reset Microphone {} \;
+```
+
 Reboot your Mac or log out and log back in to flush the in-memory LaunchServices cache.
+
+
