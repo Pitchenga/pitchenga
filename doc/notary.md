@@ -12,7 +12,7 @@ Before you can upload to the Mac App Store, you must create an app record to rec
 * Select the Bundle ID: **com.github.pitchenga.Pitchenga**.
 * Enter a unique SKU (e.g., `pitchenga-mac-v1`).
 * Click **Create**.
-* Go to **App Information** \> **General Information** to find your **Apple ID** (numeric) for the `MAC_APP_ID` secret.
+* Go to **App Information** \> **General Information** to find your App **Apple ID** (numeric) for the `MAC_APP_ID` secret.
 
 ### TestFlight for Mac
 
