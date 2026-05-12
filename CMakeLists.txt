@@ -129,7 +129,7 @@ if (APPLE)
         foreach(target_suffix Standalone AU VST3)
             if (TARGET Pitchenga_${target_suffix})
                 add_custom_command(TARGET Pitchenga_${target_suffix} POST_BUILD
-                        COMMAND /bin/bash -c "P=\"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist\"; if [ ! -f \"$P\" ]; then cp \"${CMAKE_CURRENT_BINARY_DIR}/Pitchenga_artefacts/JuceLibraryCode/Pitchenga_${target_suffix}/Info.plist\" \"$P\"; fi; V=$(bash ${CMAKE_CURRENT_SOURCE_DIR}/version.sh); /usr/bin/plutil -replace CFBundleVersion -string \"$V\" \"$P\"; /usr/bin/plutil -replace CFBundleShortVersionString -string \"$V\" \"$P\""
+                        COMMAND /bin/bash -c "P=\"$<TARGET_BUNDLE_CONTENT_DIR:Pitchenga_${target_suffix}>/Info.plist\"; if [ ! -f \"$P\" ]; then cp \"${CMAKE_CURRENT_BINARY_DIR}/Pitchenga_artefacts/JuceLibraryCode/Pitchenga_${target_suffix}/Info.plist\" \"$P\"; fi; V=$(grep '#define VERSION' \"${CMAKE_CURRENT_BINARY_DIR}/version.h\" | cut -d'\"' -f2); /usr/bin/plutil -replace CFBundleVersion -string \"$V\" \"$P\"; /usr/bin/plutil -replace CFBundleShortVersionString -string \"$V\" \"$P\""
                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                         COMMENT "Injecting dynamic version into ${target_suffix} bundle"
                         VERBATIM)
