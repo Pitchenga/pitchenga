@@ -91,7 +91,7 @@ juce_add_plugin(Pitchenga
         MICROPHONE_PERMISSION_TEXT "Pitchenga needs microphone access to visualize your audio."
         PLUGINHOST_AU TRUE
         PLUGINHOST_VST3 TRUE
-        PLIST_TO_MERGE "<plist><dict><key>NSScreenCaptureUsageDescription</key><string>Pitchenga needs screen recording permissions to capture your desktop audio.</string><key>NSAudioCaptureUsageDescription</key><string>Pitchenga needs system audio access to visualize your desktop audio.</string></dict></plist>")
+        PLIST_TO_MERGE "<plist><dict><key>NSAudioCaptureUsageDescription</key><string>Pitchenga needs system audio access to capture your desktop audio.</string></dict></plist>")
 
 # Explicitly separate the bundle identifiers to prevent LaunchServices collisions
 if (TARGET Pitchenga_Standalone)

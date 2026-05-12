@@ -12,4 +12,7 @@ public:
     static bool createFile();
     static void log(const juce::String& message);
     static juce::File getAppFolder();
+
+private:
+    static juce::CriticalSection lock;
 };

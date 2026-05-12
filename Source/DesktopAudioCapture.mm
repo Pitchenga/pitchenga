@@ -154,10 +154,6 @@ bool DesktopAudioCapture::isSupported() {
 void DesktopAudioCapture::start(double sampleRate) {
     if (impl->stream) return;
 
-    if (@available(macOS 10.15, *)) {
-        CGRequestScreenCaptureAccess();
-    }
-
     [SCShareableContent getShareableContentWithCompletionHandler:^(SCShareableContent *content, NSError *error) {
         if (error != nil) {
             Util::log("SCShareableContent error: " + juce::String([error.localizedDescription UTF8String]));

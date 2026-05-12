@@ -41,7 +41,7 @@ Pitchenga is a real-time music visualization application and audio plugin.
   e.g. "horizontal" - GOOD, "horiz" - BAD; "context" - GOOD, "ctx" - bad.
 - CRITICAL: Always use descriptive names, except for: "i" - index, "x"/"y" - coordinates, "e" - exception,
   "a"/"b"/etc for e.g. sorting parameters.
-  E.g.: "g" - BAD, "graphics" - GOOD; "cx" - BAD, "centerX" - GOOD.
+  E.g.: "g" - BAD, "graphics" - GOOD; "cx" - BAD, "centerX" - GOOD; "sl" - BAD, "scopedLock" - GOOD.
   This is a hard rule and cannot be violated.
 - CRITICAL: Do NOT put multiple statements on one line, i.e. no multiple ";" on single line.
 - CRITICAL: NEVER hard-code sizes for visual components - ALWAYS use their intrinsic sizes instead.

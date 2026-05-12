@@ -15,9 +15,9 @@ juce::File Util::getAppFolder() {
 #if JUCE_MAC
     // In a sandboxed macOS app, standard JUCE/macOS APIs return the sandboxed Container folder.
     // To access the shared folder granted via temporary-exception, we must get the real home folder using POSIX APIs.
-    passwd* passwd = getpwuid(getuid());
-    if (passwd != nullptr && passwd->pw_dir != nullptr) {
-        auto appFolder = juce::File(juce::String(passwd->pw_dir))
+    auto* pw = getpwuid(getuid());
+    if (pw != nullptr && pw->pw_dir != nullptr) {
+        auto appFolder = juce::File(juce::String(pw->pw_dir))
             .getChildFile("Library/Pitchenga");
         return appFolder;
     }
@@ -29,6 +29,7 @@ juce::File Util::getAppFolder() {
 }
 
 juce::File Util::logFile;
+juce::CriticalSection Util::lock;
 
 juce::String Util::getTimestamp() {
     const auto time = juce::Time::getCurrentTime();
@@ -48,7 +49,7 @@ void Util::init() {
             juce::Thread::launch(
                 [logsFolder]() {
                     if (logsFolder.isDirectory()) {
-                        const auto ago = juce::Time::getCurrentTime() - juce::RelativeTime::days(2);
+                        const auto ago = juce::Time::getCurrentTime() - juce::RelativeTime::days(1);
                         juce::Array<juce::File> logFiles;
                         logsFolder.findChildFiles(logFiles, juce::File::findFiles, false, "pitchenga-*.log");
                         for (const auto& file : logFiles) {
@@ -68,6 +69,7 @@ void Util::init() {
 }
 
 void Util::log(const juce::String& message) {
+    const juce::ScopedLock scopedLock (lock);
     const auto fullMessage = "[" + startTimestamp + "][" + getTimestamp() + "] " + message;
     std::cout << fullMessage.toStdString() << std::endl;
 
@@ -75,6 +77,7 @@ void Util::log(const juce::String& message) {
 }
 
 bool Util::createFile() {
+    const juce::ScopedLock scopedLock (lock);
     if (!logFile.getParentDirectory().exists()) {
         std::cout << "Creating folder=" << logFile.getParentDirectory().getFullPathName().toStdString() << std::endl;
         if (!logFile.getParentDirectory().createDirectory()) {

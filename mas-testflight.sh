@@ -24,7 +24,7 @@ fi
 export OUTPUT_PKG="Pitchenga-macOS-AppStore.pkg"
 
 # Check for required identifiers and credentials
-if [ -z "${APPLE_ID:-}" ] || [ -z "${APPLE_PASSWORD:-}" ] || [ -z "${APPLE_TEAM_ID:-}" ] || [ -z "${MAC_APP_APPLE_ID:-}" ] ]; then
+if [ -z "${APPLE_ID:-}" ] || [ -z "${APPLE_PASSWORD:-}" ] || [ -z "${APPLE_TEAM_ID:-}" ] || [ -z "${MAC_APP_APPLE_ID:-}" ]; then
     printf "\n⚠️  One or more of required secrets is not set (APPLE_ID, APPLE_PASSWORD, APPLE_TEAM_ID, MAC_APP_APPLE_ID).\n"
     exit 1
 fi
@@ -45,6 +45,7 @@ if xcrun altool --upload-package "$OUTPUT_PKG" \
     --password "$APPLE_PASSWORD" \
     --asc-provider "$APPLE_TEAM_ID" \
     --apple-id "$MAC_APP_APPLE_ID" \
+    --bundle-id "com.github.pitchenga.Pitchenga" \
     --bundle-version "$VERSION" \
     --bundle-short-version-string "$VERSION"; then
     printf "\n✅ Successfully uploaded to TestFlight!\n"
