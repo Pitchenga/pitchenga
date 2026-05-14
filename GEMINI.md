@@ -12,6 +12,7 @@ Pitchenga is a real-time music visualization application and audio plugin.
 - Package manager: CMake
 - Runtime / deployment target: Debug
 - This project does not use localization - everything is in English.
+  All non-repeating strings are hard-coded directly for better codeability.
 
 ## Commands
 
@@ -49,7 +50,7 @@ Pitchenga is a real-time music visualization application and audio plugin.
   This is a hard rule and cannot be violated.
 - CRITICAL: Do NOT put multiple statements on one line, i.e. no multiple ";" on single line.
 - CRITICAL: NEVER hard-code sizes for visual components - ALWAYS use their intrinsic sizes instead.
-- CRITICAL: ALWAYS use named constants rather than hard-coded values.
+- CRITICAL: ALWAYS use named constants rather than hard-coded values. (Except the aforementioned strings.) 
 - CRITICAL: ALWAYS declare the named constants in the header file.
 - CRITICAL: Do NOT expose private identifiers in files submitted to version control (including documentation):
   this is a public repo. For private identifiers, key, and passwords use GitHub secrets and local .env file.
