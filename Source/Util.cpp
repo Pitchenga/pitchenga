@@ -1,5 +1,6 @@
 #include "Util.h"
 #include <iostream>
+#include <memory>
 #include <vector>
 
 #if JUCE_MAC
@@ -42,7 +43,10 @@ static std::once_flag initFlag;
 void Util::init() {
     std::call_once(
         initFlag,
-        [] { juce::Logger::setCurrentLogger(new PitchengaLogger()); }
+        [] {
+            static auto activeLogger = std::make_unique<PitchengaLogger>();
+            juce::Logger::setCurrentLogger(activeLogger.get());
+        }
     );
 }
 
