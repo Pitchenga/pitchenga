@@ -22,19 +22,22 @@ class PitchengaStandaloneWindow : public juce::StandaloneFilterWindow,
     void updateWindowTitle() {
         if (pluginHolder == nullptr) return;
         auto setup = pluginHolder->deviceManager.getAudioDeviceSetup();
+        auto* type = pluginHolder->deviceManager.getCurrentDeviceTypeObject();
+
+        juce::String outName = setup.outputDeviceName;
+        juce::String inName = setup.inputDeviceName;
+
+        // Sanitize against reality to ensure the UI reflects truth, not ghost strings
+        if (type != nullptr) {
+            if (!type->getDeviceNames(false).contains(outName)) outName = "<< none >>";
+            if (!type->getDeviceNames(true).contains(inName)) inName = "<< none >>";
+        }
+
+        if (outName.isEmpty()) outName = "<< none >>";
+        if (inName.isEmpty()) inName = "<< none >>";
 
         juce::String windowTitle = JucePlugin_Name;
-
-        bool isOutFallback = preferredOutput.isNotEmpty() && setup.outputDeviceName != preferredOutput;
-        bool isInFallback = preferredInput.isNotEmpty() && setup.inputDeviceName != preferredInput;
-
-        if (isOutFallback && isInFallback && setup.outputDeviceName != setup.inputDeviceName) {
-            windowTitle += " [" + setup.outputDeviceName + " / " + setup.inputDeviceName + "]";
-        } else if (isOutFallback) {
-            windowTitle += " [" + setup.outputDeviceName + "]";
-        } else if (isInFallback) {
-            windowTitle += " [" + setup.inputDeviceName + "]";
-        }
+        windowTitle += " [" + inName + "][" + outName + "]";
 
         this->setName(windowTitle);
     }
@@ -79,6 +82,19 @@ public:
         if (source != &pluginHolder->deviceManager) return;
 
         auto currentSetup = pluginHolder->deviceManager.getAudioDeviceSetup();
+        auto* currentDeviceType = pluginHolder->deviceManager.getCurrentDeviceTypeObject();
+        if (currentDeviceType == nullptr) return;
+
+        auto availableOutputs = currentDeviceType->getDeviceNames(false);
+        auto availableInputs = currentDeviceType->getDeviceNames(true);
+
+        // Explicitly destroy JUCE ghost strings by validating against physical reality
+        if (!availableOutputs.contains(currentSetup.outputDeviceName)) {
+            currentSetup.outputDeviceName = "";
+        }
+        if (!availableInputs.contains(currentSetup.inputDeviceName)) {
+            currentSetup.inputDeviceName = "";
+        }
 
         // Initial setup: capture current as preferred if none exists
         if (preferredOutput.isEmpty() && currentSetup.outputDeviceName.isNotEmpty()) {
@@ -98,90 +114,91 @@ public:
             return;
         }
 
-        if (auto* currentDeviceType = pluginHolder->deviceManager.getCurrentDeviceTypeObject()) {
-            auto availableOutputs = currentDeviceType->getDeviceNames(false);
-            auto availableInputs = currentDeviceType->getDeviceNames(true);
+        bool needToSwitchOutput = false;
+        bool needToSwitchInput = false;
 
-            bool needToSwitchOutput = false;
-            bool needToSwitchInput = false;
-
-            // --- Handle Output ---
-            if (preferredOutput.isNotEmpty()) {
-                if (!availableOutputs.contains(preferredOutput)) {
-                    // Fallback Mode: Preferred is physically gone.
-                    if (!isOnFallbackOutput) {
-                        isOnFallbackOutput = true;
-                        Util::log(
-                            "Preferred output gone, switched to fallback output=" + currentSetup.outputDeviceName
-                        );
-                    }
-                } else if (isOnFallbackOutput) {
-                    // Auto-Restore: We were on a fallback, and preferred came back
-                    needToSwitchOutput = true;
-                } else if (currentSetup.outputDeviceName != preferredOutput) {
-                    // Manual Change: Preferred was plugged in, but user deliberately picked something else
-                    preferredOutput = currentSetup.outputDeviceName;
-                    Util::log("Updated preferred output=" + preferredOutput);
+        // --- Handle Output ---
+        if (preferredOutput.isNotEmpty()) {
+            if (!availableOutputs.contains(preferredOutput)) {
+                // Fallback Mode: Preferred is physically gone.
+                if (!isOnFallbackOutput) {
+                    isOnFallbackOutput = true;
+                    Util::log(
+                        "Preferred output gone, switched to fallback output=" + currentSetup.outputDeviceName
+                    );
                 }
+            } else if (isOnFallbackOutput) {
+                // Auto-Restore: We were on a fallback, and preferred came back
+                needToSwitchOutput = true;
+            } else if (currentSetup.outputDeviceName != preferredOutput) {
+                // Manual Change: Preferred was plugged in, but user deliberately picked something else
+                preferredOutput = currentSetup.outputDeviceName;
+                Util::log("Updated preferred output=" + preferredOutput);
             }
+        }
 
-            // --- Handle Input ---
-            if (preferredInput.isNotEmpty()) {
-                if (!availableInputs.contains(preferredInput)) {
-                    // Fallback Mode: Preferred is physically gone.
-                    if (!isOnFallbackInput) {
-                        isOnFallbackInput = true;
-                        Util::log("Preferred input gone, switched to fallback input=" + currentSetup.inputDeviceName);
-                    }
-                } else if (isOnFallbackInput) {
-                    // Auto-Restore: We were on a fallback, and preferred came back
-                    needToSwitchInput = true;
-                } else if (currentSetup.inputDeviceName != preferredInput) {
-                    // Manual Change: Preferred was plugged in, but user deliberately picked something else
-                    preferredInput = currentSetup.inputDeviceName;
-                    Util::log("Updated preferred input=" + preferredInput);
+        // --- Handle Input ---
+        if (preferredInput.isNotEmpty()) {
+            if (!availableInputs.contains(preferredInput)) {
+                // Fallback Mode: Preferred is physically gone.
+                if (!isOnFallbackInput) {
+                    isOnFallbackInput = true;
+                    Util::log("Preferred input gone, switched to fallback input=" + currentSetup.inputDeviceName);
                 }
+            } else if (isOnFallbackInput) {
+                // Auto-Restore: We were on a fallback, and preferred came back
+                needToSwitchInput = true;
+            } else if (currentSetup.inputDeviceName != preferredInput) {
+                // Manual Change: Preferred was plugged in, but user deliberately picked something else
+                preferredInput = currentSetup.inputDeviceName;
+                Util::log("Updated preferred input=" + preferredInput);
             }
+        }
 
-            updateWindowTitle();
+        updateWindowTitle();
 
-            if (needToSwitchOutput || needToSwitchInput) {
-                isOnFallbackOutput = false;
-                isOnFallbackInput = false;
+        if (needToSwitchOutput || needToSwitchInput) {
+            isOnFallbackOutput = false;
+            isOnFallbackInput = false;
 
-                SafePointer safeThis(this);
+            SafePointer safeThis(this);
 
-                // Fire asynchronously to bypass the UI lock from the Audio Settings window
-                juce::MessageManager::callAsync(
-                    [safeThis, preferredOut = preferredOutput, preferredIn =
-                        preferredInput, needToSwitchOutput, needToSwitchInput] {
-                        if (safeThis == nullptr || safeThis->pluginHolder == nullptr) return;
+            // Fire asynchronously to bypass the UI lock from the Audio Settings window
+            juce::MessageManager::callAsync(
+                [safeThis, preferredOut = preferredOutput, preferredIn =
+                    preferredInput, needToSwitchOutput, needToSwitchInput] {
+                    if (safeThis == nullptr || safeThis->pluginHolder == nullptr) return;
 
-                        juce::String error;
-                        {
-                            const juce::ScopedValueSetter setter(safeThis->isRestoring, true);
+                    juce::String error;
+                    {
+                        const juce::ScopedValueSetter setter(safeThis->isRestoring, true);
 
-                            juce::AudioDeviceManager::AudioDeviceSetup newSetup =
-                                safeThis->pluginHolder->deviceManager.getAudioDeviceSetup();
+                        juce::AudioDeviceManager::AudioDeviceSetup newSetup =
+                            safeThis->pluginHolder->deviceManager.getAudioDeviceSetup();
 
-                            if (needToSwitchOutput) newSetup.outputDeviceName = preferredOut;
-                            if (needToSwitchInput) newSetup.inputDeviceName = preferredIn;
-
-                            error = safeThis->pluginHolder->deviceManager.setAudioDeviceSetup(newSetup, true);
-                        } // isRestoring drops to false here, before we manually update the title
-
-                        if (error.isEmpty()) {
-                            if (needToSwitchOutput) Util::log("Auto-restored preferred output=" + preferredOut);
-                            if (needToSwitchInput) Util::log("Auto-restored preferred input=" + preferredIn);
-                        } else {
-                            Util::log("Failed to auto-restore interface=" + error);
+                        if (needToSwitchOutput) {
+                            newSetup.outputDeviceName = preferredOut;
+                            newSetup.useDefaultOutputChannels = true;
+                        }
+                        if (needToSwitchInput) {
+                            newSetup.inputDeviceName = preferredIn;
+                            newSetup.useDefaultInputChannels = true;
                         }
 
-                        // Explicitly force the title to update now that the restore lock is lifted
-                        safeThis->updateWindowTitle();
+                        error = safeThis->pluginHolder->deviceManager.setAudioDeviceSetup(newSetup, true);
+                    } // isRestoring drops to false here, before we manually update the title
+
+                    if (error.isEmpty()) {
+                        if (needToSwitchOutput) Util::log("Auto-restored preferred output=" + preferredOut);
+                        if (needToSwitchInput) Util::log("Auto-restored preferred input=" + preferredIn);
+                    } else {
+                        Util::log("Failed to auto-restore interface=" + error);
                     }
-                );
-            }
+
+                    // Explicitly force the title to update now that the restore lock is lifted
+                    safeThis->updateWindowTitle();
+                }
+            );
         }
     }
 
