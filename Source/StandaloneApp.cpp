@@ -19,6 +19,20 @@ class PitchengaStandaloneWindow : public juce::StandaloneFilterWindow,
     bool isOnFallbackOutput = false;
     bool isOnFallbackInput = false;
 
+    void updateWindowTitle(const juce::AudioDeviceManager::AudioDeviceSetup& setup) {
+        juce::String windowTitle = JucePlugin_Name;
+
+        if (isOnFallbackOutput && isOnFallbackInput && setup.outputDeviceName != setup.inputDeviceName) {
+            windowTitle += " [" + setup.outputDeviceName + " / " + setup.inputDeviceName + "]";
+        } else if (isOnFallbackOutput) {
+            windowTitle += " [" + setup.outputDeviceName + "]";
+        } else if (isOnFallbackInput) {
+            windowTitle += " [" + setup.inputDeviceName + "]";
+        }
+
+        this->setName(windowTitle);
+    }
+
 public:
     PitchengaStandaloneWindow(
         const juce::String& name,
@@ -121,6 +135,8 @@ public:
                     Util::log("Updated preferred input=" + preferredInput);
                 }
             }
+
+            updateWindowTitle(currentSetup);
 
             if (needToSwitchOutput || needToSwitchInput) {
                 isOnFallbackOutput = false;
