@@ -12,6 +12,7 @@ Pitchenga is a real-time music visualization application and audio plugin.
 - Package manager: CMake
 - Runtime / deployment target: Debug
 - This project does not use localization - everything is in English.
+  All non-repeating strings are hard-coded directly for better codeability.
 
 ## Commands
 
