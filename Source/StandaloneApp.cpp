@@ -120,6 +120,7 @@ namespace juce {
 
         void initialise(const String&) override {
             window.reset(createWindow());
+            window->setVisible(true);
         }
 
         void shutdown() override {
