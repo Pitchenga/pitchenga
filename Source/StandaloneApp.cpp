@@ -168,7 +168,7 @@ public:
             isOnFallbackOutput = false;
             isOnFallbackInput = false;
 
-            SafePointer safeThis(this);
+            juce::SafePointer safeThis { this };
 
             // Fire asynchronously to bypass the UI lock from the Audio Settings window
             juce::MessageManager::callAsync(
