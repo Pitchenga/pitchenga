@@ -1034,9 +1034,6 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isRawMode", isRawMode);
     xml.setAttribute("isLetterNotation", isLetterNotation);
 
-    xml.setAttribute("preferredOutputDevice", preferredOutputDevice);
-    xml.setAttribute("preferredInputDevice", preferredInputDevice);
-
     if (externalPluginDescriptionXml.isNotEmpty()) {
         xml.createNewChildElement("ExternalPluginDescription")->addTextElement(externalPluginDescriptionXml);
     }
@@ -1080,9 +1077,6 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isShowTweakPanel = xml.getBoolAttribute("isShowTweakPanel", isShowTweakPanel);
     isRawMode = xml.getBoolAttribute("isRawMode", isRawMode);
     isLetterNotation = xml.getBoolAttribute("isLetterNotation", isLetterNotation);
-
-    preferredOutputDevice = xml.getStringAttribute("preferredOutputDevice", preferredOutputDevice);
-    preferredInputDevice = xml.getStringAttribute("preferredInputDevice", preferredInputDevice);
 
     externalPluginDescriptionXml = {};
     if (auto* descriptionXmlElement = xml.getChildByName("ExternalPluginDescription")) {

@@ -47,9 +47,6 @@ public:
         std::atomic<bool> isRawMode = false;
         std::atomic<bool> isLetterNotation = false;
 
-        juce::String preferredOutputDevice;
-        juce::String preferredInputDevice;
-
         juce::String externalPluginDescriptionXml;
         juce::String externalPluginStateBase64;
         bool isExternalPluginWindowOpen = false;
