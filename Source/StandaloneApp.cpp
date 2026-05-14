@@ -53,7 +53,46 @@ class PitchengaStandaloneWindow : public juce::StandaloneFilterWindow,
         this->setName(windowTitle);
     }
 
-    auto timerCallback() -> void override {
+public:
+    PitchengaStandaloneWindow(
+        const juce::String& name,
+        juce::Colour backgroundColour,
+        std::unique_ptr<juce::StandalonePluginHolder> holder
+    )
+        : StandaloneFilterWindow(name, backgroundColour, std::move(holder)) {
+        if (pluginHolder != nullptr) {
+            if (pluginHolder->settings != nullptr) {
+                // Read the preferred device from JUCE's native XML property storage
+                if (const auto savedState = pluginHolder->settings->getXmlValue("PitchengaAudioSetup")) {
+                    preferredOutput = savedState->getStringAttribute("preferredOutput");
+                    preferredInput = savedState->getStringAttribute("preferredInput");
+                    preferredSampleRate = savedState->getDoubleAttribute("preferredSampleRate", 0.0);
+                    preferredBufferSize = savedState->getIntAttribute("preferredBufferSize", 0);
+                }
+            }
+            pluginHolder->deviceManager.addChangeListener(this);
+        }
+
+        updateWindowTitle();
+    }
+
+    ~PitchengaStandaloneWindow() override {
+        if (pluginHolder != nullptr) {
+            pluginHolder->deviceManager.removeChangeListener(this);
+
+            if (pluginHolder->settings != nullptr) {
+                // Save our preferred devices natively
+                juce::XmlElement savedState("PitchengaAudioSetup");
+                savedState.setAttribute("preferredOutput", preferredOutput);
+                savedState.setAttribute("preferredInput", preferredInput);
+                savedState.setAttribute("preferredSampleRate", preferredSampleRate);
+                savedState.setAttribute("preferredBufferSize", preferredBufferSize);
+                pluginHolder->settings->setValue("PitchengaAudioSetup", &savedState);
+            }
+        }
+    }
+
+    void timerCallback() override {
         stopTimer();
         if (pluginHolder == nullptr) return;
 
@@ -116,47 +155,6 @@ class PitchengaStandaloneWindow : public juce::StandaloneFilterWindow,
 
         // Explicitly force the title to update now that the restore lock is lifted
         updateWindowTitle();
-    }
-
-public:
-    PitchengaStandaloneWindow(
-        const juce::String& name,
-        juce::Colour backgroundColour,
-        std::unique_ptr<juce::StandalonePluginHolder> holder
-    )
-        : StandaloneFilterWindow(name, backgroundColour, std::move(holder)) {
-        if (pluginHolder != nullptr) {
-            if (pluginHolder->settings != nullptr) {
-                // Read the preferred device from JUCE's native XML property storage
-                if (std::unique_ptr savedState{
-                    pluginHolder->settings->getXmlValue("PitchengaAudioSetup")
-                }) {
-                    preferredOutput = savedState->getStringAttribute("preferredOutput");
-                    preferredInput = savedState->getStringAttribute("preferredInput");
-                    preferredSampleRate = savedState->getDoubleAttribute("preferredSampleRate", 0.0);
-                    preferredBufferSize = savedState->getIntAttribute("preferredBufferSize", 0);
-                }
-            }
-            pluginHolder->deviceManager.addChangeListener(this);
-        }
-
-        updateWindowTitle();
-    }
-
-    ~PitchengaStandaloneWindow() override {
-        if (pluginHolder != nullptr) {
-            pluginHolder->deviceManager.removeChangeListener(this);
-
-            if (pluginHolder->settings != nullptr) {
-                // Save our preferred devices natively
-                juce::XmlElement savedState("PitchengaAudioSetup");
-                savedState.setAttribute("preferredOutput", preferredOutput);
-                savedState.setAttribute("preferredInput", preferredInput);
-                savedState.setAttribute("preferredSampleRate", preferredSampleRate);
-                savedState.setAttribute("preferredBufferSize", preferredBufferSize);
-                pluginHolder->settings->setValue("PitchengaAudioSetup", &savedState);
-            }
-        }
     }
 
     void changeListenerCallback(juce::ChangeBroadcaster* source) override {
