@@ -18,6 +18,7 @@ class PitchengaStandaloneWindow : public juce::StandaloneFilterWindow,
     bool isRestoring = false;
     bool isOnFallbackOutput = false;
     bool isOnFallbackInput = false;
+    juce::String none = "<< none >>";
 
     void updateWindowTitle() {
         if (pluginHolder == nullptr) return;
@@ -29,15 +30,19 @@ class PitchengaStandaloneWindow : public juce::StandaloneFilterWindow,
 
         // Sanitize against reality to ensure the UI reflects truth, not ghost strings
         if (type != nullptr) {
-            if (!type->getDeviceNames(false).contains(outName)) outName = "<< none >>";
-            if (!type->getDeviceNames(true).contains(inName)) inName = "<< none >>";
+            if (!type->getDeviceNames(false).contains(outName)) outName = none;
+            if (!type->getDeviceNames(true).contains(inName)) inName = none;
         }
 
-        if (outName.isEmpty()) outName = "<< none >>";
-        if (inName.isEmpty()) inName = "<< none >>";
+        if (outName.isEmpty()) outName = none;
+        if (inName.isEmpty()) inName = none;
 
         juce::String windowTitle = JucePlugin_Name;
-        windowTitle += " [" + inName + "][" + outName + "]";
+        if (inName == outName) {
+            windowTitle += " [" + inName + "]";
+        } else {
+            windowTitle += " [" + inName + "] [" + outName + "]";
+        }
 
         this->setName(windowTitle);
     }
@@ -61,6 +66,8 @@ public:
             }
             pluginHolder->deviceManager.addChangeListener(this);
         }
+
+        updateWindowTitle();
     }
 
     ~PitchengaStandaloneWindow() override {
@@ -176,14 +183,23 @@ public:
                         juce::AudioDeviceManager::AudioDeviceSetup newSetup =
                             safeThis->pluginHolder->deviceManager.getAudioDeviceSetup();
 
+                        // Wipe the inherited sample rate and buffer size so the hardware can auto-negotiate
+                        newSetup.sampleRate = 0.0;
+                        newSetup.bufferSize = 0;
+
                         if (needToSwitchOutput) {
                             newSetup.outputDeviceName = preferredOut;
                             newSetup.useDefaultOutputChannels = true;
+                            newSetup.outputChannels.clear();
                         }
                         if (needToSwitchInput) {
                             newSetup.inputDeviceName = preferredIn;
                             newSetup.useDefaultInputChannels = true;
+                            newSetup.inputChannels.clear();
                         }
+
+                        // Force a complete teardown of the dead audio graph before re-initializing
+                        safeThis->pluginHolder->deviceManager.closeAudioDevice();
 
                         error = safeThis->pluginHolder->deviceManager.setAudioDeviceSetup(newSetup, true);
                     } // isRestoring drops to false here, before we manually update the title
