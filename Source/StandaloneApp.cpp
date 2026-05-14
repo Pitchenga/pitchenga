@@ -19,14 +19,20 @@ class PitchengaStandaloneWindow : public juce::StandaloneFilterWindow,
     bool isOnFallbackOutput = false;
     bool isOnFallbackInput = false;
 
-    void updateWindowTitle(const juce::AudioDeviceManager::AudioDeviceSetup& setup) {
+    void updateWindowTitle() {
+        if (pluginHolder == nullptr) return;
+        auto setup = pluginHolder->deviceManager.getAudioDeviceSetup();
+
         juce::String windowTitle = JucePlugin_Name;
 
-        if (isOnFallbackOutput && isOnFallbackInput && setup.outputDeviceName != setup.inputDeviceName) {
+        bool isOutFallback = preferredOutput.isNotEmpty() && setup.outputDeviceName != preferredOutput;
+        bool isInFallback = preferredInput.isNotEmpty() && setup.inputDeviceName != preferredInput;
+
+        if (isOutFallback && isInFallback && setup.outputDeviceName != setup.inputDeviceName) {
             windowTitle += " [" + setup.outputDeviceName + " / " + setup.inputDeviceName + "]";
-        } else if (isOnFallbackOutput) {
+        } else if (isOutFallback) {
             windowTitle += " [" + setup.outputDeviceName + "]";
-        } else if (isOnFallbackInput) {
+        } else if (isInFallback) {
             windowTitle += " [" + setup.inputDeviceName + "]";
         }
 
@@ -88,6 +94,7 @@ public:
             && currentSetup.inputDeviceName == preferredInput) {
             isOnFallbackOutput = false;
             isOnFallbackInput = false;
+            updateWindowTitle();
             return;
         }
 
@@ -136,7 +143,7 @@ public:
                 }
             }
 
-            updateWindowTitle(currentSetup);
+            updateWindowTitle();
 
             if (needToSwitchOutput || needToSwitchInput) {
                 isOnFallbackOutput = false;
@@ -150,21 +157,28 @@ public:
                         preferredInput, needToSwitchOutput, needToSwitchInput] {
                         if (safeThis == nullptr || safeThis->pluginHolder == nullptr) return;
 
-                        const juce::ScopedValueSetter setter(safeThis->isRestoring, true);
+                        juce::String error;
+                        {
+                            const juce::ScopedValueSetter setter(safeThis->isRestoring, true);
 
-                        juce::AudioDeviceManager::AudioDeviceSetup newSetup =
-                            safeThis->pluginHolder->deviceManager.getAudioDeviceSetup();
+                            juce::AudioDeviceManager::AudioDeviceSetup newSetup =
+                                safeThis->pluginHolder->deviceManager.getAudioDeviceSetup();
 
-                        if (needToSwitchOutput) newSetup.outputDeviceName = preferredOut;
-                        if (needToSwitchInput) newSetup.inputDeviceName = preferredIn;
+                            if (needToSwitchOutput) newSetup.outputDeviceName = preferredOut;
+                            if (needToSwitchInput) newSetup.inputDeviceName = preferredIn;
 
-                        auto error = safeThis->pluginHolder->deviceManager.setAudioDeviceSetup(newSetup, true);
+                            error = safeThis->pluginHolder->deviceManager.setAudioDeviceSetup(newSetup, true);
+                        } // isRestoring drops to false here, before we manually update the title
+
                         if (error.isEmpty()) {
                             if (needToSwitchOutput) Util::log("Auto-restored preferred output=" + preferredOut);
                             if (needToSwitchInput) Util::log("Auto-restored preferred input=" + preferredIn);
                         } else {
                             Util::log("Failed to auto-restore interface=" + error);
                         }
+
+                        // Explicitly force the title to update now that the restore lock is lifted
+                        safeThis->updateWindowTitle();
                     }
                 );
             }
