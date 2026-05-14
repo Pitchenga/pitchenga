@@ -24,7 +24,7 @@ class PitchengaStandaloneWindow : public juce::StandaloneFilterWindow,
     bool isOnFallbackInput = false;
     bool isAttemptingRestoreOutput = false;
     bool isAttemptingRestoreInput = false;
-    juce::String noneDevice = "<< none >>";
+    static inline const juce::String noneDevice = "<< none >>";
 
     void updateWindowTitle() {
         if (pluginHolder == nullptr) return;
