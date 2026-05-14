@@ -4,7 +4,8 @@ Pitchenga is a real-time music visualization application and audio plugin.
 
 ## Stack
 
-- Language and version: C++20
+- Language and version: C++20 - use modern syntax with Class Template Argument Deduction -
+  no redundant type arguments and qualifiers.
 - Framework(s): JUCE
 - Package manager: CMake
 - Runtime / deployment target: Debug

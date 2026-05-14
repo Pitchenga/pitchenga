@@ -16,7 +16,8 @@ class PitchengaStandaloneWindow : public juce::StandaloneFilterWindow,
     juce::String preferredOutput;
     juce::String preferredInput;
     bool isRestoring = false;
-    bool wasOnFallback = false;
+    bool isOnFallbackOutput = false;
+    bool isOnFallbackInput = false;
 
 public:
     PitchengaStandaloneWindow(
@@ -62,60 +63,93 @@ public:
         // Initial setup: capture current as preferred if none exists
         if (preferredOutput.isEmpty() && currentSetup.outputDeviceName.isNotEmpty()) {
             preferredOutput = currentSetup.outputDeviceName;
+            isOnFallbackOutput = false;
+        }
+        if (preferredInput.isEmpty() && currentSetup.inputDeviceName.isNotEmpty()) {
             preferredInput = currentSetup.inputDeviceName;
-            wasOnFallback = false;
+            isOnFallbackInput = false;
+        }
+
+        if (currentSetup.outputDeviceName == preferredOutput
+            && currentSetup.inputDeviceName == preferredInput) {
+            isOnFallbackOutput = false;
+            isOnFallbackInput = false;
             return;
         }
 
-        if (currentSetup.outputDeviceName == preferredOutput) {
-            wasOnFallback = false;
-            return;
-        }
-
-        // We are not on the preferred device.
         if (auto* currentDeviceType = pluginHolder->deviceManager.getCurrentDeviceTypeObject()) {
-            auto availableDevices = currentDeviceType->getDeviceNames();
+            auto availableOutputs = currentDeviceType->getDeviceNames(false);
+            auto availableInputs = currentDeviceType->getDeviceNames(true);
 
-            if (availableDevices.contains(preferredOutput)) {
-                // Preferred is available, but we are not on it.
-                if (wasOnFallback) {
-                    // Auto-Restore: We were on a fallback, and preferred came back!
-                    wasOnFallback = false; // Mark immediately to prevent multi-triggering from UI panic
+            bool needToSwitchOutput = false;
+            bool needToSwitchInput = false;
 
-                    SafePointer safeThis(this);
-
-                    // Fire asynchronously to bypass the UI lock from the Audio Settings window
-                    juce::MessageManager::callAsync(
-                        [safeThis, preferredOut = preferredOutput, preferredIn = preferredInput] {
-                            if (safeThis == nullptr || safeThis->pluginHolder == nullptr) return;
-
-                            const juce::ScopedValueSetter setter(safeThis->isRestoring, true);
-
-                            juce::AudioDeviceManager::AudioDeviceSetup newSetup =
-                                safeThis->pluginHolder->deviceManager.getAudioDeviceSetup();
-                            newSetup.outputDeviceName = preferredOut;
-                            newSetup.inputDeviceName = preferredIn;
-
-                            auto error = safeThis->pluginHolder->deviceManager.setAudioDeviceSetup(newSetup, true);
-                            if (error.isEmpty()) {
-                                Util::log("Auto-restored preferred interface=" + preferredOut);
-                            } else {
-                                Util::log("Failed to auto-restore interface=" + error);
-                            }
-                        }
-                    );
-                } else {
-                    // Manual Change: Preferred was plugged in, but user deliberately picked something else.
+            // --- Handle Output ---
+            if (preferredOutput.isNotEmpty()) {
+                if (!availableOutputs.contains(preferredOutput)) {
+                    // Fallback Mode: Preferred is physically gone.
+                    if (!isOnFallbackOutput) {
+                        isOnFallbackOutput = true;
+                        Util::log(
+                            "Preferred output gone, switched to fallback output=" + currentSetup.outputDeviceName
+                        );
+                    }
+                } else if (isOnFallbackOutput) {
+                    // Auto-Restore: We were on a fallback, and preferred came back
+                    needToSwitchOutput = true;
+                } else if (currentSetup.outputDeviceName != preferredOutput) {
+                    // Manual Change: Preferred was plugged in, but user deliberately picked something else
                     preferredOutput = currentSetup.outputDeviceName;
-                    preferredInput = currentSetup.inputDeviceName;
-                    Util::log("Updated preferred interface=" + preferredOutput);
+                    Util::log("Updated preferred output=" + preferredOutput);
                 }
-            } else {
-                // Fallback Mode: Preferred is physically gone.
-                wasOnFallback = true;
-                Util::log(
-                    "Preferred interface gone, switched to fallback interface="
-                    + currentSetup.outputDeviceName
+            }
+
+            // --- Handle Input ---
+            if (preferredInput.isNotEmpty()) {
+                if (!availableInputs.contains(preferredInput)) {
+                    // Fallback Mode: Preferred is physically gone.
+                    if (!isOnFallbackInput) {
+                        isOnFallbackInput = true;
+                        Util::log("Preferred input gone, switched to fallback input=" + currentSetup.inputDeviceName);
+                    }
+                } else if (isOnFallbackInput) {
+                    // Auto-Restore: We were on a fallback, and preferred came back
+                    needToSwitchInput = true;
+                } else if (currentSetup.inputDeviceName != preferredInput) {
+                    // Manual Change: Preferred was plugged in, but user deliberately picked something else
+                    preferredInput = currentSetup.inputDeviceName;
+                    Util::log("Updated preferred input=" + preferredInput);
+                }
+            }
+
+            if (needToSwitchOutput || needToSwitchInput) {
+                isOnFallbackOutput = false;
+                isOnFallbackInput = false;
+
+                SafePointer safeThis(this);
+
+                // Fire asynchronously to bypass the UI lock from the Audio Settings window
+                juce::MessageManager::callAsync(
+                    [safeThis, preferredOut = preferredOutput, preferredIn =
+                        preferredInput, needToSwitchOutput, needToSwitchInput] {
+                        if (safeThis == nullptr || safeThis->pluginHolder == nullptr) return;
+
+                        const juce::ScopedValueSetter setter(safeThis->isRestoring, true);
+
+                        juce::AudioDeviceManager::AudioDeviceSetup newSetup =
+                            safeThis->pluginHolder->deviceManager.getAudioDeviceSetup();
+
+                        if (needToSwitchOutput) newSetup.outputDeviceName = preferredOut;
+                        if (needToSwitchInput) newSetup.inputDeviceName = preferredIn;
+
+                        auto error = safeThis->pluginHolder->deviceManager.setAudioDeviceSetup(newSetup, true);
+                        if (error.isEmpty()) {
+                            if (needToSwitchOutput) Util::log("Auto-restored preferred output=" + preferredOut);
+                            if (needToSwitchInput) Util::log("Auto-restored preferred input=" + preferredIn);
+                        } else {
+                            Util::log("Failed to auto-restore interface=" + error);
+                        }
+                    }
                 );
             }
         }
@@ -133,16 +167,15 @@ public:
     bool moreThanOneInstanceAllowed() override { return true; }
 
     void initialise(const juce::String&) override {
+        // Run JUCE's default setup first (handles all the heavy lifting)
         juce::PropertiesFile::Options options;
         options.applicationName = JucePlugin_Name;
-        options.filenameSuffix = ".settings";
-        // The following properties are ignored because we pass a specific File,
-        // but they are required to cleanly initialize the Options object.
+        auto suffix = ".settings.xml";
+        options.filenameSuffix = suffix;
         options.osxLibrarySubFolder = "";
         options.folderName = "";
 
-        // Force the settings file to sit alongside your presets using your sandboxed POSIX bypass
-        juce::File settingsFile = Util::getAppFolder().getChildFile(juce::String(JucePlugin_Name) + ".settings");
+        juce::File settingsFile = Util::getAppFolder().getChildFile(juce::String(JucePlugin_Name) + suffix);
         auto* propertiesFile = new juce::PropertiesFile(settingsFile, options);
 
         auto* holder = new juce::StandalonePluginHolder(
