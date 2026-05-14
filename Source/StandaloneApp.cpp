@@ -172,8 +172,8 @@ public:
 
             // Fire asynchronously to bypass the UI lock from the Audio Settings window
             juce::MessageManager::callAsync(
-                [safeThis, preferredOut = preferredOutput, preferredIn =
-                    preferredInput, needToSwitchOutput, needToSwitchInput] {
+                [safeThis, preferredOut = preferredOutput, preferredIn = preferredInput, 
+                 needToSwitchOutput, needToSwitchInput] {
                     if (safeThis == nullptr || safeThis->pluginHolder == nullptr) return;
 
                     juce::String error;
