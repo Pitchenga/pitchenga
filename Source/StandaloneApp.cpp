@@ -296,7 +296,7 @@ public:
         );
 
         // Ownership of propertiesFile is now with holder
-        propertiesFile.release();
+        (void) propertiesFile.release();
 
         window = std::make_unique<PitchengaStandaloneWindow>(
             getApplicationName(),
