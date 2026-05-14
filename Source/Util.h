@@ -4,15 +4,25 @@
 
 class Util {
 public:
-    static juce::File logFile;
-    static juce::String startTimestamp;
-
     static void init();
-    static juce::String getTimestamp();
-    static bool createFile();
-    static void log(const juce::String& message);
     static juce::File getAppFolder();
+    static void log(const juce::String& message);
 
-private:
-    static juce::CriticalSection lock;
+    // --- Custom Logger Integration ---
+    class PitchengaLogger : public juce::Logger {
+    public:
+        PitchengaLogger();
+        ~PitchengaLogger() override;
+
+        // Override the core JUCE logging method
+        void logMessage(const juce::String& message) override;
+
+    private:
+        bool createFile() const;
+        static juce::String getTimestamp();
+
+        juce::String startTimestamp;
+        juce::File logFile;
+        juce::CriticalSection lock;
+    };
 };
