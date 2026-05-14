@@ -318,14 +318,14 @@ Control::Control(PitchengaAudioProcessor& proc)
                     juce::AlertWindow::showMessageBoxAsync(
                         juce::MessageBoxIconType::WarningIcon,
                         "Permission Error",
-                        "Failed writing file: " + defaultFile.getFullPathName()
+                        "Failed writing file="< + defaultFile.getFullPathName()
                     );
                 }
             } else {
                 juce::AlertWindow::showMessageBoxAsync(
                     juce::MessageBoxIconType::WarningIcon,
                     "Permission Error",
-                    "Failed creating folder: " + presetsFolder.getFullPathName()
+                    "Failed creating folder="< + presetsFolder.getFullPathName()
                 );
             }
         }
@@ -372,7 +372,7 @@ Control::Control(PitchengaAudioProcessor& proc)
         if (presetName == factoryDefaultPresetName || currentPresetFile == juce::File()) {
             presetName = userDefaultPresetName;
         }
-        SafePointer safeThis(this);
+        juce::Component::SafePointer<Control> safeThis(this);
         juce::AlertWindow::showOkCancelBox(
             juce::MessageBoxIconType::QuestionIcon,
             saveConfirmTitle,
@@ -964,7 +964,7 @@ void Control::refreshPresets() {
                 juce::AlertWindow::showMessageBoxAsync(
                     juce::MessageBoxIconType::WarningIcon,
                     "Access Error",
-                    "Failed accessing presets folder: " + presetsFolder.getFullPathName()
+                    "Failed accessing presets folder="< + presetsFolder.getFullPathName()
                 );
             }
         }

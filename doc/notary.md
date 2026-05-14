@@ -175,12 +175,12 @@ tccutil reset All com.github.pitchenga.Pitchenga
 
 Next, unregister all local development builds from LaunchServices:
 ```bash
-find /Users/d/dev/pitchenga -name "Pitchenga.app" -type d -exec /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -u {} \;
+find . -name "Pitchenga.app" -type d -exec /System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/LaunchServices.framework/Versions/A/Support/lsregister -u {} \;
 ```
 
 If you have orphaned "Pitchenga" entries (binaries without a bundle ID) in your Microphone list, reset them by path:
 ```bash
-find /Users/d/dev/pitchenga -name "Pitchenga" -type f -not -path "*.app/*" -exec tccutil reset Microphone {} \;
+find . -name "Pitchenga" -type f -not -path "*.app/*" -exec tccutil reset Microphone {} \;
 ```
 
 Reboot your Mac or log out and log back in to flush the in-memory LaunchServices cache.
