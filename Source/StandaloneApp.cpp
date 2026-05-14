@@ -12,12 +12,15 @@
 #if JucePlugin_Build_Standalone
 
 class PitchengaStandaloneWindow : public juce::StandaloneFilterWindow,
-    public juce::ChangeListener {
+    public juce::ChangeListener,
+    juce::Timer {
     juce::String preferredOutput;
     juce::String preferredInput;
     bool isRestoring = false;
     bool isOnFallbackOutput = false;
     bool isOnFallbackInput = false;
+    bool isAttemptingRestoreOutput = false;
+    bool isAttemptingRestoreInput = false;
     juce::String noneDevice = "<< none >>";
 
     void updateWindowTitle() {
@@ -45,6 +48,56 @@ class PitchengaStandaloneWindow : public juce::StandaloneFilterWindow,
         }
 
         this->setName(windowTitle);
+    }
+
+    void timerCallback() override {
+        stopTimer();
+        if (pluginHolder == nullptr) return;
+
+        juce::String error;
+        {
+            const juce::ScopedValueSetter setter(isRestoring, true);
+
+            juce::AudioDeviceManager::AudioDeviceSetup newSetup =
+                pluginHolder->deviceManager.getAudioDeviceSetup();
+
+            // Wipe the inherited sample rate and buffer size so the hardware can auto-negotiate
+            newSetup.sampleRate = 0.0;
+            newSetup.bufferSize = 0;
+
+            if (isAttemptingRestoreOutput) {
+                newSetup.outputDeviceName = preferredOutput;
+                newSetup.useDefaultOutputChannels = true;
+                isOnFallbackOutput = false;
+            } else if (isOnFallbackOutput && newSetup.outputDeviceName == preferredOutput) {
+                newSetup.outputDeviceName = ""; // Wipe ghost fallback strings
+            }
+
+            if (isAttemptingRestoreInput) {
+                newSetup.inputDeviceName = preferredInput;
+                newSetup.useDefaultInputChannels = true;
+                isOnFallbackInput = false;
+            } else if (isOnFallbackInput && newSetup.inputDeviceName == preferredInput) {
+                newSetup.inputDeviceName = ""; // Wipe ghost fallback strings
+            }
+
+            isAttemptingRestoreOutput = false;
+            isAttemptingRestoreInput = false;
+
+            // Force a complete teardown of the audio graph to revive MIDI and Desktop Capture
+            pluginHolder->deviceManager.closeAudioDevice();
+
+            error = pluginHolder->deviceManager.setAudioDeviceSetup(newSetup, true);
+        } // isRestoring drops to false here, before we manually update the title
+
+        if (error.isEmpty()) {
+            Util::log("Hardware graph cleanly restarted.");
+        } else {
+            Util::log("Hardware graph restart failed=" + error);
+        }
+
+        // Explicitly force the title to update now that the restore lock is lifted
+        updateWindowTitle();
     }
 
 public:
@@ -121,8 +174,7 @@ public:
             return;
         }
 
-        bool needToSwitchOutput = false;
-        bool needToSwitchInput = false;
+        bool triggerRestart = false;
 
         // --- Handle Output ---
         if (preferredOutput.isNotEmpty()) {
@@ -130,13 +182,15 @@ public:
                 // Fallback Mode: Preferred is physically gone.
                 if (!isOnFallbackOutput) {
                     isOnFallbackOutput = true;
+                    triggerRestart = true;
                     Util::log(
                         "Preferred output gone, switched to fallback output=" + currentSetup.outputDeviceName
                     );
                 }
             } else if (isOnFallbackOutput) {
                 // Auto-Restore: We were on a fallback, and preferred came back
-                needToSwitchOutput = true;
+                isAttemptingRestoreOutput = true;
+                triggerRestart = true;
             } else if (currentSetup.outputDeviceName != preferredOutput) {
                 // Manual Change: Preferred was plugged in, but user deliberately picked something else
                 preferredOutput = currentSetup.outputDeviceName;
@@ -150,11 +204,15 @@ public:
                 // Fallback Mode: Preferred is physically gone.
                 if (!isOnFallbackInput) {
                     isOnFallbackInput = true;
-                    Util::log("Preferred input gone, switched to fallback input=" + currentSetup.inputDeviceName);
+                    triggerRestart = true;
+                    Util::log(
+                        "Preferred input gone, switched to fallback input=" + currentSetup.inputDeviceName
+                    );
                 }
             } else if (isOnFallbackInput) {
                 // Auto-Restore: We were on a fallback, and preferred came back
-                needToSwitchInput = true;
+                isAttemptingRestoreInput = true;
+                triggerRestart = true;
             } else if (currentSetup.inputDeviceName != preferredInput) {
                 // Manual Change: Preferred was plugged in, but user deliberately picked something else
                 preferredInput = currentSetup.inputDeviceName;
@@ -164,61 +222,9 @@ public:
 
         updateWindowTitle();
 
-        if (needToSwitchOutput || needToSwitchInput) {
-            isOnFallbackOutput = false;
-            isOnFallbackInput = false;
-
-            SafePointer safeThis{this};
-
-            // Fire asynchronously to bypass the UI lock from the Audio Settings window
-            juce::MessageManager::callAsync(
-                [safeThis,
-                    preferredOut = preferredOutput,
-                    preferredIn = preferredInput,
-                    needToSwitchOutput,
-                    needToSwitchInput
-                ] {
-                    if (safeThis == nullptr || safeThis->pluginHolder == nullptr) return;
-
-                    juce::String error;
-                    {
-                        const juce::ScopedValueSetter setter(safeThis->isRestoring, true);
-
-                        juce::AudioDeviceManager::AudioDeviceSetup newSetup =
-                            safeThis->pluginHolder->deviceManager.getAudioDeviceSetup();
-
-                        // Wipe the inherited sample rate and buffer size so the hardware can auto-negotiate
-                        newSetup.sampleRate = 0.0;
-                        newSetup.bufferSize = 0;
-
-                        if (needToSwitchOutput) {
-                            newSetup.outputDeviceName = preferredOut;
-                            newSetup.useDefaultOutputChannels = true;
-                            newSetup.outputChannels.clear();
-                        }
-                        if (needToSwitchInput) {
-                            newSetup.inputDeviceName = preferredIn;
-                            newSetup.useDefaultInputChannels = true;
-                            newSetup.inputChannels.clear();
-                        }
-
-                        // Force a complete teardown of the dead audio graph before re-initializing
-                        safeThis->pluginHolder->deviceManager.closeAudioDevice();
-
-                        error = safeThis->pluginHolder->deviceManager.setAudioDeviceSetup(newSetup, true);
-                    } // isRestoring drops to false here, before we manually update the title
-
-                    if (error.isEmpty()) {
-                        if (needToSwitchOutput) Util::log("Auto-restored preferred output=" + preferredOut);
-                        if (needToSwitchInput) Util::log("Auto-restored preferred input=" + preferredIn);
-                    } else {
-                        Util::log("Failed to auto-restore interface=" + error);
-                    }
-
-                    // Explicitly force the title to update now that the restore lock is lifted
-                    safeThis->updateWindowTitle();
-                }
-            );
+        if (triggerRestart) {
+            // Debounce for 800ms to allow OS to settle the USB connection before tearing down the graph
+            startTimer(800);
         }
     }
 
