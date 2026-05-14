@@ -285,20 +285,23 @@ public:
 
         const juce::File settingsFile = Util::getAppFolder()
             .getChildFile(juce::String(JucePlugin_Name) + settingsSuffix);
-        auto* propertiesFile = new juce::PropertiesFile(settingsFile, options);
+        auto propertiesFile = std::make_unique<juce::PropertiesFile>(settingsFile, options);
 
-        auto* holder = new juce::StandalonePluginHolder(
-            propertiesFile,
+        auto holder = std::make_unique<juce::StandalonePluginHolder>(
+            propertiesFile.get(),
             true,
             // Tells the holder to take memory ownership of our custom propertiesFile
-            {},
+            juce::String(),
             nullptr
         );
+
+        // Ownership of propertiesFile is now with holder
+        propertiesFile.release();
 
         window = std::make_unique<PitchengaStandaloneWindow>(
             getApplicationName(),
             juce::LookAndFeel::getDefaultLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId),
-            std::unique_ptr<juce::StandalonePluginHolder>(holder)
+            std::move(holder)
         );
 
         window->setVisible(true);
