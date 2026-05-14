@@ -16,6 +16,9 @@ class PitchengaStandaloneWindow : public juce::StandaloneFilterWindow,
     juce::Timer {
     juce::String preferredOutput;
     juce::String preferredInput;
+    double preferredSampleRate = 0.0;
+    int preferredBufferSize = 0;
+
     bool isRestoring = false;
     bool isOnFallbackOutput = false;
     bool isOnFallbackInput = false;
@@ -50,20 +53,27 @@ class PitchengaStandaloneWindow : public juce::StandaloneFilterWindow,
         this->setName(windowTitle);
     }
 
-    void timerCallback() override {
+    auto timerCallback() -> void override {
         stopTimer();
         if (pluginHolder == nullptr) return;
 
         juce::String error;
+
+        bool didSwitchOutput = isAttemptingRestoreOutput;
+        bool didSwitchInput = isAttemptingRestoreInput;
+        juce::String attemptedOutputName = preferredOutput;
+        juce::String attemptedInputName = preferredInput;
+
         {
             const juce::ScopedValueSetter setter(isRestoring, true);
 
             juce::AudioDeviceManager::AudioDeviceSetup newSetup =
                 pluginHolder->deviceManager.getAudioDeviceSetup();
 
-            // Wipe the inherited sample rate and buffer size so the hardware can auto-negotiate
-            newSetup.sampleRate = 0.0;
-            newSetup.bufferSize = 0;
+            // Restore the user's explicitly preferred sample rate and buffer size.
+            // This prevents the fallback device's default settings (like 512 samples) from overriding the restored hardware.
+            newSetup.sampleRate = preferredSampleRate;
+            newSetup.bufferSize = preferredBufferSize;
 
             if (isAttemptingRestoreOutput) {
                 newSetup.outputDeviceName = preferredOutput;
@@ -92,6 +102,14 @@ class PitchengaStandaloneWindow : public juce::StandaloneFilterWindow,
 
         if (error.isEmpty()) {
             Util::log("Hardware graph cleanly restarted.");
+            if (didSwitchOutput) {
+                Util::log("Restored preferred output=" + attemptedOutputName);
+            }
+            if (didSwitchInput) {
+                Util::log("Restored preferred input=" + attemptedInputName);
+            }
+            Util::log("Restored SampleRate=" + juce::String(preferredSampleRate));
+            Util::log("Restored BufferSize=" + juce::String(preferredBufferSize));
         } else {
             Util::log("Hardware graph restart failed=" + error);
         }
@@ -115,6 +133,8 @@ public:
                 }) {
                     preferredOutput = savedState->getStringAttribute("preferredOutput");
                     preferredInput = savedState->getStringAttribute("preferredInput");
+                    preferredSampleRate = savedState->getDoubleAttribute("preferredSampleRate", 0.0);
+                    preferredBufferSize = savedState->getIntAttribute("preferredBufferSize", 0);
                 }
             }
             pluginHolder->deviceManager.addChangeListener(this);
@@ -132,6 +152,8 @@ public:
                 juce::XmlElement savedState("PitchengaAudioSetup");
                 savedState.setAttribute("preferredOutput", preferredOutput);
                 savedState.setAttribute("preferredInput", preferredInput);
+                savedState.setAttribute("preferredSampleRate", preferredSampleRate);
+                savedState.setAttribute("preferredBufferSize", preferredBufferSize);
                 pluginHolder->settings->setValue("PitchengaAudioSetup", &savedState);
             }
         }
@@ -159,15 +181,26 @@ public:
         // Initial setup: capture current as preferred if none exists
         if (preferredOutput.isEmpty() && currentSetup.outputDeviceName.isNotEmpty()) {
             preferredOutput = currentSetup.outputDeviceName;
+            preferredSampleRate = currentSetup.sampleRate;
+            preferredBufferSize = currentSetup.bufferSize;
             isOnFallbackOutput = false;
         }
         if (preferredInput.isEmpty() && currentSetup.inputDeviceName.isNotEmpty()) {
             preferredInput = currentSetup.inputDeviceName;
+            preferredSampleRate = currentSetup.sampleRate;
+            preferredBufferSize = currentSetup.bufferSize;
             isOnFallbackInput = false;
         }
 
         if (currentSetup.outputDeviceName == preferredOutput
             && currentSetup.inputDeviceName == preferredInput) {
+
+            // Track deliberate buffer/sample rate tweaks on the preferred device
+            if (!isOnFallbackOutput && !isOnFallbackInput) {
+                if (currentSetup.sampleRate > 0.0) preferredSampleRate = currentSetup.sampleRate;
+                if (currentSetup.bufferSize > 0) preferredBufferSize = currentSetup.bufferSize;
+            }
+
             isOnFallbackOutput = false;
             isOnFallbackInput = false;
             updateWindowTitle();
@@ -194,6 +227,8 @@ public:
             } else if (currentSetup.outputDeviceName != preferredOutput) {
                 // Manual Change: Preferred was plugged in, but user deliberately picked something else
                 preferredOutput = currentSetup.outputDeviceName;
+                preferredSampleRate = currentSetup.sampleRate;
+                preferredBufferSize = currentSetup.bufferSize;
                 Util::log("Updated preferred output=" + preferredOutput);
             }
         }
@@ -216,6 +251,8 @@ public:
             } else if (currentSetup.inputDeviceName != preferredInput) {
                 // Manual Change: Preferred was plugged in, but user deliberately picked something else
                 preferredInput = currentSetup.inputDeviceName;
+                preferredSampleRate = currentSetup.sampleRate;
+                preferredBufferSize = currentSetup.bufferSize;
                 Util::log("Updated preferred input=" + preferredInput);
             }
         }
