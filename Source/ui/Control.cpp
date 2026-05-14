@@ -535,8 +535,6 @@ void Control::showPlugsMenu() {
     menu.addSeparator();
     menu.addItem(3, "Unload Plugin", processor.isExternalPluginLoaded());
     menu.addSeparator();
-    menu.addItem(100, "Options");
-    menu.addSeparator();
 
     auto& list = processor.getKnownPluginList();
     auto types = list.getTypes();
@@ -560,8 +558,6 @@ void Control::showPlugsMenu() {
                 showPlugsMenu();
             } else if (result == 3) {
                 processor.unloadExternalPlugin();
-            } else if (result == 100) {
-                if (processor.onShowAudioSettings) processor.onShowAudioSettings();
             } else if (result > 3) {
                 auto& listRef = processor.getKnownPluginList();
                 auto typesRef = listRef.getTypes();
