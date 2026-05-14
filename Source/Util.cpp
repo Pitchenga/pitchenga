@@ -76,7 +76,7 @@ Util::PitchengaLogger::PitchengaLogger() {
         }
     );
 
-    logMessage("Pitchenga " + juce::String(VERSION));
+    log("Pitchenga " + juce::String(VERSION));
 }
 
 Util::PitchengaLogger::~PitchengaLogger() = default;
