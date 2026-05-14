@@ -535,6 +535,8 @@ void Control::showPlugsMenu() {
     menu.addSeparator();
     menu.addItem(3, "Unload Plugin", processor.isExternalPluginLoaded());
     menu.addSeparator();
+    menu.addItem(100, "Options");
+    menu.addSeparator();
 
     auto& list = processor.getKnownPluginList();
     auto types = list.getTypes();
@@ -558,6 +560,8 @@ void Control::showPlugsMenu() {
                 showPlugsMenu();
             } else if (result == 3) {
                 processor.unloadExternalPlugin();
+            } else if (result == 100) {
+                if (processor.onShowAudioSettings) processor.onShowAudioSettings();
             } else if (result > 3) {
                 auto& listRef = processor.getKnownPluginList();
                 auto typesRef = listRef.getTypes();
@@ -1034,6 +1038,9 @@ juce::XmlElement Control::Settings::createXml() const {
     xml.setAttribute("isRawMode", isRawMode);
     xml.setAttribute("isLetterNotation", isLetterNotation);
 
+    xml.setAttribute("preferredOutputDevice", preferredOutputDevice);
+    xml.setAttribute("preferredInputDevice", preferredInputDevice);
+
     if (externalPluginDescriptionXml.isNotEmpty()) {
         xml.createNewChildElement("ExternalPluginDescription")->addTextElement(externalPluginDescriptionXml);
     }
@@ -1077,6 +1084,9 @@ bool Control::Settings::loadFromXml(const juce::XmlElement& xml) {
     isShowTweakPanel = xml.getBoolAttribute("isShowTweakPanel", isShowTweakPanel);
     isRawMode = xml.getBoolAttribute("isRawMode", isRawMode);
     isLetterNotation = xml.getBoolAttribute("isLetterNotation", isLetterNotation);
+
+    preferredOutputDevice = xml.getStringAttribute("preferredOutputDevice", preferredOutputDevice);
+    preferredInputDevice = xml.getStringAttribute("preferredInputDevice", preferredInputDevice);
 
     externalPluginDescriptionXml = {};
     if (auto* descriptionXmlElement = xml.getChildByName("ExternalPluginDescription")) {

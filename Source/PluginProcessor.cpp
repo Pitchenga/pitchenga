@@ -89,7 +89,7 @@ void PitchengaAudioProcessor::prepareToPlay(const double sampleRate, const int s
     if (settings.isCaptureEnabled && wrapperType == wrapperType_Standalone) {
         desktopAudioCapture.start(sampleRate);
     }
-    
+
     desktopAudioBuffer.assign(bufferSize, 0.0f);
 }
 
@@ -166,7 +166,7 @@ void PitchengaAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juc
     // Stream D: Desktop Audio Capture
     int available = desktopAudioCapture.getFifo().getNumReady();
 
-    // Catch up if we are falling behind to avoid latency. 
+    // Catch up if we are falling behind to avoid latency.
     // We use a large threshold (16384 samples ~370ms) to allow for jitter.
     if (available > 16384) {
         const int toSkip = available - numSamples;
@@ -362,7 +362,7 @@ void PitchengaAudioProcessor::unloadPluginInstance(juce::AudioPluginInstance* in
     if (instance == nullptr) return;
 
     // Explicitly release resources and delete the instance.
-    // Since we are on the Message Thread and processing was suspended/resumed 
+    // Since we are on the Message Thread and processing was suspended/resumed
     // around the swap, it's safe to delete.
     instance->releaseResources();
     delete instance;
@@ -464,7 +464,7 @@ void PitchengaAudioProcessor::setStateInformation(const void* data, int sizeInBy
             }
 
             // For setup restoration, we suspend processing during the entire operation
-            // (including state setting) to avoid crashes like 0x10 (null dereference 
+            // (including state setting) to avoid crashes like 0x10 (null dereference
             // during processing while plugin is inconsistent).
             suspendProcessing(true);
 

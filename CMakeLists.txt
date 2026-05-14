@@ -209,8 +209,12 @@ if (APPLE)
 
     if (TARGET Pitchenga_Standalone)
         target_link_libraries(Pitchenga_Standalone PRIVATE "-framework ScreenCaptureKit")
-        target_sources(Pitchenga_Standalone PRIVATE Source/DesktopAudioCapture.mm)
-        target_compile_definitions(Pitchenga_Standalone PRIVATE PITCHENGA_USE_SCREEN_CAPTURE=1)
+        target_sources(Pitchenga_Standalone PRIVATE 
+            Source/DesktopAudioCapture.mm
+            Source/StandaloneApp.cpp)
+        target_compile_definitions(Pitchenga_Standalone PRIVATE 
+            PITCHENGA_USE_SCREEN_CAPTURE=1
+            JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1)
 
         # Force signing the Standalone app with stable developer ID and custom plugin-host entitlements
         if (NOT DEFINED ENV{CI})

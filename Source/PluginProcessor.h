@@ -97,6 +97,7 @@ public:
     juce::KnownPluginList& getKnownPluginList() { return knownPluginList; }
     
     std::function<void()> onShowExternalPluginEditor;
+    std::function<void()> onShowAudioSettings;
     std::function<void()> onOpenPluginBrowser;
     std::function<void()> onRescanPlugins;
     std::function<void()> onPluginLoaded;
