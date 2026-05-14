@@ -274,7 +274,7 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
     const double sampleRate = getSampleRate();
     const int blockSize = getBlockSize();
 
-    Util::log("Attempting to load plugin: " + description.name + " (" + description.fileOrIdentifier + ")");
+    Util::log("Attempting to load plugin=" + description.name + " (" + description.fileOrIdentifier + ")");
 
     if (onPluginAboutToBeDeleted) {
         onPluginAboutToBeDeleted();
@@ -296,7 +296,7 @@ void PitchengaAudioProcessor::loadExternalPlugin(const juce::PluginDescription& 
     );
 
     if (instance != nullptr) {
-        Util::log("Successfully loaded plugin: " + instance->getName());
+        Util::log("Successfully loaded plugin=" + instance->getName());
         if (forceOpenWindow) {
             settings.isExternalPluginWindowOpen = true;
         }

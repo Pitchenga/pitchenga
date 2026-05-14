@@ -14,14 +14,14 @@ juce::File Util::getAppFolder() {
 #if JUCE_MAC
     // In a sandboxed macOS app, standard JUCE/macOS APIs return the sandboxed Container folder.
     // To access the shared folder granted via temporary-exception, we must get the real home folder using POSIX APIs.
-    passwd pwd{};
+    passwd passwdEntry{};
     passwd* result = nullptr;
     long bufferSize = sysconf(_SC_GETPW_R_SIZE_MAX);
     if (bufferSize == -1) {
         bufferSize = 4096;
     }
     std::vector<char> buffer(static_cast<size_t>(bufferSize));
-    if (getpwuid_r(getuid(), &pwd, buffer.data(), buffer.size(), &result) == 0
+    if (getpwuid_r(getuid(), &passwdEntry, buffer.data(), buffer.size(), &result) == 0
         && result != nullptr
         && result->pw_dir != nullptr
     ) {
@@ -33,8 +33,6 @@ juce::File Util::getAppFolder() {
     auto appFolder = juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
         .getChildFile("Pitchenga");
 
-    // Fallback std::cout since the logger might not be fully attached when this is first evaluated
-    std::cout << "appFolder=" << appFolder.getFullPathName().toStdString() << std::endl;
     return appFolder;
 }
 
@@ -81,6 +79,7 @@ Util::PitchengaLogger::PitchengaLogger() {
     );
 
     PitchengaLogger::logMessage("Pitchenga " + juce::String(VERSION));
+    PitchengaLogger::logMessage("appFolder=" + getAppFolder().getFullPathName().toStdString());
 }
 
 Util::PitchengaLogger::~PitchengaLogger() = default;
