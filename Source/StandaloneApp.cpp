@@ -18,30 +18,30 @@ class PitchengaStandaloneWindow : public juce::StandaloneFilterWindow,
     bool isRestoring = false;
     bool isOnFallbackOutput = false;
     bool isOnFallbackInput = false;
-    juce::String none = "<< none >>";
+    juce::String noneDevice = "<< none >>";
 
     void updateWindowTitle() {
         if (pluginHolder == nullptr) return;
         auto setup = pluginHolder->deviceManager.getAudioDeviceSetup();
         auto* type = pluginHolder->deviceManager.getCurrentDeviceTypeObject();
 
-        juce::String outName = setup.outputDeviceName;
-        juce::String inName = setup.inputDeviceName;
+        juce::String outputName = setup.outputDeviceName;
+        juce::String inputName = setup.inputDeviceName;
 
         // Sanitize against reality to ensure the UI reflects truth, not ghost strings
         if (type != nullptr) {
-            if (!type->getDeviceNames(false).contains(outName)) outName = none;
-            if (!type->getDeviceNames(true).contains(inName)) inName = none;
+            if (!type->getDeviceNames(false).contains(outputName)) outputName = noneDevice;
+            if (!type->getDeviceNames(true).contains(inputName)) inputName = noneDevice;
         }
 
-        if (outName.isEmpty()) outName = none;
-        if (inName.isEmpty()) inName = none;
+        if (outputName.isEmpty()) outputName = noneDevice;
+        if (inputName.isEmpty()) inputName = noneDevice;
 
         juce::String windowTitle = JucePlugin_Name;
-        if (inName == outName) {
-            windowTitle += " [" + inName + "]";
+        if (inputName == outputName) {
+            windowTitle += " [" + inputName + "]";
         } else {
-            windowTitle += " [" + inName + "] [" + outName + "]";
+            windowTitle += " [" + inputName + "] [" + outputName + "]";
         }
 
         this->setName(windowTitle);
@@ -168,7 +168,7 @@ public:
             isOnFallbackOutput = false;
             isOnFallbackInput = false;
 
-            juce::SafePointer safeThis { this };
+            SafePointer safeThis{this};
 
             // Fire asynchronously to bypass the UI lock from the Audio Settings window
             juce::MessageManager::callAsync(
@@ -224,6 +224,7 @@ public:
 class [[maybe_unused]] PitchengaStandaloneApp : public juce::JUCEApplication {
 public:
     PitchengaStandaloneApp() = default;
+    const juce::String settingsSuffix = ".settings.xml";
 
     const juce::String getApplicationName() override { return JucePlugin_Name; }
     const juce::String getApplicationVersion() override { return JucePlugin_VersionString; }
@@ -233,12 +234,12 @@ public:
         // Run JUCE's default setup first (handles all the heavy lifting)
         juce::PropertiesFile::Options options;
         options.applicationName = JucePlugin_Name;
-        auto suffix = ".settings.xml";
-        options.filenameSuffix = suffix;
+        options.filenameSuffix = settingsSuffix;
         options.osxLibrarySubFolder = "";
         options.folderName = "";
 
-        juce::File settingsFile = Util::getAppFolder().getChildFile(juce::String(JucePlugin_Name) + suffix);
+        const juce::File settingsFile = Util::getAppFolder().getChildFile(juce::String(JucePlugin_Name)
+            + settingsSuffix);
         auto* propertiesFile = new juce::PropertiesFile(settingsFile, options);
 
         auto* holder = new juce::StandalonePluginHolder(

@@ -4,11 +4,14 @@ Pitchenga is a real-time music visualization application and audio plugin.
 
 ## Stack
 
-- Language and version: C++20 - use modern syntax with Class Template Argument Deduction -
-  no redundant type arguments and qualifiers.
+- Language and version: C++20. Use modern syntax with Class Template Argument Deduction (CTAD).
+  Do not add redundant type arguments.
+  Do not add fully qualified namespaces to types that are already in scope via class inheritance
+  (e.g., do not add redundant base-class qualifiers).
 - Framework(s): JUCE
 - Package manager: CMake
 - Runtime / deployment target: Debug
+- This project does not use localization - everything is in English.
 
 ## Commands
 
