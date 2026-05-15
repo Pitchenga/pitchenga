@@ -273,7 +273,9 @@ target_compile_features(Pitchenga PUBLIC cxx_std_20)
 
 target_compile_definitions(Pitchenga PRIVATE
     CMAKE_BUILD_PROFILE=$<CONFIG>
-    JUCE_VST3_CAN_REPLACE_VST2=0)
+    JUCE_VST3_CAN_REPLACE_VST2=0
+    JUCE_WEB_BROWSER=0
+    JUCE_USE_CURL=0)
 
 # Make generated timestamp header available to the build
 target_include_directories(Pitchenga PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
