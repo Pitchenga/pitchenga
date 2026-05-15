@@ -93,6 +93,13 @@ juce_add_plugin(Pitchenga
         PLUGINHOST_VST3 TRUE
         PLIST_TO_MERGE "<plist><dict><key>NSAudioCaptureUsageDescription</key><string>Pitchenga needs system audio access to capture your desktop audio.</string></dict></plist>")
 
+# Disable unnecessary JUCE features to reduce binary size and dependencies (fixing linux build).
+# These must be set on the target after juce_add_plugin.
+target_compile_definitions(Pitchenga PRIVATE
+    JUCE_VST3_CAN_REPLACE_VST2=0
+    JUCE_WEB_BROWSER=0
+    JUCE_USE_CURL=0)
+
 # Explicitly separate the bundle identifiers to prevent LaunchServices collisions
 if (TARGET Pitchenga_Standalone)
     set_target_properties(Pitchenga_Standalone PROPERTIES
@@ -272,10 +279,7 @@ endif()
 target_compile_features(Pitchenga PUBLIC cxx_std_20)
 
 target_compile_definitions(Pitchenga PRIVATE
-    CMAKE_BUILD_PROFILE=$<CONFIG>
-    JUCE_VST3_CAN_REPLACE_VST2=0
-    JUCE_WEB_BROWSER=0
-    JUCE_USE_CURL=0)
+    CMAKE_BUILD_PROFILE=$<CONFIG>)
 
 # Make generated timestamp header available to the build
 target_include_directories(Pitchenga PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
