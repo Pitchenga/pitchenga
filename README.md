@@ -62,7 +62,9 @@ sudo apt-get install libasound2-dev libjack-dev
 ### Licenses and acknowledgments
 
 All original source code is released under the BSD 3-Clause License, a permissive license allowing free use and modification.
+
 See the `LICENSE` file in the root of this repository for full details.
+
 The compiled binaries are governed by the GNU General Public License v3.0 (GPLv3), due to the use of the open-source tier of the JUCE framework.
 
 This project relies on third-party libraries and adapted code:
