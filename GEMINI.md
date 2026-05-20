@@ -28,7 +28,7 @@ Pitchenga is a real-time music visualization application and audio plugin.
 
 - `Source/`: Core plugin source files.
 - `doc/`: Documentation and planning.
-- `lib/`: Third-party libraries
+- `libs/`: Third-party libraries (submodules - .gitmodules).
 - `cmake-build-debug/`: Build artifacts and intermediate files.
 
 ## Logging
