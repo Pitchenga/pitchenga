@@ -59,7 +59,7 @@ Pre-built binaries are provided in the [Releases](https://github.com/pitchenga/p
 sudo apt-get install libasound2-dev libjack-dev
 ```
 
-### Licenses and acknowledgments
+### Licenses and Acknowledgments
 
 All original source code is released under the BSD 3-Clause License, a permissive license allowing free use and modification.
 
