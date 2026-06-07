@@ -277,6 +277,15 @@ void RollCqt::pumpSmoke() {
         return;
     }
 
+    bool hasSignal = false;
+    for (double mag : displayMagnitudes) {
+        if (mag > smokeThreshold) {
+            hasSignal = true;
+            break;
+        }
+    }
+    if (!hasSignal) return;
+
     const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
