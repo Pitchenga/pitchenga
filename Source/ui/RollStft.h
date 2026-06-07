@@ -38,7 +38,14 @@ private:
 
     static float frequencyToMidi(float freq);
     static float frequencyToX(float frequencyHz, float width, float xOffset);
-    void paintTooltip(juce::Graphics& graphics, int physicalWidth, int physicalHeight, const juce::StringArray& tooltipLines) const;
+
+    void paintTooltip(
+        juce::Graphics& graphics,
+        int physicalWidth,
+        int physicalHeight,
+        const juce::StringArray& tooltipLines
+    ) const;
+
     void paintCrosshairs(
         juce::Graphics& graphics,
         int physicalWidth,
@@ -46,7 +53,7 @@ private:
         bool isHorizontal,
         int logicalWidth,
         int plotHeight
-    );
+    ) const;
 
     void buildFrame();
     void paintHzAxis(
@@ -125,4 +132,3 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RollStft)
 };
-

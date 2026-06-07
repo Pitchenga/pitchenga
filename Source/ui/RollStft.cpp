@@ -142,7 +142,7 @@ void RollStft::paintCrosshairs(
     const bool isHorizontal,
     const int logicalWidth,
     const int plotHeight
-) {
+) const {
     juce::StringArray tooltipLines;
     bool shouldShowTooltip = false;
 

@@ -7,6 +7,21 @@
 
 RollCqt::RollCqt(PitchengaAudioProcessor& proc) : processor(proc) {}
 
+void RollCqt::mouseMove(const juce::MouseEvent& event) {
+    mousePosition = event.getPosition();
+    repaint();
+}
+
+void RollCqt::mouseEnter(const juce::MouseEvent& event) {
+    mousePosition = event.getPosition();
+    repaint();
+}
+
+void RollCqt::mouseExit(const juce::MouseEvent&) {
+    mousePosition = {-1, -1};
+    repaint();
+}
+
 bool RollCqt::expand() {
     const int totalBins = static_cast<int>(displayMagnitudes.size());
     if (totalBins <= 0) return false;
@@ -69,6 +84,10 @@ void RollCqt::resized() {
     const bool isHorizontal = processor.settings.isFlipRollHorizontal;
     const int logicalWidth = isHorizontal ? getHeight() : getWidth();
     const int logicalHeight = isHorizontal ? getWidth() : getHeight();
+    const int physicalHeight = getHeight();
+
+    cachedHorizontalTransform = juce::AffineTransform(0.0f, 1.0f, 0.0f, -1.0f, 0.0f, static_cast<float>(physicalHeight));
+    cachedHorizontalTransformInverted = cachedHorizontalTransform.inverted();
 
     if (logicalWidth > 0 && logicalHeight > 0) {
         const int plotHeight = std::max(1, logicalHeight - static_cast<int>(getLabelAreaHeight()));
@@ -85,6 +104,122 @@ float RollCqt::getLabelAreaHeight() {
         // return 0.0f;
     // }
     return juce::GlyphArrangement::getStringWidth(Common::getLabelFont(), "Ww8") + 4.0f;
+}
+
+void RollCqt::paintTooltip(
+    juce::Graphics& graphics,
+    const int physicalWidth,
+    const int physicalHeight,
+    const juce::StringArray& tooltipLines
+) const {
+    const float tooltipPadding = 6.0f;
+    const juce::Font tooltipFont(juce::FontOptions(12.0f).withName(juce::Font::getDefaultMonospacedFontName()));
+    const float tooltipLineHeight = std::ceil(tooltipFont.getHeight());
+    float maxLineWidth = 0.0f;
+    for (const auto& line : tooltipLines) {
+        maxLineWidth = std::max(maxLineWidth, juce::GlyphArrangement::getStringWidth(tooltipFont, line));
+    }
+    maxLineWidth = std::ceil(maxLineWidth + 2.0f); // Add safety margin
+
+    const float tooltipWidth = maxLineWidth + tooltipPadding * 2.0f;
+    const float tooltipHeight = static_cast<float>(tooltipLines.size()) * tooltipLineHeight + tooltipPadding * 2.0f;
+
+    // Offset tooltip so it doesn't cover the crosshair intersection
+    float tooltipX = static_cast<float>(mousePosition.x) + 10.0f;
+    float tooltipY = static_cast<float>(mousePosition.y) + 10.0f;
+
+    // Flip tooltip if it goes off-screen
+    if (tooltipX + tooltipWidth > static_cast<float>(physicalWidth)) {
+        tooltipX = static_cast<float>(mousePosition.x) - tooltipWidth - 10.0f;
+    }
+    if (tooltipY + tooltipHeight > static_cast<float>(physicalHeight)) {
+        tooltipY = static_cast<float>(mousePosition.y) - tooltipHeight - 10.0f;
+    }
+
+    // Background
+    graphics.setColour(juce::Colours::black.withAlpha(0.6f));
+    graphics.fillRoundedRectangle(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4.0f);
+    graphics.setColour(juce::Colours::white.withAlpha(0.2f));
+    graphics.drawRoundedRectangle(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4.0f, 1.0f);
+
+    // Text
+    graphics.setColour(juce::Colours::white);
+    graphics.setFont(tooltipFont);
+    for (int i = 0; i < tooltipLines.size(); ++i) {
+        graphics.drawText(
+            tooltipLines[i],
+            juce::Rectangle<float>(
+                tooltipX + tooltipPadding,
+                tooltipY + tooltipPadding + static_cast<float>(i) * tooltipLineHeight,
+                maxLineWidth,
+                tooltipLineHeight
+            ),
+            juce::Justification::centredLeft,
+            false
+        );
+    }
+}
+
+void RollCqt::paintCrosshairs(
+    juce::Graphics& graphics,
+    const int physicalWidth,
+    const int physicalHeight,
+    const bool isHorizontal,
+    const int logicalWidth,
+    const int plotHeight
+) const {
+    juce::StringArray tooltipLines;
+    bool shouldShowTooltip = false;
+
+    // Draw crosshairs at mouse position
+    if (mousePosition.x >= 0 && mousePosition.y >= 0) {
+        juce::Point<float> logicalMouse;
+        if (isHorizontal) {
+            logicalMouse = mousePosition.toFloat().transformedBy(cachedHorizontalTransformInverted);
+        } else {
+            logicalMouse = mousePosition.toFloat();
+        }
+
+        if (logicalMouse.x >= 0.0f && logicalMouse.x <= static_cast<float>(logicalWidth) &&
+            logicalMouse.y >= 0.0f && logicalMouse.y <= static_cast<float>(plotHeight)) {
+
+            // Draw crosshair lines using the correct transform
+            {
+                juce::Graphics::ScopedSaveState graphicsState(graphics);
+                if (isHorizontal) {
+                    graphics.addTransform(
+                        cachedHorizontalTransform
+                    );
+                }
+                graphics.setColour(juce::Colours::white.withAlpha(0.4f));
+                graphics.drawLine(0.0f, logicalMouse.y, static_cast<float>(logicalWidth), logicalMouse.y, 1.0f);
+                graphics.drawLine(logicalMouse.x, 0.0f, logicalMouse.x, static_cast<float>(plotHeight), 1.0f);
+            }
+
+            if (currentTotalBins > 0 && currentBinsPerOctave > 0) {
+                const float barWidth = static_cast<float>(logicalWidth) / static_cast<float>(currentTotalBins);
+                const float binIndex = logicalMouse.x / barWidth;
+                const float semitonesFromStart = binIndex * (12.0f / static_cast<float>(currentBinsPerOctave));
+                const float midi = 12.0f + semitonesFromStart;
+
+                const float freq = 440.0f * std::pow(2.0f, (midi - 69.0f) / 12.0f);
+
+                const int wholeMidi = static_cast<int>(std::round(midi));
+                const int roundedCents = static_cast<int>(std::round((midi - static_cast<float>(wholeMidi)) * 100.0f));
+                const juce::String noteName = Tone::getNoteName(wholeMidi, processor.settings.isLetterNotation);
+                const juce::String centsString = (roundedCents >= 0 ? "+" : "-") + juce::String(std::abs(roundedCents)).
+                    paddedLeft('0', 2) + "c";
+
+                tooltipLines.add(noteName + " (" + centsString + ")");
+                tooltipLines.add(juce::String(freq, 1) + " Hz");
+                shouldShowTooltip = true;
+            }
+        }
+    }
+
+    if (shouldShowTooltip) {
+        paintTooltip(graphics, physicalWidth, physicalHeight, tooltipLines);
+    }
 }
 
 void RollCqt::paint(juce::Graphics& graphics) {
@@ -127,6 +262,8 @@ void RollCqt::paint(juce::Graphics& graphics) {
     }
 
     graphics.restoreState();
+    
+    paintCrosshairs(graphics, physicalWidth, physicalHeight, isHorizontal, logicalWidth, plotHeight);
 }
 
 void RollCqt::buildFrame() {
@@ -351,3 +488,4 @@ void RollCqt::paintSmoke(const juce::Graphics& graphics) const {
     graphics.drawImageAt(smokeImage, 0, -smokeScrollOffset);
     graphics.drawImageAt(smokeImage, 0, height - smokeScrollOffset);
 }
+
