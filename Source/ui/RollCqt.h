@@ -22,7 +22,6 @@ public:
 
 private:
     void buildFrame();
-    void paintFrame(juce::Graphics& graphics) const;
 
     void paintLabel(
         juce::Graphics& graphics,
@@ -35,8 +34,7 @@ private:
         bool isHorizontal
     ) const;
 
-    //fixme: Implement speed
-    const float smokeSpeedPxPerFrame = 1.0f;
+    const float smokeSpeedPxPerFrame = 2.0f;
     const float smokeThreshold = 0.0001f;
     struct Smoke {
         float x;

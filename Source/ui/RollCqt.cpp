@@ -60,9 +60,7 @@ void RollCqt::updateResults(const std::vector<double>& results) {
 
     displayMagnitudes = smoother->smooth(displayMagnitudes);
 
-    if (processor.settings.isShowSmoke) {
-        pumpSmoke();
-    }
+    pumpSmoke();
 
     repaint();
 }
@@ -217,7 +215,7 @@ void RollCqt::paintLabel(
         );
         graphics.drawText(
             name,
-            juce::Rectangle<float>(rotX, rotY, maxTextWidth, labelHeight),
+            juce::Rectangle(rotX, rotY, maxTextWidth, labelHeight),
             juce::Justification::centredLeft,
             false
         );
@@ -275,7 +273,7 @@ void RollCqt::paintForrest(juce::Graphics& graphics) const {
 }
 
 void RollCqt::pumpSmoke() {
-    if (displayMagnitudes.empty() || !smokeImage.isValid()) {
+    if (!processor.settings.isShowSmoke || displayMagnitudes.empty() || !smokeImage.isValid()) {
         return;
     }
 
