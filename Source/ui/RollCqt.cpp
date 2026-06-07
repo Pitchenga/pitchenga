@@ -278,8 +278,8 @@ void RollCqt::pumpSmoke() {
     }
 
     bool hasSignal = false;
-    for (double mag : displayMagnitudes) {
-        if (mag > smokeThreshold) {
+    for (const double magnitude : displayMagnitudes) {
+        if (magnitude > smokeThreshold) {
             hasSignal = true;
             break;
         }
