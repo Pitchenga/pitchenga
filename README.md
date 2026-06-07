@@ -61,13 +61,15 @@ sudo apt-get install libasound2-dev libjack-dev
 
 ### Licenses and Acknowledgments
 
-All original source code is released under the BSD 3-Clause License.
+All original source code is released under the BSD 3-Clause License, a permissive license allowing free use and modification.
+
 See the `LICENSE` file in the root of this repository for full details.
+
+The compiled binaries are governed by the GNU General Public License v3.0 (GPLv3), due to the use of the open-source tier of the JUCE framework.
 
 This project relies on third-party libraries and adapted code:
 
-- **JUCE Framework:** Proprietary JUCE 8 Starter EULA.
-- **Open-Source Dependencies:** All other libraries in the `/libs` directory are governed by their own respective
+- **Open-Source Dependencies:** All submodules in the `/libs` directory are governed by their own respective
   open-source licenses. Please refer to the individual `LICENSE` files provided within each submodule's directory for
   their exact terms and copyright notices.
 - **[HarmonEye](https://github.com/bzamecnik/harmoneye/tree/master/HarmonEye):** The "Eye" visualization and the CQT
