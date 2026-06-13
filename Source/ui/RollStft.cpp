@@ -71,13 +71,13 @@ float RollStft::getDbAxisWidth() const {
     return juce::GlyphArrangement::getStringWidth(dbFont, "-60") + dbLabelMarginRight + 4.0f;
 }
 
-float RollStft::freqToMidi(float freq) {
+float RollStft::frequencyToMidi(float freq) {
     if (freq <= 0.0f) return 0.0f;
     return 69.0f + 12.0f * std::log2(freq / 440.0f);
 }
 
 float RollStft::frequencyToX(float frequencyHz, float width, float xOffset) {
-    const float midi = freqToMidi(frequencyHz);
+    const float midi = frequencyToMidi(frequencyHz);
     return xOffset + (width - xOffset) * ((midi - minMidiNote) / (maxMidiNote - minMidiNote));
 }
 
@@ -86,7 +86,7 @@ void RollStft::paintTooltip(
     const int physicalWidth,
     const int physicalHeight,
     const juce::StringArray& tooltipLines
-) {
+) const {
     const float tooltipPadding = 6.0f;
     const juce::Font tooltipFont(juce::FontOptions(12.0f).withName(juce::Font::getDefaultMonospacedFontName()));
     const float tooltipLineHeight = std::ceil(tooltipFont.getHeight());
@@ -142,7 +142,7 @@ void RollStft::paintCrosshairs(
     const bool isHorizontal,
     const int logicalWidth,
     const int plotHeight
-) {
+) const {
     juce::StringArray tooltipLines;
     bool shouldShowTooltip = false;
 
@@ -421,7 +421,7 @@ void RollStft::paintLabel(
         );
         graphics.drawText(
             name,
-            juce::Rectangle<float>(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
+            juce::Rectangle(targetCenter, startY - 2.0f - labelHeight / 2.0f, maxTextWidth, labelHeight),
             juce::Justification::centredLeft,
             false
         );
@@ -480,7 +480,7 @@ void RollStft::paintForrest(juce::Graphics& graphics) const {
             const float normalizedMagnitude = std::min(1.0f, std::max(0.0f, peak.magnitude));
             const auto barHeight = normalizedMagnitude * plotHeight;
 
-            const float midi = freqToMidi(peak.frequencyHz);
+            const float midi = frequencyToMidi(peak.frequencyHz);
             const float continuousChroma = Common::fast_fmod12(midi);
 
             const juce::Colour color = Tone::getContinuousColor(continuousChroma);
@@ -498,7 +498,7 @@ void RollStft::paintForrest(juce::Graphics& graphics) const {
 }
 
 void RollStft::pumpSmoke() {
-    if (activePeaks.empty() || !smokeImage.isValid()) {
+    if (!processor.settings.isShowSmoke || activePeaks.empty() || !smokeImage.isValid()) {
         return;
     }
 
@@ -521,7 +521,7 @@ void RollStft::pumpSmoke() {
     if (drawY < 0) drawY += height;
 
     // Clear the new row first to prevent ghosting from previous treadmill cycles
-    smokeImage.clear(juce::Rectangle<int>(0, drawY, width, speedPx), juce::Colours::transparentBlack);
+    smokeImage.clear(juce::Rectangle(0, drawY, width, speedPx), juce::Colours::transparentBlack);
 
     juce::Graphics graphics(smokeImage);
 
