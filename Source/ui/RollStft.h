@@ -32,13 +32,20 @@ private:
 
     juce::Image smokeImage;
     int smokeScrollOffset = 0;
-    static constexpr float smokeSpeedPxPerFrame = 1.0f;
+    static constexpr float smokeSpeedPxPerFrame = 2.0f;
 
     juce::Image cachedFrame;
 
-    static float freqToMidi(float freq);
+    static float frequencyToMidi(float freq);
     static float frequencyToX(float frequencyHz, float width, float xOffset);
-    void paintTooltip(juce::Graphics& graphics, int physicalWidth, int physicalHeight, const juce::StringArray& tooltipLines);
+
+    void paintTooltip(
+        juce::Graphics& graphics,
+        int physicalWidth,
+        int physicalHeight,
+        const juce::StringArray& tooltipLines
+    ) const;
+
     void paintCrosshairs(
         juce::Graphics& graphics,
         int physicalWidth,
@@ -46,7 +53,7 @@ private:
         bool isHorizontal,
         int logicalWidth,
         int plotHeight
-    );
+    ) const;
 
     void buildFrame();
     void paintHzAxis(
@@ -125,4 +132,3 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RollStft)
 };
-

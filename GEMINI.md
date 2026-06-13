@@ -28,7 +28,7 @@ Pitchenga is a real-time music visualization application and audio plugin.
 
 - `Source/`: Core plugin source files.
 - `doc/`: Documentation and planning.
-- `lib/`: Third-party libraries
+- `libs/`: Third-party libraries (submodules - .gitmodules).
 - `cmake-build-debug/`: Build artifacts and intermediate files.
 
 ## Logging
@@ -54,3 +54,7 @@ Pitchenga is a real-time music visualization application and audio plugin.
 - CRITICAL: ALWAYS declare the named constants in the header file.
 - CRITICAL: Do NOT expose private identifiers in files submitted to version control (including documentation):
   this is a public repo. For private identifiers, key, and passwords use GitHub secrets and local .env file.
+- CRITICAL: Naming rules:
+  Boolean: ALWAYS "isSomething", NOT "was" or "has" or anything else.
+  Map: "valuesByKey".
+  Tuple: "thisAndThat".
